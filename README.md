@@ -55,6 +55,15 @@ result links are in [the baseline report](baseline/baseline-summary.md).
 ExaFlash staging was investigated but not used; these results load directly
 from ExaSTORE.
 
+## Implementation status
+
+Phase 0 development began on 2026-07-17 on branch
+`tiered-moe-grace-view`. The first slice adds a capability-gated CUDA alias for
+ordinary pageable Grace allocations, without pinning, registration, or a copy.
+Correctness tests cover address identity, bidirectional visibility, ownership,
+and invalid storage. A matching microbenchmark compares HBM, pinned UVA, and
+pageable UVA reads. Runtime qualification is in progress on job `956247`.
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout
@@ -75,5 +84,6 @@ recorded in the result JSON files. Do not run model downloads from Booster.
 - `jupiter-env.sh`: module, virtualenv, cache, and offline settings
 - `run-cpu-offload-baseline.sh`: baseline server configuration
 - `run-batch1-baseline.sh`: batch-one benchmark cases
+- `benchmarks/`: focused hardware and kernel microbenchmarks
+- `experiments/`: dated raw results and experiment notes
 - `gh200-vllm-w4a16-tiered-moe-plan-v2.md`: implementation plan beyond baseline
-

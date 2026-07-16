@@ -5,7 +5,8 @@ set -euo pipefail
 source "$(dirname -- "${BASH_SOURCE[0]}")/jupiter-env.sh"
 
 server_host="${1:-jpbo-021-29}"
-result_dir="${VLLM_REPO_DIR}/agent_space/baseline"
+result_dir="${2:-${VLLM_REPO_DIR}/agent_space/baseline}"
+mkdir -p "${result_dir}"
 
 run_case() {
   local name="$1"
