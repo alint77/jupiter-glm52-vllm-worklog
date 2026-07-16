@@ -1,0 +1,66 @@
+
+The following have been reloaded with a version change:
+  1) GCCcore/.14.3.0 => GCCcore/14.3.0
+
+============================= test session starts ==============================
+platform linux -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0 -- /e/project1/profound/alint77/vllm/.venv/bin/python
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: /e/project1/profound/alint77/vllm
+configfile: pyproject.toml
+plugins: anyio-4.14.2, forked-1.6.0, shard-0.1.2, schemathesis-4.22.4, asyncio-1.4.0, mock-3.15.1, typeguard-4.5.2, timeout-2.4.0, rerunfailures-16.4, hypothesis-6.156.6, cov-7.1.0, buildkite-test-collector-0.1.9
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 5 items
+Running 5 items in this shard: tests/kernels/core/test_uva.py::test_cpu_write[cuda:0], tests/kernels/core/test_uva.py::test_gpu_write[cuda:0], tests/kernels/core/test_uva.py::test_pageable_cpu_and_gpu_write[cuda:0], tests/kernels/core/test_uva.py::test_pageable_view_rejects_incompatible_storage[cuda:0], tests/kernels/core/test_uva.py::test_grace_allocation_owns_final_pinned_uva_storage[cuda:0]
+
+tests/kernels/core/test_uva.py::test_cpu_write[cuda:0] PASSED            [ 20%]
+tests/kernels/core/test_uva.py::test_gpu_write[cuda:0] PASSED            [ 40%]
+tests/kernels/core/test_uva.py::test_pageable_cpu_and_gpu_write[cuda:0] PASSED [ 60%]
+tests/kernels/core/test_uva.py::test_pageable_view_rejects_incompatible_storage[cuda:0] PASSED [ 80%]
+tests/kernels/core/test_uva.py::test_grace_allocation_owns_final_pinned_uva_storage[cuda:0] FAILED [100%]
+
+=================================== FAILURES ===================================
+_________ test_grace_allocation_owns_final_pinned_uva_storage[cuda:0] __________
+
+device = 'cuda:0'
+
+    @pytest.mark.skipif(not is_uva_available(), reason="UVA is not available.")
+    @pytest.mark.parametrize("device", CUDA_DEVICES[:1])
+    def test_grace_allocation_owns_final_pinned_uva_storage(device):
+        device_index = torch.device(device).index
+        assert device_index is not None
+>       allocation = GraceAllocation.allocate_pinned(
+            (256,), torch.int32, device_index=device_index, numa_node=0
+        )
+
+tests/kernels/core/test_uva.py:115: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+vllm/model_executor/offloader/grace.py:54: in allocate_pinned
+    cpu_tensor = torch.empty(shape, dtype=dtype, pin_memory=True)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <torch.utils._device.DeviceContext object at 0x4004d20e83e0>
+func = <built-in method empty of type object at 0x40012129cb70>, types = ()
+args = ((256,),)
+kwargs = {'dtype': torch.int32, 'pin_memory': True, 'device': device(type='cuda', index=0)}
+
+    def __torch_function__(self, func, types, args=(), kwargs=None):
+        kwargs = kwargs or {}
+        if func in _device_constructors() and kwargs.get("device") is None:
+            kwargs["device"] = self.device
+>       return func(*args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: Only dense CPU tensors can be pinned
+
+.venv/lib/python3.12/site-packages/torch/utils/_device.py:116: RuntimeError
+=============================== warnings summary ===============================
+tests/kernels/core/test_uva.py: 14 warnings
+  /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/jit/_script.py:365: DeprecationWarning: `torch.jit.script_method` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/kernels/core/test_uva.py::test_grace_allocation_owns_final_pinned_uva_storage[cuda:0]
+=================== 1 failed, 4 passed, 14 warnings in 2.44s ===================
+srun: error: jpbo-027-32: task 0: Exited with exit code 1
