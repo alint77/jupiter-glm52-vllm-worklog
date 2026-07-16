@@ -47,3 +47,17 @@ first, creates its CUDA alias without another allocation, records exact bytes
 and expected device/NUMA ownership, and supports a single direct copy into the
 final backing. The final combined UVA and allocator suite passes 5/5 tests on
 GPU 0; all changed-file pre-commit hooks also pass.
+
+## Build verification
+
+The complete editable source install succeeded with Torch 2.11.0+cu130 after a
+66-minute cold build of vLLM's vendored FA2/FA3 and stable CUDA targets. Both
+`vllm._C_stable_libtorch` and the new `vllm._pageable_grace_C` import through
+the installed environment, and the registered pageable-view operator is
+visible through `torch.ops._C`.
+
+A second isolated `uv` install was stopped after it created a different
+temporary Torch include path and began redundantly recompiling the full stable
+kernel matrix. This was not a test or implementation failure. The targeted
+package import passed, followed by a fresh GH200 run of the complete test file:
+5/5 passed in 2.38 seconds.
