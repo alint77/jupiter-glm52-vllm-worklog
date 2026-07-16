@@ -45,4 +45,5 @@ CPU fallback if registered-host allocation cannot satisfy the exact plan.
 The first `GraceAllocation` contingency slice now allocates pinned CPU backing
 first, creates its CUDA alias without another allocation, records exact bytes
 and expected device/NUMA ownership, and supports a single direct copy into the
-final backing. Its focused ownership/alias test passes on GPU 0.
+final backing. The final combined UVA and allocator suite passes 5/5 tests on
+GPU 0; all changed-file pre-commit hooks also pass.
