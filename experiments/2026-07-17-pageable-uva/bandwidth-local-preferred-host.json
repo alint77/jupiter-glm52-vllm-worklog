@@ -1,0 +1,32 @@
+
+The following have been reloaded with a version change:
+  1) GCCcore/.14.3.0 => GCCcore/14.3.0
+
+{
+  "device": "NVIDIA GH200 120GB",
+  "device_index": 0,
+  "iterations": 30,
+  "measurements": {
+    "hbm": {
+      "milliseconds": 0.5963178634643554,
+      "read_gbps": 1800.6199206611261
+    },
+    "pageable_uva": {
+      "milliseconds": 2.3982622782389322,
+      "read_gbps": 447.7165961966675
+    },
+    "pinned_uva": {
+      "milliseconds": 2.550409698486328,
+      "read_gbps": 421.0075834628716
+    }
+  },
+  "pageable_numa_nodes_after": {
+    "4": 512
+  },
+  "pageable_numa_nodes_before": {
+    "0": 512
+  },
+  "pageable_pointer_identity": true,
+  "size_bytes": 1073741824,
+  "warmups": 10
+}

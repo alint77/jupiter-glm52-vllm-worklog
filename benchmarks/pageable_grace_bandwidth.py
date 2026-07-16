@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
+import ctypes
 import json
+import os
+from collections import Counter
 
 import torch
-import triton
-import triton.language as tl
 
 from vllm.utils.torch_utils import (
     get_accelerator_view_from_cpu_tensor,
@@ -14,48 +15,27 @@ from vllm.utils.torch_utils import (
 )
 
 
-@triton.jit
-def copy_kernel(src, dst, num_elements: tl.constexpr, block_size: tl.constexpr):
-    offsets = tl.program_id(0) * block_size + tl.arange(0, block_size)
-    mask = offsets < num_elements
-    values = tl.load(src + offsets, mask=mask)
-    tl.store(dst + offsets, values, mask=mask)
-
-
 def measure_copy(
     source: torch.Tensor,
     destination: torch.Tensor,
     warmups: int,
     iterations: int,
 ) -> dict[str, float]:
-    block_size = 1024
-    grid = (triton.cdiv(source.numel(), block_size),)
-
     for _ in range(warmups):
-        copy_kernel[grid](
-            source,
-            destination,
-            num_elements=source.numel(),
-            block_size=block_size,
-            num_warps=8,
-        )
+        torch.add(source, 1, out=destination)
     torch.accelerator.synchronize()
 
     start = torch.Event(enable_timing=True)
     end = torch.Event(enable_timing=True)
     start.record()
     for _ in range(iterations):
-        copy_kernel[grid](
-            source,
-            destination,
-            num_elements=source.numel(),
-            block_size=block_size,
-            num_warps=8,
-        )
+        torch.add(source, 1, out=destination)
     end.record()
     end.synchronize()
 
     milliseconds = start.elapsed_time(end) / iterations
+    if destination[7].item() != source[7].item() + 1:
+        raise RuntimeError("CUDA kernel did not copy the expected value")
     num_bytes = source.numel() * source.element_size()
     return {
         "milliseconds": milliseconds,
@@ -63,11 +43,40 @@ def measure_copy(
     }
 
 
+def sample_numa_nodes(tensor: torch.Tensor, samples: int = 512) -> dict[str, int]:
+    page_size = os.sysconf("SC_PAGE_SIZE")
+    num_bytes = tensor.numel() * tensor.element_size()
+    step = max(page_size, num_bytes // samples)
+    step -= step % page_size
+    offsets = list(range(0, num_bytes, step))[:samples]
+    pages = (ctypes.c_void_p * len(offsets))(
+        *(tensor.data_ptr() + offset for offset in offsets)
+    )
+    status = (ctypes.c_int * len(offsets))()
+    libnuma = ctypes.CDLL("libnuma.so.1", use_errno=True)
+    result = libnuma.move_pages(0, len(offsets), pages, None, status, 0)
+    if result < 0:
+        errno = ctypes.get_errno()
+        raise OSError(errno, os.strerror(errno))
+    return dict(sorted(Counter(str(node) for node in status).items()))
+
+
+def lock_pages(tensor: torch.Tensor) -> None:
+    libc = ctypes.CDLL(None, use_errno=True)
+    result = libc.mlock(
+        ctypes.c_void_p(tensor.data_ptr()), tensor.numel() * tensor.element_size()
+    )
+    if result < 0:
+        errno = ctypes.get_errno()
+        raise OSError(errno, os.strerror(errno))
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--size-gib", type=float, default=1.0)
     parser.add_argument("--warmups", type=int, default=5)
     parser.add_argument("--iterations", type=int, default=20)
+    parser.add_argument("--mlock", action="store_true")
     return parser.parse_args()
 
 
@@ -81,13 +90,16 @@ def main() -> None:
     num_elements = num_bytes // torch.empty((), dtype=torch.int64).element_size()
     destination = torch.empty(num_elements, dtype=torch.int64, device="cuda")
 
-    hbm = torch.ones_like(destination)
-    pinned_owner = torch.ones(num_elements, dtype=torch.int64, pin_memory=True)
+    hbm = torch.arange(num_elements, dtype=torch.int64, device="cuda")
+    pinned_owner = torch.arange(num_elements, dtype=torch.int64).pin_memory()
     pinned_uva = get_accelerator_view_from_cpu_tensor(pinned_owner)
-    pageable_owner = torch.ones(num_elements, dtype=torch.int64)
+    pageable_owner = torch.arange(num_elements, dtype=torch.int64)
+    if args.mlock:
+        lock_pages(pageable_owner)
     pageable_uva = get_pageable_accelerator_view_from_cpu_tensor(
         pageable_owner, device_index
     )
+    numa_nodes_before = sample_numa_nodes(pageable_owner)
 
     results = {
         "device": torch.cuda.get_device_name(device_index),
@@ -95,8 +107,10 @@ def main() -> None:
         "size_bytes": num_elements * destination.element_size(),
         "warmups": args.warmups,
         "iterations": args.iterations,
+        "mlock": args.mlock,
         "pageable_pointer_identity": pageable_owner.data_ptr()
         == pageable_uva.data_ptr(),
+        "pageable_numa_nodes_before": numa_nodes_before,
         "measurements": {
             "hbm": measure_copy(hbm, destination, args.warmups, args.iterations),
             "pinned_uva": measure_copy(
@@ -106,6 +120,7 @@ def main() -> None:
                 pageable_uva, destination, args.warmups, args.iterations
             ),
         },
+        "pageable_numa_nodes_after": sample_numa_nodes(pageable_owner),
     }
     print(json.dumps(results, indent=2, sort_keys=True))
 

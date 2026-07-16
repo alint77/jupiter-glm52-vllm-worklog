@@ -61,8 +61,11 @@ Phase 0 development began on 2026-07-17 on branch
 `tiered-moe-grace-view`. The first slice adds a capability-gated CUDA alias for
 ordinary pageable Grace allocations, without pinning, registration, or a copy.
 Correctness tests cover address identity, bidirectional visibility, ownership,
-and invalid storage. A matching microbenchmark compares HBM, pinned UVA, and
-pageable UVA reads. Runtime qualification is in progress on job `956247`.
+and invalid storage. Runtime qualification passes for PyTorch CUDA kernels, but
+the driver migrates the pages from Grace node 0 to GPU-HBM node 4. Preferred-host
+advice, read-mostly advice, and `mlock` did not preserve the physical LPDDR tier.
+The direct pageable path therefore remains gated off while the destination-aware
+pinned-UVA and CPU contingencies are evaluated.
 
 ## Reproducing
 

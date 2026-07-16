@@ -1,0 +1,30 @@
+{
+  "device": "NVIDIA GH200 120GB",
+  "device_index": 0,
+  "iterations": 30,
+  "measurements": {
+    "hbm": {
+      "milliseconds": 0.595966911315918,
+      "read_gbps": 1801.6802671630485
+    },
+    "pageable_uva": {
+      "milliseconds": 1.5702730814615886,
+      "read_gbps": 683.7930527348631
+    },
+    "pinned_uva": {
+      "milliseconds": 2.5508511861165366,
+      "read_gbps": 420.9347177303136
+    }
+  },
+  "mlock": true,
+  "pageable_numa_nodes_after": {
+    "0": 256,
+    "4": 256
+  },
+  "pageable_numa_nodes_before": {
+    "0": 512
+  },
+  "pageable_pointer_identity": true,
+  "size_bytes": 1073741824,
+  "warmups": 10
+}
