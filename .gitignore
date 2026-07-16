@@ -1,0 +1,9 @@
+# Never add model weights, environments, or generated compiler caches.
+*.safetensors
+*.gguf
+.venv/
+__pycache__/
+.cache/
+core
+core.*
+

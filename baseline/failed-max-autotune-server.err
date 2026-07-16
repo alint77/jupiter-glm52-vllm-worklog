@@ -1,0 +1,395 @@
+
+The following have been reloaded with a version change:
+  1) GCCcore/.14.3.0 => GCCcore/14.3.0
+
+(EngineCore pid=135901) /e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py:139: UserWarning: Failed to get the IP address, using 0.0.0.0 by default. The value can be set by the environment variable VLLM_HOST_IP or HOST_IP.
+(EngineCore pid=135901)   mq_connect_ip = get_ip()
+[W716 18:23:20.613013529 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:38619 (errno: 97 - Address family not supported by protocol).
+[W716 18:23:22.123588435 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:38619 (errno: 97 - Address family not supported by protocol).
+[W716 18:23:22.143894778 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:38619 (errno: 97 - Address family not supported by protocol).
+[W716 18:23:22.150290797 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:38619 (errno: 97 - Address family not supported by protocol).
+(Worker_TP0_EP0 pid=136174) 
+Loading safetensors checkpoint shards:   0% Completed | 0/8 [00:00<?, ?it/s]
+(Worker_TP0_EP0 pid=136174) 
+Loading safetensors checkpoint shards:  12% Completed | 1/8 [02:46<19:25, 166.50s/it]
+(Worker_TP0_EP0 pid=136174) Loading safetensors checkpoint shards:  25% Completed | 2/8 [05:43<17:14, 172.48s/it]
+(Worker_TP0_EP0 pid=136174) Loading safetensors checkpoint shards:  38% Completed | 3/8 [08:36<14:23, 172.79s/it]
+(Worker_TP0_EP0 pid=136174) Loading safetensors checkpoint shards:  50% Completed | 4/8 [11:23<11:21, 170.40s/it]
+(Worker_TP0_EP0 pid=136174) Loading safetensors checkpoint shards:  62% Completed | 5/8 [13:55<08:11, 163.92s/it]
+(Worker_TP0_EP0 pid=136174) Loading safetensors checkpoint shards:  75% Completed | 6/8 [16:28<05:20, 160.33s/it]
+(Worker_TP0_EP0 pid=136174) Loading safetensors checkpoint shards:  88% Completed | 7/8 [18:58<02:36, 156.95s/it]
+(Worker_TP0_EP0 pid=136174) Loading safetensors checkpoint shards: 100% Completed | 8/8 [20:48<00:00, 141.95s/it]
+(Worker_TP0_EP0 pid=136174) Loading safetensors checkpoint shards: 100% Completed | 8/8 [20:48<00:00, 156.08s/it]
+(Worker_TP0_EP0 pid=136174) 
+(Worker_TP0_EP0 pid=136174) /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+(Worker_TP0_EP0 pid=136174)   return func(*args, **kwargs)
+[rank0]:[W716 18:45:02.748375406 ProcessGroupNCCL.cpp:5188] Guessing device ID based on global rank. This can cause a hang if rank to GPU mapping is heterogeneous. You can specify device_id in init_process_group()
+(Worker_TP0_EP0 pid=136174) Process VllmWorker-0:
+(Worker_TP1_EP1 pid=136176) Process VllmWorker-1:
+(Worker_TP2_EP2 pid=136178) Process VllmWorker-2:
+(Worker_TP3_EP3 pid=136180) Process VllmWorker-3:
+(Worker_TP1_EP1 pid=136176) Traceback (most recent call last):
+(Worker_TP2_EP2 pid=136178) Traceback (most recent call last):
+(Worker_TP3_EP3 pid=136180) Traceback (most recent call last):
+(Worker_TP0_EP0 pid=136174) Traceback (most recent call last):
+(Worker_TP1_EP1 pid=136176)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 924, in worker_main
+(Worker_TP2_EP2 pid=136178)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 924, in worker_main
+(Worker_TP1_EP1 pid=136176)     raise e
+(Worker_TP2_EP2 pid=136178)     raise e
+(Worker_TP3_EP3 pid=136180)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 924, in worker_main
+(Worker_TP1_EP1 pid=136176)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 892, in worker_main
+(Worker_TP2_EP2 pid=136178)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 892, in worker_main
+(Worker_TP3_EP3 pid=136180)     raise e
+(Worker_TP2_EP2 pid=136178)     worker.worker_busy_loop()
+(Worker_TP1_EP1 pid=136176)     worker.worker_busy_loop()
+(Worker_TP0_EP0 pid=136174)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 924, in worker_main
+(Worker_TP3_EP3 pid=136180)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 892, in worker_main
+(Worker_TP2_EP2 pid=136178)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 990, in worker_busy_loop
+(Worker_TP0_EP0 pid=136174)     raise e
+(Worker_TP1_EP1 pid=136176)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 990, in worker_busy_loop
+(Worker_TP3_EP3 pid=136180)     worker.worker_busy_loop()
+(Worker_TP2_EP2 pid=136178)     method, args, kwargs, output_rank = self.rpc_broadcast_mq.dequeue(
+(Worker_TP0_EP0 pid=136174)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 892, in worker_main
+(Worker_TP2_EP2 pid=136178)                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker_TP1_EP1 pid=136176)     method, args, kwargs, output_rank = self.rpc_broadcast_mq.dequeue(
+(Worker_TP3_EP3 pid=136180)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 990, in worker_busy_loop
+(Worker_TP1_EP1 pid=136176)                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker_TP2_EP2 pid=136178)   File "/e/project1/profound/alint77/vllm/vllm/distributed/device_communicators/shm_broadcast.py", line 779, in dequeue
+(Worker_TP3_EP3 pid=136180)     method, args, kwargs, output_rank = self.rpc_broadcast_mq.dequeue(
+(Worker_TP0_EP0 pid=136174)     worker.worker_busy_loop()
+(Worker_TP2_EP2 pid=136178)     with self.acquire_read(timeout, indefinite) as buf:
+(Worker_TP0_EP0 pid=136174)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 990, in worker_busy_loop
+(Worker_TP2_EP2 pid=136178)          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker_TP3_EP3 pid=136180)                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker_TP2_EP2 pid=136178)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/contextlib.py", line 137, in __enter__
+(Worker_TP1_EP1 pid=136176)   File "/e/project1/profound/alint77/vllm/vllm/distributed/device_communicators/shm_broadcast.py", line 779, in dequeue
+(Worker_TP0_EP0 pid=136174)     method, args, kwargs, output_rank = self.rpc_broadcast_mq.dequeue(
+(Worker_TP1_EP1 pid=136176)     with self.acquire_read(timeout, indefinite) as buf:
+(Worker_TP0_EP0 pid=136174)                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker_TP3_EP3 pid=136180)   File "/e/project1/profound/alint77/vllm/vllm/distributed/device_communicators/shm_broadcast.py", line 779, in dequeue
+(Worker_TP2_EP2 pid=136178)     return next(self.gen)
+(Worker_TP0_EP0 pid=136174)   File "/e/project1/profound/alint77/vllm/vllm/distributed/device_communicators/shm_broadcast.py", line 779, in dequeue
+(Worker_TP1_EP1 pid=136176)          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker_TP2_EP2 pid=136178)            ^^^^^^^^^^^^^^
+(Worker_TP3_EP3 pid=136180)     with self.acquire_read(timeout, indefinite) as buf:
+(Worker_TP0_EP0 pid=136174)     with self.acquire_read(timeout, indefinite) as buf:
+(Worker_TP2_EP2 pid=136178)   File "/e/project1/profound/alint77/vllm/vllm/distributed/device_communicators/shm_broadcast.py", line 698, in acquire_read
+(Worker_TP0_EP0 pid=136174)          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker_TP1_EP1 pid=136176)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/contextlib.py", line 137, in __enter__
+(Worker_TP3_EP3 pid=136180)          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker_TP2_EP2 pid=136178)     self._spin_condition.wait(timeout_ms=read_timeout.timeout_ms())
+(Worker_TP3_EP3 pid=136180)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/contextlib.py", line 137, in __enter__
+(Worker_TP2_EP2 pid=136178)   File "/e/project1/profound/alint77/vllm/vllm/distributed/device_communicators/shm_broadcast.py", line 198, in wait
+(Worker_TP0_EP0 pid=136174)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/contextlib.py", line 137, in __enter__
+(Worker_TP2_EP2 pid=136178)     events = dict(self.poller.poll(timeout=timeout_ms))
+(Worker_TP1_EP1 pid=136176)     return next(self.gen)
+(Worker_TP3_EP3 pid=136180)     return next(self.gen)
+(Worker_TP0_EP0 pid=136174)     return next(self.gen)
+(Worker_TP3_EP3 pid=136180)            ^^^^^^^^^^^^^^
+(Worker_TP0_EP0 pid=136174)            ^^^^^^^^^^^^^^
+(Worker_TP2_EP2 pid=136178)                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker_TP3_EP3 pid=136180)   File "/e/project1/profound/alint77/vllm/vllm/distributed/device_communicators/shm_broadcast.py", line 698, in acquire_read
+(Worker_TP0_EP0 pid=136174)   File "/e/project1/profound/alint77/vllm/vllm/distributed/device_communicators/shm_broadcast.py", line 698, in acquire_read
+(Worker_TP2_EP2 pid=136178)   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/zmq/sugar/poll.py", line 106, in poll
+(Worker_TP1_EP1 pid=136176)            ^^^^^^^^^^^^^^
+(Worker_TP3_EP3 pid=136180)     self._spin_condition.wait(timeout_ms=read_timeout.timeout_ms())
+(Worker_TP0_EP0 pid=136174)     self._spin_condition.wait(timeout_ms=read_timeout.timeout_ms())
+(Worker_TP2_EP2 pid=136178)     return zmq_poll(self.sockets, timeout=timeout)
+(Worker_TP3_EP3 pid=136180)   File "/e/project1/profound/alint77/vllm/vllm/distributed/device_communicators/shm_broadcast.py", line 198, in wait
+(Worker_TP1_EP1 pid=136176)   File "/e/project1/profound/alint77/vllm/vllm/distributed/device_communicators/shm_broadcast.py", line 698, in acquire_read
+(Worker_TP2_EP2 pid=136178)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker_TP3_EP3 pid=136180)     events = dict(self.poller.poll(timeout=timeout_ms))
+(Worker_TP1_EP1 pid=136176)     self._spin_condition.wait(timeout_ms=read_timeout.timeout_ms())
+(Worker_TP3_EP3 pid=136180)                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker_TP0_EP0 pid=136174)   File "/e/project1/profound/alint77/vllm/vllm/distributed/device_communicators/shm_broadcast.py", line 198, in wait
+(Worker_TP3_EP3 pid=136180)   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/zmq/sugar/poll.py", line 106, in poll
+(Worker_TP2_EP2 pid=136178)   File "zmq/backend/cython/_zmq.py", line 1680, in zmq.backend.cython._zmq.zmq_poll
+(Worker_TP1_EP1 pid=136176)   File "/e/project1/profound/alint77/vllm/vllm/distributed/device_communicators/shm_broadcast.py", line 198, in wait
+(Worker_TP2_EP2 pid=136178)     _check_rc(rc)
+(Worker_TP0_EP0 pid=136174)     events = dict(self.poller.poll(timeout=timeout_ms))
+(Worker_TP3_EP3 pid=136180)     return zmq_poll(self.sockets, timeout=timeout)
+(Worker_TP1_EP1 pid=136176)     events = dict(self.poller.poll(timeout=timeout_ms))
+(Worker_TP2_EP2 pid=136178)     ^^^^^^^^^^^
+(Worker_TP0_EP0 pid=136174)                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker_TP3_EP3 pid=136180)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker_TP1_EP1 pid=136176)                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker_TP2_EP2 pid=136178)   File "zmq/backend/cython/_zmq.py", line 179, in zmq.backend.cython._zmq._check_rc
+(Worker_TP0_EP0 pid=136174)   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/zmq/sugar/poll.py", line 106, in poll
+(Worker_TP3_EP3 pid=136180)   File "zmq/backend/cython/_zmq.py", line 1680, in zmq.backend.cython._zmq.zmq_poll
+(Worker_TP1_EP1 pid=136176)   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/zmq/sugar/poll.py", line 106, in poll
+(Worker_TP2_EP2 pid=136178)     PyErr_CheckSignals()
+(Worker_TP1_EP1 pid=136176)     return zmq_poll(self.sockets, timeout=timeout)
+(Worker_TP0_EP0 pid=136174)     return zmq_poll(self.sockets, timeout=timeout)
+(Worker_TP3_EP3 pid=136180)     _check_rc(rc)
+(Worker_TP2_EP2 pid=136178)     ^^^^^^^^^^^
+(Worker_TP0_EP0 pid=136174)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker_TP1_EP1 pid=136176)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker_TP0_EP0 pid=136174)   File "zmq/backend/cython/_zmq.py", line 1680, in zmq.backend.cython._zmq.zmq_poll
+(Worker_TP3_EP3 pid=136180)     ^^^^^^^^^^^
+(Worker_TP2_EP2 pid=136178)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 826, in signal_handler
+(Worker_TP3_EP3 pid=136180)   File "zmq/backend/cython/_zmq.py", line 179, in zmq.backend.cython._zmq._check_rc
+(Worker_TP1_EP1 pid=136176)   File "zmq/backend/cython/_zmq.py", line 1680, in zmq.backend.cython._zmq.zmq_poll
+(Worker_TP2_EP2 pid=136178)     raise SystemExit()
+(Worker_TP3_EP3 pid=136180)     PyErr_CheckSignals()
+(Worker_TP1_EP1 pid=136176)     _check_rc(rc)
+(Worker_TP3_EP3 pid=136180)     ^^^^^^^^^^^
+(Worker_TP0_EP0 pid=136174)     _check_rc(rc)
+(Worker_TP2_EP2 pid=136178) SystemExit
+(Worker_TP1_EP1 pid=136176)     ^^^^^^^^^^^
+(Worker_TP3_EP3 pid=136180)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 826, in signal_handler
+(Worker_TP2_EP2 pid=136178) 
+(Worker_TP1_EP1 pid=136176)   File "zmq/backend/cython/_zmq.py", line 179, in zmq.backend.cython._zmq._check_rc
+(Worker_TP2_EP2 pid=136178) During handling of the above exception, another exception occurred:
+(Worker_TP0_EP0 pid=136174)     ^^^^^^^^^^^
+(Worker_TP3_EP3 pid=136180)     raise SystemExit()
+(Worker_TP0_EP0 pid=136174)   File "zmq/backend/cython/_zmq.py", line 179, in zmq.backend.cython._zmq._check_rc
+(Worker_TP2_EP2 pid=136178) 
+(Worker_TP1_EP1 pid=136176)     PyErr_CheckSignals()
+(Worker_TP3_EP3 pid=136180) SystemExit
+(Worker_TP0_EP0 pid=136174)     PyErr_CheckSignals()
+(Worker_TP0_EP0 pid=136174)     ^^^^^^^^^^^
+(Worker_TP3_EP3 pid=136180) 
+(Worker_TP2_EP2 pid=136178) Traceback (most recent call last):
+(Worker_TP3_EP3 pid=136180) During handling of the above exception, another exception occurred:
+(Worker_TP0_EP0 pid=136174)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 826, in signal_handler
+(Worker_TP1_EP1 pid=136176)     ^^^^^^^^^^^
+(Worker_TP3_EP3 pid=136180) 
+(Worker_TP0_EP0 pid=136174)     raise SystemExit()
+(Worker_TP1_EP1 pid=136176)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 826, in signal_handler
+(Worker_TP3_EP3 pid=136180) Traceback (most recent call last):
+(Worker_TP1_EP1 pid=136176)     raise SystemExit()
+(Worker_TP0_EP0 pid=136174) SystemExit
+(Worker_TP1_EP1 pid=136176) SystemExit
+(Worker_TP0_EP0 pid=136174) 
+(Worker_TP0_EP0 pid=136174) During handling of the above exception, another exception occurred:
+(Worker_TP1_EP1 pid=136176) 
+(Worker_TP0_EP0 pid=136174) 
+(Worker_TP1_EP1 pid=136176) During handling of the above exception, another exception occurred:
+(Worker_TP1_EP1 pid=136176) 
+(Worker_TP0_EP0 pid=136174) Traceback (most recent call last):
+(Worker_TP1_EP1 pid=136176) Traceback (most recent call last):
+(Worker_TP2_EP2 pid=136178)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+(Worker_TP2_EP2 pid=136178)     self.run()
+(Worker_TP3_EP3 pid=136180)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+(Worker_TP2_EP2 pid=136178)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/multiprocessing/process.py", line 108, in run
+(Worker_TP3_EP3 pid=136180)     self.run()
+(Worker_TP2_EP2 pid=136178)     self._target(*self._args, **self._kwargs)
+(Worker_TP3_EP3 pid=136180)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/multiprocessing/process.py", line 108, in run
+(Worker_TP2_EP2 pid=136178)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 933, in worker_main
+(Worker_TP3_EP3 pid=136180)     self._target(*self._args, **self._kwargs)
+(Worker_TP0_EP0 pid=136174)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+(Worker_TP2_EP2 pid=136178)     worker.shutdown()
+(Worker_TP3_EP3 pid=136180)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 933, in worker_main
+(Worker_TP0_EP0 pid=136174)     self.run()
+(Worker_TP3_EP3 pid=136180)     worker.shutdown()
+(Worker_TP2_EP2 pid=136178)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 778, in shutdown
+(Worker_TP0_EP0 pid=136174)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/multiprocessing/process.py", line 108, in run
+(Worker_TP3_EP3 pid=136180)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 778, in shutdown
+(Worker_TP2_EP2 pid=136178)     self.worker.shutdown()
+(Worker_TP1_EP1 pid=136176)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+(Worker_TP2_EP2 pid=136178)   File "/e/project1/profound/alint77/vllm/vllm/v1/worker/worker_base.py", line 220, in shutdown
+(Worker_TP0_EP0 pid=136174)     self._target(*self._args, **self._kwargs)
+(Worker_TP2_EP2 pid=136178)     self.worker.shutdown()
+(Worker_TP1_EP1 pid=136176)     self.run()
+(Worker_TP3_EP3 pid=136180)     self.worker.shutdown()
+(Worker_TP0_EP0 pid=136174)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 933, in worker_main
+(Worker_TP2_EP2 pid=136178)   File "/e/project1/profound/alint77/vllm/vllm/v1/worker/gpu_worker.py", line 1311, in shutdown
+(Worker_TP0_EP0 pid=136174)     worker.shutdown()
+(Worker_TP1_EP1 pid=136176)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/multiprocessing/process.py", line 108, in run
+(Worker_TP2_EP2 pid=136178)     model_runner.shutdown()
+(Worker_TP0_EP0 pid=136174)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 778, in shutdown
+(Worker_TP3_EP3 pid=136180)   File "/e/project1/profound/alint77/vllm/vllm/v1/worker/worker_base.py", line 220, in shutdown
+(Worker_TP2_EP2 pid=136178)   File "/e/project1/profound/alint77/vllm/vllm/v1/worker/gpu_model_runner.py", line 6471, in shutdown
+(Worker_TP0_EP0 pid=136174)     self.worker.shutdown()
+(Worker_TP3_EP3 pid=136180)     self.worker.shutdown()
+(Worker_TP1_EP1 pid=136176)     self._target(*self._args, **self._kwargs)
+(Worker_TP0_EP0 pid=136174)   File "/e/project1/profound/alint77/vllm/vllm/v1/worker/worker_base.py", line 220, in shutdown
+(Worker_TP3_EP3 pid=136180)   File "/e/project1/profound/alint77/vllm/vllm/v1/worker/gpu_worker.py", line 1311, in shutdown
+(Worker_TP2_EP2 pid=136178)     self._cleanup_profiling_kv_cache()
+(Worker_TP0_EP0 pid=136174)     self.worker.shutdown()
+(Worker_TP3_EP3 pid=136180)     model_runner.shutdown()
+(Worker_TP2_EP2 pid=136178)   File "/e/project1/profound/alint77/vllm/vllm/v1/worker/gpu_model_runner.py", line 6489, in _cleanup_profiling_kv_cache
+(Worker_TP1_EP1 pid=136176)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 933, in worker_main
+(Worker_TP0_EP0 pid=136174)   File "/e/project1/profound/alint77/vllm/vllm/v1/worker/gpu_worker.py", line 1311, in shutdown
+(Worker_TP3_EP3 pid=136180)   File "/e/project1/profound/alint77/vllm/vllm/v1/worker/gpu_model_runner.py", line 6471, in shutdown
+(Worker_TP0_EP0 pid=136174)     model_runner.shutdown()
+(Worker_TP2_EP2 pid=136178)     torch.accelerator.synchronize()
+(Worker_TP1_EP1 pid=136176)     worker.shutdown()
+(Worker_TP3_EP3 pid=136180)     self._cleanup_profiling_kv_cache()
+(Worker_TP2_EP2 pid=136178)   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/accelerator/__init__.py", line 263, in synchronize
+(Worker_TP0_EP0 pid=136174)   File "/e/project1/profound/alint77/vllm/vllm/v1/worker/gpu_model_runner.py", line 6471, in shutdown
+(Worker_TP1_EP1 pid=136176)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 778, in shutdown
+(Worker_TP0_EP0 pid=136174)     self._cleanup_profiling_kv_cache()
+(Worker_TP3_EP3 pid=136180)   File "/e/project1/profound/alint77/vllm/vllm/v1/worker/gpu_model_runner.py", line 6489, in _cleanup_profiling_kv_cache
+(Worker_TP1_EP1 pid=136176)     self.worker.shutdown()
+(Worker_TP3_EP3 pid=136180)     torch.accelerator.synchronize()
+(Worker_TP2_EP2 pid=136178)     torch._C._accelerator_synchronizeDevice(device_index)
+(Worker_TP3_EP3 pid=136180)   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/accelerator/__init__.py", line 263, in synchronize
+(Worker_TP0_EP0 pid=136174)   File "/e/project1/profound/alint77/vllm/vllm/v1/worker/gpu_model_runner.py", line 6489, in _cleanup_profiling_kv_cache
+(Worker_TP1_EP1 pid=136176)   File "/e/project1/profound/alint77/vllm/vllm/v1/worker/worker_base.py", line 220, in shutdown
+(Worker_TP2_EP2 pid=136178) torch.AcceleratorError: CUDA error: an illegal memory access was encountered
+(Worker_TP3_EP3 pid=136180)     torch._C._accelerator_synchronizeDevice(device_index)
+(Worker_TP0_EP0 pid=136174)     torch.accelerator.synchronize()
+(Worker_TP2_EP2 pid=136178) Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+(Worker_TP1_EP1 pid=136176)     self.worker.shutdown()
+(Worker_TP0_EP0 pid=136174)   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/accelerator/__init__.py", line 263, in synchronize
+(Worker_TP3_EP3 pid=136180) torch.AcceleratorError: CUDA error: an illegal memory access was encountered
+(Worker_TP0_EP0 pid=136174)     torch._C._accelerator_synchronizeDevice(device_index)
+(Worker_TP2_EP2 pid=136178) CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+(Worker_TP3_EP3 pid=136180) Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+(Worker_TP1_EP1 pid=136176)   File "/e/project1/profound/alint77/vllm/vllm/v1/worker/gpu_worker.py", line 1311, in shutdown
+(Worker_TP2_EP2 pid=136178) For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+(Worker_TP3_EP3 pid=136180) CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+(Worker_TP0_EP0 pid=136174) torch.AcceleratorError: CUDA error: an illegal memory access was encountered
+(Worker_TP1_EP1 pid=136176)     model_runner.shutdown()
+(Worker_TP0_EP0 pid=136174) Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+(Worker_TP2_EP2 pid=136178) Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+(Worker_TP3_EP3 pid=136180) For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+(Worker_TP0_EP0 pid=136174) CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+(Worker_TP1_EP1 pid=136176)   File "/e/project1/profound/alint77/vllm/vllm/v1/worker/gpu_model_runner.py", line 6471, in shutdown
+(Worker_TP2_EP2 pid=136178) 
+(Worker_TP3_EP3 pid=136180) Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+(Worker_TP0_EP0 pid=136174) For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+(Worker_TP1_EP1 pid=136176)     self._cleanup_profiling_kv_cache()
+(Worker_TP3_EP3 pid=136180) 
+(Worker_TP0_EP0 pid=136174) Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+(Worker_TP1_EP1 pid=136176)   File "/e/project1/profound/alint77/vllm/vllm/v1/worker/gpu_model_runner.py", line 6489, in _cleanup_profiling_kv_cache
+(Worker_TP0_EP0 pid=136174) 
+(Worker_TP1_EP1 pid=136176)     torch.accelerator.synchronize()
+(Worker_TP1_EP1 pid=136176)   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/accelerator/__init__.py", line 263, in synchronize
+(Worker_TP1_EP1 pid=136176)     torch._C._accelerator_synchronizeDevice(device_index)
+(Worker_TP1_EP1 pid=136176) torch.AcceleratorError: CUDA error: an illegal memory access was encountered
+(Worker_TP1_EP1 pid=136176) Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+(Worker_TP1_EP1 pid=136176) CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+(Worker_TP1_EP1 pid=136176) For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+(Worker_TP1_EP1 pid=136176) Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+(Worker_TP1_EP1 pid=136176) 
+terminate called after throwing an instance of 'c10::AcceleratorError'
+terminate called after throwing an instance of 'c10::AcceleratorError'
+terminate called after throwing an instance of 'c10::AcceleratorError'
+terminate called after throwing an instance of 'c10::AcceleratorError'
+  what():  CUDA error: an illegal memory access was encountered
+Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Exception raised from ~AllocationRef at /pytorch/torch/csrc/distributed/c10d/symm_mem/CUDASymmetricMemory.cu:51 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0x4000d54166e8 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: c10::cuda::c10_cuda_check_implementation(int, char const*, char const*, unsigned int, bool) + 0x224 (0x4000d52f43e4 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libc10_cuda.so)
+frame #2: c10d::symmetric_memory::AllocationRef::~AllocationRef() + 0x7c (0x4000c027b8dc in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #3: c10::intrusive_ptr<c10d::symmetric_memory::AllocationRef, c10::detail::intrusive_target_default_null_type<c10d::symmetric_memory::AllocationRef> >::reset_not_null_(c10d::symmetric_memory::AllocationRef*) + 0x8c (0x4000c027f33c in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: c10d::symmetric_memory::CUDAPeerAllocInfo::~CUDAPeerAllocInfo() + 0x78 (0x4000c027f718 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #5: c10d::symmetric_memory::CUDASymmetricMemory::~CUDASymmetricMemory() + 0x2c (0x4000c027ee6c in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0x1199644 (0x4000b44e9644 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_python.so)
+frame #7: <unknown function> + 0x63f518 (0x4000b398f518 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_python.so)
+frame #8: <unknown function> + 0x63fe84 (0x4000b398fe84 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_python.so)
+frame #9: PyObject_GenericSetAttr + 0x4f0 (0xaaaae6d6ecdc in VLLM::Worker_TP0_EP0)
+frame #10: _PyEval_EvalFrameDefault + 0xb914 (0xaaaae6dbab48 in VLLM::Worker_TP0_EP0)
+frame #11: <unknown function> + 0x5c4db0 (0xaaaae6fd4db0 in VLLM::Worker_TP0_EP0)
+frame #12: Py_FinalizeEx + 0x64 (0xaaaae6f25c70 in VLLM::Worker_TP0_EP0)
+frame #13: Py_Exit + 0x14 (0xaaaae6c70c30 in VLLM::Worker_TP0_EP0)
+frame #14: <unknown function> + 0x264a74 (0xaaaae6c74a74 in VLLM::Worker_TP0_EP0)
+frame #15: <unknown function> + 0x264128 (0xaaaae6c74128 in VLLM::Worker_TP0_EP0)
+frame #16: PyRun_SimpleStringFlags + 0x1e4 (0xaaaae6f2c39c in VLLM::Worker_TP0_EP0)
+frame #17: Py_RunMain + 0x3d4 (0xaaaae6f40dd4 in VLLM::Worker_TP0_EP0)
+frame #18: <unknown function> + 0x531358 (0xaaaae6f41358 in VLLM::Worker_TP0_EP0)
+frame #19: <unknown function> + 0x4188b0 (0xaaaae6e288b0 in VLLM::Worker_TP0_EP0)
+frame #20: <unknown function> + 0x27540 (0x4000261c7540 in /lib64/libc.so.6)
+frame #21: __libc_start_main + 0x98 (0x4000261c7618 in /lib64/libc.so.6)
+frame #22: <unknown function> + 0x4187a0 (0xaaaae6e287a0 in VLLM::Worker_TP0_EP0)
+
+  what():  CUDA error: an illegal memory access was encountered
+Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Exception raised from ~AllocationRef at /pytorch/torch/csrc/distributed/c10d/symm_mem/CUDASymmetricMemory.cu:51 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0x4000d8d366e8 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: c10::cuda::c10_cuda_check_implementation(int, char const*, char const*, unsigned int, bool) + 0x224 (0x4000d8c143e4 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libc10_cuda.so)
+frame #2: c10d::symmetric_memory::AllocationRef::~AllocationRef() + 0x7c (0x4000c3b9b8dc in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #3: c10::intrusive_ptr<c10d::symmetric_memory::AllocationRef, c10::detail::intrusive_target_default_null_type<c10d::symmetric_memory::AllocationRef> >::reset_not_null_(c10d::symmetric_memory::AllocationRef*) + 0x8c (0x4000c3b9f33c in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: c10d::symmetric_memory::CUDAPeerAllocInfo::~CUDAPeerAllocInfo() + 0x78 (0x4000c3b9f718 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #5: c10d::symmetric_memory::CUDASymmetricMemory::~CUDASymmetricMemory() + 0x2c (0x4000c3b9ee6c in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0x1199644 (0x4000b7e09644 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_python.so)
+frame #7: <unknown function> + 0x63f518 (0x4000b72af518 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_python.so)
+frame #8: <unknown function> + 0x63fe84 (0x4000b72afe84 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_python.so)
+frame #9: PyObject_GenericSetAttr + 0x4f0 (0xaaaadccfecdc in VLLM::Worker_TP2_EP2)
+frame #10: _PyEval_EvalFrameDefault + 0xb914 (0xaaaadcd4ab48 in VLLM::Worker_TP2_EP2)
+frame #11: <unknown function> + 0x5c4db0 (0xaaaadcf64db0 in VLLM::Worker_TP2_EP2)
+frame #12: Py_FinalizeEx + 0x64 (0xaaaadceb5c70 in VLLM::Worker_TP2_EP2)
+frame #13: Py_Exit + 0x14 (0xaaaadcc00c30 in VLLM::Worker_TP2_EP2)
+frame #14: <unknown function> + 0x264a74 (0xaaaadcc04a74 in VLLM::Worker_TP2_EP2)
+frame #15: <unknown function> + 0x264128 (0xaaaadcc04128 in VLLM::Worker_TP2_EP2)
+frame #16: PyRun_SimpleStringFlags + 0x1e4 (0xaaaadcebc39c in VLLM::Worker_TP2_EP2)
+frame #17: Py_RunMain + 0x3d4 (0xaaaadced0dd4 in VLLM::Worker_TP2_EP2)
+frame #18: <unknown function> + 0x531358 (0xaaaadced1358 in VLLM::Worker_TP2_EP2)
+frame #19: <unknown function> + 0x4188b0 (0xaaaadcdb88b0 in VLLM::Worker_TP2_EP2)
+frame #20: <unknown function> + 0x27540 (0x400029ae7540 in /lib64/libc.so.6)
+frame #21: __libc_start_main + 0x98 (0x400029ae7618 in /lib64/libc.so.6)
+frame #22: <unknown function> + 0x4187a0 (0xaaaadcdb87a0 in VLLM::Worker_TP2_EP2)
+  what():  
+CUDA error: an illegal memory access was encountered
+Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Exception raised from ~AllocationRef at /pytorch/torch/csrc/distributed/c10d/symm_mem/CUDASymmetricMemory.cu:51 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0x4000b9d366e8 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: c10::cuda::c10_cuda_check_implementation(int, char const*, char const*, unsigned int, bool) + 0x224 (0x4000b9c143e4 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libc10_cuda.so)
+frame #2: c10d::symmetric_memory::AllocationRef::~AllocationRef() + 0x7c (0x4000a4b9b8dc in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #3: c10::intrusive_ptr<c10d::symmetric_memory::AllocationRef, c10::detail::intrusive_target_default_null_type<c10d::symmetric_memory::AllocationRef> >::reset_not_null_(c10d::symmetric_memory::AllocationRef*) + 0x8c (0x4000a4b9f33c in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: c10d::symmetric_memory::CUDAPeerAllocInfo::~CUDAPeerAllocInfo() + 0x78 (0x4000a4b9f718 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #5: c10d::symmetric_memory::CUDASymmetricMemory::~CUDASymmetricMemory() + 0x2c (0x4000a4b9ee6c in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0x1199644 (0x400098e09644 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_python.so)
+frame #7: <unknown function> + 0x63f518 (0x4000982af518 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_python.so)
+frame #8: <unknown function> + 0x63fe84 (0x4000982afe84 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_python.so)
+frame #9: PyObject_GenericSetAttr + 0x4f0 (0xaaaadaabecdc in VLLM::Worker_TP1_EP1)
+frame #10: _PyEval_EvalFrameDefault + 0xb914 (0xaaaadab0ab48 in VLLM::Worker_TP1_EP1)
+frame #11: <unknown function> + 0x5c4db0 (0xaaaadad24db0 in VLLM::Worker_TP1_EP1)
+frame #12: Py_FinalizeEx + 0x64 (0xaaaadac75c70 in VLLM::Worker_TP1_EP1)
+frame #13: Py_Exit + 0x14 (0xaaaada9c0c30 in VLLM::Worker_TP1_EP1)
+frame #14: <unknown function> + 0x264a74 (0xaaaada9c4a74 in VLLM::Worker_TP1_EP1)
+frame #15: <unknown function> + 0x264128 (0xaaaada9c4128 in VLLM::Worker_TP1_EP1)
+frame #16: PyRun_SimpleStringFlags + 0x1e4 (0xaaaadac7c39c in VLLM::Worker_TP1_EP1)
+frame #17: Py_RunMain + 0x3d4 (0xaaaadac90dd4 in VLLM::Worker_TP1_EP1)
+frame #18: <unknown function> + 0x531358 (0xaaaadac91358 in VLLM::Worker_TP1_EP1)
+frame #19: <unknown function> + 0x4188b0 (0xaaaadab788b0 in VLLM::Worker_TP1_EP1)
+frame #20: <unknown function> + 0x27540 (0x40000aae7540 in /lib64/libc.so.6)
+frame #21: __libc_start_main + 0x98 (0x40000aae7618 in /lib64/libc.so.6)
+frame #22: <unknown function> + 0x4187a0 (0xaaaadab787a0 in VLLM::Worker_TP1_EP1)
+
+  what():  CUDA error: an illegal memory access was encountered
+Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Exception raised from ~AllocationRef at /pytorch/torch/csrc/distributed/c10d/symm_mem/CUDASymmetricMemory.cu:51 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0x4000c91d66e8 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: c10::cuda::c10_cuda_check_implementation(int, char const*, char const*, unsigned int, bool) + 0x224 (0x4000c90b43e4 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libc10_cuda.so)
+frame #2: c10d::symmetric_memory::AllocationRef::~AllocationRef() + 0x7c (0x4000b403b8dc in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #3: c10::intrusive_ptr<c10d::symmetric_memory::AllocationRef, c10::detail::intrusive_target_default_null_type<c10d::symmetric_memory::AllocationRef> >::reset_not_null_(c10d::symmetric_memory::AllocationRef*) + 0x8c (0x4000b403f33c in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: c10d::symmetric_memory::CUDAPeerAllocInfo::~CUDAPeerAllocInfo() + 0x78 (0x4000b403f718 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #5: c10d::symmetric_memory::CUDASymmetricMemory::~CUDASymmetricMemory() + 0x2c (0x4000b403ee6c in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #6: <unknown function> + 0x1199644 (0x4000a82a9644 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_python.so)
+frame #7: <unknown function> + 0x63f518 (0x4000a774f518 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_python.so)
+frame #8: <unknown function> + 0x63fe84 (0x4000a774fe84 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_python.so)
+frame #9: PyObject_GenericSetAttr + 0x4f0 (0xaaaac37becdc in VLLM::Worker_TP3_EP3)
+frame #10: _PyEval_EvalFrameDefault + 0xb914 (0xaaaac380ab48 in VLLM::Worker_TP3_EP3)
+frame #11: <unknown function> + 0x5c4db0 (0xaaaac3a24db0 in VLLM::Worker_TP3_EP3)
+frame #12: Py_FinalizeEx + 0x64 (0xaaaac3975c70 in VLLM::Worker_TP3_EP3)
+frame #13: Py_Exit + 0x14 (0xaaaac36c0c30 in VLLM::Worker_TP3_EP3)
+frame #14: <unknown function> + 0x264a74 (0xaaaac36c4a74 in VLLM::Worker_TP3_EP3)
+frame #15: <unknown function> + 0x264128 (0xaaaac36c4128 in VLLM::Worker_TP3_EP3)
+frame #16: PyRun_SimpleStringFlags + 0x1e4 (0xaaaac397c39c in VLLM::Worker_TP3_EP3)
+frame #17: Py_RunMain + 0x3d4 (0xaaaac3990dd4 in VLLM::Worker_TP3_EP3)
+frame #18: <unknown function> + 0x531358 (0xaaaac3991358 in VLLM::Worker_TP3_EP3)
+frame #19: <unknown function> + 0x4188b0 (0xaaaac38788b0 in VLLM::Worker_TP3_EP3)
+frame #20: <unknown function> + 0x27540 (0x400019f87540 in /lib64/libc.so.6)
+frame #21: __libc_start_main + 0x98 (0x400019f87618 in /lib64/libc.so.6)
+frame #22: <unknown function> + 0x4187a0 (0xaaaac38787a0 in VLLM::Worker_TP3_EP3)
+
+slurmstepd: error: *** STEP 954640.23 ON jpbo-021-29 CANCELLED AT 2026-07-16T19:10:31 ***

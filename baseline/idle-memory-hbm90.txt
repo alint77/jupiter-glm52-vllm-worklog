@@ -1,0 +1,8 @@
+Thu Jul 16 20:04:43 CEST 2026
+               total        used        free      shared  buff/cache   available
+Mem:           857Gi       726Gi        58Gi       215Gi       371Gi       131Gi
+Swap:             0B          0B          0B
+0, 90700 MiB, 6581 MiB, 0 %, 150.98 W
+1, 90716 MiB, 6565 MiB, 0 %, 151.23 W
+2, 90687 MiB, 6594 MiB, 0 %, 153.55 W
+3, 90693 MiB, 6588 MiB, 0 %, 148.48 W

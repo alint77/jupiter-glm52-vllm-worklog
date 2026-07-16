@@ -1,0 +1,13 @@
+
+The following have been reloaded with a version change:
+  1) GCCcore/.14.3.0 => GCCcore/14.3.0
+
+(EngineCore pid=130415) /e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py:139: UserWarning: Failed to get the IP address, using 0.0.0.0 by default. The value can be set by the environment variable VLLM_HOST_IP or HOST_IP.
+(EngineCore pid=130415)   mq_connect_ip = get_ip()
+[W716 17:55:31.912032432 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:53291 (errno: 97 - Address family not supported by protocol).
+[W716 17:55:31.087681416 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:53291 (errno: 97 - Address family not supported by protocol).
+[W716 17:55:31.091326442 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:53291 (errno: 97 - Address family not supported by protocol).
+[W716 17:55:31.093088844 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:53291 (errno: 97 - Address family not supported by protocol).
+(Worker_TP0_EP0 pid=130778) Loading safetensors checkpoint shards:   0% Completed | 0/8 [00:00<?, ?it/s]
+(Worker_TP0_EP0 pid=130778) Loading safetensors checkpoint shards:  12% Completed | 1/8 [02:50<19:56, 170.97s/it]
+slurmstepd: error: *** STEP 954640.8 ON jpbo-021-29 CANCELLED AT 2026-07-16T17:59:04 ***
