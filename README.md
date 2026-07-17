@@ -177,9 +177,11 @@ top-8 routes, validates a fingerprinted arbitrary per-layer EP4 owner map, and
 loads it in the full graphed 400K server. A six-request train/two-request
 held-out split reduces held-out cold routing from 31.24% to 2.32% in offline
 replay. Two matched 4K/256 runs reduce mean TPOT from 27.553 to 25.931 ms,
-raising decode from 36.29 to 38.57 tok/s on average. This greedy
-frequency-based pass is promising but does not yet satisfy Phase 6's calibrated
-held-out latency-prediction gate or replace the planned tail-aware optimizer.
+raising decode from 36.29 to 38.57 tok/s on average. A bounded tail-aware swap
+pass and exact request replay then reduce held-out TPOT from 27.099 to 24.209
+ms. A cold-critical latency model fitted only on six training requests predicts
+both placements on two held-out requests with 2.27% worst error, passing the
+v2 20% gate. Sampled real DSA index traces remain separate follow-up work.
 See the [trace-placement result](experiments/2026-07-17-trace-placement/README.md).
 
 ## Reproducing

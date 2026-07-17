@@ -1,0 +1,40 @@
+{
+  "model": "affine(cold_critical_count)",
+  "coefficients": [
+    23.523867788428028,
+    0.030346206471690125
+  ],
+  "training_mean_relative_error": 0.020758324475788126,
+  "heldout": [
+    {
+      "request_hash": "ebb56bebf0bd282ccb89ce82da92671d1eeace360d16c2ce9ed8b76a467bef17",
+      "placement": "linear_even",
+      "predicted_tpot_ms": 26.83447978534785,
+      "observed_tpot_ms": 27.119210888890343,
+      "relative_error": 0.01049923999297256
+    },
+    {
+      "request_hash": "ebb56bebf0bd282ccb89ce82da92671d1eeace360d16c2ce9ed8b76a467bef17",
+      "placement": "profiled",
+      "predicted_tpot_ms": 23.860663220695248,
+      "observed_tpot_ms": 24.415830031752453,
+      "relative_error": 0.022737986393877186
+    },
+    {
+      "request_hash": "33613d0b691e475ad1714adefb178e816e58232a5b2e1c2cd7ec8cc3c7aecb55",
+      "placement": "linear_even",
+      "predicted_tpot_ms": 26.828700884943395,
+      "observed_tpot_ms": 27.07888801593245,
+      "relative_error": 0.00923919515608808
+    },
+    {
+      "request_hash": "33613d0b691e475ad1714adefb178e816e58232a5b2e1c2cd7ec8cc3c7aecb55",
+      "placement": "profiled",
+      "predicted_tpot_ms": 23.888441026987184,
+      "observed_tpot_ms": 24.00300584133855,
+      "relative_error": 0.004772936152607122
+    }
+  ],
+  "heldout_max_relative_error": 0.022737986393877186,
+  "within_20_percent": true
+}

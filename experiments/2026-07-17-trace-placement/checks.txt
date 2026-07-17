@@ -11,11 +11,16 @@ Runtime:
 - Seed 0: 1/1 request completed, 26.261515 ms TPOT.
 - Seed 1: 1/1 request completed, 25.600931 ms TPOT.
 - Stable semantic smoke: three identical outputs and token logprobs.
+- Linear request replay: 26.846 ms train, 27.099 ms held-out TPOT.
+- Profiled request replay: 23.834 ms train, 24.209 ms held-out TPOT.
+- Held-out latency prediction: 2.27% worst error, 20% gate passed.
 
 Tests:
 - .venv/bin/python -m pytest tests/model_executor/model_loader/test_tiered_moe_manifest.py -q
-  31 passed, 14 warnings in 9.27s
+  31 passed, 14 warnings in 9.31s
 - .venv/bin/pre-commit run ruff-check --files <changed Python files>
+  Passed
+- .venv/bin/pre-commit run ruff-format --files <changed Python files>
   Passed
 - git diff --check
   Passed

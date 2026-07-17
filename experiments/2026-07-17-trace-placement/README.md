@@ -1,9 +1,8 @@
 # Trace-derived owner and residency placement
 
-This is the first minimal Phase 6 pass: capture exact logical top-8 routes,
-derive a static EP4 placement from whole requests, load arbitrary per-layer
-owners, and measure the result against the linear/even HBM-cache tracer bullet.
-It is not the final tail-aware optimizer.
+This Phase 6 slice captures exact logical top-8 routes, derives a static EP4
+placement from whole requests, applies a bounded tail-aware residency search,
+loads arbitrary per-layer owners, and validates latency on held-out requests.
 
 ## Method
 
@@ -37,9 +36,8 @@ assigned to any one rank for each token.
 | Held out | Linear/even | 31.24% | 109.00 | 261.04 |
 | Held out | Trace-derived | 2.32% | 11.56 | 248.02 |
 
-Held-out replay preserves the large predicted reduction, but the v2 exit gate
-requires a latency prediction within 20% of replay. This first frequency proxy
-is not calibrated in latency units, so Phase 6 is not complete yet.
+Held-out replay preserves the large predicted reduction. The first frequency
+profile was later refined and calibrated in the request replay below.
 
 ## End-to-end result
 
@@ -64,6 +62,41 @@ same eight tokens and token logprobs across three repeats, beginning with the
 correct answer `Paris`; the first-token logprob margin was 3.125. A model eval
 is still required before treating this as PR-ready model-affecting work.
 
+## Tail-aware residency and held-out latency
+
+Starting from frequency residency, a deterministic bounded search examines 16
+hot and 16 cold candidates per rank and accepts at most eight exact-objective
+swaps. Its objective is mean request cold-critical count plus 0.25 times
+request CVaR95, with the HBM slot budget unchanged.
+
+All eight swaps were accepted. They reduce the training objective from 13.0013
+to 12.9822 and the held-out objective from 14.5619 to 14.5596. The changes are
+only 0.15% and 0.016%, respectively, so the swap refinement itself is below
+end-to-end timing noise. The large gain remains attributable to the balanced
+owner and frequency-residency profile.
+
+The exact eight trace prompts were then replayed against independently loaded
+linear/even and tail-profiled 400K HBM-cache servers. Each server received one
+warmup followed by eight salted 1,024-input/64-output requests.
+
+| Split | Linear TPOT | Profiled TPOT | Latency reduction | Decode gain |
+| --- | ---: | ---: | ---: | ---: |
+| Six training requests | 26.846 ms | 23.834 ms | 11.22% | 12.64% |
+| Two held-out requests | 27.099 ms | 24.209 ms | 10.66% | 11.94% |
+| All requests | 26.909 ms | 23.928 ms | 11.08% | 12.46% |
+
+An affine model fitted only on the 12 training observations is:
+
+```text
+predicted TPOT ms = 23.5239 + 0.0303462 * cold-critical count
+```
+
+Across the four held-out observations—two hashes under both placements—the
+worst absolute relative error is 2.27%. This passes the v2 limit of 20% without
+using held-out values for fitting. The expert-placement latency gate is now
+satisfied. Sampled real DSA index traces remain separate follow-up work; AUTO
+already rejects the host-UVA main-cache plan.
+
 ## Reproduction
 
 Capture from a server started with `--enable-return-routed-experts`:
@@ -80,8 +113,8 @@ Build the static profile:
   --trace-dir agent_space/experiments/2026-07-17-trace-placement/trace \
   --model "$GLM52_W4A16_MODEL" \
   --hot-slots-per-rank 3176 --train-requests 6 \
-  --output-profile agent_space/experiments/2026-07-17-trace-placement/placement-profile.json \
-  --output-report agent_space/experiments/2026-07-17-trace-placement/optimizer-report.json
+  --output-profile agent_space/experiments/2026-07-17-trace-placement/tail-placement-profile.json \
+  --output-report agent_space/experiments/2026-07-17-trace-placement/tail-optimizer-report.json
 ```
 
 Launch the qualified HBM-cache server as in the long-context experiment, adding
@@ -93,6 +126,10 @@ benchmark JSON files contain the exact serving client settings.
 - `trace/`: request-bound exact route captures and hashes
 - `placement-profile.json`: fingerprinted arbitrary owner/residency profile
 - `optimizer-report.json`: training and held-out replay metrics
+- `tail-placement-profile.json`: bounded tail-aware refinement
+- `tail-optimizer-report.json`: per-request objective values and swap history
+- `phase6-{linear,tail}-replay.json`: request-level server timings
+- `latency-validation.json`: training fit and held-out prediction errors
 - `profile-plan.log`: plan-only validation output for all four ranks
 - `phase6-optimized-*.json`: end-to-end serving results
 - `checks.txt`: focused verification record
