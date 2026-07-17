@@ -42,8 +42,14 @@ ranks:
 The completion begins with `Paris`, establishing an end-to-end cache
 append/read and tiered-MoE decode path. This is a correctness tracer bullet,
 not a performance result. The server used `--enforce-eager`; compile, CUDA
-graphs, cache-boundary tests, populated 32K/128K/400K validation, and reference
-logit comparison remain open.
+graphs, larger cache-boundary tests, populated 32K/128K/400K validation, and
+reference logit comparison remain open.
+
+Repeating the same request on the same server produced the identical eight
+tokens in 1.75 s. A 101-token prompt plus eight decode tokens then crossed the
+64-token cache-block boundary in 2.07 s and completed successfully; 4,701 MiB
+or more remained free on every rank afterward. Larger boundaries and populated
+long-context tests remain open.
 
 A post-warmup runtime audit now releases unused allocator cache, reads physical
 free HBM, and fails closed below 4 GB for the default 5 GB planned reserve.
