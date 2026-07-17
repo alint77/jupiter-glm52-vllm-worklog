@@ -125,3 +125,11 @@ returned 4,477 hot and 323 cold slots, 75 ownership maps with experts 0-63,
 and the same machine-profile hash and totals as server plan-only. It reads only
 headers and exits without model parameter allocation. The scoped context is
 unit tested to reset after model loading, and changed-file mypy/hooks pass.
+
+The WNA16 Marlin construction path now consumes that context and resolves its
+module prefix to exactly one `LayerExpertPlacement`. It fails before allocation
+if the prefix has no plan entry or if native local-expert construction disagrees
+with the planned hot-plus-cold count, then attaches the validated placement to
+the routed layer. This is the final non-allocating guard before replacing the
+native monolithic expert tensors with the compact destination bundles. The
+selected suite is 64/64 passing.
