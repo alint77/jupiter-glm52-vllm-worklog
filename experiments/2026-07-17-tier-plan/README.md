@@ -11,7 +11,7 @@ coverage, shard contents, quantization fields, every routed expert component,
 and the index `total_size`.
 
 | Item | Exact bytes |
-|---|---:|
+| --- | ---: |
 | Complete checkpoint | 387,667,154,688 |
 | Routed experts in checkpoint | 373,713,408,000 |
 | Non-routed checkpoint tensors | 13,953,746,688 |
@@ -29,7 +29,7 @@ three `I64[2]` shape tensors per expert, while the current fused runtime keeps
 two `BF16[2]` shape tensors. Static act-order leaves empty runtime `g_idx`
 arrays, and the 2,048-wide expert intermediate needs no Marlin padding.
 
-## First machine reconciliation
+## Initial machine reconciliation
 
 Inputs use the measured 97,871 MiB HBM and 121,677 MiB local Grace capacity,
 5 GiB reserve in each tier, the exact 30,834,055,680-byte baseline KV cache,
@@ -40,7 +40,7 @@ memory to only two decimal GiB.
 Each rank receives the same deterministic even-placement plan:
 
 | Item | Per rank |
-|---|---:|
+| --- | ---: |
 | Fixed HBM allocations | 41,526,448,353 bytes |
 | Hot expert slots | 2,863 |
 | Hot expert storage | 55,726,004,600 bytes |
@@ -55,8 +55,52 @@ the next slice must derive non-routed TP/replicated runtime weights and cache,
 workspace, graph, and scratch allocations directly rather than accepting the
 rounded baseline-derived weight component.
 
-Seven focused manifest, schema, byte-accounting, planner, capacity-failure, and
-CLI tests pass. The plan-only module is invoked with:
+## Exact non-routed reconciliation
+
+The checkpoint inventory is now classified through the current GLM runtime
+loader rules rather than inferred by subtracting rounded process-memory log
+categories. The classifier accounts for replicated tensors, TP-sharded
+tensors, checkpoint indexer copies dropped on non-indexer layers, and shape
+metadata removed by runtime fusion.
+
+| Non-routed item | Exact bytes |
+| --- | ---: |
+| Checkpoint tensors | 13,953,746,688 |
+| Dropped checkpoint tensors | 1,068,397,056 |
+| Replicated runtime tensors | 1,280,365,824 |
+| TP-sharded checkpoint tensors | 11,604,983,808 |
+| TP4 runtime shard | 2,901,245,952 |
+| Runtime fusion savings | 2,496 |
+| Runtime total per rank | 4,181,609,280 |
+
+Using that exact runtime total with the same measured machine capacities and
+baseline cache/runtime categories revises the deterministic plan to:
+
+| Item | Per rank |
+| --- | ---: |
+| Fixed HBM allocations | 36,969,875,079 bytes |
+| Hot expert slots | 3,097 |
+| Hot expert storage | 60,280,627,400 bytes |
+| Cold expert slots | 1,703 |
+| Cold pinned-UVA storage | 33,147,532,600 bytes |
+| Planned HBM including reserve | 102,619,211,599 bytes |
+| Planned Grace including reserve | 38,516,241,720 bytes |
+
+All four ranks receive the same byte totals. Their owned expert ranges are
+0-63, 64-127, 128-191, and 192-255, with an even deterministic layer rotation.
+The earlier 8.738 GB baseline-derived non-expert estimate was invalid because
+rounded aggregate process memory cannot distinguish TP sharding, discarded
+checkpoint copies, and runtime fusion. The exact classifier is fail-closed: an
+unknown non-routed GLM tensor aborts planning.
+
+The exact KV allocation is still taken from the baseline log. Peak activation,
+non-Torch, and CUDA-graph categories are converted from its rounded GiB values;
+the 5 GiB HBM reserve covers that remaining measurement uncertainty. The next
+planner slice will derive cache-tier sizing and runtime workspace categories.
+
+Eight focused manifest, schema, byte-accounting, planner, capacity-failure,
+non-routed classification, and CLI tests pass. All changed-file pre-commit
+hooks pass. The plan-only module is invoked with:
 
 ```bash
 .venv/bin/python -m vllm.entrypoints.tiered_moe_plan MODEL \

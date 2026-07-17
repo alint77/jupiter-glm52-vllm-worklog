@@ -26,7 +26,7 @@ uses `fp8_ds_mla` KV cache, Inductor mode 3, and full/piecewise CUDA graphs.
 Batch one, random input, deterministic decoding, 256 output tokens:
 
 | Input | TTFT | Approx. prefill | Decode | Total |
-|---:|---:|---:|---:|---:|
+| ---: | ---: | ---: | ---: | ---: |
 | 4,096 | 0.990 s | 4,139 tok/s | 37.06 tok/s | 7.87 s |
 | 32,768 | 7.652 s | 4,282 tok/s | 37.06 tok/s | 14.53 s |
 | 399,744 | 120.853 s | 3,308 tok/s | 37.57 tok/s | 127.64 s |
@@ -75,10 +75,13 @@ gate/up plus down matrix sequence at batch one. See the
 
 Phase 1 now has a header-only fail-closed manifest and deterministic EP4 expert
 planner. It inventories all 175,527 tensors in about 1.5 seconds and separates
-stored checkpoint bytes from the final fused-Marlin layout. The first machine
-reconciliation is in the
+stored checkpoint bytes from the final fused-Marlin layout. Exact tracing of
+non-routed tensors through TP4 sharding, dropped indexer copies, and runtime
+fusion produces 4,181,609,280 resident bytes per rank. With the measured
+machine capacities, the current deterministic plan places 3,097 experts in HBM
+and 1,703 in pinned Grace memory per rank. Details are in the
 [tier-plan experiment](experiments/2026-07-17-tier-plan/README.md); exact
-non-routed runtime classification remains the next planner slice.
+cache-tier and workspace sizing are the next planner slice.
 
 ## Reproducing
 
