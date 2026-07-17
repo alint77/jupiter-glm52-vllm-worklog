@@ -1,14 +1,15 @@
 {
   "profile_version": 1,
   "machine": "JUPITER Booster GH200 rank-local NUMA domain",
-  "hbm_capacity_bytes": 102625181696,
+  "hbm_capacity_bytes": 102006521856,
   "host_capacity_bytes": 127587581952,
   "gpu_sm_count": 132,
   "fixed_hbm_allocations": {
     "baseline_peak_activation_upper_bound": 1218696970,
     "baseline_non_torch_upper_bound": 681826058,
-    "baseline_cudagraph_upper_bound": 69793219
+    "baseline_cudagraph_upper_bound": 69793219,
+    "observed_tiered_runtime_reconciliation": 2226232113
   },
   "fixed_host_allocations": {},
-  "measurement_source": "2026-07-16 baseline vLLM memory-profile logs; each reported two-decimal GiB value is budgeted at the upper rounding boundary"
+  "measurement_source": "2026-07-16 baseline vLLM memory-profile logs plus 2026-07-17 tiered host-UVA startup; capacity is the physical 97281 MiB reported per GPU and runtime reconciliation is the measured final-allocation gap after releasing allocator cache"
 }

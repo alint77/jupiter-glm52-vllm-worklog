@@ -193,9 +193,10 @@ bounded one-expert conversion allocation.
 | Transient conversion scratch budget | 67,108,864 |
 
 The checked-in [GH200 profile](../../profiles/jupiter-gh200-baseline.json) uses
-exact rank-local capacities and budgets each two-decimal baseline runtime
-metric at its upper rounding boundary. Its SHA-256 is
-`180d0284b120ad21bcfadec4fffd553aae6d47e6ade073f4044876a73da19026`.
+the physical 97,281 MiB device capacity, budgets each two-decimal baseline
+runtime metric at its upper rounding boundary, and includes the measured
+post-cache-release tiered runtime reconciliation. Its SHA-256 is
+`32a22c5baf8fac3922d16e479e8e0cca32724d02d8085465d12019f35f88224f`.
 
 The production `vllm serve` parser now has an early plan-only exit. A real run
 against the immutable checkpoint completed in about nine seconds without
@@ -204,11 +205,11 @@ totals on all four ranks:
 
 | Per-rank item | Host-UVA main cache | HBM main cache |
 | --- | ---: | ---: |
-| Hot expert slots | 4,477 | 3,425 |
-| Cold expert slots | 323 | 1,375 |
-| Planned HBM including 5 GB reserve | 102,625,140,327 | 102,616,001,927 |
-| Planned Grace including 8 GB reserve | 34,754,136,600 | 34,763,275,000 |
-| Peak HBM budget during conversion | 97,692,249,191 | 97,683,110,791 |
+| Hot expert slots | 4,330 | 3,279 |
+| Cold expert slots | 470 | 1,521 |
+| Planned HBM including 5 GB reserve | 101,990,135,040 | 102,000,460,840 |
+| Planned Grace including 8 GB reserve | 37,615,374,000 | 37,605,048,200 |
+| Peak HBM budget during conversion | 97,057,243,904 | 97,067,569,704 |
 
 This completes the Phase 1 exit criterion: every planned physical allocation
 is priced before any model payload is read. The earlier cache-only figures are

@@ -115,18 +115,24 @@ expert with native Marlin, and commits the 19,464,200-byte result to Grace with
 next. Worker startup now resolves the selected cache/expert scenario before
 `initialize_model`, retains the exact rank plan in `DefaultModelLoader`, and
 exposes it through a scoped construction context. The real rank-0 resolver
-matches plan-only: 4,477 hot and 323 cold slots across 75 layers.
+matches plan-only. After physical-capacity and runtime reconciliation, the
+selected host-cache plan uses 4,330 hot and 470 cold slots across 75 layers.
 
 The destination loader now completes the entire model: four split-shard experts
 are deferred without breaking the one-expert staging bound, all 4,800 local
 layer-expert slots stream directly into compact storage in about 30 seconds
 with warm GPFS cache, and complete model loading takes 41-43 seconds with an
 89.2 GiB per-rank model-memory delta. The first tiered execution slice also
-completes one native prepare, 60-hot Marlin, 4-cold UVA Marlin, one join, and
-one native finalize on all four ranks. Startup now stops at the unwired
-host-UVA MLA cache accounting/allocation boundary (`-5.07 GiB` under ordinary
-HBM cache sizing). See the [storage results](experiments/2026-07-17-tiered-storage/README.md)
-and [dispatch trace](experiments/2026-07-17-tiered-dispatch/README.md).
+completes one native prepare, hot Marlin, cold UVA Marlin, one join, and one
+native finalize on all four ranks. The first host-UVA MLA cache slice now
+creates all 78 main-cache tensors in paired Grace memory while retaining all
+21 indexer tensors in HBM. A 400K server starts with 100% sampled NUMA locality
+and 4.64 GiB observed free HBM per rank, and a deterministic eight-token
+request completes successfully. A post-warmup audit fails closed below the v2
+runtime reserve. See the
+[storage results](experiments/2026-07-17-tiered-storage/README.md),
+[dispatch trace](experiments/2026-07-17-tiered-dispatch/README.md), and
+[host-UVA cache result](experiments/2026-07-17-host-uva-kv/README.md).
 
 ## Reproducing
 
