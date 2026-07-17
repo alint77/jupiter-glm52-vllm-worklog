@@ -1,0 +1,35 @@
+
+The following have been reloaded with a version change:
+  1) GCCcore/.14.3.0 => GCCcore/14.3.0
+
+(EngineCore pid=181024) /e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py:139: UserWarning: Failed to get the IP address, using 0.0.0.0 by default. The value can be set by the environment variable VLLM_HOST_IP or HOST_IP.
+(EngineCore pid=181024)   mq_connect_ip = get_ip()
+[W717 23:41:46.207973492 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:49333 (errno: 97 - Address family not supported by protocol).
+[W717 23:41:46.519560134 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:49333 (errno: 97 - Address family not supported by protocol).
+[W717 23:41:46.523791250 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:49333 (errno: 97 - Address family not supported by protocol).
+[W717 23:41:46.527862880 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:49333 (errno: 97 - Address family not supported by protocol).
+(Worker_TP0_EP0 pid=181298) Loading safetensors checkpoint shards:   0% Completed | 0/8 [00:00<?, ?it/s]
+(Worker_TP0_EP0 pid=181298) Loading safetensors checkpoint shards:  12% Completed | 1/8 [01:47<12:33, 107.61s/it]
+(Worker_TP0_EP0 pid=181298) Loading safetensors checkpoint shards:  25% Completed | 2/8 [03:38<10:58, 109.67s/it]
+(Worker_TP0_EP0 pid=181298) Loading safetensors checkpoint shards:  38% Completed | 3/8 [05:31<09:14, 110.97s/it]
+(Worker_TP0_EP0 pid=181298) Loading safetensors checkpoint shards:  50% Completed | 4/8 [07:21<07:23, 110.76s/it]
+(Worker_TP0_EP0 pid=181298) Loading safetensors checkpoint shards:  62% Completed | 5/8 [09:13<05:33, 111.04s/it]
+(Worker_TP0_EP0 pid=181298) Loading safetensors checkpoint shards:  75% Completed | 6/8 [11:08<03:44, 112.36s/it]
+(Worker_TP0_EP0 pid=181298) Loading safetensors checkpoint shards:  88% Completed | 7/8 [13:00<01:52, 112.51s/it]
+(Worker_TP0_EP0 pid=181298) Loading safetensors checkpoint shards: 100% Completed | 8/8 [14:25<00:00, 103.68s/it]
+(Worker_TP0_EP0 pid=181298) Loading safetensors checkpoint shards: 100% Completed | 8/8 [14:25<00:00, 108.22s/it]
+(Worker_TP0_EP0 pid=181298) 
+(Worker_TP2_EP2 pid=181302) 2026-07-17 23:59:43,943 - INFO - autotuner.py:651 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(Worker_TP3_EP3 pid=181304) 2026-07-17 23:59:44,135 - INFO - autotuner.py:651 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(Worker_TP0_EP0 pid=181298) 2026-07-17 23:59:44,441 - INFO - autotuner.py:651 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(Worker_TP1_EP1 pid=181300) 2026-07-17 23:59:44,477 - INFO - autotuner.py:651 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(Worker_TP1_EP1 pid=181300) 2026-07-17 23:59:45,179 - INFO - autotuner.py:674 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(Worker_TP3_EP3 pid=181304) 2026-07-17 23:59:45,179 - INFO - autotuner.py:674 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(Worker_TP2_EP2 pid=181302) 2026-07-17 23:59:45,179 - INFO - autotuner.py:674 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(Worker_TP0_EP0 pid=181298) 2026-07-17 23:59:45,179 - INFO - autotuner.py:674 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(Worker_TP0_EP0 pid=181298) Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):   0%|          | 0/1 [00:00<?, ?it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE): 100%|██████████| 1/1 [00:01<00:00,  1.29s/it]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE): 100%|██████████| 1/1 [00:01<00:00,  1.29s/it]
+(Worker_TP0_EP0 pid=181298) Capturing CUDA graphs (decode, FULL):   0%|          | 0/1 [00:00<?, ?it/s]Capturing CUDA graphs (decode, FULL): 100%|██████████| 1/1 [00:00<00:00,  2.21it/s]Capturing CUDA graphs (decode, FULL): 100%|██████████| 1/1 [00:00<00:00,  2.20it/s]
+(APIServer pid=180346) [32mINFO[0m:     Started server process [[36m180346[0m]
+(APIServer pid=180346) [32mINFO[0m:     Waiting for application startup.
+(APIServer pid=180346) [32mINFO[0m:     Application startup complete.
+slurmstepd: error: *** STEP 967403.21 ON jpbo-002-16 CANCELLED AT 2026-07-18T00:09:20 ***

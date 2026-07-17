@@ -1,0 +1,12 @@
+{
+  "units": "MiB reported by nvidia-smi",
+  "reserve7": {
+    "idle_free": [6334, 6329, 6331, 6324],
+    "post_400k_free": [1446, 1443, 1445, 1439]
+  },
+  "reserve10": {
+    "idle_free": [9184, 9188, 9183, 9185],
+    "post_400k_seed13_free": [4298, 4302, 4295, 4299],
+    "post_400k_seed14_free": [4299, 4302, 4296, 4300]
+  }
+}

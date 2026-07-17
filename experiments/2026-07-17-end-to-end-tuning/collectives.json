@@ -1,0 +1,42 @@
+{
+  "world_size": 4,
+  "dtype": "torch.bfloat16",
+  "hidden_size": 6144,
+  "sequence_lengths": [
+    1,
+    2,
+    4
+  ],
+  "num_warmup": 100,
+  "num_trials": 1000,
+  "cuda_graph_capture_cycles": 10,
+  "results": {
+    "1": {
+      "timings": {
+        "ca_1stage": 0.004058283299673348,
+        "ca_2stage": 0.006754923702101223,
+        "pynccl": 0.011915994499577209,
+        "pynccl-symm": 0.01377682430029381
+      },
+      "speedup_info": "ca_1stage (2.94x)"
+    },
+    "2": {
+      "timings": {
+        "ca_1stage": 0.004034962199511939,
+        "ca_2stage": 0.006983213400235399,
+        "pynccl": 0.013723538999329321,
+        "pynccl-symm": 0.015539419199922124
+      },
+      "speedup_info": "ca_1stage (3.40x)"
+    },
+    "4": {
+      "timings": {
+        "ca_1stage": 0.004288506001466885,
+        "ca_2stage": 0.007140301601612009,
+        "pynccl": 0.011024601201643235,
+        "pynccl-symm": 0.013051565201021732
+      },
+      "speedup_info": "ca_1stage (2.57x)"
+    }
+  }
+}

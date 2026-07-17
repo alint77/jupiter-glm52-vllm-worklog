@@ -1,0 +1,14 @@
+ruff check: passed
+ruff format: passed
+pytest tests/model_executor/test_dsa_index_trace.py tests/model_executor/model_loader/test_tiered_moe_manifest.py -q: 34 passed
+bash -n run-server.sh run-benchmark.sh: passed
+git diff --check: passed
+git -C agent_space diff --check: passed
+
+Runtime validation on allocation 967403, node jpbo-002-16:
+- TP4/EP4, HBM main cache, 400,064 physical cache slots
+- full and piecewise CUDA graphs
+- reserve-10 plan-only accepted 3,022 hot and 1,778 cold slots/rank
+- both 399,744 + 256 requests completed
+- minimum observed post-request free HBM: 4,295 MiB/rank
+- semantic smoke matched the prior output: ` Paris. Distance from Paris to Lyon is`

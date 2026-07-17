@@ -188,6 +188,16 @@ tiers. Host-UVA still misses the 0.5 ms gate by 5.0x, so AUTO remains on HBM.
 See the [trace-placement result](experiments/2026-07-17-trace-placement/README.md)
 and [real DSA trace result](experiments/2026-07-17-dsa-index-trace/README.md).
 
+Phase 7 now completes the collective and populated-400K tuning pass. The exact
+12 KiB TP4 reduction takes 4.06 us through vLLM's already-selected custom
+one-stage backend. A trace-profiled 10 GB-reserve configuration completes two
+399,744-input/256-output runs at a mean 107.009 seconds TTFT and 23.765 ms
+TPOT, or 42.08 decode tok/s, while retaining at least 4,295 MiB free HBM per
+GPU. This is 12.0% faster in decode than the native CPU-offload baseline and
+clears the v2 observed-memory gate, but remains below the 100 tok/s project
+minimum. See the
+[end-to-end tuning result](experiments/2026-07-17-end-to-end-tuning/README.md).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout
