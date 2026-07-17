@@ -61,3 +61,9 @@ temporary Torch include path and began redundantly recompiling the full stable
 kernel matrix. This was not a test or implementation failure. The targeted
 package import passed, followed by a fresh GH200 run of the complete test file:
 5/5 passed in 2.38 seconds.
+
+The allocator now records a `GracePagePlacement` snapshot and optionally fails
+closed when fewer than 95% of sampled pages reside on the expected Grace NUMA
+node. A real 16 MiB pinned allocation passed strict auditing with 256/256 pages
+on node 0 before and after a GPU write. The extended 5-test suite passes in
+2.61 seconds, and the complete changed-file pre-commit hook set passes.
