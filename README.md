@@ -67,6 +67,12 @@ advice, read-mostly advice, and `mlock` did not preserve the physical LPDDR tier
 The direct pageable path therefore remains gated off while the destination-aware
 pinned-UVA and CPU contingencies are evaluated.
 
+The first pinned-UVA contingency allocator and GLM-shaped Marlin probe are now
+complete. Final pinned backing stays on the local Grace NUMA node, produces
+bit-exact Marlin output, and measured about 4.5% slower than HBM for the combined
+gate/up plus down matrix sequence at batch one. See the
+[Marlin/UVA experiment](experiments/2026-07-17-marlin-uva/README.md).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout

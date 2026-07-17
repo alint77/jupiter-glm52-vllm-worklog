@@ -1,0 +1,39 @@
+{
+  "device": "NVIDIA GH200 120GB",
+  "torch": "2.11.0+cu130",
+  "dtype": "symmetric_int4_fp16_activation",
+  "group_size": 128,
+  "timed_groups": 300,
+  "single_projection_sweep": [
+    {"experts": 1, "hbm_us": 74.848, "grace_uva_us": 77.632, "ratio": 1.037195},
+    {"experts": 2, "hbm_us": 56.680, "grace_uva_us": 57.648, "ratio": 1.017078},
+    {"experts": 4, "hbm_us": 45.340, "grace_uva_us": 45.712, "ratio": 1.008205},
+    {"experts": 8, "hbm_us": 39.146, "grace_uva_us": 39.026, "ratio": 0.996935}
+  ],
+  "complete_expert": [
+    {
+      "projection": "combined_gate_up",
+      "shape_mkn": [1, 6144, 4096],
+      "hbm_us_per_expert": 39.224001,
+      "grace_uva_us_per_expert": 43.545999,
+      "ratio": 1.110188,
+      "sampled_numa_before": {"0": 192},
+      "sampled_numa_after": {"0": 192}
+    },
+    {
+      "projection": "down",
+      "shape_mkn": [1, 2048, 6144],
+      "hbm_us_per_expert": 44.470001,
+      "grace_uva_us_per_expert": 43.908000,
+      "ratio": 0.987362,
+      "sampled_numa_before": {"0": 96},
+      "sampled_numa_after": {"0": 96}
+    }
+  ],
+  "complete_expert_sequential_sum": {
+    "hbm_us": 83.694002,
+    "grace_uva_us": 87.453999,
+    "ratio": 1.044925
+  },
+  "correctness": "exact"
+}
