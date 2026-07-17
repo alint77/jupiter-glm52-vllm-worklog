@@ -190,7 +190,7 @@ bounded one-expert conversion allocation.
 | Placement maps | 249,600 |
 | Remapped IDs and weights | 1,048,576 |
 | Total steady HBM | 3,223,191,400 |
-| Transient conversion scratch | 38,928,440 |
+| Transient conversion scratch budget | 67,108,864 |
 
 The checked-in [GH200 profile](../../profiles/jupiter-gh200-baseline.json) uses
 exact rank-local capacities and budgets each two-decimal baseline runtime
@@ -208,7 +208,7 @@ totals on all four ranks:
 | Cold expert slots | 323 | 1,375 |
 | Planned HBM including 5 GB reserve | 102,625,140,327 | 102,616,001,927 |
 | Planned Grace including 8 GB reserve | 34,754,136,600 | 34,763,275,000 |
-| Peak HBM during one-expert conversion | 97,664,068,767 | 97,654,930,367 |
+| Peak HBM budget during conversion | 97,692,249,191 | 97,683,110,791 |
 
 This completes the Phase 1 exit criterion: every planned physical allocation
 is priced before any model payload is read. The earlier cache-only figures are

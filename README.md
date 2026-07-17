@@ -108,7 +108,11 @@ final-destination layout allocates component-major Marlin tensors from one HBM
 buffer and one pinned-Grace buffer per layer, so weights, scales, and shape
 metadata cannot split across tiers. A 60-hot/4-cold layer smoke test allocated
 the exact 1,245,708,800 bytes in 0.683 seconds; all 256 sampled cold pages were
-on the paired Grace NUMA node. Streamed one-expert conversion is next.
+on the paired Grace NUMA node. A bounded production stager now rejects
+interleaved or incomplete bundles, converts one real 19,464,240-byte checkpoint
+expert with native Marlin, and commits the 19,464,200-byte result to Grace with
+44,662,784 bytes peak HBM. Wiring this path into model parameter creation is
+next.
 
 ## Reproducing
 

@@ -24,8 +24,8 @@ over one byte buffer per tier:
 
 | Component per expert | Shape | Type | Bytes |
 | --- | ---: | --- | ---: |
-| Combined gate/up packed weight | 768 x 4096 | INT32 | 12,582,912 |
-| Down packed weight | 256 x 6144 | INT32 | 6,291,456 |
+| Combined gate/up packed weight | 384 x 8192 | INT32 | 12,582,912 |
+| Down packed weight | 128 x 12288 | INT32 | 6,291,456 |
 | Combined gate/up scale | 48 x 4096 | BF16 | 393,216 |
 | Down scale | 16 x 6144 | BF16 | 196,608 |
 | Combined gate/up shape | 2 | BF16 | 4 |
@@ -68,5 +68,43 @@ On GH200, a single 19,464,200-byte synthetic converted expert was written from
 HBM into its fresh pinned-Grace destination in 46.50 ms, including first page
 faults and six component copies. Every component compared equal afterward and
 the post-copy NUMA audit remained 256/256 pages on node 0. This is load-time
-cost, not decode latency; the next conversion probe will separate repacking
-from the one-time final commit and reuse this exact API.
+cost, not decode latency.
+
+## Actual checkpoint conversion
+
+The one-expert stream probe reads the real nine-component checkpoint bundle,
+fuses gate/up/down into native one-expert GPU staging tensors, invokes vLLM's
+Marlin conversion, and commits the result to pinned Grace. It also exposed and
+corrected two planning assumptions before loader integration:
+
+- Native repacking changes packed shapes to 384 x 8192 and 128 x 12288 while
+  preserving their byte counts.
+- Repacking uses internal temporaries. The measured HBM high-water is
+  44,662,784 bytes, above the former 38,928,440-byte source-plus-result
+  estimate. The plan now enforces a fixed 64 MiB conversion budget.
+
+For layer 3, expert 0, the first real run measured:
+
+| Stage | Result |
+| --- | ---: |
+| Checkpoint bundle | 19,464,240 bytes |
+| Header-selected payload read | 0.080 s |
+| Fusion and host-to-device staging | 0.133 s |
+| Native Marlin conversion | 0.311 s |
+| Final pinned-Grace commit | 0.0025 s |
+| Final expert | 19,464,200 bytes |
+| Peak HBM | 44,662,784 bytes |
+
+All six final components compare exactly with the converter output and the
+cold allocation remains 100% local in the post-commit NUMA audit. The 64 MiB
+budget leaves 22,446,080 bytes above this observed high-water and keeps the
+planner fail-closed if a later conversion exceeds it.
+
+The probe now calls the production `OneExpertCheckpointStager` and
+`convert_glm_w4a16_expert` rather than carrying a benchmark-only conversion.
+The stager validates all nine stored shapes and types, refuses a second expert
+until the first is complete, and fails on a partial final bundle. The hardware
+rerun passed with the same 44,662,784-byte peak, 0.448 s combined fusion/H2D/
+Marlin conversion, 0.0023 s final commit, exact output checks, and 100% NUMA
+locality. The selected config, manifest, filter, loader, storage, and stager
+suite is now 62/62 passing; all changed-file hooks pass.
