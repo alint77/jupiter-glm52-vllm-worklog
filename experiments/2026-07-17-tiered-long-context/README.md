@@ -32,7 +32,8 @@ planner had allocated 6,250 physical blocks, leaving only 6,249 usable; token
 The planner now includes the scheduler's one null block. The corrected plan has
 6,251 physical blocks, or 400,064 physical token slots and 400,000 usable token
 slots. This adds 3,452,160 bytes per rank and does not change expert placement.
-Ruff check, Ruff format, and all 29 focused tiered tests pass.
+The measured 7 GB HBM margin is now also the config default and fail-closed
+minimum. Ruff check, Ruff format, and all 31 focused tests pass.
 
 The native references are 7.652 seconds TTFT and 37.06 decode tok/s at 32K,
 and 120.853 seconds TTFT and 37.57 decode tok/s at 399,744 tokens.

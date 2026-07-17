@@ -1,9 +1,9 @@
 source agent_space/jupiter-env.sh
-.venv/bin/python -m pytest tests/model_executor/model_loader/test_tiered_moe_manifest.py -q
-29 passed, 14 warnings in 10.92s
+.venv/bin/python -m pytest tests/model_executor/model_loader/test_tiered_moe_manifest.py tests/engine/test_arg_utils.py::test_tiered_moe_cli_args tests/engine/test_arg_utils.py::test_tiered_moe_config_enforces_reserves_and_enablement -q
+31 passed, 14 warnings in 9.28s
 
-.venv/bin/pre-commit run ruff-check --files vllm/model_executor/model_loader/tiered_moe_kv.py tests/model_executor/model_loader/test_tiered_moe_manifest.py
+.venv/bin/pre-commit run ruff-check --files vllm/config/tiered_moe.py vllm/model_executor/model_loader/tiered_moe_kv.py vllm/model_executor/model_loader/tiered_moe_planner.py vllm/model_executor/model_loader/tiered_moe_physical.py tests/engine/test_arg_utils.py tests/model_executor/model_loader/test_tiered_moe_manifest.py
 ruff check: Passed
 
-.venv/bin/pre-commit run ruff-format --files vllm/model_executor/model_loader/tiered_moe_kv.py tests/model_executor/model_loader/test_tiered_moe_manifest.py
+.venv/bin/pre-commit run ruff-format --files vllm/config/tiered_moe.py vllm/model_executor/model_loader/tiered_moe_kv.py vllm/model_executor/model_loader/tiered_moe_planner.py vllm/model_executor/model_loader/tiered_moe_physical.py tests/engine/test_arg_utils.py tests/model_executor/model_loader/test_tiered_moe_manifest.py
 ruff format: Passed
