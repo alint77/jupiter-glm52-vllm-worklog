@@ -162,6 +162,16 @@ reserved null block. With 3,176 hot and 1,624 cold expert slots per rank, the
 full-context TTFT is 118.385 seconds, 2.47 seconds faster than native. See the
 [long-context result](experiments/2026-07-17-tiered-long-context/README.md).
 
+The standalone Phase 5 full-footprint gate rejects the host-UVA main cache:
+random/sorted graph replay is about 3.0 ms p95 versus the plan's 0.5 ms limit.
+A full graphed server retry nevertheless shows why both complete plans matter.
+Moving the 19.06 GiB cache to local Grace memory keeps 1,052 more expert slots
+in HBM and improves decode from 36.29 to 40.46 tok/s at 4K and from 36.57 to
+41.54 tok/s at exact 400K. The cost is a 75% higher cold 4K TTFT and 122%
+higher exact-400K TTFT. AUTO remains fail-closed on HBM under the v2 gate, but
+host-UVA is retained as a measured decode alternative for trace analysis. See
+the [cache gate and production retry](experiments/2026-07-17-host-uva-cache-gate/README.md).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout

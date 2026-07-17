@@ -1,0 +1,18 @@
+source agent_space/jupiter-env.sh
+.venv/bin/pre-commit run ruff-format --files agent_space/benchmarks/mla_cache_full_footprint.py
+ruff format: Passed
+
+.venv/bin/pre-commit run ruff-check --files agent_space/benchmarks/mla_cache_full_footprint.py
+ruff check: Passed
+
+.venv/bin/python verify the three phase5-host result JSON files
+completed: 1 each
+failed: 0 each
+input/output tokens: 4096/256, 4096/256, 399744/256
+
+Production server checks
+host-UVA cache: 19.06 GiB/rank
+minimum sampled NUMA locality: 100.0%
+startup HBM free: 6.26 GiB/rank
+post-400K high-water HBM free: 2.58 GiB/rank
+exact 399744 + 256 request: Passed
