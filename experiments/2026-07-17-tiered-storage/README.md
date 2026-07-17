@@ -56,3 +56,17 @@ pages on node 0. Repeating with `--cpu-bind=map_cpu:0`, the production rank-0
 binding, passed at 100% locality. This confirms both the fail-closed audit and
 the final compact allocation on hardware. The next step is bounded one-expert
 checkpoint staging and Marlin conversion into these destinations.
+
+## One-expert final commit
+
+The destination API now validates the complete set, shape, and type of all six
+converted components before writing anything. It resolves the expert's compact
+slot and commits exactly that expert to one tier. A unit test verifies that an
+adjacent expert slot remains untouched and that an unassigned ID fails closed.
+
+On GH200, a single 19,464,200-byte synthetic converted expert was written from
+HBM into its fresh pinned-Grace destination in 46.50 ms, including first page
+faults and six component copies. Every component compared equal afterward and
+the post-copy NUMA audit remained 256/256 pages on node 0. This is load-time
+cost, not decode latency; the next conversion probe will separate repacking
+from the one-time final commit and reuse this exact API.
