@@ -102,6 +102,14 @@ and hashes a checked-in GH200 machine profile, prints both complete physical
 plans, and exits before sockets, workers, GPU allocation, or tensor payload
 reads. Destination-loader wiring is the next implementation slice.
 
+Phase 2 has started. The real `DefaultModelLoader` now installs the planner's
+strict layer-aware EP4 ownership map and forwards it to safetensors. A compact
+final-destination layout allocates component-major Marlin tensors from one HBM
+buffer and one pinned-Grace buffer per layer, so weights, scales, and shape
+metadata cannot split across tiers. A 60-hot/4-cold layer smoke test allocated
+the exact 1,245,708,800 bytes in 0.683 seconds; all 256 sampled cold pages were
+on the paired Grace NUMA node. Streamed one-expert conversion is next.
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout
