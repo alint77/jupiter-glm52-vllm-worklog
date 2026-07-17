@@ -145,9 +145,26 @@ remote quantized component is materialized. The iterator primitive is ready;
 the tiered loader still has to install the planner-generated layer map and then
 apply the dropped-indexer and streamed-conversion rules.
 
-The tier planner suite has eleven focused tests; the EP filter and local
-safetensors suite adds 38 selected tests. All 49 pass, and all changed-file
-pre-commit hooks pass. The plan-only module is invoked with:
+## Dedicated vLLM configuration
+
+The v2 configuration surface is now represented by `TieredMoEConfig` and wired
+through `EngineArgs` into `VllmConfig`. It exposes the enable/backend/profile,
+routing trace, physical reserves, strict NUMA, plan-only, MLA cache-tier, and
+Grace machine-profile options from the plan.
+
+Validation fails closed unless the initial production contract is satisfied:
+CUDA, pinned GLM architecture/model type, TP4 with DP/PP/PCP/DCP all one, EP
+and EP filtering enabled, EPLB disabled, NUMA binding enabled, one sequence,
+400K maximum length, `fp8_ds_mla`, at least 5/8 decimal GB reserves, and no
+generic UVA or prefetch model offload. Building an engine config from the real
+artifact with this exact contract succeeds without reading model payloads.
+The `--tiered-moe-plan-only` flag is parsed and validated but is not yet hooked
+to an early server exit; the standalone plan-only module remains the runnable
+entry point.
+
+The selected planner, EP filter, safetensors, and configuration suite has 51
+passing tests. All changed-file pre-commit hooks pass. The plan-only module is
+invoked with:
 
 ```bash
 .venv/bin/python -m vllm.entrypoints.tiered_moe_plan MODEL \

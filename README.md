@@ -93,6 +93,12 @@ and metadata before payload materialization. Under linear EP4, this reduces the
 planned checkpoint stream to 107,382,098,688 bytes per rank. It is tested as an
 iterator primitive but is not yet wired into the tiered destination loader.
 
+All dedicated v2 flags now flow through `EngineArgs` into a hashed
+`TieredMoEConfig`. Cross-config validation enforces the pinned TP4/EP4, 400K,
+batch-one, FP8 MLA, NUMA, reserve, and no-generic-offload contract. The real
+artifact builds this engine config successfully; server-side plan-only early
+exit and destination-loader wiring remain pending.
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout
