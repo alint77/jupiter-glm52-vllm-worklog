@@ -1,0 +1,14 @@
+{
+  "profile_version": 1,
+  "machine": "JUPITER Booster GH200 rank-local NUMA domain",
+  "hbm_capacity_bytes": 102625181696,
+  "host_capacity_bytes": 127587581952,
+  "gpu_sm_count": 132,
+  "fixed_hbm_allocations": {
+    "baseline_peak_activation_upper_bound": 1218696970,
+    "baseline_non_torch_upper_bound": 681826058,
+    "baseline_cudagraph_upper_bound": 69793219
+  },
+  "fixed_host_allocations": {},
+  "measurement_source": "2026-07-16 baseline vLLM memory-profile logs; each reported two-decimal GiB value is budgeted at the upper rounding boundary"
+}

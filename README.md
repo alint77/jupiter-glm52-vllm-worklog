@@ -81,11 +81,12 @@ fusion produces 4,181,609,280 resident bytes per rank. With the measured
 machine capacities, the current deterministic plan places 3,097 experts in HBM
 and 1,703 in pinned Grace memory per rank when retaining the baseline cache
 allocation. Native 400K cache sizing now replaces that baseline input: the
-host-main-cache scenario keeps 4,643 of 4,800 local layer-expert slots hot,
-while the HBM-cache fallback keeps 3,591 hot. Both enforce the v2 plan's 5 GB
-HBM and 8 GB Grace reserves. Details are in the
-[tier-plan experiment](experiments/2026-07-17-tier-plan/README.md); workspace
-and conversion-scratch sizing are the remaining Phase 1 accounting slice.
+host-main-cache scenario keeps 4,477 of 4,800 local layer-expert slots hot,
+while the HBM-cache fallback keeps 3,425 hot. These final counts include exact
+two-tier Marlin workspaces, maps, remap buffers, and one-expert conversion
+scratch, plus conservative upper bounds for rounded baseline runtime metrics.
+Both enforce the v2 plan's 5 GB HBM and 8 GB Grace reserves. Details are in the
+[tier-plan experiment](experiments/2026-07-17-tier-plan/README.md).
 
 The next loader prerequisite is also in place: safetensors iteration accepts a
 fail-closed per-layer ownership map and skips remote packed weights, scales,
@@ -96,8 +97,10 @@ iterator primitive but is not yet wired into the tiered destination loader.
 All dedicated v2 flags now flow through `EngineArgs` into a hashed
 `TieredMoEConfig`. Cross-config validation enforces the pinned TP4/EP4, 400K,
 batch-one, FP8 MLA, NUMA, reserve, and no-generic-offload contract. The real
-artifact builds this engine config successfully; server-side plan-only early
-exit and destination-loader wiring remain pending.
+`vllm serve --tiered-moe-plan-only` path now builds this engine config, validates
+and hashes a checked-in GH200 machine profile, prints both complete physical
+plans, and exits before sockets, workers, GPU allocation, or tensor payload
+reads. Destination-loader wiring is the next implementation slice.
 
 ## Reproducing
 
@@ -120,5 +123,6 @@ recorded in the result JSON files. Do not run model downloads from Booster.
 - `run-cpu-offload-baseline.sh`: baseline server configuration
 - `run-batch1-baseline.sh`: batch-one benchmark cases
 - `benchmarks/`: focused hardware and kernel microbenchmarks
+- `profiles/`: versioned physical machine profiles used by plan-only
 - `experiments/`: dated raw results and experiment notes
 - `gh200-vllm-w4a16-tiered-moe-plan-v2.md`: implementation plan beyond baseline

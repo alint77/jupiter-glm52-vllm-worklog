@@ -157,10 +157,9 @@ CUDA, pinned GLM architecture/model type, TP4 with DP/PP/PCP/DCP all one, EP
 and EP filtering enabled, EPLB disabled, NUMA binding enabled, one sequence,
 400K maximum length, `fp8_ds_mla`, at least 5/8 decimal GB reserves, and no
 generic UVA or prefetch model offload. Building an engine config from the real
-artifact with this exact contract succeeds without reading model payloads.
-The `--tiered-moe-plan-only` flag is parsed and validated but is not yet hooked
-to an early server exit; the standalone plan-only module remains the runnable
-entry point.
+artifact with this exact contract succeeds without reading model payloads. The
+standalone planner remains useful for isolated accounting, while the production
+server command now uses the same planner through its early plan-only exit.
 
 The selected planner, EP filter, safetensors, and configuration suite has 51
 passing tests. All changed-file pre-commit hooks pass. The plan-only module is
@@ -174,3 +173,48 @@ invoked with:
   --host-capacity-bytes BYTES --host-reserve-bytes BYTES \
   --fixed-hbm-allocation NAME=BYTES --summary-only
 ```
+
+## Exact runtime buffers and server plan-only exit
+
+The final Phase 1 accounting derives the additional steady HBM used by two
+independent Marlin calls at the pinned 8,192-token scheduler ceiling. Hot and
+cold calls each receive their own BF16 intermediate arenas and lock state; the
+plan also includes alignment storage, tier maps, remapped IDs/weights, and a
+bounded one-expert conversion allocation.
+
+| Runtime allocation | Exact bytes per rank |
+| --- | ---: |
+| Two-tier Marlin intermediate arenas | 3,221,225,472 |
+| Alignment buffers | 663,528 |
+| Marlin lock workspaces | 4,224 |
+| Placement maps | 249,600 |
+| Remapped IDs and weights | 1,048,576 |
+| Total steady HBM | 3,223,191,400 |
+| Transient conversion scratch | 38,928,440 |
+
+The checked-in [GH200 profile](../../profiles/jupiter-gh200-baseline.json) uses
+exact rank-local capacities and budgets each two-decimal baseline runtime
+metric at its upper rounding boundary. Its SHA-256 is
+`180d0284b120ad21bcfadec4fffd553aae6d47e6ade073f4044876a73da19026`.
+
+The production `vllm serve` parser now has an early plan-only exit. A real run
+against the immutable checkpoint completed in about nine seconds without
+starting an API listener, worker process, or CUDA context and produced equal
+totals on all four ranks:
+
+| Per-rank item | Host-UVA main cache | HBM main cache |
+| --- | ---: | ---: |
+| Hot expert slots | 4,477 | 3,425 |
+| Cold expert slots | 323 | 1,375 |
+| Planned HBM including 5 GB reserve | 102,625,140,327 | 102,616,001,927 |
+| Planned Grace including 8 GB reserve | 34,754,136,600 | 34,763,275,000 |
+| Peak HBM during one-expert conversion | 97,664,068,767 | 97,654,930,367 |
+
+This completes the Phase 1 exit criterion: every planned physical allocation
+is priced before any model payload is read. The earlier cache-only figures are
+retained above to show how each accounting slice changed the plan.
+
+Focused verification is 16/16 passing for manifest, planner, runtime-buffer,
+machine-profile, and tiered argument tests. A broad `test_arg_utils.py` run was
+98/112 passing; all 14 failures are pre-existing tests that instantiate fake
+Hub IDs while this environment intentionally sets `HF_HUB_OFFLINE=1`.
