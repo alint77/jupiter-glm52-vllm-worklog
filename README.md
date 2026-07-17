@@ -112,7 +112,10 @@ on the paired Grace NUMA node. A bounded production stager now rejects
 interleaved or incomplete bundles, converts one real 19,464,240-byte checkpoint
 expert with native Marlin, and commits the 19,464,200-byte result to Grace with
 44,662,784 bytes peak HBM. Wiring this path into model parameter creation is
-next.
+next. Worker startup now resolves the selected cache/expert scenario before
+`initialize_model`, retains the exact rank plan in `DefaultModelLoader`, and
+exposes it through a scoped construction context. The real rank-0 resolver
+matches plan-only: 4,477 hot and 323 cold slots across 75 layers.
 
 ## Reproducing
 

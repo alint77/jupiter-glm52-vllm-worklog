@@ -108,3 +108,20 @@ rerun passed with the same 44,662,784-byte peak, 0.448 s combined fusion/H2D/
 Marlin conversion, 0.0023 s final commit, exact output checks, and 100% NUMA
 locality. The selected config, manifest, filter, loader, storage, and stager
 suite is now 62/62 passing; all changed-file hooks pass.
+
+## Pre-construction worker plan
+
+Placement used to be resolved in `_init_ep_weight_filter`, after native model
+parameter construction. That is early enough to skip checkpoint reads but too
+late to choose physical parameter destinations. `DefaultModelLoader` now
+resolves the worker's selected scenario before `initialize_model`, exposes it
+through a scoped construction context, and reuses the same object for the
+layer-aware iterator map.
+
+Production loading now requires an explicit `hbm` or `host_uva` main-cache tier
+and a versioned machine profile; `auto` remains available only to plan-only for
+comparison. A direct real-artifact rank-0 resolution with `host_uva` selected
+returned 4,477 hot and 323 cold slots, 75 ownership maps with experts 0-63,
+and the same machine-profile hash and totals as server plan-only. It reads only
+headers and exits without model parameter allocation. The scoped context is
+unit tested to reset after model loading, and changed-file mypy/hooks pass.
