@@ -117,6 +117,17 @@ next. Worker startup now resolves the selected cache/expert scenario before
 exposes it through a scoped construction context. The real rank-0 resolver
 matches plan-only: 4,477 hot and 323 cold slots across 75 layers.
 
+The destination loader now completes the entire model: four split-shard experts
+are deferred without breaking the one-expert staging bound, all 4,800 local
+layer-expert slots stream directly into compact storage in about 30 seconds
+with warm GPFS cache, and complete model loading takes 41-43 seconds with an
+89.2 GiB per-rank model-memory delta. The first tiered execution slice also
+completes one native prepare, 60-hot Marlin, 4-cold UVA Marlin, one join, and
+one native finalize on all four ranks. Startup now stops at the unwired
+host-UVA MLA cache accounting/allocation boundary (`-5.07 GiB` under ordinary
+HBM cache sizing). See the [storage results](experiments/2026-07-17-tiered-storage/README.md)
+and [dispatch trace](experiments/2026-07-17-tiered-dispatch/README.md).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout

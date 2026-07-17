@@ -133,3 +133,29 @@ with the planned hot-plus-cold count, then attaches the validated placement to
 the routed layer. This is the final non-allocating guard before replacing the
 native monolithic expert tensors with the compact destination bundles. The
 selected suite is 64/64 passing.
+
+## Full destination-aware load
+
+Marlin construction now allocates only the planner's compact hot and cold
+destinations. The standard loader diverts each complete nine-tensor GLM expert
+bundle through the bounded converter and writes it directly to its final tier;
+dense and shared weights continue through vLLM's ordinary loader.
+
+Four experts have checkpoint components split across two safetensors shards.
+The iterator discovers those cases from headers, skips their fragments during
+the normal pass, then rereads only those fragments adjacently. This keeps the
+one-expert staging bound without buffering a second expert.
+
+The four-rank host-cache plan loaded all 4,800 rank-local layer-expert slots:
+
+| Measurement | Result |
+| --- | ---: |
+| Routed expert stream | 4,800 experts |
+| Stream and conversion time, warm GPFS cache | 29.73-30.85 s |
+| All checkpoint weight loading | 36.62-37.74 s |
+| Complete model loading | 40.58-43.02 s |
+| vLLM model-memory delta | 89.2 GiB per rank |
+
+The compact allocation crossed model post-processing without the former
+64-expert monolithic HBM allocation. This completes the main Phase 2 loading
+path; a full post-load NUMA audit remains to be added.
