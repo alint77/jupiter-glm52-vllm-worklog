@@ -154,6 +154,14 @@ measure 27.54-27.56 ms TPOT, or 36.28-36.31 decode tok/s. This is a repeatable
 5.4% improvement and leaves about 2.0% to the 37.06 tok/s native baseline. See
 the [stream-overlap result](experiments/2026-07-17-tiered-stream-overlap/README.md).
 
+Long-context qualification exposed two capacity margins. Raising the planned
+HBM reserve from 5 to 7 GB prevents FlashMLA's 2 GiB request-time allocation
+from exhausting HBM. The cache planner now also budgets vLLM's permanently
+reserved null block. With 3,176 hot and 1,624 cold expert slots per rank, the
+32K and exact 399,744 + 256 cases complete at 36.24 and 36.57 decode tok/s. The
+full-context TTFT is 118.385 seconds, 2.47 seconds faster than native. See the
+[long-context result](experiments/2026-07-17-tiered-long-context/README.md).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout

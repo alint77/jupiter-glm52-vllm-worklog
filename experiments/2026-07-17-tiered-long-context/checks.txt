@@ -1,0 +1,9 @@
+source agent_space/jupiter-env.sh
+.venv/bin/python -m pytest tests/model_executor/model_loader/test_tiered_moe_manifest.py -q
+29 passed, 14 warnings in 10.92s
+
+.venv/bin/pre-commit run ruff-check --files vllm/model_executor/model_loader/tiered_moe_kv.py tests/model_executor/model_loader/test_tiered_moe_manifest.py
+ruff check: Passed
+
+.venv/bin/pre-commit run ruff-format --files vllm/model_executor/model_loader/tiered_moe_kv.py tests/model_executor/model_loader/test_tiered_moe_manifest.py
+ruff format: Passed
