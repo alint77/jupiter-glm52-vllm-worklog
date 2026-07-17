@@ -1,0 +1,32 @@
+
+The following have been reloaded with a version change:
+  1) GCCcore/.14.3.0 => GCCcore/14.3.0
+
+(EngineCore pid=199798) /e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py:139: UserWarning: Failed to get the IP address, using 0.0.0.0 by default. The value can be set by the environment variable VLLM_HOST_IP or HOST_IP.
+(EngineCore pid=199798)   mq_connect_ip = get_ip()
+[W717 13:47:18.794351352 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:55627 (errno: 97 - Address family not supported by protocol).
+[W717 13:47:18.066677990 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:55627 (errno: 97 - Address family not supported by protocol).
+[W717 13:47:18.068437738 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:55627 (errno: 97 - Address family not supported by protocol).
+[W717 13:47:18.069786644 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:55627 (errno: 97 - Address family not supported by protocol).
+(Worker_TP0_EP0 pid=200071) Loading safetensors checkpoint shards:   0% Completed | 0/8 [00:00<?, ?it/s]
+(Worker_TP0_EP0 pid=200071) Loading safetensors checkpoint shards:  12% Completed | 1/8 [01:27<10:09, 87.14s/it]
+(Worker_TP0_EP0 pid=200071) Loading safetensors checkpoint shards:  25% Completed | 2/8 [02:47<08:19, 83.19s/it]
+(Worker_TP0_EP0 pid=200071) Loading safetensors checkpoint shards:  38% Completed | 3/8 [03:50<06:10, 74.01s/it]
+(Worker_TP0_EP0 pid=200071) Loading safetensors checkpoint shards:  50% Completed | 4/8 [04:45<04:25, 66.40s/it]
+(Worker_TP0_EP0 pid=200071) Loading safetensors checkpoint shards:  62% Completed | 5/8 [05:42<03:08, 63.00s/it]
+(Worker_TP0_EP0 pid=200071) Loading safetensors checkpoint shards:  75% Completed | 6/8 [06:46<02:06, 63.36s/it]
+(Worker_TP0_EP0 pid=200071) Loading safetensors checkpoint shards:  88% Completed | 7/8 [07:50<01:03, 63.47s/it]
+(Worker_TP0_EP0 pid=200071) Loading safetensors checkpoint shards: 100% Completed | 8/8 [08:33<00:00, 57.09s/it]
+(Worker_TP0_EP0 pid=200071) Loading safetensors checkpoint shards: 100% Completed | 8/8 [08:33<00:00, 64.19s/it]
+(Worker_TP0_EP0 pid=200071) 
+(Worker_TP1_EP1 pid=200073) 2026-07-17 13:57:25,221 - INFO - autotuner.py:651 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(Worker_TP0_EP0 pid=200071) 2026-07-17 13:57:25,340 - INFO - autotuner.py:651 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(Worker_TP2_EP2 pid=200075) 2026-07-17 13:57:25,470 - INFO - autotuner.py:651 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(Worker_TP3_EP3 pid=200077) 2026-07-17 13:57:25,519 - INFO - autotuner.py:651 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(Worker_TP3_EP3 pid=200077) 2026-07-17 13:57:26,372 - INFO - autotuner.py:674 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(Worker_TP2_EP2 pid=200075) 2026-07-17 13:57:26,372 - INFO - autotuner.py:674 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(Worker_TP0_EP0 pid=200071) 2026-07-17 13:57:26,372 - INFO - autotuner.py:674 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(Worker_TP1_EP1 pid=200073) 2026-07-17 13:57:26,372 - INFO - autotuner.py:674 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(APIServer pid=198901) [32mINFO[0m:     Started server process [[36m198901[0m]
+(APIServer pid=198901) [32mINFO[0m:     Waiting for application startup.
+(APIServer pid=198901) [32mINFO[0m:     Application startup complete.

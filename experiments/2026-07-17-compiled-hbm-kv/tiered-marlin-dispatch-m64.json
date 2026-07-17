@@ -1,0 +1,153 @@
+{
+  "device": "NVIDIA GH200 120GB",
+  "torch": "2.11.0+cu130",
+  "hot_experts": 44,
+  "cold_experts": 20,
+  "num_tokens": 64,
+  "grace_bytes": 1634992128,
+  "grace_locality": [
+    {
+      "expected_node": 0,
+      "page_counts": [
+        [
+          0,
+          256
+        ]
+      ],
+      "local_fraction": 1.0
+    },
+    {
+      "expected_node": 0,
+      "page_counts": [
+        [
+          0,
+          256
+        ]
+      ],
+      "local_fraction": 1.0
+    },
+    {
+      "expected_node": 0,
+      "page_counts": [
+        [
+          0,
+          120
+        ]
+      ],
+      "local_fraction": 1.0
+    },
+    {
+      "expected_node": 0,
+      "page_counts": [
+        [
+          0,
+          60
+        ]
+      ],
+      "local_fraction": 1.0
+    },
+    {
+      "expected_node": 0,
+      "page_counts": [
+        [
+          0,
+          256
+        ]
+      ],
+      "local_fraction": 1.0
+    },
+    {
+      "expected_node": 0,
+      "page_counts": [
+        [
+          0,
+          256
+        ]
+      ],
+      "local_fraction": 1.0
+    },
+    {
+      "expected_node": 0,
+      "page_counts": [
+        [
+          0,
+          256
+        ]
+      ],
+      "local_fraction": 1.0
+    },
+    {
+      "expected_node": 0,
+      "page_counts": [
+        [
+          0,
+          192
+        ]
+      ],
+      "local_fraction": 1.0
+    }
+  ],
+  "results": [
+    {
+      "name": "native_hbm_mixed",
+      "median_us": 303.8560003042221,
+      "p90_us": 314.14398550987244,
+      "amortized_wall_us": 318.5209689036128
+    },
+    {
+      "name": "native_grace_mixed",
+      "median_us": 772.7680206298828,
+      "p90_us": 773.5360264778137,
+      "amortized_wall_us": 780.1245938026113
+    },
+    {
+      "name": "native_hbm_cycling",
+      "median_us": 290.0799959897995,
+      "p90_us": 296.83199524879456,
+      "amortized_wall_us": 301.49321855788
+    },
+    {
+      "name": "native_grace_cycling",
+      "median_us": 777.3599922657013,
+      "p90_us": 779.20001745224,
+      "amortized_wall_us": 784.1565316084598
+    },
+    {
+      "name": "split_hbm_mixed",
+      "median_us": 566.0640001296997,
+      "p90_us": 580.6080102920532,
+      "amortized_wall_us": 581.4927499159239
+    },
+    {
+      "name": "split_grace_mixed",
+      "median_us": 542.9919958114624,
+      "p90_us": 561.7280006408691,
+      "amortized_wall_us": 556.536187104939
+    },
+    {
+      "name": "split_hbm_cycling_cold",
+      "median_us": 562.7520084381104,
+      "p90_us": 579.9360275268555,
+      "amortized_wall_us": 574.0918750234414
+    },
+    {
+      "name": "split_grace_cycling_cold",
+      "median_us": 541.4240062236786,
+      "p90_us": 556.6719770431519,
+      "amortized_wall_us": 552.3842187358241
+    },
+    {
+      "name": "split_grace_hot_only",
+      "median_us": 541.5840148925781,
+      "p90_us": 553.9519786834717,
+      "amortized_wall_us": 553.5682184927282
+    },
+    {
+      "name": "split_grace_cold_only",
+      "median_us": 804.287999868393,
+      "p90_us": 807.1039915084839,
+      "amortized_wall_us": 819.1459687623137
+    }
+  ],
+  "correctness": "split HBM and Grace mixed outputs match native HBM"
+}

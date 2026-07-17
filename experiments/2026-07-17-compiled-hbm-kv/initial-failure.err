@@ -1,0 +1,119 @@
+
+The following have been reloaded with a version change:
+  1) GCCcore/.14.3.0 => GCCcore/14.3.0
+
+(EngineCore pid=197113) /e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py:139: UserWarning: Failed to get the IP address, using 0.0.0.0 by default. The value can be set by the environment variable VLLM_HOST_IP or HOST_IP.
+(EngineCore pid=197113)   mq_connect_ip = get_ip()
+[W717 13:34:35.337415572 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:33957 (errno: 97 - Address family not supported by protocol).
+[W717 13:34:36.629309966 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:33957 (errno: 97 - Address family not supported by protocol).
+[W717 13:34:36.636243873 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:33957 (errno: 97 - Address family not supported by protocol).
+[W717 13:34:36.643262002 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:33957 (errno: 97 - Address family not supported by protocol).
+(Worker_TP0_EP0 pid=197386) Loading safetensors checkpoint shards:   0% Completed | 0/8 [00:00<?, ?it/s]
+(Worker_TP0_EP0 pid=197386) Loading safetensors checkpoint shards:  12% Completed | 1/8 [01:21<09:27, 81.10s/it]
+(Worker_TP0_EP0 pid=197386) Loading safetensors checkpoint shards:  25% Completed | 2/8 [02:12<06:21, 63.64s/it]
+(Worker_TP0_EP0 pid=197386) Loading safetensors checkpoint shards:  38% Completed | 3/8 [02:46<04:11, 50.20s/it]
+(Worker_TP0_EP0 pid=197386) Loading safetensors checkpoint shards:  50% Completed | 4/8 [03:55<03:49, 57.48s/it]
+(Worker_TP0_EP0 pid=197386) Loading safetensors checkpoint shards:  62% Completed | 5/8 [04:44<02:43, 54.40s/it]
+(Worker_TP0_EP0 pid=197386) Loading safetensors checkpoint shards:  75% Completed | 6/8 [05:49<01:56, 58.06s/it]
+(Worker_TP0_EP0 pid=197386) Loading safetensors checkpoint shards:  88% Completed | 7/8 [06:54<01:00, 60.27s/it]
+(Worker_TP0_EP0 pid=197386) Loading safetensors checkpoint shards: 100% Completed | 8/8 [07:37<00:00, 54.88s/it]
+(Worker_TP0_EP0 pid=197386) Loading safetensors checkpoint shards: 100% Completed | 8/8 [07:37<00:00, 57.20s/it]
+(Worker_TP0_EP0 pid=197386) 
+(EngineCore pid=197113) Process EngineCore:
+(EngineCore pid=197113) Traceback (most recent call last):
+(EngineCore pid=197113)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+(EngineCore pid=197113)     self.run()
+(EngineCore pid=197113)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/multiprocessing/process.py", line 108, in run
+(EngineCore pid=197113)     self._target(*self._args, **self._kwargs)
+(EngineCore pid=197113)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/core.py", line 1334, in run_engine_core
+(EngineCore pid=197113)     raise e
+(EngineCore pid=197113)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/core.py", line 1299, in run_engine_core
+(EngineCore pid=197113)     engine_core = EngineCoreProc(*args, engine_index=dp_rank, **kwargs)
+(EngineCore pid=197113)                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=197113)   File "/e/project1/profound/alint77/vllm/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore pid=197113)     return func(*args, **kwargs)
+(EngineCore pid=197113)            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=197113)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/core.py", line 1065, in __init__
+(EngineCore pid=197113)     super().__init__(
+(EngineCore pid=197113)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/core.py", line 136, in __init__
+(EngineCore pid=197113)     kv_cache_config = self._initialize_kv_caches(vllm_config)
+(EngineCore pid=197113)                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=197113)   File "/e/project1/profound/alint77/vllm/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore pid=197113)     return func(*args, **kwargs)
+(EngineCore pid=197113)            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=197113)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/core.py", line 297, in _initialize_kv_caches
+(EngineCore pid=197113)     kv_cache_configs = get_kv_cache_configs(
+(EngineCore pid=197113)                        ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=197113)   File "/e/project1/profound/alint77/vllm/vllm/v1/core/kv_cache_utils.py", line 2129, in get_kv_cache_configs
+(EngineCore pid=197113)     get_tiered_kv_available_memory(vllm_config, groups)
+(EngineCore pid=197113)   File "/e/project1/profound/alint77/vllm/vllm/model_executor/model_loader/tiered_moe_kv.py", line 75, in get_tiered_kv_available_memory
+(EngineCore pid=197113)     raise ValueError("Tiered GLM requires 78 main and 21 indexer cache specs")
+(EngineCore pid=197113) ValueError: Tiered GLM requires 78 main and 21 indexer cache specs
+(APIServer pid=196471) Traceback (most recent call last):
+(APIServer pid=196471)   File "/e/project1/profound/alint77/vllm/.venv/bin/vllm", line 10, in <module>
+(APIServer pid=196471)     sys.exit(main())
+(APIServer pid=196471)              ^^^^^^
+(APIServer pid=196471)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/cli/main.py", line 95, in main
+(APIServer pid=196471)     args.dispatch_function(args)
+(APIServer pid=196471)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/cli/serve.py", line 162, in cmd
+(APIServer pid=196471)     uvloop.run(run_server(args))
+(APIServer pid=196471)   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/uvloop/__init__.py", line 96, in run
+(APIServer pid=196471)     return __asyncio.run(
+(APIServer pid=196471)            ^^^^^^^^^^^^^^
+(APIServer pid=196471)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/asyncio/runners.py", line 195, in run
+(APIServer pid=196471)     return runner.run(main)
+(APIServer pid=196471)            ^^^^^^^^^^^^^^^^
+(APIServer pid=196471)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/asyncio/runners.py", line 118, in run
+(APIServer pid=196471)     return self._loop.run_until_complete(task)
+(APIServer pid=196471)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=196471)   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+(APIServer pid=196471)   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/uvloop/__init__.py", line 48, in wrapper
+(APIServer pid=196471)     return await main
+(APIServer pid=196471)            ^^^^^^^^^^
+(APIServer pid=196471)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/openai/api_server.py", line 759, in run_server
+(APIServer pid=196471)     await run_server_worker(listen_address, sock, args, **uvicorn_kwargs)
+(APIServer pid=196471)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/openai/api_server.py", line 773, in run_server_worker
+(APIServer pid=196471)     async with build_async_engine_client(
+(APIServer pid=196471)                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=196471)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/contextlib.py", line 210, in __aenter__
+(APIServer pid=196471)     return await anext(self.gen)
+(APIServer pid=196471)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=196471)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/openai/api_server.py", line 139, in build_async_engine_client
+(APIServer pid=196471)     async with build_async_engine_client_from_engine_args(
+(APIServer pid=196471)                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=196471)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/contextlib.py", line 210, in __aenter__
+(APIServer pid=196471)     return await anext(self.gen)
+(APIServer pid=196471)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=196471)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/openai/api_server.py", line 175, in build_async_engine_client_from_engine_args
+(APIServer pid=196471)     async_llm = AsyncLLM.from_vllm_config(
+(APIServer pid=196471)                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=196471)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/async_llm.py", line 217, in from_vllm_config
+(APIServer pid=196471)     return cls(
+(APIServer pid=196471)            ^^^^
+(APIServer pid=196471)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/async_llm.py", line 146, in __init__
+(APIServer pid=196471)     self.engine_core = EngineCoreClient.make_async_mp_client(
+(APIServer pid=196471)                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=196471)   File "/e/project1/profound/alint77/vllm/vllm/tracing/otel.py", line 178, in sync_wrapper
+(APIServer pid=196471)     return func(*args, **kwargs)
+(APIServer pid=196471)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=196471)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/core_client.py", line 132, in make_async_mp_client
+(APIServer pid=196471)     return AsyncMPClient(*client_args)
+(APIServer pid=196471)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=196471)   File "/e/project1/profound/alint77/vllm/vllm/tracing/otel.py", line 178, in sync_wrapper
+(APIServer pid=196471)     return func(*args, **kwargs)
+(APIServer pid=196471)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=196471)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/core_client.py", line 963, in __init__
+(APIServer pid=196471)     super().__init__(
+(APIServer pid=196471)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/core_client.py", line 573, in __init__
+(APIServer pid=196471)     with launch_core_engines(
+(APIServer pid=196471)          ^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=196471)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/contextlib.py", line 144, in __exit__
+(APIServer pid=196471)     next(self.gen)
+(APIServer pid=196471)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/utils.py", line 1213, in launch_core_engines
+(APIServer pid=196471)     wait_for_engine_startup(
+(APIServer pid=196471)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/utils.py", line 1272, in wait_for_engine_startup
+(APIServer pid=196471)     raise RuntimeError(
+(APIServer pid=196471) RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 4 leaked shared_memory objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+srun: error: jpbo-037-04: task 0: Exited with exit code 1

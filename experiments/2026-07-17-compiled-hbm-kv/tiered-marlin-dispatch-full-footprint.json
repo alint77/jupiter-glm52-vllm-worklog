@@ -1,0 +1,87 @@
+{
+  "device": "NVIDIA GH200 120GB",
+  "torch": "2.11.0+cu130",
+  "hot_experts": 44,
+  "cold_experts": 20,
+  "grace_bytes": 389283840,
+  "grace_locality": [
+    {
+      "expected_node": 0,
+      "page_counts": [
+        [
+          0,
+          256
+        ]
+      ],
+      "local_fraction": 1.0
+    },
+    {
+      "expected_node": 0,
+      "page_counts": [
+        [
+          0,
+          256
+        ]
+      ],
+      "local_fraction": 1.0
+    },
+    {
+      "expected_node": 0,
+      "page_counts": [
+        [
+          0,
+          120
+        ]
+      ],
+      "local_fraction": 1.0
+    },
+    {
+      "expected_node": 0,
+      "page_counts": [
+        [
+          0,
+          60
+        ]
+      ],
+      "local_fraction": 1.0
+    }
+  ],
+  "results": [
+    {
+      "name": "native_hbm_mixed",
+      "median_us": 296.4639961719513,
+      "p90_us": 311.3279938697815
+    },
+    {
+      "name": "split_hbm_mixed",
+      "median_us": 567.5680041313171,
+      "p90_us": 583.296000957489
+    },
+    {
+      "name": "split_grace_mixed",
+      "median_us": 545.5199778079987,
+      "p90_us": 561.2159967422485
+    },
+    {
+      "name": "split_hbm_cycling_cold",
+      "median_us": 555.9840202331543,
+      "p90_us": 570.8479881286621
+    },
+    {
+      "name": "split_grace_cycling_cold",
+      "median_us": 545.7919836044312,
+      "p90_us": 564.6079778671265
+    },
+    {
+      "name": "split_grace_hot_only",
+      "median_us": 537.775993347168,
+      "p90_us": 554.3680191040039
+    },
+    {
+      "name": "split_grace_cold_only",
+      "median_us": 538.3360087871552,
+      "p90_us": 554.3040037155151
+    }
+  ],
+  "correctness": "split HBM and Grace mixed outputs match native HBM"
+}

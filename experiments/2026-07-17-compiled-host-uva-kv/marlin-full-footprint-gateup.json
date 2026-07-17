@@ -1,0 +1,31 @@
+{
+  "device": "NVIDIA GH200 120GB",
+  "torch": "2.11.0+cu130",
+  "shape_mkn": [
+    1,
+    6144,
+    4096
+  ],
+  "group_size": 128,
+  "packed_bytes_per_expert": 12582912,
+  "scale_bytes_per_expert": 393216,
+  "grace_only": true,
+  "working_set_bytes": 6098780160,
+  "results": [
+    {
+      "source": "pinned_grace_uva",
+      "experts": 470,
+      "median_group_us": 32926.59378051758,
+      "median_expert_us": 70.05658251173953,
+      "p90_group_us": 33555.39321899414
+    }
+  ],
+  "grace_over_hbm": null,
+  "grace_numa_nodes_before": {
+    "0": 192
+  },
+  "grace_numa_nodes_after": {
+    "0": 192
+  },
+  "correctness": "exact"
+}

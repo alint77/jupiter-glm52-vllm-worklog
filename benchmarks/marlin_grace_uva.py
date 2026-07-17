@@ -40,6 +40,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--n", type=int, default=2048)
     parser.add_argument("--group-size", type=int, default=128)
     parser.add_argument("--numa-node", type=int, default=0)
+    parser.add_argument(
+        "--grace-only",
+        action="store_true",
+        help="Measure a large Grace-only working set without retaining HBM copies.",
+    )
     return parser.parse_args()
 
 
@@ -159,6 +164,42 @@ def measure_interleaved(
     )
 
 
+def measure_grace_only(
+    activation: torch.Tensor,
+    grace_weights: list[torch.Tensor],
+    grace_scales: list[torch.Tensor],
+    workspace: torch.Tensor,
+    args: argparse.Namespace,
+) -> tuple[Result, torch.Tensor]:
+    for _ in range(args.warmup_groups):
+        output = run_group(
+            activation, grace_weights, grace_scales, workspace, args
+        )
+    torch.cuda.synchronize()
+
+    times_us = []
+    for _ in range(args.groups):
+        start = torch.cuda.Event(enable_timing=True)
+        end = torch.cuda.Event(enable_timing=True)
+        start.record()
+        output = run_group(
+            activation, grace_weights, grace_scales, workspace, args
+        )
+        end.record()
+        torch.cuda.synchronize()
+        times_us.append(start.elapsed_time(end) * 1000)
+
+    median_group_us = statistics.median(times_us)
+    result = Result(
+        source="pinned_grace_uva",
+        experts=args.experts,
+        median_group_us=median_group_us,
+        median_expert_us=median_group_us / args.experts,
+        p90_group_us=sorted(times_us)[int(0.9 * (len(times_us) - 1))],
+    )
+    return result, output
+
+
 def main() -> None:
     args = parse_args()
     torch.manual_seed(0)
@@ -170,26 +211,54 @@ def main() -> None:
     )
     del dense
 
-    hbm_weights = [packed.clone() for _ in range(args.experts)]
-    hbm_scales = [scale.clone() for _ in range(args.experts)]
-    del packed, scale
-    grace_weights = [
-        allocate_grace_copy(weight, args.numa_node) for weight in hbm_weights
-    ]
-    grace_scales = [allocate_grace_copy(scale, args.numa_node) for scale in hbm_scales]
     workspace = marlin_make_workspace_new(device)
-    grace_numa_nodes_before = sample_numa_nodes(grace_weights[0].cpu_tensor)
-
-    hbm_result, grace_result, hbm_output, grace_output = measure_interleaved(
-        activation,
-        hbm_weights,
-        hbm_scales,
-        [allocation.cuda_alias for allocation in grace_weights],
-        [allocation.cuda_alias for allocation in grace_scales],
-        workspace,
-        args,
+    reference_output = run_group(
+        activation, [packed], [scale], workspace, args
     )
-    torch.testing.assert_close(grace_output, hbm_output, rtol=0, atol=0)
+    if args.grace_only:
+        grace_weights = [
+            allocate_grace_copy(packed, args.numa_node)
+            for _ in range(args.experts)
+        ]
+        grace_scales = [
+            allocate_grace_copy(scale, args.numa_node)
+            for _ in range(args.experts)
+        ]
+        del packed, scale
+        grace_numa_nodes_before = sample_numa_nodes(grace_weights[0].cpu_tensor)
+        grace_result, grace_output = measure_grace_only(
+            activation,
+            [allocation.cuda_alias for allocation in grace_weights],
+            [allocation.cuda_alias for allocation in grace_scales],
+            workspace,
+            args,
+        )
+        torch.testing.assert_close(grace_output, reference_output, rtol=0, atol=0)
+        results = [grace_result]
+        grace_over_hbm = None
+    else:
+        hbm_weights = [packed.clone() for _ in range(args.experts)]
+        hbm_scales = [scale.clone() for _ in range(args.experts)]
+        del packed, scale
+        grace_weights = [
+            allocate_grace_copy(weight, args.numa_node) for weight in hbm_weights
+        ]
+        grace_scales = [
+            allocate_grace_copy(scale, args.numa_node) for scale in hbm_scales
+        ]
+        grace_numa_nodes_before = sample_numa_nodes(grace_weights[0].cpu_tensor)
+        hbm_result, grace_result, hbm_output, grace_output = measure_interleaved(
+            activation,
+            hbm_weights,
+            hbm_scales,
+            [allocation.cuda_alias for allocation in grace_weights],
+            [allocation.cuda_alias for allocation in grace_scales],
+            workspace,
+            args,
+        )
+        torch.testing.assert_close(grace_output, hbm_output, rtol=0, atol=0)
+        results = [hbm_result, grace_result]
+        grace_over_hbm = grace_result.median_group_us / hbm_result.median_group_us
 
     report = {
         "device": torch.cuda.get_device_name(device),
@@ -198,8 +267,11 @@ def main() -> None:
         "group_size": args.group_size,
         "packed_bytes_per_expert": grace_weights[0].num_bytes,
         "scale_bytes_per_expert": grace_scales[0].num_bytes,
-        "results": [asdict(hbm_result), asdict(grace_result)],
-        "grace_over_hbm": (grace_result.median_group_us / hbm_result.median_group_us),
+        "grace_only": args.grace_only,
+        "working_set_bytes": args.experts
+        * (grace_weights[0].num_bytes + grace_scales[0].num_bytes),
+        "results": [asdict(result) for result in results],
+        "grace_over_hbm": grace_over_hbm,
         "grace_numa_nodes_before": grace_numa_nodes_before,
         "grace_numa_nodes_after": sample_numa_nodes(grace_weights[0].cpu_tensor),
         "correctness": "exact",

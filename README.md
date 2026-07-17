@@ -134,6 +134,18 @@ runtime reserve. See the
 [dispatch trace](experiments/2026-07-17-tiered-dispatch/README.md), and
 [host-UVA cache result](experiments/2026-07-17-host-uva-kv/README.md).
 
+The compiled tracer bullet now works with full/piecewise CUDA graphs after
+disabling the stack's failing FlashInfer all-reduce/RMSNorm fusion. A cache-tier
+A/B showed that host-UVA and HBM main caches both decode at only about 4 tok/s
+without graphs; cache placement is not the dominant short-context cost. With
+the exact 400K main cache in HBM, graphs reduce TPOT from 245.60 ms to 29.03 ms,
+or 34.45 decode tok/s, while preserving deterministic output and a 4.27 GiB
+post-warmup physical reserve. A production-shaped Marlin probe also measured
+native full-footprint Grace-UVA execution within 2% of HBM and isolated the
+fixed two-tier call cost. See the
+[compiled host-cache result](experiments/2026-07-17-compiled-host-uva-kv/README.md)
+and [compiled HBM-cache result](experiments/2026-07-17-compiled-hbm-kv/README.md).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout
