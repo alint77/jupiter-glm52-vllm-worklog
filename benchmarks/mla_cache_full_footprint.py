@@ -4,7 +4,9 @@ import argparse
 import json
 import math
 import statistics
+from pathlib import Path
 
+import numpy as np
 import torch
 
 from vllm.model_executor.offloader.grace import GraceAllocation
@@ -24,7 +26,28 @@ def percentile(values: list[float], fraction: float) -> float:
     return sorted(values)[math.ceil(fraction * len(values)) - 1]
 
 
-def make_index_sets(pattern: str, device: torch.device) -> list[torch.Tensor]:
+def make_index_sets(
+    pattern: str,
+    device: torch.device,
+    real_index_trace: Path | None = None,
+) -> list[torch.Tensor]:
+    if pattern == "real":
+        if real_index_trace is None:
+            raise ValueError("The real pattern requires --real-index-trace")
+        with np.load(real_index_trace) as data:
+            source = data["indices"].astype(np.int64)
+            context_position = int(data["context_position"])
+        if (
+            source.shape != (21, TOPK)
+            or source.min() < 0
+            or source.max() > context_position
+            or (np.diff(np.sort(source, axis=1), axis=1) == 0).any()
+        ):
+            raise ValueError("Real DSA trace must contain 21 complete top-2048 sets")
+        scale = (NUM_BLOCKS * BLOCK_SIZE - 1) / context_position
+        scaled = np.floor(source * scale).astype(np.int32)
+        return [torch.from_numpy(row).to(device).view(1, 1, TOPK) for row in scaled]
+
     generator = torch.Generator(device=device).manual_seed(17)
     sets = []
     for index in range(21):
@@ -123,6 +146,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--numa-node", type=int, default=0)
     parser.add_argument("--warmups", type=int, default=3)
     parser.add_argument("--iterations", type=int, default=30)
+    parser.add_argument("--real-index-trace", type=Path)
     return parser.parse_args()
 
 
@@ -160,8 +184,11 @@ def main() -> None:
 
     results = {}
     correctness = {}
-    for pattern in ("random", "sorted", "clustered"):
-        index_sets = make_index_sets(pattern, device)
+    patterns = ["random", "sorted", "clustered"]
+    if args.real_index_trace is not None:
+        patterns.append("real")
+    for pattern in patterns:
+        index_sets = make_index_sets(pattern, device, args.real_index_trace)
         results[pattern] = {
             "eager": {},
             "cuda_graph": {},
@@ -202,6 +229,9 @@ def main() -> None:
         "sparse_read_bytes_per_token": LAYERS * TOPK * ENTRY_BYTES,
         "warmups": args.warmups,
         "iterations": args.iterations,
+        "real_index_trace": str(args.real_index_trace)
+        if args.real_index_trace is not None
+        else None,
         "results": results,
         "correctness": correctness,
         "minimum_local_fraction_before": min(

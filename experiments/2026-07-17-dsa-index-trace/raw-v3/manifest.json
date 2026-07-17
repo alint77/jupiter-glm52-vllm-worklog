@@ -1,0 +1,234 @@
+[
+  {
+    "domain": "synthetic-random-token",
+    "elapsed_seconds": 8.347386364010163,
+    "output_tokens": 64,
+    "prompt_tokens": 32768,
+    "request_hash": "fedad230ccccb392a8a6dd91e6deaafefbe8054c1d5bbb84cce8f5e97826abd3",
+    "request_id": "dsa-fedad230ccccb392a8a6",
+    "samples": [
+      {
+        "context_position": 8176,
+        "file": "sample-00000000.npz",
+        "request_id": "cmpl-dsa-fedad230ccccb392a8a6-0-b110c78d",
+        "valid_indices": 43008
+      },
+      {
+        "context_position": 16368,
+        "file": "sample-00000001.npz",
+        "request_id": "cmpl-dsa-fedad230ccccb392a8a6-0-b110c78d",
+        "valid_indices": 43008
+      },
+      {
+        "context_position": 24560,
+        "file": "sample-00000002.npz",
+        "request_id": "cmpl-dsa-fedad230ccccb392a8a6-0-b110c78d",
+        "valid_indices": 43008
+      },
+      {
+        "context_position": 32752,
+        "file": "sample-00000003.npz",
+        "request_id": "cmpl-dsa-fedad230ccccb392a8a6-0-b110c78d",
+        "valid_indices": 43008
+      },
+      {
+        "context_position": 32768,
+        "file": "sample-00000004.npz",
+        "request_id": "cmpl-dsa-fedad230ccccb392a8a6-0-b110c78d",
+        "valid_indices": 43008
+      },
+      {
+        "context_position": 32784,
+        "file": "sample-00000005.npz",
+        "request_id": "cmpl-dsa-fedad230ccccb392a8a6-0-b110c78d",
+        "valid_indices": 43008
+      },
+      {
+        "context_position": 32800,
+        "file": "sample-00000006.npz",
+        "request_id": "cmpl-dsa-fedad230ccccb392a8a6-0-b110c78d",
+        "valid_indices": 43008
+      },
+      {
+        "context_position": 32816,
+        "file": "sample-00000007.npz",
+        "request_id": "cmpl-dsa-fedad230ccccb392a8a6-0-b110c78d",
+        "valid_indices": 43008
+      }
+    ]
+  },
+  {
+    "domain": "synthetic-random-token",
+    "elapsed_seconds": 7.769993819994852,
+    "output_tokens": 64,
+    "prompt_tokens": 32768,
+    "request_hash": "d3c3216ea4cd1e4fc9e4f61f63aa09f15e1827220faf3bfa726533f6e28342fb",
+    "request_id": "dsa-d3c3216ea4cd1e4fc9e4",
+    "samples": [
+      {
+        "context_position": 8176,
+        "file": "sample-00000008.npz",
+        "request_id": "cmpl-dsa-d3c3216ea4cd1e4fc9e4-0-835dfca6",
+        "valid_indices": 43008
+      },
+      {
+        "context_position": 16368,
+        "file": "sample-00000009.npz",
+        "request_id": "cmpl-dsa-d3c3216ea4cd1e4fc9e4-0-835dfca6",
+        "valid_indices": 43008
+      },
+      {
+        "context_position": 24560,
+        "file": "sample-00000010.npz",
+        "request_id": "cmpl-dsa-d3c3216ea4cd1e4fc9e4-0-835dfca6",
+        "valid_indices": 43008
+      },
+      {
+        "context_position": 32752,
+        "file": "sample-00000011.npz",
+        "request_id": "cmpl-dsa-d3c3216ea4cd1e4fc9e4-0-835dfca6",
+        "valid_indices": 43008
+      },
+      {
+        "context_position": 32768,
+        "file": "sample-00000012.npz",
+        "request_id": "cmpl-dsa-d3c3216ea4cd1e4fc9e4-0-835dfca6",
+        "valid_indices": 43008
+      },
+      {
+        "context_position": 32784,
+        "file": "sample-00000013.npz",
+        "request_id": "cmpl-dsa-d3c3216ea4cd1e4fc9e4-0-835dfca6",
+        "valid_indices": 43008
+      },
+      {
+        "context_position": 32800,
+        "file": "sample-00000014.npz",
+        "request_id": "cmpl-dsa-d3c3216ea4cd1e4fc9e4-0-835dfca6",
+        "valid_indices": 43008
+      },
+      {
+        "context_position": 32816,
+        "file": "sample-00000015.npz",
+        "request_id": "cmpl-dsa-d3c3216ea4cd1e4fc9e4-0-835dfca6",
+        "valid_indices": 43008
+      }
+    ]
+  },
+  {
+    "domain": "synthetic-random-token",
+    "elapsed_seconds": 7.811206017009681,
+    "output_tokens": 64,
+    "prompt_tokens": 32768,
+    "request_hash": "7aa7d2132ae9d798e0b260417928f7f32e236509add173fe43ba101f33f9bc84",
+    "request_id": "dsa-7aa7d2132ae9d798e0b2",
+    "samples": [
+      {
+        "context_position": 8176,
+        "file": "sample-00000016.npz",
+        "request_id": "cmpl-dsa-7aa7d2132ae9d798e0b2-0-9fdd78f5",
+        "valid_indices": 43008
+      },
+      {
+        "context_position": 16368,
+        "file": "sample-00000017.npz",
+        "request_id": "cmpl-dsa-7aa7d2132ae9d798e0b2-0-9fdd78f5",
+        "valid_indices": 43008
+      },
+      {
+        "context_position": 24560,
+        "file": "sample-00000018.npz",
+        "request_id": "cmpl-dsa-7aa7d2132ae9d798e0b2-0-9fdd78f5",
+        "valid_indices": 43008
+      },
+      {
+        "context_position": 32752,
+        "file": "sample-00000019.npz",
+        "request_id": "cmpl-dsa-7aa7d2132ae9d798e0b2-0-9fdd78f5",
+        "valid_indices": 43008
+      },
+      {
+        "context_position": 32768,
+        "file": "sample-00000020.npz",
+        "request_id": "cmpl-dsa-7aa7d2132ae9d798e0b2-0-9fdd78f5",
+        "valid_indices": 43008
+      },
+      {
+        "context_position": 32784,
+        "file": "sample-00000021.npz",
+        "request_id": "cmpl-dsa-7aa7d2132ae9d798e0b2-0-9fdd78f5",
+        "valid_indices": 43008
+      },
+      {
+        "context_position": 32800,
+        "file": "sample-00000022.npz",
+        "request_id": "cmpl-dsa-7aa7d2132ae9d798e0b2-0-9fdd78f5",
+        "valid_indices": 43008
+      },
+      {
+        "context_position": 32816,
+        "file": "sample-00000023.npz",
+        "request_id": "cmpl-dsa-7aa7d2132ae9d798e0b2-0-9fdd78f5",
+        "valid_indices": 43008
+      }
+    ]
+  },
+  {
+    "domain": "synthetic-random-token",
+    "elapsed_seconds": 7.811948018003022,
+    "output_tokens": 64,
+    "prompt_tokens": 32768,
+    "request_hash": "624136269588e5a38c3c061e8c908042cec69b051ee9c4844421cbeaab8a311c",
+    "request_id": "dsa-624136269588e5a38c3c",
+    "samples": [
+      {
+        "context_position": 8176,
+        "file": "sample-00000024.npz",
+        "request_id": "cmpl-dsa-624136269588e5a38c3c-0-b6957640",
+        "valid_indices": 43008
+      },
+      {
+        "context_position": 16368,
+        "file": "sample-00000025.npz",
+        "request_id": "cmpl-dsa-624136269588e5a38c3c-0-b6957640",
+        "valid_indices": 43008
+      },
+      {
+        "context_position": 24560,
+        "file": "sample-00000026.npz",
+        "request_id": "cmpl-dsa-624136269588e5a38c3c-0-b6957640",
+        "valid_indices": 43008
+      },
+      {
+        "context_position": 32752,
+        "file": "sample-00000027.npz",
+        "request_id": "cmpl-dsa-624136269588e5a38c3c-0-b6957640",
+        "valid_indices": 43008
+      },
+      {
+        "context_position": 32768,
+        "file": "sample-00000028.npz",
+        "request_id": "cmpl-dsa-624136269588e5a38c3c-0-b6957640",
+        "valid_indices": 43008
+      },
+      {
+        "context_position": 32784,
+        "file": "sample-00000029.npz",
+        "request_id": "cmpl-dsa-624136269588e5a38c3c-0-b6957640",
+        "valid_indices": 43008
+      },
+      {
+        "context_position": 32800,
+        "file": "sample-00000030.npz",
+        "request_id": "cmpl-dsa-624136269588e5a38c3c-0-b6957640",
+        "valid_indices": 43008
+      },
+      {
+        "context_position": 32816,
+        "file": "sample-00000031.npz",
+        "request_id": "cmpl-dsa-624136269588e5a38c3c-0-b6957640",
+        "valid_indices": 43008
+      }
+    ]
+  }
+]

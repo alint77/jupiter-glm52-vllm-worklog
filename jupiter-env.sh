@@ -4,6 +4,8 @@ module load Stages/2026
 module load GCC/14.3.0 CUDA/13 CMake/3.31.8 NCCL/default-CUDA-13
 module load ccache/4.11.3 Ninja/1.13.0
 
+export TRITON_PTXAS_PATH="$(command -v ptxas)"
+
 VLLM_REPO_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 source "${VLLM_REPO_DIR}/.venv/bin/activate"
 

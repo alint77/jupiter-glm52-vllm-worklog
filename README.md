@@ -172,7 +172,7 @@ higher exact-400K TTFT. AUTO remains fail-closed on HBM under the v2 gate, but
 host-UVA is retained as a measured decode alternative for trace analysis. See
 the [cache gate and production retry](experiments/2026-07-17-host-uva-cache-gate/README.md).
 
-The first minimal Phase 6 placement pass now captures exact request-bound
+Phase 6 now captures exact request-bound
 top-8 routes, validates a fingerprinted arbitrary per-layer EP4 owner map, and
 loads it in the full graphed 400K server. A six-request train/two-request
 held-out split reduces held-out cold routing from 31.24% to 2.32% in offline
@@ -181,8 +181,12 @@ raising decode from 36.29 to 38.57 tok/s on average. A bounded tail-aware swap
 pass and exact request replay then reduce held-out TPOT from 27.099 to 24.209
 ms. A cold-critical latency model fitted only on six training requests predicts
 both placements on two held-out requests with 2.27% worst error, passing the
-v2 20% gate. Sampled real DSA index traces remain separate follow-up work.
-See the [trace-placement result](experiments/2026-07-17-trace-placement/README.md).
+v2 20% gate. A bounded sidecar then captured 32 request-bound real DSA rows
+across all 21 full-indexer layers. Full-footprint replay measured the real
+pattern at 1.484 ms HBM p95 and 2.508 ms host-UVA p95 with exact output across
+tiers. Host-UVA still misses the 0.5 ms gate by 5.0x, so AUTO remains on HBM.
+See the [trace-placement result](experiments/2026-07-17-trace-placement/README.md)
+and [real DSA trace result](experiments/2026-07-17-dsa-index-trace/README.md).
 
 ## Reproducing
 
