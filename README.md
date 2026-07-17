@@ -79,9 +79,13 @@ stored checkpoint bytes from the final fused-Marlin layout. Exact tracing of
 non-routed tensors through TP4 sharding, dropped indexer copies, and runtime
 fusion produces 4,181,609,280 resident bytes per rank. With the measured
 machine capacities, the current deterministic plan places 3,097 experts in HBM
-and 1,703 in pinned Grace memory per rank. Details are in the
-[tier-plan experiment](experiments/2026-07-17-tier-plan/README.md); exact
-cache-tier and workspace sizing are the next planner slice.
+and 1,703 in pinned Grace memory per rank when retaining the baseline cache
+allocation. Native 400K cache sizing now replaces that baseline input: the
+host-main-cache scenario keeps 4,643 of 4,800 local layer-expert slots hot,
+while the HBM-cache fallback keeps 3,591 hot. Both enforce the v2 plan's 5 GB
+HBM and 8 GB Grace reserves. Details are in the
+[tier-plan experiment](experiments/2026-07-17-tier-plan/README.md); workspace
+and conversion-scratch sizing are the remaining Phase 1 accounting slice.
 
 ## Reproducing
 

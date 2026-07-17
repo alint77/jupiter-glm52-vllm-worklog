@@ -93,18 +93,49 @@ rounded aggregate process memory cannot distinguish TP sharding, discarded
 checkpoint copies, and runtime fusion. The exact classifier is fail-closed: an
 unknown non-routed GLM tensor aborts planning.
 
-The exact KV allocation is still taken from the baseline log. Peak activation,
-non-Torch, and CUDA-graph categories are converted from its rounded GiB values;
-the 5 GiB HBM reserve covers that remaining measurement uncertainty. The next
-planner slice will derive cache-tier sizing and runtime workspace categories.
+## Native 400K cache-tier reconciliation
 
-Eight focused manifest, schema, byte-accounting, planner, capacity-failure,
-non-routed classification, and CLI tests pass. All changed-file pre-commit
-hooks pass. The plan-only module is invoked with:
+The planner now constructs the same ordinary, non-v4 `MLAAttentionSpec`
+geometry used by the native GLM path. It rejects sliding-window MLA, the
+DeepSeek-v4 584-byte layout, a non-`fp8_ds_mla` main cache, a block size other
+than 64, or a different indexer pattern. At 400K tokens it derives:
+
+| Cache item | Exact allocation per rank |
+| --- | ---: |
+| Main MLA: 656 bytes/token x 78 layers | 20,467,200,000 bytes |
+| Indexer: 132 bytes/token x 21 layers | 1,108,800,000 bytes |
+| Cache blocks | 6,250 |
+| Allocated tokens | 400,000 |
+
+Plan-only now prices both physical cache tiers without using the baseline KV
+total. The main cache moves between HBM and Grace as one allocation; the
+indexer cache always remains in HBM.
+
+| Per-rank item | Host-UVA main cache | HBM main cache |
+| --- | ---: | ---: |
+| Fixed HBM allocations | 7,244,619,399 | 27,711,819,399 |
+| Fixed Grace allocations | 20,467,200,000 | 0 |
+| Hot expert slots | 4,643 | 3,591 |
+| Cold expert slots | 157 | 1,209 |
+| Hot expert bytes | 90,372,280,600 | 69,895,942,200 |
+| Cold expert bytes | 3,055,879,400 | 23,532,217,800 |
+| HBM total including 5 GB reserve | 102,616,899,999 | 102,607,761,599 |
+| Grace total including 8 GB reserve | 31,523,079,400 | 31,532,217,800 |
+
+Peak activation, non-Torch, and CUDA-graph categories are still converted from
+the baseline's rounded GiB values. They are inside the fixed HBM total, while
+the separate 5 GB HBM reserve covers the remaining measurement uncertainty.
+Workspace and conversion-scratch accounting remain to be derived before the
+Phase 1 exit criterion is complete.
+
+Eleven focused manifest, schema, byte-accounting, cache-layout, planner,
+capacity-failure, non-routed classification, and CLI tests pass. All
+changed-file pre-commit hooks pass. The plan-only module is invoked with:
 
 ```bash
 .venv/bin/python -m vllm.entrypoints.tiered_moe_plan MODEL \
   --ep-size 4 \
+  --max-model-len 400000 --mla-cache-tier auto \
   --hbm-capacity-bytes BYTES --hbm-reserve-bytes BYTES \
   --host-capacity-bytes BYTES --host-reserve-bytes BYTES \
   --fixed-hbm-allocation NAME=BYTES --summary-only
