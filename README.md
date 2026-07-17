@@ -73,6 +73,13 @@ bit-exact Marlin output, and measured about 4.5% slower than HBM for the combine
 gate/up plus down matrix sequence at batch one. See the
 [Marlin/UVA experiment](experiments/2026-07-17-marlin-uva/README.md).
 
+Phase 1 now has a header-only fail-closed manifest and deterministic EP4 expert
+planner. It inventories all 175,527 tensors in about 1.5 seconds and separates
+stored checkpoint bytes from the final fused-Marlin layout. The first machine
+reconciliation is in the
+[tier-plan experiment](experiments/2026-07-17-tier-plan/README.md); exact
+non-routed runtime classification remains the next planner slice.
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout
