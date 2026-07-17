@@ -146,6 +146,14 @@ fixed two-tier call cost. See the
 [compiled host-cache result](experiments/2026-07-17-compiled-host-uva-kv/README.md)
 and [compiled HBM-cache result](experiments/2026-07-17-compiled-hbm-kv/README.md).
 
+The hot and cold Marlin branches now use independent views from one workspace
+allocation and overlap only for the captured one- and two-token decode shapes.
+Large prefill remains serial to avoid an unnecessary 896 MiB warmup peak. Both
+graph modes capture, deterministic output is unchanged, and two 4K/256 runs
+measure 27.54-27.56 ms TPOT, or 36.28-36.31 decode tok/s. This is a repeatable
+5.4% improvement and leaves about 2.0% to the 37.06 tok/s native baseline. See
+the [stream-overlap result](experiments/2026-07-17-tiered-stream-overlap/README.md).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout

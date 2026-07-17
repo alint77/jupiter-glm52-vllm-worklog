@@ -72,9 +72,9 @@ captured successfully. Estimated graph memory was 0.14 GiB per rank.
 
 Graphs improve decode by 8.46x and bring the first tiered tracer bullet to
 within about 7% of the 37.06 tok/s native-offload baseline. The result remains
-below the project target; the next execution optimization is independent
-hot/cold streams with truly separate workspaces, followed by route tracing and
-placement rather than additional cache-tier work.
+below the project target. Independent hot/cold workspaces and streams are
+measured in the follow-on
+[stream-overlap experiment](../2026-07-17-tiered-stream-overlap/README.md).
 
 After the graphed 4K request, allocator-retained prefill buffers reduced
 physical free HBM to about 1.52 GiB per GPU. As with the host-cache scenario,
