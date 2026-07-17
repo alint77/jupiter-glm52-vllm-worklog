@@ -128,9 +128,26 @@ the separate 5 GB HBM reserve covers the remaining measurement uncertainty.
 Workspace and conversion-scratch accounting remain to be derived before the
 Phase 1 exit criterion is complete.
 
-Eleven focused manifest, schema, byte-accounting, cache-layout, planner,
-capacity-failure, non-routed classification, and CLI tests pass. All
-changed-file pre-commit hooks pass. The plan-only module is invoked with:
+## Layer-aware loader filter prerequisite
+
+The safetensors iterator now accepts a strict per-layer expert ownership map.
+Unlike the existing generic EP filter, this mode rejects missing layer maps and
+skips every remote expert component before `get_tensor()`: packed weights,
+scales, and shape metadata. The generic filter also now recognizes
+`.weight_packed` as a heavy payload while retaining its existing conservative
+scale/metadata behavior for other quantization backends.
+
+For linear EP4 ownership, the strict map reduces this artifact's per-rank
+checkpoint stream from 387,667,154,688 bytes to 107,382,098,688 bytes:
+13,953,746,688 non-routed bytes plus one 93,428,352,000-byte routed shard. A
+synthetic safetensors test instruments `get_tensor()` and confirms that no
+remote quantized component is materialized. The iterator primitive is ready;
+the tiered loader still has to install the planner-generated layer map and then
+apply the dropped-indexer and streamed-conversion rules.
+
+The tier planner suite has eleven focused tests; the EP filter and local
+safetensors suite adds 38 selected tests. All 49 pass, and all changed-file
+pre-commit hooks pass. The plan-only module is invoked with:
 
 ```bash
 .venv/bin/python -m vllm.entrypoints.tiered_moe_plan MODEL \

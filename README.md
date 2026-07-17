@@ -87,6 +87,12 @@ HBM and 8 GB Grace reserves. Details are in the
 [tier-plan experiment](experiments/2026-07-17-tier-plan/README.md); workspace
 and conversion-scratch sizing are the remaining Phase 1 accounting slice.
 
+The next loader prerequisite is also in place: safetensors iteration accepts a
+fail-closed per-layer ownership map and skips remote packed weights, scales,
+and metadata before payload materialization. Under linear EP4, this reduces the
+planned checkpoint stream to 107,382,098,688 bytes per rank. It is tested as an
+iterator primitive but is not yet wired into the tiered destination loader.
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout
