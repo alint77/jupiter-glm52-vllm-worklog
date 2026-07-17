@@ -1,0 +1,21 @@
+Phase 6 first static placement pass
+
+Profile validation:
+- Plan-only accepted the fingerprinted profile for all four EP ranks.
+- Each rank: 64 experts/layer, 3,176 hot and 1,624 cold slots.
+- Full server streamed all 4,800 local routed experts per rank.
+- Full and piecewise CUDA graph capture completed.
+- 400,064-token KV cache allocation completed.
+
+Runtime:
+- Seed 0: 1/1 request completed, 26.261515 ms TPOT.
+- Seed 1: 1/1 request completed, 25.600931 ms TPOT.
+- Stable semantic smoke: three identical outputs and token logprobs.
+
+Tests:
+- .venv/bin/python -m pytest tests/model_executor/model_loader/test_tiered_moe_manifest.py -q
+  31 passed, 14 warnings in 9.27s
+- .venv/bin/pre-commit run ruff-check --files <changed Python files>
+  Passed
+- git diff --check
+  Passed

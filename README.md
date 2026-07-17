@@ -172,6 +172,16 @@ higher exact-400K TTFT. AUTO remains fail-closed on HBM under the v2 gate, but
 host-UVA is retained as a measured decode alternative for trace analysis. See
 the [cache gate and production retry](experiments/2026-07-17-host-uva-cache-gate/README.md).
 
+The first minimal Phase 6 placement pass now captures exact request-bound
+top-8 routes, validates a fingerprinted arbitrary per-layer EP4 owner map, and
+loads it in the full graphed 400K server. A six-request train/two-request
+held-out split reduces held-out cold routing from 31.24% to 2.32% in offline
+replay. Two matched 4K/256 runs reduce mean TPOT from 27.553 to 25.931 ms,
+raising decode from 36.29 to 38.57 tok/s on average. This greedy
+frequency-based pass is promising but does not yet satisfy Phase 6's calibrated
+held-out latency-prediction gate or replace the planned tail-aware optimizer.
+See the [trace-placement result](experiments/2026-07-17-trace-placement/README.md).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout
