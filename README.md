@@ -238,6 +238,14 @@ experts, with a 2.18 ms/step ideal kernel-overlap bound, while sparse MLA pads
 16 local heads to 64. See the
 [forward-pass roofline](experiments/2026-07-18-mtp-prompt-profile/roofline-analysis.md).
 
+Phase 11 tests MTP6 and stops the deeper sweep. At 4K, MTP6 reaches 107.26
+tok/s, but at exact 400K it falls from MTP3's 108.17 to 84.47 tok/s. On the
+matched exact request it drafts 98% more tokens while accepting fewer, and the
+fourth through sixth draft positions accept only 11.0%, 7.7%, and 4.4%.
+Greedy output remains byte-identical. MTP7 and MTP8 were skipped; MTP3 remains
+the fixed-depth default. See the
+[MTP depth result](experiments/2026-07-18-mtp-depth-sweep/README.md).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout
