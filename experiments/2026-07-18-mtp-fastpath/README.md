@@ -90,3 +90,43 @@ Retain MTP3 as the default depth and retain verification overlap for all sizes
 up to four. Keep local argmax as an opt-in implementation for larger batches or
 future collective-heavy configurations; do not enable it by default from these
 batch-one results.
+
+## Sequence-parallel follow-up
+
+MTP3 verifies four tokens on TP4, so a target-only sequence-parallel trial
+tested whether assigning one verification token to each rank avoids the
+batch-one padding problem found in Phase 8. The MTP draft layer remained on the
+non-SP path.
+
+SP replicates the target shared experts, adding 1,094,860,800 bytes per rank.
+The physical planner accounted for that footprint by reducing routed HBM
+residency from 2,870 to 2,813 experts per rank. The same trace optimizer chose
+the smaller residency set. Both configurations therefore loaded 61.62 GiB of
+weights and the SP runs retained 9.17-9.18 GiB of free HBM.
+
+| Exact-400K configuration | Run 1 | Run 2 | Mean decode | Mean acceptance | Mean TTFT |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| MTP3 overlap, no SP | 126.07 | 121.23 | 123.65 tok/s | 60.25% | 111.93 s |
+| MTP3 overlap, target SP | 117.33 | 108.62 | 112.98 tok/s | 62.41% | 110.51 s |
+
+Target SP is 8.63% slower despite 2.17 percentage points higher acceptance.
+Both SP outputs and both controls match the expected exact-400K SHA-256
+`d594e4d4268600a0d9e2d51355913907c638ef0c61615547598615384dcfc528`.
+
+The rank-mean trace accounts for the regression:
+
+| Path | Routed sum | Routed span | Custom AR | NCCL | Collectives/step |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| No SP | 11.846 ms | 7.357 ms | 4.759 ms | 0.090 ms | 166 custom, 4 gather |
+| Target SP | 11.920 ms | 7.384 ms | 0.196 ms | 7.257 ms | 16 custom, 150 RS, 154 gather |
+
+The routed kernels do not become shorter at verification size four. SP instead
+replaces 150 custom reductions with one reduce-scatter/all-gather pair in each
+of the 75 target MoE layers. Profiled TPOT rises from 20.327 to 21.655 ms; these
+profiled values are used only for attribution.
+
+The runtime experiment was reverted. Tiered MTP keeps the existing non-SP
+target path. Raw traces are in
+`/e/scratch/profound/naeimitabiei1/glm52-mtp3-nosp-control-profile-969649`
+and
+`/e/scratch/profound/naeimitabiei1/glm52-mtp3-target-sp-valid-profile-969666`.

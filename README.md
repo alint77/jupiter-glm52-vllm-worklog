@@ -258,6 +258,15 @@ batch-one throughput benefit, so it remains opt-in and MTP3 overlap remains the
 default. See the
 [MTP fast-path result](experiments/2026-07-18-mtp-fastpath/README.md).
 
+Phase 13 tests target-only sequence-parallel MoE at MTP3's four-token
+verification size. The exact physical plan keeps HBM usage constant by moving
+57 more routed experts per rank to Grace. Two exact-400K runs average 112.98
+tok/s versus a fresh 123.65 tok/s no-SP control, an 8.63% regression. The
+trace shows unchanged routed-kernel span but 150 reduce-scatters and 150 extra
+all-gathers per step, adding 7.26 ms of NCCL activity. The experiment was
+reverted; tiered MTP retains the non-SP target path. See the
+[sequence-parallel follow-up](experiments/2026-07-18-mtp-fastpath/README.md#sequence-parallel-follow-up).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout

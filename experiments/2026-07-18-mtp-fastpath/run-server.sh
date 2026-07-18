@@ -12,8 +12,8 @@ verification_size=$((depth + 1))
 speculative_config="{\"method\":\"mtp\",\"num_speculative_tokens\":${depth},\"use_local_argmax_reduction\":${local_argmax}}"
 
 export TIERED_MOE_MODEL_PATH="$(dirname -- "${repo_dir}")/models/GLM-5.2-W4A16-FP8-MTP"
-export TIERED_MOE_PLACEMENT_PROFILE="${repo_dir}/agent_space/experiments/2026-07-18-mtp-graft/placement-profile.json"
-export TIERED_MOE_HBM_RESERVE_GB=10
+export TIERED_MOE_PLACEMENT_PROFILE="${TIERED_MOE_PLACEMENT_PROFILE:-${repo_dir}/agent_space/experiments/2026-07-18-mtp-graft/placement-profile.json}"
+export TIERED_MOE_HBM_RESERVE_GB="${TIERED_MOE_HBM_RESERVE_GB:-10}"
 export TIERED_MOE_COMPILATION_CONFIG="{\"mode\":3,\"cudagraph_mode\":\"FULL_AND_PIECEWISE\",\"cudagraph_capture_sizes\":[${verification_size}],\"compile_sizes\":[${verification_size}],\"pass_config\":{\"fuse_allreduce_rms\":false}}"
 
 profiler_args=()
