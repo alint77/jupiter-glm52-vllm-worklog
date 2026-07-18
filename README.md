@@ -25,11 +25,13 @@ uses `fp8_ds_mla` KV cache, Inductor mode 3, and full/piecewise CUDA graphs.
 
 Batch one, random input, deterministic decoding, 256 output tokens:
 
-| Input | TTFT | Approx. prefill | Decode | Total |
-| ---: | ---: | ---: | ---: | ---: |
-| 4,096 | 0.990 s | 4,139 tok/s | 37.06 tok/s | 7.87 s |
-| 32,768 | 7.652 s | 4,282 tok/s | 37.06 tok/s | 14.53 s |
-| 399,744 | 120.853 s | 3,308 tok/s | 37.57 tok/s | 127.64 s |
+
+| Input   | TTFT      | Approx. prefill | Decode      | Total    |
+| ------- | --------- | --------------- | ----------- | -------- |
+| 4,096   | 0.990 s   | 4,139 tok/s     | 37.06 tok/s | 7.87 s   |
+| 32,768  | 7.652 s   | 4,282 tok/s     | 37.06 tok/s | 14.53 s  |
+| 399,744 | 120.853 s | 3,308 tok/s     | 37.57 tok/s | 127.64 s |
+
 
 At idle, the working configuration uses about 90.7 GiB HBM per GPU, leaves
 6.58 GiB free, and provides a 574,336-token KV capacity. Detailed settings and
@@ -38,19 +40,19 @@ result links are in [the baseline report](baseline/baseline-summary.md).
 ## How we got here
 
 1. Downloaded and checksum-pinned the eight-shard model on the internet-facing
-   login node, then used the local immutable checkpoint offline on Booster.
+  login node, then used the local immutable checkpoint offline on Booster.
 2. Built an editable vLLM environment with `uv` after loading the JUPITER 2026,
-   GCC 14.3, CUDA 13, CMake, NCCL, ccache, and Ninja modules.
+  GCC 14.3, CUDA 13, CMake, NCCL, ccache, and Ninja modules.
 3. Enabled TP4/EP4, per-rank expert filtering, NUMA binding, 40 GiB/rank UVA
-   expert offload, FP8 MLA KV cache, Inductor, autotuning, and CUDA graphs.
+  expert offload, FP8 MLA KV cache, Inductor, autotuning, and CUDA graphs.
 4. Moved compiler caches from the quota-limited home directory to scratch.
 5. Disabled `fuse_allreduce_rms`; that fused warmup path produced an illegal
-   memory access on this stack.
+  memory access on this stack.
 6. Reduced `gpu-memory-utilization` from 0.94 to 0.90. The former left only
-   about 2.95 GiB free and failed at an 8K chunk during 32K prefill; 0.90 leaves
+  about 2.95 GiB free and failed at an 8K chunk during 32K prefill; 0.90 leaves
    enough transient HBM while preserving more than 400K KV capacity.
 7. Repeated warmed 4K and 32K measurements, then completed the 399,744 + 256
-   full-context case.
+  full-context case.
 
 ExaFlash staging was investigated but not used; these results load directly
 from ExaSTORE.
@@ -245,6 +247,16 @@ fourth through sixth draft positions accept only 11.0%, 7.7%, and 4.4%.
 Greedy output remains byte-identical. MTP7 and MTP8 were skipped; MTP3 remains
 the fixed-depth default. See the
 [MTP depth result](experiments/2026-07-18-mtp-depth-sweep/README.md).
+
+Phase 12 extends hot/cold expert stream overlap through size-4 MTP verification
+and adds the DeepSeek/GLM local draft-argmax path. Two exact-400K overlap runs
+average 127.67 tok/s with MTP3, 18.0% above the serial MTP3 control. MTP2 is
+slower at roughly 110-114 tok/s. Traces show that overlap removes 15.7% of the
+MTP3 routed span and that local argmax shrinks each draft vocabulary gather
+from a 38,720-element shard to one value/index pair. Local argmax has no stable
+batch-one throughput benefit, so it remains opt-in and MTP3 overlap remains the
+default. See the
+[MTP fast-path result](experiments/2026-07-18-mtp-fastpath/README.md).
 
 ## Reproducing
 
