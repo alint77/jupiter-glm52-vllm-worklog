@@ -130,6 +130,55 @@ is TP-only, ruled out). Job 972505 reruns full-graph with
 PYTHONFAULTHANDLER=1, NCCL_DEBUG=INFO, and core dumps to capture the
 crashing frame.
 
+## Round 3: capture-crash bisect
+
+Job 972505 (faulthandler + core dumps) died identically with no
+faulthandler output - faulthandler catches SIGSEGV/SIGABRT but not
+SIGKILL-style deaths, and no core file appeared. NCCL 2.28.9 logged no
+error; all communicators initialized in 0.1-2.8 s at startup, none
+mid-capture. Slurm MaxRSS was ~181 GiB (host), but the piecewise DCP4 run
+carries the same memory layout and survives, so steady-state host OOM is
+ruled out.
+
+Job 974928 (`job-bisect.sh`) boots the server three times with temporary
+env gates in `mla_attention.py` (TEMP-DEBUG, working tree only, never to
+be committed) that produce shape-correct but numerically wrong output:
+
+| Variant | In-graph DCP ops | If it captures |
+| --- | --- | --- |
+| no-comm | index filter + kernel + lse mask only | crash is in the collectives |
+| ag-only | + query all-gather (pynccl) | crash is in the LSE merge (ag + triton + reduce-scatter) |
+| full-dcp | + LSE merge | control: expected crash |
+
+Health endpoint responding = capture completed for that variant.
+
+## Round 3 results and revised diagnosis
+
+All three variants crashed, including no-comm - which invalidated the
+bisect's premise: the env gates only removed the MLA-layer DCP collectives,
+but the DSA indexer's own DCP top-k merge
+(`sparse_attn_indexer._merge_dcp_topk_global`: Triton candidate pack ->
+`get_dcp_group().all_gather` -> CuteDSL stable top-k) runs inside the
+captured graph in every variant. Meanwhile all four suspect ops (CuteDSL
+stable top-k, Triton pack, DCP index filter, FlashMLA sparse FP8 kernel)
+capture and replay cleanly in single-GPU isolation on the login GH200
+(`capture_repro.py`).
+
+The surviving hypothesis fits every observation: in the qualified DCP1
+config, no NCCL collective is ever captured (the vocabulary all-gather
+lives in `compute_logits`, outside the FULL graph), so **the DCP port
+introduces the first in-graph NCCL collective on this stack** (PyTorch
+2.12, NCCL 2.28.9+cuda13.0, aarch64). Piecewise works (collectives eager),
+DCP1 full-graph works (no in-graph collectives), every DCP4 full-graph
+variant crashes (indexer all-gather always in-graph).
+
+Round 4: minimal 4-rank pynccl-all-gather-inside-capture repro
+(`pynccl_capture_repro.py`, jobs 976071 base / 976072 NCCL_CUMEM_ENABLE=0 /
+976073 NCCL_NVLS_ENABLE=0, submitted in parallel). If the base repro
+crashes and an env variant survives, that env is the fix; if the base
+passes, the composition (side-stream capture, multiple comms, aux streams)
+is at fault and the repro grows toward the production pattern.
+
 ## Expected effects (to verify against trace)
 
 - Per-rank DSA scan and top-k over context/4 (~1.5 ms/step -> ~0.4 ms).
