@@ -24,8 +24,9 @@ def main():
     os.environ["RANK"] = str(rank)
     os.environ["WORLD_SIZE"] = str(world)
     dist.init_process_group("gloo")
-    torch.cuda.set_device(rank)
-    device = torch.device(f"cuda:{rank}")
+    # --gpus-per-task=1: each task sees exactly one GPU as device 0.
+    torch.cuda.set_device(0)
+    device = torch.device("cuda:0")
 
     from vllm.distributed.device_communicators.pynccl import PyNcclCommunicator
 

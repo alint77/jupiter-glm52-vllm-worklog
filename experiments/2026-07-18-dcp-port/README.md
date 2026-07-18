@@ -179,6 +179,40 @@ crashes and an env variant survives, that env is the fix; if the base
 passes, the composition (side-stream capture, multiple comms, aux streams)
 is at fault and the repro grows toward the production pattern.
 
+## Round 4 results: every reduced repro passes
+
+- `capture_repro.py` (login GH200): CuteDSL stable top-k, Triton pack, DCP
+  index filter, and the FlashMLA sparse FP8 kernel each capture and replay
+  cleanly in isolation.
+- `pynccl_capture_repro.py` (4 ranks, jobs 976075-77): pynccl all-gather
+  inside plain CUDA graph capture passes 4/4 with default env,
+  NCCL_CUMEM_ENABLE=0, and NCCL_NVLS_ENABLE=0 alike.
+- `pynccl_capture_repro2.py` (4 ranks, job 976086): full vLLM parallel
+  state (world/TP/DCP comms), DCP all-gather captured under vLLM's
+  graph_capture() context, custom-AR sharing the same graph, and an
+  aux-stream fork in the same graph - all four stages pass 4/4.
+
+The crash therefore requires the real model graph. Remaining deltas: the
+graph-memory profiling capture runs against a minimal stand-in KV cache
+with a temporary graph pool, the captured graph is the Inductor-compiled
+forward with ~3,600 nodes on multiple streams, and two graphs (piecewise
+then FULL) are captured back to back.
+
+## Round 5: instrumented server runs (in flight)
+
+TEMP-DEBUG hooks in `gpu_model_runner.py` (env-gated, uncommitted):
+phase markers around `_warmup_and_capture` plus
+`faulthandler.dump_traceback_later(30s)` - periodic all-thread stack dumps
+that survive even a hang-then-SIGKILL death; and
+`TIERED_SKIP_FULL_CG_PROFILE=1` to drop FULL graphs from the profiling
+capture only, so the later real `capture_model` (normal pool, real KV
+cache) is tested directly.
+
+| Job | Config | Question |
+| --- | --- | --- |
+| 976087 | instrumented, full profiling | which phase dies; stacks at death |
+| 976088 | instrumented + skip FULL profiling | does the real capture path survive? |
+
 ## Expected effects (to verify against trace)
 
 - Per-rank DSA scan and top-k over context/4 (~1.5 ms/step -> ~0.4 ms).
