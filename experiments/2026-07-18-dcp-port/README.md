@@ -213,6 +213,27 @@ cache) is tested directly.
 | 976087 | instrumented, full profiling | which phase dies; stacks at death |
 | 976088 | instrumented + skip FULL profiling | does the real capture path survive? |
 
+## Round 5 results: crash localized and fixed
+
+Job 976087's markers: piecewise capture completes, the FULL eager warmup
+(DCP path executing for real) completes on all four ranks, and death is
+inside the FULL profiling capture itself, within seconds. Job 976088
+(skip FULL from the memory-profiling pass only): **CAPTURE_OK** - the real
+`capture_model` pass captured the identical FULL graph with all ~300
+in-graph DCP collectives cleanly (1.91 GiB, 5 s) and the server served.
+
+Conclusion: the crash is specific to the graph-memory profiling capture's
+composition (temporary graph pool + minimal stand-in KV cache); the same
+graph captures fine against the persistent pool and real KV cache. Fix
+committed (`67e6d48ff`): `profile_cudagraph_memory` skips FULL graphs when
+`decode_context_parallel_size > 1` and estimates from piecewise only (the
+tiered KV plan overrides available memory, so the estimate is not
+load-bearing). All TEMP-DEBUG gates removed.
+
+Round 6: full-performance qualification, jobs 976128/976129 (DCP4,
+FULL_AND_PIECEWISE, exact-400K matrix, two runs), gated on the golden SHA
+and benchmarked against today's DCP1 controls (129.1/136.4 tok/s).
+
 ## Expected effects (to verify against trace)
 
 - Per-rank DSA scan and top-k over context/4 (~1.5 ms/step -> ~0.4 ms).
