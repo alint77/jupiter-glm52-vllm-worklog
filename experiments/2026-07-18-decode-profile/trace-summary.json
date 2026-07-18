@@ -1,0 +1,59 @@
+{
+  "profiled_decode_steps": 8,
+  "rank_ms_per_token": [
+    {
+      "rank": 0,
+      "routed_marlin": 7.841,
+      "moe_support": 3.023,
+      "nccl_collectives": 7.278,
+      "custom_all_reduce": 0.066,
+      "dense_gemm": 5.615,
+      "sparse_mla": 1.890,
+      "dsa_indexer": 0.912,
+      "other": 2.758
+    },
+    {
+      "rank": 1,
+      "routed_marlin": 8.903,
+      "moe_support": 3.237,
+      "nccl_collectives": 6.508,
+      "custom_all_reduce": 0.050,
+      "dense_gemm": 5.625,
+      "sparse_mla": 1.862,
+      "dsa_indexer": 0.915,
+      "other": 2.741
+    },
+    {
+      "rank": 2,
+      "routed_marlin": 8.661,
+      "moe_support": 3.211,
+      "nccl_collectives": 6.716,
+      "custom_all_reduce": 0.056,
+      "dense_gemm": 5.563,
+      "sparse_mla": 1.887,
+      "dsa_indexer": 0.910,
+      "other": 2.704
+    },
+    {
+      "rank": 3,
+      "routed_marlin": 8.344,
+      "moe_support": 3.097,
+      "nccl_collectives": 6.920,
+      "custom_all_reduce": 0.044,
+      "dense_gemm": 5.600,
+      "sparse_mla": 1.846,
+      "dsa_indexer": 0.916,
+      "other": 2.742
+    }
+  ],
+  "rank0_calls_per_token": {
+    "custom_all_reduce": 7,
+    "nccl_reduce_scatter": 150,
+    "nccl_all_gather": 151,
+    "routed_marlin": 300
+  },
+  "notes": [
+    "Kernel activity overlaps across streams and is not additive wall time.",
+    "One NCCL all-gather per token is the vocabulary gather; the remaining 150 pair with reduce-scatter in the routed layers' sequence-parallel path."
+  ]
+}

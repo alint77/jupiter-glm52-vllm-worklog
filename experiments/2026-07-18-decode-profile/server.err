@@ -1,0 +1,52 @@
+
+The following have been reloaded with a version change:
+  1) GCCcore/.14.3.0 => GCCcore/14.3.0
+
+(EngineCore pid=138677) /e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py:139: UserWarning: Failed to get the IP address, using 0.0.0.0 by default. The value can be set by the environment variable VLLM_HOST_IP or HOST_IP.
+(EngineCore pid=138677)   mq_connect_ip = get_ip()
+[W718 00:50:01.277787802 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:60681 (errno: 97 - Address family not supported by protocol).
+[W718 00:50:03.543885830 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:60681 (errno: 97 - Address family not supported by protocol).
+[W718 00:50:03.544286335 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:60681 (errno: 97 - Address family not supported by protocol).
+[W718 00:50:03.545291469 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:60681 (errno: 97 - Address family not supported by protocol).
+(Worker_TP0_EP0 pid=138950) Loading safetensors checkpoint shards:   0% Completed | 0/8 [00:00<?, ?it/s]
+(Worker_TP0_EP0 pid=138950) Loading safetensors checkpoint shards:  12% Completed | 1/8 [01:48<12:42, 108.94s/it]
+(Worker_TP0_EP0 pid=138950) Loading safetensors checkpoint shards:  25% Completed | 2/8 [03:40<11:02, 110.45s/it]
+(Worker_TP0_EP0 pid=138950) Loading safetensors checkpoint shards:  38% Completed | 3/8 [05:32<09:15, 111.02s/it]
+(Worker_TP0_EP0 pid=138950) Loading safetensors checkpoint shards:  50% Completed | 4/8 [07:22<07:23, 110.92s/it]
+(Worker_TP0_EP0 pid=138950) Loading safetensors checkpoint shards:  62% Completed | 5/8 [09:15<05:34, 111.38s/it]
+(Worker_TP0_EP0 pid=138950) Loading safetensors checkpoint shards:  75% Completed | 6/8 [11:08<03:43, 111.93s/it]
+(Worker_TP0_EP0 pid=138950) Loading safetensors checkpoint shards:  88% Completed | 7/8 [13:00<01:52, 112.04s/it]
+(Worker_TP0_EP0 pid=138950) Loading safetensors checkpoint shards: 100% Completed | 8/8 [14:25<00:00, 103.41s/it]
+(Worker_TP0_EP0 pid=138950) Loading safetensors checkpoint shards: 100% Completed | 8/8 [14:25<00:00, 108.16s/it]
+(Worker_TP0_EP0 pid=138950) 
+(Worker_TP3_EP3 pid=138956) 2026-07-18 01:06:39,774 - INFO - autotuner.py:651 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(Worker_TP2_EP2 pid=138954) 2026-07-18 01:06:39,823 - INFO - autotuner.py:651 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(Worker_TP0_EP0 pid=138950) 2026-07-18 01:06:39,840 - INFO - autotuner.py:651 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(Worker_TP1_EP1 pid=138952) 2026-07-18 01:06:39,842 - INFO - autotuner.py:651 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(Worker_TP0_EP0 pid=138950) 2026-07-18 01:06:40,573 - INFO - autotuner.py:674 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(Worker_TP3_EP3 pid=138956) 2026-07-18 01:06:40,573 - INFO - autotuner.py:674 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(Worker_TP1_EP1 pid=138952) 2026-07-18 01:06:40,573 - INFO - autotuner.py:674 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(Worker_TP2_EP2 pid=138954) 2026-07-18 01:06:40,573 - INFO - autotuner.py:674 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(Worker_TP0_EP0 pid=138950) Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):   0%|          | 0/1 [00:00<?, ?it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE): 100%|██████████| 1/1 [00:02<00:00,  2.34s/it]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE): 100%|██████████| 1/1 [00:02<00:00,  2.34s/it]
+(Worker_TP0_EP0 pid=138950) Capturing CUDA graphs (decode, FULL):   0%|          | 0/1 [00:00<?, ?it/s]Capturing CUDA graphs (decode, FULL): 100%|██████████| 1/1 [00:00<00:00,  1.91it/s]Capturing CUDA graphs (decode, FULL): 100%|██████████| 1/1 [00:00<00:00,  1.91it/s]
+(APIServer pid=137995) INFO:     Started server process [137995]
+(APIServer pid=137995) INFO:     Waiting for application startup.
+(APIServer pid=137995) INFO:     Application startup complete.
+(Worker_TP1_EP1 pid=138952) /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/profiler/profiler.py:224: UserWarning: Warning: Profiler clears events at the end of each cycle.Only events from the current cycle will be reported.To keep events across cycles, set acc_events=True.
+(Worker_TP1_EP1 pid=138952)   _warn_once(
+(Worker_TP3_EP3 pid=138956) /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/profiler/profiler.py:224: UserWarning: Warning: Profiler clears events at the end of each cycle.Only events from the current cycle will be reported.To keep events across cycles, set acc_events=True.
+(Worker_TP3_EP3 pid=138956)   _warn_once(
+(Worker_TP2_EP2 pid=138954) /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/profiler/profiler.py:224: UserWarning: Warning: Profiler clears events at the end of each cycle.Only events from the current cycle will be reported.To keep events across cycles, set acc_events=True.
+(Worker_TP2_EP2 pid=138954)   _warn_once(
+(Worker_TP0_EP0 pid=138950) /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/profiler/profiler.py:224: UserWarning: Warning: Profiler clears events at the end of each cycle.Only events from the current cycle will be reported.To keep events across cycles, set acc_events=True.
+(Worker_TP0_EP0 pid=138950)   _warn_once(
+srun: interrupt (one more within 1 sec to abort)
+srun: StepId=967809.4 task 0: running
+(APIServer pid=137995) INFO:     Shutting down
+(APIServer pid=137995) INFO:     Shutting down
+(APIServer pid=137995) INFO:     Waiting for application shutdown.
+(APIServer pid=137995) INFO:     Application shutdown complete.
+/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 4 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 6 leaked shared_memory objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '

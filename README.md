@@ -198,6 +198,18 @@ clears the v2 observed-memory gate, but remains below the 100 tok/s project
 minimum. See the
 [end-to-end tuning result](experiments/2026-07-17-end-to-end-tuning/README.md).
 
+Phase 8 profiles eight exact-400K decode steps on every rank and corrects the
+Phase 7 collective model. The 75 routed layers were automatically using
+sequence-parallel MoE, producing 150 NCCL reduce-scatter/all-gather pairs per
+token and 6.5-7.3 ms of overlapping NCCL activity per rank. Tiered DeepSeek
+layers now retain mirrored batch-one hidden states, execute only locally owned
+experts, and combine partial results with the existing late custom all-reduce.
+Two exact 399,744-input/256-output runs measure a mean 108.648 seconds TTFT and
+18.129 ms TPOT, or 55.16 decode tok/s, with only 0.35% TPOT spread and at least
+5,409 MiB free HBM. This raises decode 31.09% over Phase 7 and 46.82% over the
+native CPU-offload baseline while preserving deterministic smoke output. See
+the [decode critical-path result](experiments/2026-07-18-decode-profile/README.md).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout
