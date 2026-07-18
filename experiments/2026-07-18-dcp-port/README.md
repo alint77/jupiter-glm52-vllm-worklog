@@ -234,6 +234,31 @@ Round 6: full-performance qualification, jobs 976128/976129 (DCP4,
 FULL_AND_PIECEWISE, exact-400K matrix, two runs), gated on the golden SHA
 and benchmarked against today's DCP1 controls (129.1/136.4 tok/s).
 
+## Round 6 results: DCP4 full-graph qualified; c=1 decode regresses
+
+Both runs pass the gate: exact-400K SHA matches the golden hash and the
+semantic prompt is byte-identical under full CUDA graphs.
+
+| Config | Exact-400K decode | 4K decode | TTFT |
+| --- | ---: | ---: | ---: |
+| DCP1 controls (today) | 129.1 / 136.4 tok/s | 85.1 / 97.1 | 111.4-113.0 s |
+| DCP4 full graphs | 78.4 / 80.6 tok/s | 70.0 / 86.4 | 110.0-110.3 s |
+
+The ~40% c=1 regression is collective-latency arithmetic: DCP adds ~312
+small NCCL ops per step (78 layers x indexer-AG + q-AG + lse-AG + RS) at
+tens of microseconds each, ~+12 ms/step, outweighing the ~5 ms/step saved
+by +843 hot experts, 4x-sharded DSA scans, and unpadded MLA heads. TTFT
+improves slightly.
+
+This does not defeat the c=4 goal: DCP4 is the only KV-feasible route to
+c=4 x 400K, and the collective tax is per-step, so it amortizes across
+concurrent requests. Four agents served sequentially at DCP1 see an
+effective ~33 tok/s each; projected c=4 DCP4 is ~80-90 tok/s per request.
+The c=4 measurement is the decision point.
+
+In flight: 976153 (profiled DCP4, trace attribution of the added step
+time) and 976156 (`--dcp-comm-backend a2a`, halves the merge collectives).
+
 ## Expected effects (to verify against trace)
 
 - Per-rank DSA scan and top-k over context/4 (~1.5 ms/step -> ~0.4 ms).

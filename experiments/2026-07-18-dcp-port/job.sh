@@ -40,7 +40,7 @@ result_dir=agent_space/experiments/2026-07-18-dcp-port
 server_out="${result_dir}/${label}-server.out"
 server_err="${result_dir}/${label}-server.err"
 agent_space/experiments/2026-07-18-dcp-port/run-server.sh \
-  "${depth}" "${dcp_size}" "${cudagraph_mode}" "${profile_dir}" \
+  "${depth}" "${dcp_size}" "${cudagraph_mode}" "${profile_dir}" "${@:7}" \
   >"${server_out}" 2>"${server_err}" &
 server_pid=$!
 trap 'kill "${server_pid}" 2>/dev/null || true' EXIT
