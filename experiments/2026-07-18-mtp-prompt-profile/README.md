@@ -72,6 +72,18 @@ The shape trace also finds two smaller MTP inefficiencies:
   four full-vocabulary all-gathers. The target batch-4 GEMM costs 145 us, while
   each of the three serial batch-1 draft GEMMs costs 147 us.
 
+## Roofline analysis
+
+The [complete forward-pass roofline](roofline-analysis.md) inventories all 91
+grouped CUDA kernel/copy names and models their FLOPs, logical traffic, and
+applicable GH200 roof. It identifies two additional first-order losses: the
+size-4 MTP verification path serializes hot-HBM and cold-Grace expert calls
+(2.18 ms/step ideal kernel-overlap bound), and sparse MLA pads 16 real local
+heads to 64 (75% wasted head work). The raw tables and plots are in
+[`roofline-kernels.csv`](roofline-kernels.csv),
+[`roofline-summary.json`](roofline-summary.json), and
+[`roofline.svg`](roofline.svg).
+
 ## Optimization order
 
 1. Capture routing under MTP and rebuild owner/hot placement for verification

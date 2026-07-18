@@ -231,6 +231,13 @@ size-4-only sequence parallelism/all-reduce tuning, graph-safe index reuse,
 local draft argmax, and an MTP2/MTP3 sweep. See the
 [MTP prompt and profile result](experiments/2026-07-18-mtp-prompt-profile/README.md).
 
+The analytical forward-pass roofline shows that the grafted MTP FP8 block is
+small; target MoE, its synchronization boundaries, and dense W4 kernels
+dominate. Size-4 verification currently serializes hot-HBM and cold-Grace
+experts, with a 2.18 ms/step ideal kernel-overlap bound, while sparse MLA pads
+16 local heads to 64. See the
+[forward-pass roofline](experiments/2026-07-18-mtp-prompt-profile/roofline-analysis.md).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout

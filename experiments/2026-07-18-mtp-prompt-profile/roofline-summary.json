@@ -1,0 +1,364 @@
+{
+  "method": {
+    "profiled_steps": 8,
+    "query_size": 4,
+    "context_tokens": 399744,
+    "trace_directory": "/e/scratch/profound/naeimitabiei1/glm52-mtp-profile-968182",
+    "trace_files": [
+      "dp0_pp0_tp0_dcp0_ep0_rank0.1784370077832287983.pt.trace.json.gz",
+      "dp0_pp0_tp1_dcp0_ep1_rank1.1784370077787502540.pt.trace.json.gz",
+      "dp0_pp0_tp2_dcp0_ep2_rank2.1784370077787542508.pt.trace.json.gz",
+      "dp0_pp0_tp3_dcp0_ep3_rank3.1784370077787560683.pt.trace.json.gz"
+    ],
+    "trace_has_hardware_counters": false,
+    "duration_source": "PyTorch profiler CUDA event durations",
+    "traffic_source": "checkpoint shapes, model geometry, and kernel I/O"
+  },
+  "ceilings": {
+    "hbm_bytes_per_second": 3500000000000.0,
+    "grace_c2c_measured_bytes_per_second": 421000000000.0,
+    "peer_nvlink_bytes_per_second": 150000000000.0,
+    "bf16_flops_per_second": 630000000000000.0,
+    "fp8_flops_per_second": 1260000000000000.0
+  },
+  "gpu_kernel_activity_us_per_step": 30322.64803125,
+  "activity_by_role_us_per_step": {
+    "Routed W4 MoE": 8476.29006250003,
+    "Target W4 linear": 5529.003718749998,
+    "Custom all-reduce": 4989.447687499997,
+    "Elementwise and metadata": 2344.3286874999994,
+    "Routed MoE support": 2040.0242499999988,
+    "DSA indexer": 1954.02615625,
+    "Sparse MLA": 1952.566281250001,
+    "MLA BF16 contractions": 657.4383125000002,
+    "Vocabulary output": 653.2704375,
+    "Sparse MLA support": 505.70349999999894,
+    "MTP FP8 block": 487.39381250000014,
+    "MoE router": 281.19834374999965,
+    "Memsets": 233.59068749999938,
+    "MTP BF16 projection": 151.50896875,
+    "Explicit copies": 66.85712499999997
+  },
+  "roofline": [
+    {
+      "name": "Target fused QKV-A W4 Marlin",
+      "domain": "HBM",
+      "calls_per_step": 78,
+      "time_us_per_step": 875.68003125,
+      "flops_per_step": 10060038144,
+      "logical_bytes_per_step": 648400896.0,
+      "arithmetic_intensity_flop_per_byte": 15.515151515151516,
+      "achieved_tflops": 11.48825802232772,
+      "effective_bandwidth_gbs": 740.4541303453414,
+      "roof_tflops": 54.303030303030305,
+      "roof_efficiency_pct": 21.15583229558118,
+      "note": ""
+    },
+    {
+      "name": "Target W4 Machete projections/MLPs",
+      "domain": "HBM",
+      "calls_per_step": 312,
+      "time_us_per_step": 4653.3236875,
+      "flops_per_step": 27959230464,
+      "logical_bytes_per_step": 1802059776.0,
+      "arithmetic_intensity_flop_per_byte": 15.515151515151516,
+      "achieved_tflops": 6.008443070295225,
+      "effective_bandwidth_gbs": 387.262932265122,
+      "roof_tflops": 54.303030303030305,
+      "roof_efficiency_pct": 11.064655207574912,
+      "note": ""
+    },
+    {
+      "name": "Target MoE router BF16",
+      "domain": "HBM",
+      "calls_per_step": 75,
+      "time_us_per_step": 281.19834375,
+      "flops_per_step": 943718400,
+      "logical_bytes_per_step": 235929600,
+      "arithmetic_intensity_flop_per_byte": 4.0,
+      "achieved_tflops": 3.3560595962791835,
+      "effective_bandwidth_gbs": 839.0148990697959,
+      "roof_tflops": 14.0,
+      "roof_efficiency_pct": 23.971854259137025,
+      "note": ""
+    },
+    {
+      "name": "MLA W_UK/W_UV BF16 contractions",
+      "domain": "HBM",
+      "calls_per_step": 162,
+      "time_us_per_step": 657.4383125,
+      "flops_per_step": 2435973120,
+      "logical_bytes_per_step": 626393088,
+      "arithmetic_intensity_flop_per_byte": 3.888888888888889,
+      "achieved_tflops": 3.705249714968505,
+      "effective_bandwidth_gbs": 952.7784981347585,
+      "roof_tflops": 13.61111111111111,
+      "roof_efficiency_pct": 27.22224280385024,
+      "note": ""
+    },
+    {
+      "name": "Target DSA Wq BF16",
+      "domain": "HBM",
+      "calls_per_step": 21,
+      "time_us_per_step": 157.86771874999997,
+      "flops_per_step": 1409286144,
+      "logical_bytes_per_step": 352321536,
+      "arithmetic_intensity_flop_per_byte": 4.0,
+      "achieved_tflops": 8.92700645298962,
+      "effective_bandwidth_gbs": 2231.7516132474047,
+      "roof_tflops": 14.0,
+      "roof_efficiency_pct": 63.76433180706871,
+      "note": ""
+    },
+    {
+      "name": "DSA WK+score projection BF16",
+      "domain": "HBM",
+      "calls_per_step": 24,
+      "time_us_per_step": 82.025375,
+      "flops_per_step": 171048960,
+      "logical_bytes_per_step": 47185920,
+      "arithmetic_intensity_flop_per_byte": 3.625,
+      "achieved_tflops": 2.085317622747839,
+      "effective_bandwidth_gbs": 575.2600338614728,
+      "roof_tflops": 12.6875,
+      "roof_efficiency_pct": 16.43600096747065,
+      "note": ""
+    },
+    {
+      "name": "DSA full-context FP8 scan",
+      "domain": "HBM",
+      "calls_per_step": 24,
+      "time_us_per_step": 980.66475,
+      "flops_per_step": 284899147776,
+      "logical_bytes_per_step": 1266388992,
+      "arithmetic_intensity_flop_per_byte": 224.96969696969697,
+      "achieved_tflops": 290.51635411184094,
+      "effective_bandwidth_gbs": 1291.357716283776,
+      "roof_tflops": 787.3939393939394,
+      "roof_efficiency_pct": 36.89593475096502,
+      "note": "K-cache is counted once per batch-4 target call."
+    },
+    {
+      "name": "DSA cooperative top-k",
+      "domain": "HBM",
+      "calls_per_step": 24,
+      "time_us_per_step": 626.22665625,
+      "flops_per_step": null,
+      "logical_bytes_per_step": 139110912,
+      "arithmetic_intensity_flop_per_byte": null,
+      "achieved_tflops": null,
+      "effective_bandwidth_gbs": 222.14147323755031,
+      "roof_tflops": null,
+      "roof_efficiency_pct": 6.34689923535858,
+      "note": "Minimum one FP32 logits read; selection work is not FLOP-modeled."
+    },
+    {
+      "name": "Sparse MLA FP8 split+combine",
+      "domain": "HBM",
+      "calls_per_step": 81,
+      "time_us_per_step": 1952.56628125,
+      "flops_per_step": 89841991680,
+      "logical_bytes_per_step": 423198720,
+      "arithmetic_intensity_flop_per_byte": 212.29268292682926,
+      "achieved_tflops": 46.01226219193168,
+      "effective_bandwidth_gbs": 216.73974607872228,
+      "roof_tflops": 630.0,
+      "roof_efficiency_pct": 7.303533681258997,
+      "note": "Actual work includes 16-to-64 head padding; useful FLOPs are 25%."
+    },
+    {
+      "name": "MTP eh_proj BF16",
+      "domain": "HBM",
+      "calls_per_step": 3,
+      "time_us_per_step": 151.50896875,
+      "flops_per_step": 452984832,
+      "logical_bytes_per_step": 452984832,
+      "arithmetic_intensity_flop_per_byte": 1.0,
+      "achieved_tflops": 2.9898218946196873,
+      "effective_bandwidth_gbs": 2989.8218946196876,
+      "roof_tflops": 3.5,
+      "roof_efficiency_pct": 85.42348270341964,
+      "note": ""
+    },
+    {
+      "name": "MTP FP8 dense/index/shared linears",
+      "domain": "HBM",
+      "calls_per_step": 18,
+      "time_us_per_step": 140.38721875,
+      "flops_per_step": 405012480,
+      "logical_bytes_per_step": 202506240,
+      "arithmetic_intensity_flop_per_byte": 2.0,
+      "achieved_tflops": 2.8849669051514,
+      "effective_bandwidth_gbs": 1442.4834525756999,
+      "roof_tflops": 7.0,
+      "roof_efficiency_pct": 41.213812930734285,
+      "note": ""
+    },
+    {
+      "name": "MTP FP8 routed experts",
+      "domain": "HBM",
+      "calls_per_step": 6,
+      "time_us_per_step": 229.585625,
+      "flops_per_step": 452984832,
+      "logical_bytes_per_step": 226492416,
+      "arithmetic_intensity_flop_per_byte": 2.0,
+      "achieved_tflops": 1.9730539836716696,
+      "effective_bandwidth_gbs": 986.5269918358348,
+      "roof_tflops": 7.0,
+      "roof_efficiency_pct": 28.18648548102385,
+      "note": "Uses the global average of two expert assignments per rank/pass."
+    },
+    {
+      "name": "BF16 vocabulary projection",
+      "domain": "HBM",
+      "calls_per_step": 4,
+      "time_us_per_step": 585.9508125,
+      "flops_per_step": 3330539520,
+      "logical_bytes_per_step": 1903165440,
+      "arithmetic_intensity_flop_per_byte": 1.75,
+      "achieved_tflops": 5.6839916405099284,
+      "effective_bandwidth_gbs": 3247.995223148531,
+      "roof_tflops": 6.125,
+      "roof_efficiency_pct": 92.79986351852945,
+      "note": ""
+    }
+  ],
+  "routed_moe_bounds": {
+    "rank_stats": [
+      {
+        "rank": 0,
+        "hot_us_per_step": 3865.5375,
+        "cold_us_per_step": 4036.8975,
+        "hot_active_layers_per_step": 74.625,
+        "cold_active_layers_per_step": 36.875,
+        "serial_us_per_step": 7902.4349999999995,
+        "ideal_overlap_us_per_step": 5944.6355,
+        "overlap_upper_bound_savings_us": 1957.7994999999992,
+        "overlap_upper_bound_pct": 24.774635919181865
+      },
+      {
+        "rank": 1,
+        "hot_us_per_step": 3853.658125,
+        "cold_us_per_step": 4372.9835,
+        "hot_active_layers_per_step": 74.75,
+        "cold_active_layers_per_step": 41.125,
+        "serial_us_per_step": 8226.641625,
+        "ideal_overlap_us_per_step": 6093.565875,
+        "overlap_upper_bound_savings_us": 2133.07575,
+        "overlap_upper_bound_pct": 25.928876535933945
+      },
+      {
+        "rank": 2,
+        "hot_us_per_step": 4015.679125,
+        "cold_us_per_step": 5037.086,
+        "hot_active_layers_per_step": 74.875,
+        "cold_active_layers_per_step": 43.875,
+        "serial_us_per_step": 9052.765125,
+        "ideal_overlap_us_per_step": 6724.221875,
+        "overlap_upper_bound_savings_us": 2328.5432499999997,
+        "overlap_upper_bound_pct": 25.721900633095238
+      },
+      {
+        "rank": 3,
+        "hot_us_per_step": 3910.7745,
+        "cold_us_per_step": 4812.544,
+        "hot_active_layers_per_step": 74.25,
+        "cold_active_layers_per_step": 43.625,
+        "serial_us_per_step": 8723.3185,
+        "ideal_overlap_us_per_step": 6444.1215,
+        "overlap_upper_bound_savings_us": 2279.196999999999,
+        "overlap_upper_bound_pct": 26.127637091320228
+      }
+    ],
+    "method": "Lower cold traffic is one distinct expert per active cold tier. Upper cold traffic is the measured 421 GB/s C2C ceiling. Remaining global-average assignments are attributed to HBM.",
+    "ideal_hot_cold_overlap": {
+      "serial_us_per_step": 8476.2900625,
+      "ideal_overlap_us_per_step": 6301.6361875,
+      "upper_bound_savings_us": 2174.653875,
+      "upper_bound_savings_pct": 25.655727434587188,
+      "note": "Kernel-only bound from overlapping each layer's hot and cold tier calls. End-to-end savings will be smaller."
+    },
+    "total_expert_assignments_per_rank_step": 600.0,
+    "hot_hbm": {
+      "time_us_per_step": 3911.4123125,
+      "assignments_per_rank_step": [
+        501.2641504589556,
+        558.625
+      ],
+      "logical_bytes_per_step": [
+        9756701667.25,
+        10873184256.0
+      ],
+      "effective_bandwidth_gbs": [
+        2494.4191222361706,
+        2779.8614380927656
+      ],
+      "achieved_tflops": [
+        9.67532265594636,
+        10.782492850784061
+      ],
+      "roof_efficiency_pct": [
+        71.2691177781763,
+        79.42461251693615
+      ]
+    },
+    "cold_c2c": {
+      "time_us_per_step": 4564.87775,
+      "assignments_per_rank_step": [
+        41.375,
+        98.7358495410444
+      ],
+      "logical_bytes_per_step": [
+        805330944.0,
+        1921813532.7500002
+      ],
+      "effective_bandwidth_gbs": [
+        176.41895097847913,
+        421.00000000000006
+      ],
+      "achieved_tflops": [
+        0.6842916886437977,
+        1.6329696969696972
+      ],
+      "roof_efficiency_pct": [
+        41.90473894975751,
+        100.00000000000001
+      ]
+    }
+  },
+  "communication": {
+    "custom_allreduce": {
+      "calls_per_step": 166.0,
+      "time_us_per_step": 4989.4476875,
+      "remote_bytes_per_rank_step": 23482368,
+      "effective_remote_gbs": 4.706406293993236,
+      "link_bandwidth_efficiency_pct": 3.137604195995491,
+      "measured_latency_floor_us": 709.819989,
+      "latency_efficiency_pct": 14.226424114602963
+    },
+    "vocab_nccl_allgather": {
+      "calls_per_step": 4,
+      "time_us_per_step": 67.319625,
+      "network_bytes_per_rank_step": 1626240,
+      "effective_gbs": 24.156997309476992,
+      "link_bandwidth_efficiency_pct": 16.10466487298466
+    },
+    "explicit_copies": {
+      "Memcpy HtoD (Pinned -> Device)": {
+        "calls": 24.0,
+        "time_us": 43.30643749999997,
+        "bytes": 25261.0
+      },
+      "Memcpy DtoD (Device -> Device)": {
+        "calls": 18.0,
+        "time_us": 19.622687499999998,
+        "bytes": 1981720.0
+      },
+      "Memcpy DtoH (Device -> Pinned)": {
+        "calls": 2.0,
+        "time_us": 3.928000000000001,
+        "bytes": 20.0
+      }
+    }
+  }
+}
