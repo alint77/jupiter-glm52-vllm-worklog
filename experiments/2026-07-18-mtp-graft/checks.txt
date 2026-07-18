@@ -1,0 +1,6 @@
+Focused pytest: 41 passed, 14 warnings in 13.64s
+Ruff: all checks passed
+Shell syntax: both launchers passed bash -n
+Git whitespace: parent checkout and worklog passed diff --check
+Semantic smoke: eight generated token strings exactly match the non-MTP baseline
+Maximum context: 399,744 input + 256 output tokens completed

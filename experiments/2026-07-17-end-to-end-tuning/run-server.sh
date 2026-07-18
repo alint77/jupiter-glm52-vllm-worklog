@@ -4,14 +4,17 @@ set -euo pipefail
 
 source agent_space/jupiter-env.sh
 
+model_path="${TIERED_MOE_MODEL_PATH:-${GLM52_W4A16_MODEL}}"
 placement_profile="${TIERED_MOE_PLACEMENT_PROFILE-agent_space/experiments/2026-07-17-trace-placement/tail-placement-profile.json}"
 hbm_reserve_gb="${TIERED_MOE_HBM_RESERVE_GB:-7}"
+default_compilation_config='{"mode":3,"cudagraph_mode":"FULL_AND_PIECEWISE","cudagraph_capture_sizes":[1],"compile_sizes":[1],"pass_config":{"fuse_allreduce_rms":false}}'
+compilation_config="${TIERED_MOE_COMPILATION_CONFIG:-${default_compilation_config}}"
 placement_args=()
 if [[ -n "${placement_profile}" ]]; then
   placement_args=(--tiered-moe-placement-profile "${placement_profile}")
 fi
 
-exec .venv/bin/vllm serve "${GLM52_W4A16_MODEL}" \
+exec .venv/bin/vllm serve "${model_path}" \
   --served-model-name glm52-w4a16-tiered \
   --host 127.0.0.1 \
   --port 8027 \
@@ -27,7 +30,7 @@ exec .venv/bin/vllm serve "${GLM52_W4A16_MODEL}" \
   --max-num-batched-tokens 8192 \
   --gpu-memory-utilization 0.90 \
   --optimization-level 2 \
-  --compilation-config '{"mode":3,"cudagraph_mode":"FULL_AND_PIECEWISE","cudagraph_capture_sizes":[1],"compile_sizes":[1],"pass_config":{"fuse_allreduce_rms":false}}' \
+  --compilation-config "${compilation_config}" \
   --enable-tiered-moe \
   --tiered-moe-backend uva \
   "${placement_args[@]}" \

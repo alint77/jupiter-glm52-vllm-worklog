@@ -210,6 +210,15 @@ Two exact 399,744-input/256-output runs measure a mean 108.648 seconds TTFT and
 native CPU-offload baseline while preserving deterministic smoke output. See
 the [decode critical-path result](experiments/2026-07-18-decode-profile/README.md).
 
+Phase 9 grafts the official FP8 MTP layer onto the pinned W4A16 target, loads
+only 64 of 256 draft experts per EP rank, and extends physical planning to the
+draft weights and caches. MTP3 with size-4 CUDA graphs preserves the exact
+eight-token baseline output. It reaches 103.42 tok/s at 4K with 78.51% draft
+acceptance and 108.17 tok/s at exact 400K with 60.74% acceptance. The latter is
+a 96.1% decode improvement over Phase 8, with a 5.8% TTFT cost and at least
+3,311 MiB free HBM after the maximum-length request. See the
+[MTP graft result](experiments/2026-07-18-mtp-graft/README.md).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout
