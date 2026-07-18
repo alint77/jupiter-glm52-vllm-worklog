@@ -1,20 +1,29 @@
 # GLM-5.2 on JUPITER: agent handoff
 
-Last updated: 2026-07-18
+Last updated: 2026-07-18 (evening: DCP port in flight)
 
 ## Start here
 
-We are optimizing batch-one serving of `lowbitcoffee/GLM-5.2-W4A16` at up
-to 400K context on one JUPITER Booster node. The implementation keeps the
-most useful routed experts in HBM, runs the rest directly from NUMA-local
-Grace memory through CUDA UVA, and uses the official GLM-5.2 MTP head for
+We are optimizing serving of `lowbitcoffee/GLM-5.2-W4A16` at up to 400K
+context on one JUPITER Booster node. The implementation keeps the most
+useful routed experts in HBM, runs the rest directly from NUMA-local Grace
+memory through CUDA UVA, and uses the official GLM-5.2 MTP head for
 speculative decoding.
 
 The current qualified default is **MTP3 + concurrent hot/cold expert
 execution, without sequence parallelism or local draft argmax**. It delivers
-about 124-128 decode tok/s on the exact 399,744-input/256-output test, versus
+about 124-136 decode tok/s on the exact 399,744-input/256-output test, versus
 37.57 tok/s for native vLLM CPU offload. Correctness remains lossless because
 the W4 target model verifies the draft tokens.
+
+The active work (Phase 15) is a decode-context-parallel (DCP4) port of the
+FlashMLA sparse backend, targeting concurrency-4 serving at 400K for agentic
+workloads. DFlash was deprioritized: the draft is only 7% of the step and
+DFlash's ~3K-context training makes 400K acceptance a poor bet. Source
+changes for the DCP port are committed locally on `tiered-moe-grace-mtp`
+but NOT pushed; the human must review every changed line first. See the
+[DCP port experiment](experiments/2026-07-18-dcp-port/README.md) for state,
+including any still-running Slurm jobs.
 
 Read these before changing anything:
 
@@ -236,7 +245,26 @@ reduce-scatter/all-gather pair.
 - Do not re-enable target sequence parallelism or deeper fixed MTP without a
   new measured reason.
 
-## Immediate next experiment: DFlash
+## Current thread: DCP4 and concurrency 4 (supersedes DFlash)
+
+Read, in order: the [SOL re-analysis](experiments/2026-07-18-sol-reanalysis/README.md)
+(kernel-level roofline of the qualified config, TP2xPP2 rejection, DCP
+rationale, c=4 KV math) and the
+[DCP port](experiments/2026-07-18-dcp-port/README.md) (implementation notes,
+the lse=+inf trap, round-1 results, in-flight jobs).
+
+State at last update: DCP1 controls reproduce the exact-400K SHA at
+129.1-136.4 tok/s; DCP4 crashes in full CUDA graph capture
+(cudagraph_num_of_warmups=0 lazy-init diagnosis); jobs 970395 (piecewise)
+and 970396 (full graph + warmup 1 + NCCL_DEBUG) are the retries. Remaining
+plan: qualify DCP4 at c=1 400K against the SHA (accepting a possible
+reduction-order greedy tie-break, see the experiment README), then enable
+c=4 x 400K: relax max_num_seqs in the tiered contract, capture the 16-token
+verify graph, extend the apply_tiered overlap gate beyond num_tokens<=4,
+and replan capacity. MTP-aware placement rebuild and MoE support-chain
+fusion remain the next single-request levers after that.
+
+## Superseded next experiment: DFlash
 
 DFlash and FlashMLA-ETAP were investigated but have not been implemented or
 benchmarked in this project. No DFlash checkpoint has been downloaded yet.

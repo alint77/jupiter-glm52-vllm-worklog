@@ -267,6 +267,35 @@ all-gathers per step, adding 7.26 ms of NCCL activity. The experiment was
 reverted; tiered MTP retains the non-SP target path. See the
 [sequence-parallel follow-up](experiments/2026-07-18-mtp-fastpath/README.md#sequence-parallel-follow-up).
 
+Phase 14 re-analyzes the fresh no-SP control trace with GPU-annotation-aligned
+phase segmentation, per-kernel occupancy/duration statistics, and solo-time
+attribution. The target verify is 93% of the 28.6 ms in-profile step and the
+GPU never idles for 50 us anywhere; the three drafts cost 2.1 ms. The
+all-reduce bar is a desynchronization tail (p50 6.5 us at the isolated floor,
+p99 162 us), ~20% of routed Marlin launches are near-empty, the DSA top-k uses
+32 of 132 SMs, and step speed-of-light is ~6-6.5 ms (~3.5x away). TP2xPP2 was
+analyzed and rejected: batch-one pipeline stages serialize and halve aggregate
+HBM utilization. DCP4 was identified as the correct KV-dedup vehicle: the MLA
+latent cache is replicated across TP, and 16 local heads x 4 folds to exactly
+the FlashMLA 64-head shape. See the
+[SOL re-analysis](experiments/2026-07-18-sol-reanalysis/README.md).
+
+Phase 15 ports DCP to the FlashMLA sparse backend to unlock concurrency-4 at
+400K (c=4 x 400K is 76 GiB/rank of replicated KV without DCP; the same
+19 GiB as today with DCP4). The port adds DCP index filtering, base-e LSE
+return, and head-fold-aware metadata sizing to the fp8_ds_mla mixed-batch
+path; an lse=+inf sentinel for all-filtered rows had to be masked to -inf to
+keep the cross-rank combine finite. A new kernel-level unit test matches the
+real FP8 kernel under simulated DCP4 sharding against a full-index reference
+on the login-node GH200. The tiered contract admits DCP1/DCP4, the KV planner
+shards blocks (20.47 GB -> 5.19 GB per rank), and the residency planner
+promotes cold experts when the budget grows (hot 2,870 -> 3,713 of 4,800).
+Both DCP1 controls reproduced the exact-400K SHA at 129.1-136.4 tok/s; both
+DCP4 runs crashed during full-graph capture because the decode shape
+initializes DCP-specific lazy state inside capture with
+cudagraph_num_of_warmups=0. Piecewise and warmup-1 full-graph retries are in
+flight. See the [DCP port](experiments/2026-07-18-dcp-port/README.md).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout
