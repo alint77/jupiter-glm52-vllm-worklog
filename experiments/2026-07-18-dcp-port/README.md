@@ -108,6 +108,28 @@ Round 2 (`run-server.sh` now sets `cudagraph_num_of_warmups: 1`):
 | 970395 | DCP4, PIECEWISE, warmup 1 | eager-path correctness + SHA |
 | 970396 | DCP4, FULL_AND_PIECEWISE, warmup 1, NCCL_DEBUG=WARN, CUDA_LAUNCH_BLOCKING | fix candidate; diagnostics if it still fails |
 
+## Round 2 results: DCP4 correctness qualified
+
+Job 970395 (DCP4, PIECEWISE graphs, warmup 1) served and completed the full
+matrix. The exact-400K continuation SHA-256 matches the golden
+`d594e4...cfc528` byte-for-byte and the semantic prompt is identical:
+**the DCP4 attention path is lossless in the real model.** TTFT at exact
+400K is 112.2 s, inside the 111.4-113.0 s control band, so the prefill
+query all-gather cost is negligible. Decode is piecewise-slow as expected
+(35.5 ms TPOT at 400K vs ~7.5 ms full-graph control; ~3,600 launches/step
+without full graphs) - this run is a correctness vehicle only.
+
+Job 970396 (FULL_AND_PIECEWISE, warmup 1, NCCL_DEBUG=WARN) still died
+silently at the same point, proving the eager warmup does not fix the
+capture crash. NCCL printed no warnings; CUDA_LAUNCH_BLOCKING surfaced no
+Python error - a hard signal during FULL-graph capture of the size-4
+decode shape. Piecewise capture completes; only the FULL capture
+(attention + DCP collectives in-graph) dies. NCCL symmetric-memory AG/RS
+is off by default (ruled out); the DCP group uses plain pynccl (custom AR
+is TP-only, ruled out). Job 972505 reruns full-graph with
+PYTHONFAULTHANDLER=1, NCCL_DEBUG=INFO, and core dumps to capture the
+crashing frame.
+
 ## Expected effects (to verify against trace)
 
 - Per-rank DSA scan and top-k over context/4 (~1.5 ms/step -> ~0.4 ms).

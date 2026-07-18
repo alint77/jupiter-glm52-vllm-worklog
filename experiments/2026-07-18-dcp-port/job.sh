@@ -18,8 +18,10 @@ cudagraph_mode="${5:-FULL_AND_PIECEWISE}"
 debug_env="${6:-false}"
 
 if [[ "${debug_env}" == true ]]; then
-  export NCCL_DEBUG=WARN
+  export NCCL_DEBUG=INFO
   export CUDA_LAUNCH_BLOCKING=1
+  export PYTHONFAULTHANDLER=1
+  ulimit -c unlimited
 fi
 
 cd /e/project1/profound/alint77/vllm
