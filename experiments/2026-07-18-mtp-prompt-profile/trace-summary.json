@@ -1,0 +1,80 @@
+{
+  "profiled_decode_steps": 8,
+  "profiled_query_size": 4,
+  "rank_metrics_ms": [
+    {
+      "rank": 0,
+      "routed_w4_moe": 63.219,
+      "custom_all_reduce": 44.044,
+      "dense_w4_gemm": 37.238,
+      "sparse_mla_split": 9.825,
+      "sparse_mla_combine": 5.375,
+      "dsa_indexer_logits": 7.833,
+      "vocab_projection": 4.681,
+      "mtp_fp8_dense": 2.834,
+      "mtp_fp8_moe": 0.862,
+      "mtp_fp8_scale": 0.475
+    },
+    {
+      "rank": 1,
+      "routed_w4_moe": 65.813,
+      "custom_all_reduce": 42.650,
+      "dense_w4_gemm": 37.139,
+      "sparse_mla_split": 10.056,
+      "sparse_mla_combine": 5.730,
+      "dsa_indexer_logits": 7.831,
+      "vocab_projection": 4.684,
+      "mtp_fp8_dense": 3.076,
+      "mtp_fp8_moe": 0.864,
+      "mtp_fp8_scale": 0.468
+    },
+    {
+      "rank": 2,
+      "routed_w4_moe": 72.422,
+      "custom_all_reduce": 35.608,
+      "dense_w4_gemm": 37.538,
+      "sparse_mla_split": 9.947,
+      "sparse_mla_combine": 5.436,
+      "dsa_indexer_logits": 7.841,
+      "vocab_projection": 4.704,
+      "mtp_fp8_dense": 2.755,
+      "mtp_fp8_moe": 0.815,
+      "mtp_fp8_scale": 0.461
+    },
+    {
+      "rank": 3,
+      "routed_w4_moe": 69.787,
+      "custom_all_reduce": 37.361,
+      "dense_w4_gemm": 36.991,
+      "sparse_mla_split": 9.895,
+      "sparse_mla_combine": 5.462,
+      "dsa_indexer_logits": 7.877,
+      "vocab_projection": 4.682,
+      "mtp_fp8_dense": 3.175,
+      "mtp_fp8_moe": 0.876,
+      "mtp_fp8_scale": 0.461
+    }
+  ],
+  "rank0_calls": {
+    "routed_w4_moe": 2400,
+    "custom_all_reduce": 1328,
+    "dsa_indexer_logits": 192,
+    "vocab_projection_batch_4": 8,
+    "vocab_projection_batch_1": 24,
+    "vocab_all_gather": 32
+  },
+  "profiled_request": {
+    "input_tokens": 399744,
+    "output_tokens": 256,
+    "acceptance_rate_percent": 63.9847,
+    "acceptance_length": 2.9195,
+    "profiled_tpot_ms": 19.1305
+  },
+  "notes": [
+    "Profiler overhead means profiled TPOT is not a performance result.",
+    "Kernel durations overlap across streams and are not additive wall time.",
+    "Routed W4 time and custom-all-reduce time are inversely correlated across ranks (r=-0.988), indicating synchronization wait from EP imbalance.",
+    "The capture runs 24 DSA indexers per step versus 21 in the Phase 8 target. The 16 batch-1 top-k calls are exactly MTP passes two and three, so CUDA graphs defeat index_share_for_mtp_iteration.",
+    "Each step runs one batch-4 target vocabulary projection and three serial batch-1 draft projections; all four use a full-vocabulary all-gather."
+  ]
+}

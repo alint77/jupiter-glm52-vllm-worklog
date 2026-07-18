@@ -1,0 +1,3 @@
+{"prompt":"Explain snapshot isolation and serializable isolation to a backend engineer. Include one concrete anomaly that snapshot isolation permits."}
+{"prompt":"Compare TCP plus TLS with QUIC for a latency-sensitive service. Focus on handshake latency, head-of-line blocking, migration, and operational tradeoffs."}
+{"prompt":"Explain to a nontechnical project manager what it means that speculative decoding doubled decode throughput while slightly increasing time to first token."}

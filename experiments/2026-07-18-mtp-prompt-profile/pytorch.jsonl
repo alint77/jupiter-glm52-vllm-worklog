@@ -1,0 +1,3 @@
+{"prompt":"Implement a numerically stable custom PyTorch autograd Function for log-sum-exp over the last dimension. Include forward, backward, and a gradcheck example."}
+{"prompt":"Show a correct PyTorch DistributedDataParallel training loop using mixed precision and gradient accumulation. Explain where no_sync and optimizer.zero_grad belong."}
+{"prompt":"A PyTorch model runs out of GPU memory during attention on long sequences. Provide a minimal diagnosis checklist and rewrite the attention call using scaled_dot_product_attention."}

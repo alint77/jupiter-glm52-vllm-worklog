@@ -1,0 +1,3 @@
+{"prompt":"Prove by induction that 1^2 + 2^2 + ... + n^2 = n(n+1)(2n+1)/6. Keep every algebraic step explicit."}
+{"prompt":"For positive real x and y with x + y = 20, find the maximum of x^2 y and justify that it is the global maximum."}
+{"prompt":"A fair coin is tossed until two consecutive heads appear. Derive the expected number of tosses using states rather than quoting a known result."}

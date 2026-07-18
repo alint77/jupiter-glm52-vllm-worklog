@@ -1,0 +1,3 @@
+{"prompt":"Write a robust Python 3.12 implementation of an LRU cache using collections.OrderedDict. Include type hints, a short usage example, and time-complexity analysis."}
+{"prompt":"The function `def flatten(xs): return sum(xs, [])` is slow for large lists of lists. Explain why and replace it with an efficient, readable Python implementation."}
+{"prompt":"Implement an async Python retry helper with exponential backoff, jitter, a maximum attempt count, and correct cancellation handling. Show a concise example."}

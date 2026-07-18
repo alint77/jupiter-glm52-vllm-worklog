@@ -1,0 +1,3 @@
+{"prompt":"Write a CUDA C++ kernel for an out-of-place tiled matrix transpose using shared memory. Avoid shared-memory bank conflicts and explain the indexing."}
+{"prompt":"Implement a CUDA C++ block reduction for float sums using warp shuffles and one shared value per warp. State the assumptions and launch configuration."}
+{"prompt":"Debug this CUDA indexing pattern: `int i = blockIdx.x * blockDim.y + threadIdx.x;`. Explain the bug, give the corrected kernel guard, and show the launch code."}

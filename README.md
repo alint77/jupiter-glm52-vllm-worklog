@@ -219,6 +219,18 @@ a 96.1% decode improvement over Phase 8, with a 5.8% TTFT cost and at least
 3,311 MiB free HBM after the maximum-length request. See the
 [MTP graft result](experiments/2026-07-18-mtp-graft/README.md).
 
+Phase 10 measures 18 deterministic prompts across Python, PyTorch, CUDA C++,
+math, email, and technical explanation. Weighted acceptance is 67.61% and
+decode is 93.86 tok/s; category acceptance ranges from 58.21% for PyTorch to
+77.63% for math and correlates with decode rate at `r=0.990`. An eight-step
+exact-400K profile shows that routed W4 work is unchanged per target step, but
+rank imbalance is exposed in custom-all-reduce wait. It also finds that CUDA
+graphs defeat MTP index sharing and that three serial draft heads perform full
+vocabulary gathers. The next measured priorities are MTP-aware placement,
+size-4-only sequence parallelism/all-reduce tuning, graph-safe index reuse,
+local draft argmax, and an MTP2/MTP3 sweep. See the
+[MTP prompt and profile result](experiments/2026-07-18-mtp-prompt-profile/README.md).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout
