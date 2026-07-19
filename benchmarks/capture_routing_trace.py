@@ -117,7 +117,7 @@ def capture_prompts(args: argparse.Namespace) -> None:
                 "output_tokens": output_tokens,
                 "verification_steps": int(routes.shape[0]),
                 "verification_size": args.verification_size,
-                "accepted_tokens_per_step": output_tokens / routes.shape[0],
+                "accepted_tokens_per_step": (output_tokens - 1) / routes.shape[0],
                 "domain": record["domain"],
                 "split": record["split"],
             }
