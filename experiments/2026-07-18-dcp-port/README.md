@@ -259,6 +259,28 @@ The c=4 measurement is the decision point.
 In flight: 976153 (profiled DCP4, trace attribution of the added step
 time) and 976156 (`--dcp-comm-backend a2a`, halves the merge collectives).
 
+## Round 7: concurrency 4 (in flight)
+
+Side results: the profiled DCP4 c=1 run passed (SHA ok, 81.7 tok/s, trace
+at `glm52-dcp4-profiled-profile-976153` on scratch, unanalyzed). The
+`--dcp-comm-backend a2a` variant failed the fail-closed HBM audit
+(8.86 GiB free vs 9 GiB minimum - the a2a path allocates slightly more);
+deprioritized.
+
+c=4 enablement (`4dc352d24`): KV blocks provisioned per concurrent
+sequence (c=4 x 400K DCP4 = 6,253 blocks = 20.74 GB/rank, same footprint
+class as DCP1 c=1), the hot/cold overlap gate derives from
+(depth+1) x max_num_seqs, the tiered contract admits max_num_seqs 1-4
+(requiring DCP), and residency profiles now demote deterministically when
+the budget shrinks (plan-only confirms hot 2,870 -> 2,869). Full graphs
+capture at sizes 4/8/12/16 (`run-server-c4.sh`).
+
+Benchmark (`run-benchmark-c4.sh`): c=4 cases use seed 17 so prompts stay
+disjoint from the seed-13 golden prompt; the gate is the c=1 exact-400K
+SHA served from the same c=4 server, plus the semantic prompt. Headline:
+4 concurrent 399,744-token requests, aggregate and per-request decode.
+Jobs 976249/976250.
+
 ## Expected effects (to verify against trace)
 
 - Per-rank DSA scan and top-k over context/4 (~1.5 ms/step -> ~0.4 ms).
