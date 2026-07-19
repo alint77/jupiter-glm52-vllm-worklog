@@ -317,6 +317,15 @@ with acceptance improving from 3.006 to 3.230 tokens, effective aggregate
 throughput rises from 186.52 to 225.23 tok/s (+20.8%). See the
 [V2 MTP full-graph follow-up](experiments/2026-07-18-dcp-port/v2-mtp-full-graph.md).
 
+Phase 17 makes the 24-prompt Python/PyTorch/ML/math suite the primary c1/q4
+performance regression gate. With prefix caching disabled, one excluded full
+warmup, and two measured repetitions, pre-route-capture and current source are
+identical at 108.09 and 108.08 decode tok/s. The requested exact `44 / 0 / 31`
+layer layout reaches 95.88 tok/s, 2.1% below `44 / 1 / 30` and 11.3% below the
+108.08 tok/s per-expert frequency layout. Exact-400K synthetic runs remain
+memory/DCP/correctness stress tests, not the headline performance baseline. See
+the [realistic placement qualification](experiments/2026-07-19-c1q4-placement/README.md#warmed-realistic-prompt-qualification).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout
