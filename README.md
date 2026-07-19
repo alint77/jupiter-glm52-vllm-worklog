@@ -326,6 +326,15 @@ layer layout reaches 95.88 tok/s, 2.1% below `44 / 1 / 30` and 11.3% below the
 memory/DCP/correctness stress tests, not the headline performance baseline. See
 the [realistic placement qualification](experiments/2026-07-19-c1q4-placement/README.md#warmed-realistic-prompt-qualification).
 
+Phase 18 qualifies the V2 model runner at c1/q4. The earlier apparent startup
+hang was active first-use Inductor autotuning after the logged compile phase;
+reusing completed VLLM, FlashInfer, and TRT-LLM caches lets every graph mode
+start successfully. Full V2 graphs are required, but on the warmed realistic
+suite V2 reaches 106.08 decode tok/s versus V1's 108.08 (-1.85%), and 95.44
+versus 98.03 end-to-end tok/s (-2.65%). V2 remains the c4/DCP4 choice, while
+V1 remains the c1/q4 default. See the
+[V2 c1/q4 qualification](experiments/2026-07-19-v2-c1/README.md).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout

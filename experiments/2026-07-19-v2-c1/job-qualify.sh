@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+#SBATCH --account=profound
+#SBATCH --partition=booster
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --gres=gpu:4
+#SBATCH --time=04:00:00
+#SBATCH --output=agent_space/experiments/2026-07-19-v2-c1/slurm-%x-%j.out
+#SBATCH --error=agent_space/experiments/2026-07-19-v2-c1/slurm-%x-%j.err
+
+set -euo pipefail
+
+repo_dir=/e/project1/profound/alint77/vllm
+result_dir="${repo_dir}/agent_space/experiments/2026-07-19-v2-c1"
+model=/e/project1/profound/alint77/models/GLM-5.2-W4A16-FP8-MTP
+
+cd "${repo_dir}"
+source agent_space/jupiter-env.sh
+
+export VLLM_CACHE_ROOT=/e/scratch/profound/naeimitabiei1/vllm-cache-977807
+export FLASHINFER_WORKSPACE_BASE=/e/scratch/profound/naeimitabiei1/flashinfer
+export TRTLLM_DG_CACHE_DIR=/e/scratch/profound/naeimitabiei1/trtllm-deepgemm
+export TIERED_MOE_PLACEMENT_PROFILE="${repo_dir}/agent_space/experiments/2026-07-19-c1q4-placement/hybrid-p0.5-profile.json"
+export TIERED_MOE_HBM_RESERVE_GB=10
+export VLLM_USE_V2_MODEL_RUNNER=1
+
+agent_space/experiments/2026-07-18-dcp-port/run-server.sh \
+  3 1 FULL_AND_PIECEWISE "" --no-enable-prefix-caching \
+  >"${result_dir}/qualify-server.out" \
+  2>"${result_dir}/qualify-server.err" &
+server_pid=$!
+trap 'kill "${server_pid}" 2>/dev/null || true' EXIT
+
+ready=false
+for _ in $(seq 1 240); do
+  if curl -fsS http://127.0.0.1:8027/health >/dev/null; then
+    ready=true
+    break
+  fi
+  if ! kill -0 "${server_pid}" 2>/dev/null; then
+    wait "${server_pid}"
+  fi
+  sleep 10
+done
+[[ "${ready}" == true ]]
+
+bench_args=(
+  --backend openai
+  --base-url http://127.0.0.1:8027
+  --endpoint /v1/completions
+  --model glm52-w4a16-tiered
+  --served-model-name glm52-w4a16-tiered
+  --tokenizer "${model}"
+  --dataset-name custom
+  --dataset-path agent_space/experiments/2026-07-19-c1q4-placement/prompts.jsonl
+  --custom-output-len 256
+  --skip-chat-template
+  --disable-shuffle
+  --num-prompts 24
+  --max-concurrency 1
+  --request-rate inf
+  --temperature 0
+  --ignore-eos
+  --disable-tqdm
+)
+
+.venv/bin/vllm bench serve "${bench_args[@]}"
+for repeat in 1 2; do
+  .venv/bin/vllm bench serve "${bench_args[@]}" \
+    --save-result \
+    --save-detailed \
+    --result-dir "${result_dir}" \
+    --result-filename "qualify-r${repeat}.json"
+done
