@@ -244,11 +244,11 @@ semantic prompt is byte-identical under full CUDA graphs.
 | DCP1 controls (today) | 129.1 / 136.4 tok/s | 85.1 / 97.1 | 111.4-113.0 s |
 | DCP4 full graphs | 78.4 / 80.6 tok/s | 70.0 / 86.4 | 110.0-110.3 s |
 
-The ~40% c=1 regression is collective-latency arithmetic: DCP adds ~312
-small NCCL ops per step (78 layers x indexer-AG + q-AG + lse-AG + RS) at
-tens of microseconds each, ~+12 ms/step, outweighing the ~5 ms/step saved
-by +843 hot experts, 4x-sharded DSA scans, and unpadded MLA heads. TTFT
-improves slightly.
+The ~40% c=1 regression is collective-latency arithmetic. The later trace
+measured ~271 DCP collectives per step (about 190 all-gathers and 81
+reduce-scatters) at tens of microseconds each, ~+12 ms/step, outweighing
+the ~5 ms/step saved by +843 hot experts, 4x-sharded DSA scans, and
+unpadded MLA heads. TTFT improves slightly.
 
 This does not defeat the c=4 goal: DCP4 is the only KV-feasible route to
 c=4 x 400K, and the collective tax is per-step, so it amortizes across
@@ -341,10 +341,9 @@ as predicted, and the per-step DCP collective tax is shared. Prefills
 serialize (~110 s each; cold 4-agent TTFT ladder ~2/4/6/8 min) - relying
 on cross-turn prefix caching in agentic use.
 
-Unharvested levers, in expected order: MTP-aware placement rebuild
-(routed span + AR wait), MoE support-chain fusion, indexer/merge
-collective coalescing (312 ops/step at c=1 pays ~12 ms; profiled trace at
-`glm52-dcp4-profiled-profile-976153` awaits analysis).
+Unharvested levers, in expected order: MoE support-chain fusion and
+indexer/merge collective coalescing. The MTP-aware placement and DCP trace
+are analyzed below.
 
 ## Expected effects (to verify against trace)
 
@@ -353,3 +352,121 @@ collective coalescing (312 ops/step at c=1 pays ~12 ms; profiled trace at
 - Routed cold span shrinks with 1,087 vs 1,930 cold slots.
 - New per-layer costs: DCP query all-gather + LSE-corrected reduce-scatter.
 - Prefill/TTFT may regress: prefill chunks also pay the q all-gather.
+
+## Round 9: trace-guided A2A optimization
+
+The eight-step DCP4 c=1 trace at
+`/e/scratch/profound/naeimitabiei1/glm52-dcp4-profiled-profile-976153`
+attributes the communication portion of each decode step as follows:
+
+| Operation | Calls/step | Time/step |
+| --- | ---: | ---: |
+| all-gather, grid 1 (mostly LSE) | 81 | 1.81 ms |
+| all-gather, grid 18 (query) | 79 | 1.17 ms |
+| all-gather, grid 16 (mostly indexer) | 25 | 1.35 ms |
+| other all-gathers | 5 | 1.41 ms |
+| reduce-scatter | 81 | 1.16 ms |
+| LSE correction kernel | 81 | 0.14 ms |
+
+The LSE all-gather, reduce-scatter, and correction chain alone is about
+3.10 ms/step. `--dcp-comm-backend a2a` replaces that chain with one packed
+all-to-all plus pack/unpack kernels; the query and indexer all-gathers
+remain. NCCL symmetric memory (`VLLM_USE_NCCL_SYMM_MEM=1`) is tested as a
+separate matched variant.
+
+A four-rank mean over the same eight full-context decode steps gives a more
+direct backend comparison:
+
+| Backend | All-gather | Exchange | Auxiliary | Total communication |
+| --- | ---: | ---: | ---: | ---: |
+| `ag_rs` | 7.089 ms | 1.345 ms RS | 0.135 ms correction | 8.569 ms |
+| plain A2A | 4.690 ms | 2.614 ms A2A | 0.330 ms pack/unpack | 7.633 ms |
+| A2A + NVLS | 4.862 ms | 2.722 ms A2A | 0.332 ms pack/unpack | 7.916 ms |
+
+Plain A2A saves 0.936 ms/step of communication and NVLS saves 0.653 ms.
+At c=1, however, the extra A2A residency forced more experts into Grace:
+plain A2A's total GPU span rose from 51.98 to 54.55 ms and NVLS to 55.66 ms.
+The routed W4 MoE role alone rose from 9.37 to 11.41/12.10 ms. The c=4 test
+is therefore decisive because its communication saving is amortized across
+four requests.
+
+### Residency and qualification
+
+A2A needs more persistent HBM than `ag_rs`. The first full-residency runs
+failed closed at about 9.50 GB free for plain A2A and 9.05 GB for A2A+NVLS
+against the 10 GB observed-reserve gate. A profile with 2,813 hot
+experts/rank initially freed only five physical experts because the planner
+automatically promoted cold experts into remaining capacity. Commit
+`3cd56a570` adds opt-in `VLLM_TIERED_MOE_PROFILE_CAP=1`: only an explicit
+placement profile becomes a hard residency ceiling; default promotion is
+unchanged. Its 38 focused tests and all pre-commit hooks pass.
+
+Calibration jobs 976379/976380 confirmed that a 2,813 cap was still short at
+9.59/9.15 GB. The qualified profiles use 2,771 hot experts/rank for plain
+A2A and 2,749 for NVLS. Their held-out routing cold-hit rates are 3.84% and
+3.93%, respectively, versus 3.66% at 2,813. Both validate against the exact
+serving checkpoint fingerprint. Plain A2A loads 59.82 GiB of model memory
+and leaves 9.69-9.70 GiB free after capture; NVLS loads 59.42 GiB and leaves
+9.67-9.69 GiB. Neither relaxes the 10,000,000,000-byte runtime gate.
+
+The fixed semantic continuation and the established c=1 400K SHA
+`d594e4d4268600a0d9e2d51355913907c638ef0c61615547598615384dcfc528`
+pass for plain A2A and NVLS. Concurrent and sequential random-prompt batches
+are not a valid byte-equality pair, so the harness instead gates the semantic
+continuation, output lengths, server health, and exact c=1 SHA. Jobs
+976417-420 reached that gate, but editing the live shell script caused those
+workers to resume at an invalid file offset before the long case. Jobs
+976450/976452 are the clean resubmissions; this is why launch scripts must not
+be modified while jobs execute them.
+
+### c=4 result
+
+The steady window begins after the final 395,904-token prefill and ends when
+the first of four 4,096-token decodes completes. Tokens are reconstructed
+from detailed ITL event timestamps, using each request's measured speculative
+acceptance length.
+
+| Backend | Window | Median step | Aggregate | Per request | Acceptance length |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `ag_rs` r11 | 74.18 s | 68.87 ms | 178.94 tok/s | 44.74 tok/s | 3.023 |
+| `ag_rs` v2 | 79.81 s | 71.37 ms | 173.12 tok/s | 43.28 tok/s | 3.045 |
+| `ag_rs` v3 | **61.53 s** | **62.32 ms** | 179.56 tok/s | 44.89 tok/s | 2.561 |
+| plain A2A, p2771 | 72.08 s | 63.92 ms | 170.12 tok/s | 42.53 tok/s | 2.561 |
+| A2A + NVLS, p2749 | 65.09 s | 65.90 ms | **190.15 tok/s** | **47.54 tok/s** | 2.977 |
+
+Plain A2A shortens the median step versus the first two baselines, but not the
+fresh v3 control; its generated path also accepts fewer MTP tokens and loses
+end-to-end. NVLS retains normal acceptance and improves aggregate throughput
+by 5.9% over the best `ag_rs` run and 9.8% over the lower baseline replica.
+Acceptance is explicitly reported because small floating-point changes select
+different greedy paths in every replica and make throughput content-sensitive.
+
+An attempted follow-up cached A2A send/receive tensors by shape, based on an
+estimated 0.784 GiB of duplicated buffers across FULL and piecewise graphs.
+Jobs 976454/976455 falsified the hypothesis: graph memory stayed at
+2.87 GiB versus 2.86 GiB before the patch, and the p2793 profile failed at
+9,957,867,520/9,965,469,696 bytes free. The code and test were removed;
+p2813 and p2793-NVLS follow-ups were cancelled before wasting more node time.
+
+### NVLS reliability disposition
+
+The 190.15 tok/s NVLS result is not the production default. Replica job
+976497 stalled during MTP profiling: one rank was in
+`ncclCommWindowRegister` while the other ranks had entered the matching
+all-reduce. [NCCL documents window registration as a collective operation](https://docs.nvidia.com/deeplearning/nccl/archives/nccl_2277/user-guide/docs/api/comms.html);
+DCP can give ranks different allocator histories even when the current
+collective has a uniform shape. Commit `990b1d378` therefore disables only
+NCCL symmetric-memory all-reduce under DCP, while leaving the NVLS
+all-gather/reduce-scatter path available. All commit hooks pass. Runtime
+qualification of that safety split was deliberately left for a later session
+rather than extending this investigation; job 976565 was cancelled during
+model loading and no jobs remain active.
+
+Until that qualification is run, `ag_rs` at 179.56 tok/s is the stable DCP4
+default. A2A+NVLS at 190.15 tok/s is an experimental upper result, not a
+qualified replacement.
+
+Operationally, only vLLM/Inductor state is job-specific; stable FlashInfer
+and TRT-LLM caches are shared. Caller cache overrides now survive nested
+`jupiter-env.sh` sourcing. Never give two parallel jobs the same writable
+vLLM cache root.

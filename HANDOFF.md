@@ -1,6 +1,6 @@
 # GLM-5.2 on JUPITER: agent handoff
 
-Last updated: 2026-07-18 (evening: DCP port in flight)
+Last updated: 2026-07-19 (DCP A2A/NVLS optimization wrapped)
 
 ## Start here
 
@@ -16,12 +16,12 @@ about 124-136 decode tok/s on the exact 399,744-input/256-output test, versus
 37.57 tok/s for native vLLM CPU offload. Correctness remains lossless because
 the W4 target model verifies the draft tokens.
 
-The active work (Phase 15) is a decode-context-parallel (DCP4) port of the
-FlashMLA sparse backend, targeting concurrency-4 serving at 400K for agentic
-workloads. DFlash was deprioritized: the draft is only 7% of the step and
-DFlash's ~3K-context training makes 400K acceptance a poor bet. Source
-changes for the DCP port are committed locally on `tiered-moe-grace-mtp`
-but NOT pushed; the human must review every changed line first. See the
+Phase 15 is a decode-context-parallel (DCP4) port of the FlashMLA sparse
+backend for concurrency-4 serving at 400K. DFlash was deprioritized: the
+draft is only 7% of the step and DFlash's ~3K-context training makes 400K
+acceptance a poor bet. Source changes are pushed to the fork branch
+`tiered-moe-grace-mtp` through `990b1d378`; the human must still review every
+changed line before proposing upstream work. See the
 [DCP port experiment](experiments/2026-07-18-dcp-port/README.md) for state,
 including any still-running Slurm jobs.
 
@@ -253,7 +253,7 @@ rationale, c=4 KV math) and the
 [DCP port](experiments/2026-07-18-dcp-port/README.md) (implementation notes,
 the lse=+inf trap, round-1 results, in-flight jobs).
 
-State at last update: the DCP thread is COMPLETE and qualified. The
+State at last update: the base DCP thread is complete and qualified. The
 serving menu on one node (all lossless, golden-SHA-gated): c=1 DCP1 at
 129-136 tok/s (interactive default); c=4 DCP4 at 173-179 tok/s aggregate
 (43-45 tok/s per agent) for the 400K agent swarm, launched via
@@ -263,13 +263,12 @@ minimal KV cache) and fixed by skipping FULL-graph profiling under DCP.
 Known operational notes: free HBM varies ~0.5 GiB across nodes (one audit
 failure at 10 GB planned reserve; 11 GB is safe for c=4), and 400K
 prefills serialize at ~110 s each (cold simultaneous agent starts ladder
-TTFTs; cross-turn prefix caching mitigates). Source commits through
-`4dc352d24` are local on the branch, NOT pushed pending human review.
-Next levers, in expected order: MTP-aware placement rebuild (capture
-routes at DCP1 c=1; trace capture is incompatible with DCP), MoE
-support-chain fusion, DCP collective coalescing (~312 in-graph ops/step;
-unanalyzed profiled trace at
-`/e/scratch/profound/naeimitabiei1/glm52-dcp4-profiled-profile-976153`).
+TTFTs; cross-turn prefix caching mitigates). A2A+NVLS reached 190.15 tok/s
+once but is experimental: a replica hung in collective symmetric-memory
+registration. Commit `990b1d378` disables symmetric-memory all-reduce under
+DCP while retaining NVLS AG/RS; it passed commit hooks but still needs one
+runtime qualification. No Slurm jobs are active. The stable DCP4 default is
+still `ag_rs` at 179.56 tok/s aggregate.
 
 ## Superseded next experiment: DFlash
 

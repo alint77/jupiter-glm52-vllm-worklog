@@ -12,10 +12,11 @@ source "${VLLM_REPO_DIR}/.venv/bin/activate"
 export GLM52_W4A16_MODEL="$(dirname -- "${VLLM_REPO_DIR}")/models/GLM-5.2-W4A16-55c92ae"
 export CCACHE_DIR=/e/scratch/profound/naeimitabiei1/vllm-ccache
 export CCACHE_NOHASHDIR=true
+export PRE_COMMIT_HOME="${PRE_COMMIT_HOME:-/e/scratch/profound/naeimitabiei1/pre-commit}"
 export XDG_CACHE_HOME=/e/scratch/profound/naeimitabiei1/cache
-export VLLM_CACHE_ROOT=/e/scratch/profound/naeimitabiei1/vllm-cache
-export FLASHINFER_WORKSPACE_BASE=/e/scratch/profound/naeimitabiei1/flashinfer
-export TRTLLM_DG_CACHE_DIR=/e/scratch/profound/naeimitabiei1/trtllm-deepgemm
+export VLLM_CACHE_ROOT="${VLLM_CACHE_ROOT:-/e/scratch/profound/naeimitabiei1/vllm-cache}"
+export FLASHINFER_WORKSPACE_BASE="${FLASHINFER_WORKSPACE_BASE:-/e/scratch/profound/naeimitabiei1/flashinfer}"
+export TRTLLM_DG_CACHE_DIR="${TRTLLM_DG_CACHE_DIR:-/e/scratch/profound/naeimitabiei1/trtllm-deepgemm}"
 export MAX_JOBS="${MAX_JOBS:-4}"
 export VLLM_ENABLE_INDUCTOR_MAX_AUTOTUNE=1
 export VLLM_ENABLE_INDUCTOR_COORDINATE_DESCENT_TUNING=1

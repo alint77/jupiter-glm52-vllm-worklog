@@ -1,0 +1,292 @@
+{
+  "trace_request_count": 8,
+  "training_request_count": 6,
+  "heldout_request_count": 2,
+  "trace_tokens": 8696,
+  "hot_slots_per_rank": 2813,
+  "capacity_cold_rate": 0.4139583333333333,
+  "tail_swaps": [
+    {
+      "rank": 2,
+      "demoted": [
+        16,
+        187
+      ],
+      "promoted": [
+        39,
+        226
+      ],
+      "objective_before": 20.640217724624346,
+      "objective_after": 20.634314627414902
+    },
+    {
+      "rank": 1,
+      "demoted": [
+        15,
+        127
+      ],
+      "promoted": [
+        19,
+        9
+      ],
+      "objective_before": 20.634314627414902,
+      "objective_after": 20.629561484207294
+    },
+    {
+      "rank": 1,
+      "demoted": [
+        54,
+        58
+      ],
+      "promoted": [
+        8,
+        166
+      ],
+      "objective_before": 20.629561484207294,
+      "objective_after": 20.62565164060104
+    },
+    {
+      "rank": 0,
+      "demoted": [
+        11,
+        72
+      ],
+      "promoted": [
+        41,
+        201
+      ],
+      "objective_before": 20.62565164060104,
+      "objective_after": 20.621971787795154
+    },
+    {
+      "rank": 3,
+      "demoted": [
+        12,
+        76
+      ],
+      "promoted": [
+        11,
+        29
+      ],
+      "objective_before": 20.621971787795154,
+      "objective_after": 20.618521925789636
+    },
+    {
+      "rank": 3,
+      "demoted": [
+        24,
+        35
+      ],
+      "promoted": [
+        10,
+        89
+      ],
+      "objective_before": 20.618521925789636,
+      "objective_after": 20.616222017785955
+    },
+    {
+      "rank": 1,
+      "demoted": [
+        23,
+        34
+      ],
+      "promoted": [
+        25,
+        161
+      ],
+      "objective_before": 20.616222017785955,
+      "objective_after": 20.614228764182766
+    },
+    {
+      "rank": 2,
+      "demoted": [
+        48,
+        246
+      ],
+      "promoted": [
+        19,
+        128
+      ],
+      "objective_before": 20.614228764182766,
+      "objective_after": 20.61254216498007
+    }
+  ],
+  "training": {
+    "linear_even": {
+      "routing_cold_hit_rate": 0.38895098640498826,
+      "mean_token_cold_critical_count": 127.4408157007053,
+      "cvar95_request_cold_critical_count": 127.9346826126955,
+      "tail_objective": 159.42448635387916,
+      "mean_token_owner_max_count": 260.96519472554434,
+      "requests": [
+        {
+          "request_hash": "7c54f86a19f5c504516806c52e0d5f87ba7aa830be93977eeb7f313266e0103d",
+          "mean_token_cold_critical_count": 127.43790248390064,
+          "mean_token_owner_max_count": 261.4857405703772
+        },
+        {
+          "request_hash": "bf05fdc12627fb523a96e291fc713d27ecc6e5991de30e1c53b21765c946e2b2",
+          "mean_token_cold_critical_count": 127.19135234590617,
+          "mean_token_owner_max_count": 260.3808647654094
+        },
+        {
+          "request_hash": "668e004cfe4fba306cf1f7fa35b0caa18b48f01122f84b979e07500997e9715a",
+          "mean_token_cold_critical_count": 127.9346826126955,
+          "mean_token_owner_max_count": 260.99448022079116
+        },
+        {
+          "request_hash": "11eaf616bd2fe08fc24866da893d2b9f85b1e70f924b8360572c542c75537cfa",
+          "mean_token_cold_critical_count": 127.33026678932843,
+          "mean_token_owner_max_count": 260.7046918123275
+        },
+        {
+          "request_hash": "3fe8db119352c2762b0d0269bc01b64a3fbbe70ba2536256e7fa36d8d0ccf166",
+          "mean_token_cold_critical_count": 127.74333026678933,
+          "mean_token_owner_max_count": 260.9751609935603
+        },
+        {
+          "request_hash": "4cd332b6274b50dac61b208e027527549e29ce2c5a10d8386e88c79dcb645b78",
+          "mean_token_cold_critical_count": 127.00735970561178,
+          "mean_token_owner_max_count": 261.2502299908004
+        }
+      ]
+    },
+    "frequency": {
+      "routing_cold_hit_rate": 0.033020290299499135,
+      "mean_token_cold_critical_count": 16.156087089849738,
+      "cvar95_request_cold_critical_count": 17.936522539098437,
+      "tail_objective": 20.640217724624346,
+      "mean_token_owner_max_count": 247.57421036491874,
+      "requests": [
+        {
+          "request_hash": "7c54f86a19f5c504516806c52e0d5f87ba7aa830be93977eeb7f313266e0103d",
+          "mean_token_cold_critical_count": 15.376264949402024,
+          "mean_token_owner_max_count": 247.2198712051518
+        },
+        {
+          "request_hash": "bf05fdc12627fb523a96e291fc713d27ecc6e5991de30e1c53b21765c946e2b2",
+          "mean_token_cold_critical_count": 16.484820607175713,
+          "mean_token_owner_max_count": 247.83808647654095
+        },
+        {
+          "request_hash": "668e004cfe4fba306cf1f7fa35b0caa18b48f01122f84b979e07500997e9715a",
+          "mean_token_cold_critical_count": 17.84820607175713,
+          "mean_token_owner_max_count": 248.03495860165594
+        },
+        {
+          "request_hash": "11eaf616bd2fe08fc24866da893d2b9f85b1e70f924b8360572c542c75537cfa",
+          "mean_token_cold_critical_count": 14.291628334866605,
+          "mean_token_owner_max_count": 246.71665133394663
+        },
+        {
+          "request_hash": "3fe8db119352c2762b0d0269bc01b64a3fbbe70ba2536256e7fa36d8d0ccf166",
+          "mean_token_cold_critical_count": 14.999080036798528,
+          "mean_token_owner_max_count": 247.66329346826126
+        },
+        {
+          "request_hash": "4cd332b6274b50dac61b208e027527549e29ce2c5a10d8386e88c79dcb645b78",
+          "mean_token_cold_critical_count": 17.936522539098437,
+          "mean_token_owner_max_count": 247.97240110395583
+        }
+      ]
+    },
+    "optimized": {
+      "routing_cold_hit_rate": 0.03302233466216907,
+      "mean_token_cold_critical_count": 16.14198098742717,
+      "cvar95_request_cold_critical_count": 17.88224471021159,
+      "tail_objective": 20.61254216498007,
+      "mean_token_owner_max_count": 247.57421036491874,
+      "requests": [
+        {
+          "request_hash": "7c54f86a19f5c504516806c52e0d5f87ba7aa830be93977eeb7f313266e0103d",
+          "mean_token_cold_critical_count": 15.36982520699172,
+          "mean_token_owner_max_count": 247.2198712051518
+        },
+        {
+          "request_hash": "bf05fdc12627fb523a96e291fc713d27ecc6e5991de30e1c53b21765c946e2b2",
+          "mean_token_cold_critical_count": 16.498620055197794,
+          "mean_token_owner_max_count": 247.83808647654095
+        },
+        {
+          "request_hash": "668e004cfe4fba306cf1f7fa35b0caa18b48f01122f84b979e07500997e9715a",
+          "mean_token_cold_critical_count": 17.836246550137993,
+          "mean_token_owner_max_count": 248.03495860165594
+        },
+        {
+          "request_hash": "11eaf616bd2fe08fc24866da893d2b9f85b1e70f924b8360572c542c75537cfa",
+          "mean_token_cold_critical_count": 14.280588776448942,
+          "mean_token_owner_max_count": 246.71665133394663
+        },
+        {
+          "request_hash": "3fe8db119352c2762b0d0269bc01b64a3fbbe70ba2536256e7fa36d8d0ccf166",
+          "mean_token_cold_critical_count": 14.984360625574977,
+          "mean_token_owner_max_count": 247.66329346826126
+        },
+        {
+          "request_hash": "4cd332b6274b50dac61b208e027527549e29ce2c5a10d8386e88c79dcb645b78",
+          "mean_token_cold_critical_count": 17.88224471021159,
+          "mean_token_owner_max_count": 247.97240110395583
+        }
+      ]
+    }
+  },
+  "heldout": {
+    "linear_even": {
+      "routing_cold_hit_rate": 0.38774379024839006,
+      "mean_token_cold_critical_count": 127.30266789328428,
+      "cvar95_request_cold_critical_count": 127.3081876724931,
+      "tail_objective": 159.12971481140755,
+      "mean_token_owner_max_count": 261.04093836246545,
+      "requests": [
+        {
+          "request_hash": "ebb56bebf0bd282ccb89ce82da92671d1eeace360d16c2ce9ed8b76a467bef17",
+          "mean_token_cold_critical_count": 127.3081876724931,
+          "mean_token_owner_max_count": 260.7111315547378
+        },
+        {
+          "request_hash": "33613d0b691e475ad1714adefb178e816e58232a5b2e1c2cd7ec8cc3c7aecb55",
+          "mean_token_cold_critical_count": 127.29714811407544,
+          "mean_token_owner_max_count": 261.3707451701932
+        }
+      ]
+    },
+    "frequency": {
+      "routing_cold_hit_rate": 0.03666819993866912,
+      "mean_token_cold_critical_count": 17.78564857405704,
+      "cvar95_request_cold_critical_count": 18.3836246550138,
+      "tail_objective": 22.38155473781049,
+      "mean_token_owner_max_count": 248.02345906163754,
+      "requests": [
+        {
+          "request_hash": "ebb56bebf0bd282ccb89ce82da92671d1eeace360d16c2ce9ed8b76a467bef17",
+          "mean_token_cold_critical_count": 17.187672493100276,
+          "mean_token_owner_max_count": 247.85648574057038
+        },
+        {
+          "request_hash": "33613d0b691e475ad1714adefb178e816e58232a5b2e1c2cd7ec8cc3c7aecb55",
+          "mean_token_cold_critical_count": 18.3836246550138,
+          "mean_token_owner_max_count": 248.1904323827047
+        }
+      ]
+    },
+    "optimized": {
+      "routing_cold_hit_rate": 0.03660686905857099,
+      "mean_token_cold_critical_count": 17.766789328426864,
+      "cvar95_request_cold_critical_count": 18.371665133394664,
+      "tail_objective": 22.35970561177553,
+      "mean_token_owner_max_count": 248.02345906163754,
+      "requests": [
+        {
+          "request_hash": "ebb56bebf0bd282ccb89ce82da92671d1eeace360d16c2ce9ed8b76a467bef17",
+          "mean_token_cold_critical_count": 17.161913523459063,
+          "mean_token_owner_max_count": 247.85648574057038
+        },
+        {
+          "request_hash": "33613d0b691e475ad1714adefb178e816e58232a5b2e1c2cd7ec8cc3c7aecb55",
+          "mean_token_cold_critical_count": 18.371665133394664,
+          "mean_token_owner_max_count": 248.1904323827047
+        }
+      ]
+    }
+  }
+}

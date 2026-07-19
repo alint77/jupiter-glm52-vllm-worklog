@@ -15,19 +15,18 @@ dcp_size="${2:?decode-context-parallel size is required}"
 max_num_seqs="${3:?max concurrent sequences is required}"
 label="${4:?result label is required}"
 comm_backend="${5:-ag_rs}"
+profile_dir="${6:-}"
 
 cd /e/project1/profound/alint77/vllm
 source agent_space/jupiter-env.sh
 
-export VLLM_CACHE_ROOT="/e/scratch/profound/naeimitabiei1/vllm-cache-${SLURM_JOB_ID}"
-export FLASHINFER_WORKSPACE_BASE="/e/scratch/profound/naeimitabiei1/flashinfer-${SLURM_JOB_ID}"
-export TRTLLM_DG_CACHE_DIR="/e/scratch/profound/naeimitabiei1/trtllm-deepgemm-${SLURM_JOB_ID}"
+export VLLM_CACHE_ROOT="${VLLM_CACHE_ROOT_OVERRIDE:-/e/scratch/profound/naeimitabiei1/vllm-cache-${SLURM_JOB_ID}}"
 
 result_dir=agent_space/experiments/2026-07-18-dcp-port
 server_out="${result_dir}/${label}-server.out"
 server_err="${result_dir}/${label}-server.err"
 agent_space/experiments/2026-07-18-dcp-port/run-server-c4.sh \
-  "${depth}" "${dcp_size}" "${max_num_seqs}" "" \
+  "${depth}" "${dcp_size}" "${max_num_seqs}" "${profile_dir}" \
   --dcp-comm-backend "${comm_backend}" \
   >"${server_out}" 2>"${server_err}" &
 server_pid=$!
@@ -50,4 +49,5 @@ if [[ "${ready}" != true ]]; then
   exit 1
 fi
 
-agent_space/experiments/2026-07-18-dcp-port/run-benchmark-c4.sh "${label}"
+agent_space/experiments/2026-07-18-dcp-port/run-benchmark-c4.sh \
+  "${label}" "${profile_dir:+profile}"
