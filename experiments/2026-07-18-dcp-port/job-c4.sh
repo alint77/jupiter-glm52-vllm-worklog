@@ -16,6 +16,7 @@ max_num_seqs="${3:?max concurrent sequences is required}"
 label="${4:?result label is required}"
 comm_backend="${5:-ag_rs}"
 profile_dir="${6:-}"
+profile_target="${7:-c1}"
 
 cd /e/project1/profound/alint77/vllm
 source agent_space/jupiter-env.sh
@@ -50,4 +51,4 @@ if [[ "${ready}" != true ]]; then
 fi
 
 agent_space/experiments/2026-07-18-dcp-port/run-benchmark-c4.sh \
-  "${label}" "${profile_dir:+profile}"
+  "${label}" "${profile_dir:+${profile_target}}"

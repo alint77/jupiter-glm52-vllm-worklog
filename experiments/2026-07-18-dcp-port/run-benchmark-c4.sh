@@ -3,7 +3,7 @@
 set -euo pipefail
 
 label="${1:?result label is required}"
-profile_mode="${2:-}"
+profile_target="${2:-}"
 
 source agent_space/jupiter-env.sh
 
@@ -52,17 +52,23 @@ run_case() {
 # golden prompt (no prefix-cache cross-talk with the SHA gate).
 run_case "${label}-warmup-4k-16-c4" 4096 16 17 4
 run_case "${label}-4k-256-c4" 4096 256 17 4
-if [[ -n "${profile_mode}" ]]; then
+if [[ "${profile_target}" == c1 ]]; then
   curl -fsS -X POST http://127.0.0.1:8027/start_profile
 fi
 run_case "${label}-399744-256-c1" 399744 256 13 1
 test "$(jq -j '.generated_texts[0]' \
   "${result_dir}/${label}-399744-256-c1.json" | sha256sum | cut -d' ' -f1)" = \
   d594e4d4268600a0d9e2d51355913907c638ef0c61615547598615384dcfc528
-if [[ -n "${profile_mode}" ]]; then
+if [[ "${profile_target}" == c1 ]]; then
   curl -fsS -X POST http://127.0.0.1:8027/stop_profile
 fi
 # 395,904 + 4,096 = exactly max_model_len: prefills serialize (~110 s
 # each), so a long output leaves a real 4-way steady decode window after
 # the last prefill; steady TPOT comes from the detailed ITLs.
+if [[ "${profile_target}" == c4 ]]; then
+  curl -fsS -X POST http://127.0.0.1:8027/start_profile
+fi
 run_case "${label}-395904-4096-c4" 395904 4096 17 4
+if [[ "${profile_target}" == c4 ]]; then
+  curl -fsS -X POST http://127.0.0.1:8027/stop_profile
+fi

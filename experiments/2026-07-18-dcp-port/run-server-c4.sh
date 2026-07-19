@@ -29,7 +29,8 @@ fi
 profiler_args=()
 if [[ -n "${profile_dir}" ]]; then
   mkdir -p "${profile_dir}"
-  profiler_config="{\"profiler\":\"torch\",\"torch_profiler_dir\":\"${profile_dir}\",\"torch_profiler_with_stack\":false,\"torch_profiler_record_shapes\":true,\"ignore_frontend\":true,\"delay_iterations\":50,\"max_iterations\":8}"
+  profile_delay="${VLLM_TORCH_PROFILER_DELAY_ITERATIONS:-50}"
+  profiler_config="{\"profiler\":\"torch\",\"torch_profiler_dir\":\"${profile_dir}\",\"torch_profiler_with_stack\":false,\"torch_profiler_record_shapes\":true,\"ignore_frontend\":true,\"delay_iterations\":${profile_delay},\"max_iterations\":8}"
   profiler_args=(--profiler-config "${profiler_config}")
 fi
 

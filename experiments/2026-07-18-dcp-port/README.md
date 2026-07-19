@@ -466,6 +466,16 @@ Until that qualification is run, `ag_rs` at 179.56 tok/s is the stable DCP4
 default. A2A+NVLS at 190.15 tok/s is an experimental upper result, not a
 qualified replacement.
 
+## Round 10: true c4 roofline trace
+
+Job 976646 captured six inner full-context `generation_4(16)` cycles on all
+four ranks. The [kernel and roofline report](c4-roofline-analysis.md) finds that
+dense W4 weights amortize almost perfectly, while the 19.17 ms overlapped routed
+MoE span, 13.27 ms of TP all-reduce activity, and 9.17 ms DCP chain dominate.
+Most communication is latency/rank-arrival limited rather than bandwidth
+limited. The surrounding run passed the exact-400K SHA and measured 68.43 ms
+steady step p50, 160.61 aggregate tok/s, and 2.883 accepted tokens/step.
+
 Operationally, only vLLM/Inductor state is job-specific; stable FlashInfer
 and TRT-LLM caches are shared. Caller cache overrides now survive nested
 `jupiter-env.sh` sourcing. Never give two parallel jobs the same writable
