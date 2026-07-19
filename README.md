@@ -290,11 +290,21 @@ real FP8 kernel under simulated DCP4 sharding against a full-index reference
 on the login-node GH200. The tiered contract admits DCP1/DCP4, the KV planner
 shards blocks (20.47 GB -> 5.19 GB per rank), and the residency planner
 promotes cold experts when the budget grows (hot 2,870 -> 3,713 of 4,800).
-Both DCP1 controls reproduced the exact-400K SHA at 129.1-136.4 tok/s; both
-DCP4 runs crashed during full-graph capture because the decode shape
-initializes DCP-specific lazy state inside capture with
-cudagraph_num_of_warmups=0. Piecewise and warmup-1 full-graph retries are in
-flight. See the [DCP port](experiments/2026-07-18-dcp-port/README.md).
+Both DCP1 controls reproduced the exact-400K SHA at 129.1-136.4 tok/s. The
+full-graph capture crash was bisected through eight rounds to the
+graph-memory profiling pass (temporary pool + minimal stand-in KV cache);
+the identical graph captures cleanly in the real capture path, so profiling
+now skips FULL graphs under DCP. DCP4 then qualified losslessly at c=1
+(76-82 tok/s: ~312 in-graph DCP collectives/step cost ~12 ms against ~5 ms
+of wins) and concurrency 4 was enabled: per-sequence KV provisioning,
+config-derived overlap gating, and deterministic residency
+promotion/demotion when the HBM budget moves. Two steady-state runs measure
+**c=4 x 400K at 173-179 tok/s aggregate (43-45 tok/s per agent)** with the
+c=1 golden SHA reproduced on the same server - 1.35x the best
+single-request aggregate, +36% effective per-agent versus queueing on the
+DCP1 config. Prefills serialize (~110 s each), so cold simultaneous
+400K-agent starts ladder their TTFTs; cross-turn prefix caching is the
+mitigation. See the [DCP port](experiments/2026-07-18-dcp-port/README.md).
 
 ## Reproducing
 

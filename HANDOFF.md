@@ -253,16 +253,23 @@ rationale, c=4 KV math) and the
 [DCP port](experiments/2026-07-18-dcp-port/README.md) (implementation notes,
 the lse=+inf trap, round-1 results, in-flight jobs).
 
-State at last update: DCP1 controls reproduce the exact-400K SHA at
-129.1-136.4 tok/s; DCP4 crashes in full CUDA graph capture
-(cudagraph_num_of_warmups=0 lazy-init diagnosis); jobs 970395 (piecewise)
-and 970396 (full graph + warmup 1 + NCCL_DEBUG) are the retries. Remaining
-plan: qualify DCP4 at c=1 400K against the SHA (accepting a possible
-reduction-order greedy tie-break, see the experiment README), then enable
-c=4 x 400K: relax max_num_seqs in the tiered contract, capture the 16-token
-verify graph, extend the apply_tiered overlap gate beyond num_tokens<=4,
-and replan capacity. MTP-aware placement rebuild and MoE support-chain
-fusion remain the next single-request levers after that.
+State at last update: the DCP thread is COMPLETE and qualified. The
+serving menu on one node (all lossless, golden-SHA-gated): c=1 DCP1 at
+129-136 tok/s (interactive default); c=4 DCP4 at 173-179 tok/s aggregate
+(43-45 tok/s per agent) for the 400K agent swarm, launched via
+`job-c4.sh 3 4 4 <label>` / `run-server-c4.sh`. The full-graph capture
+crash was root-caused to the graph-memory profiling pass (temporary pool +
+minimal KV cache) and fixed by skipping FULL-graph profiling under DCP.
+Known operational notes: free HBM varies ~0.5 GiB across nodes (one audit
+failure at 10 GB planned reserve; 11 GB is safe for c=4), and 400K
+prefills serialize at ~110 s each (cold simultaneous agent starts ladder
+TTFTs; cross-turn prefix caching mitigates). Source commits through
+`4dc352d24` are local on the branch, NOT pushed pending human review.
+Next levers, in expected order: MTP-aware placement rebuild (capture
+routes at DCP1 c=1; trace capture is incompatible with DCP), MoE
+support-chain fusion, DCP collective coalescing (~312 in-graph ops/step;
+unanalyzed profiled trace at
+`/e/scratch/profound/naeimitabiei1/glm52-dcp4-profiled-profile-976153`).
 
 ## Superseded next experiment: DFlash
 

@@ -311,6 +311,41 @@ and serialize, so four agents submitting cold simultaneously see TTFTs of
 roughly 2/4/6/8 minutes. Cross-turn prefix caching (agents re-prefix only
 their delta) is the mitigation, and is already enabled.
 
+## Round 8 results: c=4 x 400K qualified
+
+Both v2 jobs (976254 label `c4-dcp4-r11` with 11 GB reserve, 976261 label
+`c4-dcp4-v2` with 10 GB) passed the c=1 golden-SHA gate on the c=4 server
+(78.5 / 75.5 tok/s) and completed the steady-state case (input 395,904 +
+output 4,096 x 4 concurrent). Steady 4-way decode, measured over the
+window after the last prefill from per-request ITLs (tokens stream in
+MTP bursts of ~2.8-3.5/step; each ITL is one engine step):
+
+| Run | Steady window | Step p50 | Aggregate | Per request |
+| --- | ---: | ---: | ---: | ---: |
+| r11 | 74.2 s | 68.9 ms | 178.9 tok/s | 44.7 tok/s |
+| v2 | 79.8 s | 71.4 ms | 173.2 tok/s | 43.3 tok/s |
+
+Final serving menu on one Booster node (all lossless, SHA-gated):
+
+| Config | Per-request decode | Aggregate | Use case |
+| --- | ---: | ---: | --- |
+| c=1, DCP1 (qualified default) | 129-136 tok/s | 129-136 | interactive single session |
+| c=1, DCP4 | 76-82 tok/s | 76-82 | not useful alone |
+| c=4, DCP4 | 43-45 tok/s | ~176 | agent swarm at 400K |
+
+c=4 DCP4 delivers ~1.35x the aggregate of the best single-request config
+and +36% effective per-agent throughput versus queueing four agents on
+the DCP1 server (~33 tok/s effective each). The step time doubles
+(~35 -> ~69 ms) while serving 4x the tokens: weight streaming amortizes
+as predicted, and the per-step DCP collective tax is shared. Prefills
+serialize (~110 s each; cold 4-agent TTFT ladder ~2/4/6/8 min) - relying
+on cross-turn prefix caching in agentic use.
+
+Unharvested levers, in expected order: MTP-aware placement rebuild
+(routed span + AR wait), MoE support-chain fusion, indexer/merge
+collective coalescing (312 ops/step at c=1 pays ~12 ms; profiled trace at
+`glm52-dcp4-profiled-profile-976153` awaits analysis).
+
 ## Expected effects (to verify against trace)
 
 - Per-rank DSA scan and top-k over context/4 (~1.5 ms/step -> ~0.4 ms).
