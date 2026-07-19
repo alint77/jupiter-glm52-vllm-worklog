@@ -6,13 +6,14 @@ The true concurrency-4 trace is `generation_4(16)`: four sequences, 16 target
 verification tokens, then three MTP draft passes of four tokens each. Dense
 weights amortize well: target Machete time is 3.70 ms, essentially unchanged
 from c1 despite 4x the target tokens, and sparse MLA does 4x useful work in
-1.37x the time. The step is instead set by routed MoE and synchronization.
+1.37x the time. The step is instead set by routed MoE, host dispatch, and
+synchronization.
 Routed W4 expert kernels contribute 32.00 ms of cumulative activity and reduce
 to a 19.17 ms hot/cold-overlapped span; TP custom all-reduce contributes
 13.27 ms, and the DCP attention/index communication chain contributes another
 9.17 ms including correction. Most collectives are short, but a few
 shape-boundary calls wait for 0.6-2.4 ms and expose rank skew. This is a
-latency/synchronization roof, not an NVLink bandwidth roof.
+launch/latency/synchronization roof, not an NVLink bandwidth roof.
 
 The benchmark surrounding the trace measured a 68.43 ms steady step p50,
 160.61 aggregate tok/s (40.15 per request), and 2.883 accepted tokens per
@@ -61,7 +62,8 @@ three MTP draft passes: q4 each
 There is no storage or network I/O in decode. Persistent weights and caches
 come from HBM; cold expert weights arrive from the NUMA-local Grace memory over
 NVLink-C2C; TP/DCP tensors move peer-to-peer over GPU NVLink. Explicit CUDA
-copies are only 0.063 ms of activity per step.
+copies are only 0.063 ms of device activity per step, but their host-side
+submission and staging contribute materially to bubbles.
 
 ## Timeline
 
@@ -112,6 +114,37 @@ Machete, QKV, contraction, and vocabulary time. Sparse MLA similarly turns 4x
 useful work into only 1.37x time. Routed MoE cannot reuse weights as completely
 because more tokens activate more distinct experts, so its overlapped union
 span grows from 6.02 to 19.17 ms.
+
+## Host dispatch and launch pressure
+
+The run is strongly launch/granularity bound in addition to being MoE and
+collective bound. Each rank executes 4,861 GPU kernel/copy/memset nodes per
+step. CUDA graphs contain 4,561 of them (93.8%), but the seven graph replays are
+separated by 300 eager GPU operations: 239 explicit kernel launches, 56 async
+copies, and five memsets per step. The eager region contains DCP metadata,
+candidate packing and selection, small tensor operations, NCCL launches, and
+host-to-device metadata updates.
+
+In the instrumented trace, median explicit launch API cost is 10-13 us. The
+seven `cudaGraphLaunch` calls themselves occupy 4.3-5.3 ms of CPU API time per
+step, dominated by the first large replay. This number is profiler-inflated:
+the live step p50 is 8.2 ms below the traced mean, so it must not be treated as
+production graph-launch cost.
+
+Even with that caveat, the rank asymmetry confirms a real host-feed problem.
+Rank 0 spends 13.66 ms per step in the CPU `execute_context` annotation versus
+9.78-10.34 ms on ranks 1-3. A correlation-based classification associates
+24.59 ms of rank-0 idle gaps with submission of the next CUDA operation,
+versus 6.09-12.94 ms on the other ranks; approximately 3.7-3.9 ms per rank lies
+inside an already-launched CUDA graph. This classification is diagnostic, not
+an exact unprofiled latency decomposition, because Kineto perturbs CUDA API
+durations. It nevertheless explains the Perfetto pattern: rank 0 often starves
+its GPU while issuing eager work, then the other ranks arrive at collectives
+and wait for it. NCCL wait kernels appear as GPU “busy” on those ranks even
+though they are not doing useful compute.
+
+NUMA placement is not the cause in this run. `--numa-bind` was active and the
+four workers were bound one-to-one to NUMA nodes 0-3 for GPUs 0-3.
 
 ## Analytical kernel roofline
 
@@ -167,15 +200,19 @@ same wall-time step.
 
 ## Optimization order implied by the trace
 
-1. Reduce routed-MoE span: improve q16 placement for distinct-expert coverage,
+1. Reduce the eager islands between CUDA graph replays: capture or fuse DCP
+   metadata/packing operations, eliminate scalar and pageable metadata copies,
+   and reduce the 239 explicit kernel launches per step. Re-measure without
+   profiler instrumentation.
+2. Reduce routed-MoE span: improve q16 placement for distinct-expert coverage,
    balance hot/cold work across ranks, and fuse the align/sort/activation/sum
    support chain. This is the largest measured span.
-2. Attack collective arrival skew and count: fuse/coalesce TP reductions where
+3. Attack collective arrival skew and count: fuse/coalesce TP reductions where
    dependencies allow, then combine DCP metadata collectives. LSE AG is the
    clearest latency-bound target. Evaluate wall time, not NCCL kernel time alone.
-3. Keep the c4 batching wins intact. Sparse MLA, top-k, MTP routed experts, and
+4. Keep the c4 batching wins intact. Sparse MLA, top-k, MTP routed experts, and
    the vocabulary head already amortize well; replacing them is lower priority.
-4. Only then tune dense W4 kernels. Machete is at 13.9% of its analytical roof,
+5. Only then tune dense W4 kernels. Machete is at 13.9% of its analytical roof,
    but its absolute 3.70 ms is flat versus c1 and therefore not the source of
    the c4 regression.
 
