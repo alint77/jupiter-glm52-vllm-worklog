@@ -281,6 +281,36 @@ SHA served from the same c=4 server, plus the semantic prompt. Headline:
 4 concurrent 399,744-token requests, aggregate and per-request decode.
 Jobs 976249/976250.
 
+## Round 7 results: c=4 works; the first 400K measurement design was wrong
+
+Job 976249 passed every gate on the c=4 server: semantic byte-identical,
+and the c=1 exact-400K golden SHA reproduced (76.6 tok/s, consistent with
+c=1 DCP4 minus one demoted expert and 4-size graphs). c=4 at 4K ran all
+four requests concurrently: 31.2 ms TPOT = 32 tok/s per request, ~128
+tok/s aggregate decode.
+
+The c=4 exact-400K case (input 399,744, output 256) reported 825 ms TPOT -
+not a decode collapse but a measurement artifact: 400K prefills serialize
+(~110 s each; one partial prefill at a time), decode steps of running
+requests queue behind 8,192-token prefill chunks, and with only 256 output
+tokens the requests finish as the last prefill lands. There is no 4-way
+steady decode window in that trace at all (`Running: 2..3` throughout; no
+preemptions; KV peaked at 68%).
+
+The repeat on a different node failed the fail-closed HBM audit by 0.2 GiB
+(node variance ~0.5 GiB in free HBM); resubmitted with an 11 GB planned
+reserve (976254).
+
+Round 8 (v2 benchmark, jobs 976254/976261): input 395,904 + output 4,096
+(= exactly 400,000, same per-seq block budget) leaves a multi-minute clean
+4-way decode phase after the last prefill; steady-state TPOT to be
+extracted from the detailed ITLs of the last-admitted request.
+
+Operational note for agentic serving: at 400K, prefills are ~2 min each
+and serialize, so four agents submitting cold simultaneously see TTFTs of
+roughly 2/4/6/8 minutes. Cross-turn prefix caching (agents re-prefix only
+their delta) is the mitigation, and is already enabled.
+
 ## Expected effects (to verify against trace)
 
 - Per-rank DSA scan and top-k over context/4 (~1.5 ms/step -> ~0.4 ms).
