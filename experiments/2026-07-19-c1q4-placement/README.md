@@ -19,4 +19,9 @@ verification step, including rejected drafts. Normal routed-expert responses
 remain unchanged unless the internal `return_rejected_routed_experts` request
 flag is set.
 
+The matched c1/q4 runs use the qualified V1 runner. Background job `977479`
+showed that the V2 runner does not currently become ready at DCP1: it hangs
+after compilation during graph warmup. The V2 result remains qualified for
+DCP4/c4, not c1.
+
 Status: implementation and capture qualification in progress.

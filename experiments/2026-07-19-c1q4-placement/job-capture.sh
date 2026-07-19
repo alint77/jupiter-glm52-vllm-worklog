@@ -21,6 +21,7 @@ export VLLM_CACHE_ROOT="/e/scratch/profound/naeimitabiei1/vllm-cache-${SLURM_JOB
 export FLASHINFER_WORKSPACE_BASE="/e/scratch/profound/naeimitabiei1/flashinfer-${SLURM_JOB_ID}"
 export TRTLLM_DG_CACHE_DIR="/e/scratch/profound/naeimitabiei1/trtllm-deepgemm-${SLURM_JOB_ID}"
 export TIERED_MOE_HBM_RESERVE_GB=10
+export VLLM_USE_V2_MODEL_RUNNER=0
 
 agent_space/experiments/2026-07-18-dcp-port/run-server.sh \
   3 1 FULL_AND_PIECEWISE "" --enable-return-routed-experts \
