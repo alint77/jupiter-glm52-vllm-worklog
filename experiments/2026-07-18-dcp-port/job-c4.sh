@@ -14,6 +14,7 @@ depth="${1:?speculative depth is required}"
 dcp_size="${2:?decode-context-parallel size is required}"
 max_num_seqs="${3:?max concurrent sequences is required}"
 label="${4:?result label is required}"
+comm_backend="${5:-ag_rs}"
 
 cd /e/project1/profound/alint77/vllm
 source agent_space/jupiter-env.sh
@@ -27,6 +28,7 @@ server_out="${result_dir}/${label}-server.out"
 server_err="${result_dir}/${label}-server.err"
 agent_space/experiments/2026-07-18-dcp-port/run-server-c4.sh \
   "${depth}" "${dcp_size}" "${max_num_seqs}" "" \
+  --dcp-comm-backend "${comm_backend}" \
   >"${server_out}" 2>"${server_err}" &
 server_pid=$!
 trap 'kill "${server_pid}" 2>/dev/null || true' EXIT
