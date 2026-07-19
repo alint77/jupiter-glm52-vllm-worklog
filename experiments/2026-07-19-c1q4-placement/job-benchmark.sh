@@ -20,7 +20,10 @@ result_dir=agent_space/experiments/2026-07-19-c1q4-placement
 model=/e/project1/profound/alint77/models/GLM-5.2-W4A16-FP8-MTP
 
 export VLLM_CACHE_ROOT="/e/scratch/profound/naeimitabiei1/vllm-cache-${SLURM_JOB_ID}"
-export FLASHINFER_WORKSPACE_BASE="/e/scratch/profound/naeimitabiei1/flashinfer-${SLURM_JOB_ID}"
+mkdir -p "${VLLM_CACHE_ROOT}"
+cp -a /e/scratch/profound/naeimitabiei1/vllm-cache-977582/. \
+  "${VLLM_CACHE_ROOT}/"
+export FLASHINFER_WORKSPACE_BASE="/e/scratch/profound/naeimitabiei1/flashinfer"
 export TRTLLM_DG_CACHE_DIR="/e/scratch/profound/naeimitabiei1/trtllm-deepgemm-${SLURM_JOB_ID}"
 export TIERED_MOE_PLACEMENT_PROFILE="${placement_profile}"
 export TIERED_MOE_HBM_RESERVE_GB=10
