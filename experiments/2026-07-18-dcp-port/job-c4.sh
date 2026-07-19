@@ -17,6 +17,7 @@ label="${4:?result label is required}"
 comm_backend="${5:-ag_rs}"
 profile_dir="${6:-}"
 profile_target="${7:-c1}"
+server_args=("${@:8}")
 
 cd /e/project1/profound/alint77/vllm
 source agent_space/jupiter-env.sh
@@ -29,6 +30,7 @@ server_err="${result_dir}/${label}-server.err"
 agent_space/experiments/2026-07-18-dcp-port/run-server-c4.sh \
   "${depth}" "${dcp_size}" "${max_num_seqs}" "${profile_dir}" \
   --dcp-comm-backend "${comm_backend}" \
+  "${server_args[@]}" \
   >"${server_out}" 2>"${server_err}" &
 server_pid=$!
 trap 'kill "${server_pid}" 2>/dev/null || true' EXIT

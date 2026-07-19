@@ -25,13 +25,11 @@ uses `fp8_ds_mla` KV cache, Inductor mode 3, and full/piecewise CUDA graphs.
 
 Batch one, random input, deterministic decoding, 256 output tokens:
 
-
 | Input   | TTFT      | Approx. prefill | Decode      | Total    |
 | ------- | --------- | --------------- | ----------- | -------- |
 | 4,096   | 0.990 s   | 4,139 tok/s     | 37.06 tok/s | 7.87 s   |
 | 32,768  | 7.652 s   | 4,282 tok/s     | 37.06 tok/s | 14.53 s  |
 | 399,744 | 120.853 s | 3,308 tok/s     | 37.57 tok/s | 127.64 s |
-
 
 At idle, the working configuration uses about 90.7 GiB HBM per GPU, leaves
 6.58 GiB free, and provides a 574,336-token KV capacity. Detailed settings and
@@ -310,6 +308,14 @@ stalled in collective NCCL window registration. The stable default remains
 `ag_rs`; commit `990b1d378` adds the minimal DCP safety gate needed before a
 future NVLS requalification. See the
 [DCP port](experiments/2026-07-18-dcp-port/README.md).
+
+Phase 16 removes the main host-launch bottleneck by qualifying the V2 GPU
+runner's complete MTP CUDA graphs. A missing DCP draft-length refresh caused
+mixed c4 batches to deadlock; after the minimal fix, the deterministic 400K c1
+SHA passes and matched 4K c4 median ITL falls from 64.46 to 57.37 ms. Combined
+with acceptance improving from 3.006 to 3.230 tokens, effective aggregate
+throughput rises from 186.52 to 225.23 tok/s (+20.8%). See the
+[V2 MTP full-graph follow-up](experiments/2026-07-18-dcp-port/v2-mtp-full-graph.md).
 
 ## Reproducing
 
