@@ -25,6 +25,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-report", type=Path, required=True)
     parser.add_argument("--hot-slots-per-rank", type=int, required=True)
     parser.add_argument("--train-requests", type=int)
+    parser.add_argument("--mixed-layer-penalty", type=float)
     return parser.parse_args()
 
 
@@ -32,9 +33,17 @@ def load_requests(trace_dir: Path) -> list[tuple[str, np.ndarray]]:
     requests = []
     for path in sorted(trace_dir.glob("request-*.npz")):
         with np.load(path) as data:
-            routes = data["routes"][:, ROUTED_LAYERS, :].astype(np.int64)
+            raw_routes = data["routes"]
             request_hash = str(data["request_hash"])
-        if routes.ndim != 3 or routes.shape[1:] != (len(ROUTED_LAYERS), 8):
+        if raw_routes.ndim == 3:
+            routes = raw_routes[:, ROUTED_LAYERS, :]
+        elif raw_routes.ndim == 4:
+            routes = raw_routes[:, :, ROUTED_LAYERS, :].transpose(0, 2, 1, 3)
+            routes = routes.reshape(routes.shape[0], len(ROUTED_LAYERS), -1)
+        else:
+            raise ValueError(f"Invalid trace shape in {path}: {raw_routes.shape}")
+        routes = routes.astype(np.int64)
+        if routes.ndim != 3 or routes.shape[1] != len(ROUTED_LAYERS):
             raise ValueError(f"Invalid trace shape in {path}: {routes.shape}")
         requests.append((request_hash, routes))
     if len(requests) < 2:
@@ -259,6 +268,127 @@ def even_hot(owners: np.ndarray, hot_slots_per_rank: int) -> np.ndarray:
     return hot
 
 
+def _mixed_layer_count(owners: np.ndarray, hot: np.ndarray) -> int:
+    count = 0
+    for layer in range(len(ROUTED_LAYERS)):
+        rank_hot = [
+            int(hot[layer, owners[layer] == rank].sum()) for rank in range(EP_SIZE)
+        ]
+        count += not (
+            all(value == 0 for value in rank_hot)
+            or all(value == EXPERTS_PER_RANK for value in rank_hot)
+        )
+    return count
+
+
+def _hot_with_full_layers(
+    counts: np.ndarray,
+    owners: np.ndarray,
+    hot_slots_per_rank: int,
+    full_layers: set[int],
+    candidate_layers: set[int] | None = None,
+) -> np.ndarray:
+    reserved = len(full_layers) * EXPERTS_PER_RANK
+    if reserved > hot_slots_per_rank:
+        raise ValueError("Fully hot layers exceed the HBM slot budget")
+    hot = np.zeros_like(owners, dtype=bool)
+    for layer in full_layers:
+        hot[layer] = True
+    remaining = hot_slots_per_rank - reserved
+    for rank in range(EP_SIZE):
+        candidates = [
+            (int(counts[layer, expert]), layer, expert)
+            for layer in range(len(ROUTED_LAYERS))
+            if layer not in full_layers
+            and (candidate_layers is None or layer in candidate_layers)
+            for expert in range(NUM_EXPERTS)
+            if owners[layer, expert] == rank
+        ]
+        if len(candidates) < remaining:
+            raise ValueError("Candidate layers cannot satisfy the HBM slot budget")
+        candidates.sort(key=lambda item: (-item[0], item[1], item[2]))
+        for _, layer, expert in candidates[:remaining]:
+            hot[layer, expert] = True
+    return hot
+
+
+def optimize_hot_layer_concentrated(
+    requests: list[tuple[str, np.ndarray]],
+    counts: np.ndarray,
+    owners: np.ndarray,
+    hot_slots_per_rank: int,
+    mixed_layer_penalty: float,
+) -> tuple[np.ndarray, dict]:
+    """Concentrate residency when the saved second-tier launch is worthwhile."""
+    if mixed_layer_penalty < 0:
+        raise ValueError("Mixed-layer penalty must be non-negative")
+    frequency_hot = optimize_hot(counts, owners, hot_slots_per_rank)
+    _, _, cold_counts, _ = _route_state(requests, owners, frequency_hot)
+    layer_order = sorted(
+        range(len(ROUTED_LAYERS)),
+        key=lambda layer: (-float(cold_counts[:, layer].max(axis=1).mean()), layer),
+    )
+    frequency_metrics = evaluate(requests, owners, frequency_hot)
+    frequency_mixed = _mixed_layer_count(owners, frequency_hot)
+    frequency_candidate = {
+        "mode": "per-expert",
+        "full_layer_count": 0,
+        "full_layers": [],
+        "mixed_layer_count": frequency_mixed,
+        "cold_layer_count": 0,
+        "route_objective": frequency_metrics["tail_objective"],
+        "objective": frequency_metrics["tail_objective"]
+        + mixed_layer_penalty * frequency_mixed,
+    }
+    candidates = [frequency_candidate]
+    best = (
+        (frequency_candidate["objective"], frequency_mixed, 0),
+        frequency_hot,
+        frequency_candidate,
+    )
+    max_full_layers = hot_slots_per_rank // EXPERTS_PER_RANK
+    for full_count in range(max_full_layers + 1):
+        full_layers = set(layer_order[:full_count])
+        remaining = hot_slots_per_rank - full_count * EXPERTS_PER_RANK
+        partial_count = math.ceil(remaining / EXPERTS_PER_RANK)
+        partial_layers = set(layer_order[full_count : full_count + partial_count])
+        hot = _hot_with_full_layers(
+            counts,
+            owners,
+            hot_slots_per_rank,
+            full_layers,
+            partial_layers,
+        )
+        metrics = evaluate(requests, owners, hot)
+        mixed_layers = _mixed_layer_count(owners, hot)
+        actual_full_layers = [
+            layer for layer in range(len(ROUTED_LAYERS)) if hot[layer].all()
+        ]
+        cold_layers = [
+            layer for layer in range(len(ROUTED_LAYERS)) if not hot[layer].any()
+        ]
+        objective = metrics["tail_objective"] + mixed_layer_penalty * mixed_layers
+        candidate = {
+            "mode": "layer-concentrated",
+            "full_layer_count": len(actual_full_layers),
+            "full_layers": [ROUTED_LAYERS[layer] for layer in actual_full_layers],
+            "mixed_layer_count": mixed_layers,
+            "cold_layer_count": len(cold_layers),
+            "route_objective": metrics["tail_objective"],
+            "objective": objective,
+        }
+        candidates.append(candidate)
+        key = (objective, mixed_layers, -full_count)
+        if best is None or key < best[0]:
+            best = (key, hot, candidate)
+    assert best is not None
+    return best[1], {
+        "mixed_layer_penalty": mixed_layer_penalty,
+        "selected": best[2],
+        "candidates": candidates,
+    }
+
+
 def evaluate(
     requests: list[tuple[str, np.ndarray]], owners: np.ndarray, hot: np.ndarray
 ) -> dict:
@@ -291,23 +421,86 @@ def evaluate(
     }
 
 
+def evaluate_with_domains(
+    requests: list[tuple[str, np.ndarray]],
+    owners: np.ndarray,
+    hot: np.ndarray,
+    metadata: dict[str, dict],
+) -> dict:
+    result = evaluate(requests, owners, hot)
+    if not metadata or any(
+        request_hash not in metadata or "domain" not in metadata[request_hash]
+        for request_hash, _ in requests
+    ):
+        return result
+    domains = sorted({metadata[request_hash]["domain"] for request_hash, _ in requests})
+    result["domains"] = {
+        domain: evaluate(
+            [
+                request
+                for request in requests
+                if metadata[request[0]]["domain"] == domain
+            ],
+            owners,
+            hot,
+        )
+        for domain in domains
+    }
+    return result
+
+
 def main() -> None:
     args = parse_args()
     requests = load_requests(args.trace_dir)
-    train_count = args.train_requests or max(1, len(requests) * 3 // 4)
-    if not 0 < train_count < len(requests):
-        raise ValueError("Training request count must leave held-out requests")
-    training = requests[:train_count]
-    heldout = requests[train_count:]
+    manifest_path = args.trace_dir / "manifest.json"
+    metadata = {}
+    if manifest_path.exists():
+        metadata = {
+            record["request_hash"]: record
+            for record in json.loads(manifest_path.read_text())
+        }
+    has_split = metadata and all("split" in record for record in metadata.values())
+    if has_split:
+        training = [
+            request for request in requests if metadata[request[0]]["split"] == "train"
+        ]
+        heldout = [
+            request
+            for request in requests
+            if metadata[request[0]]["split"] == "heldout"
+        ]
+        if args.train_requests is not None and len(training) != args.train_requests:
+            raise ValueError("Manifest training split does not match --train-requests")
+    else:
+        train_count = args.train_requests or max(1, len(requests) * 3 // 4)
+        if not 0 < train_count < len(requests):
+            raise ValueError("Training request count must leave held-out requests")
+        training = requests[:train_count]
+        heldout = requests[train_count:]
+    if not training or not heldout:
+        raise ValueError("Training split must leave held-out requests")
     counts = route_counts(training)
 
     baseline_owners = linear_owners()
     baseline_hot = even_hot(baseline_owners, args.hot_slots_per_rank)
     optimized_owners = optimize_owners(counts)
     frequency_hot = optimize_hot(counts, optimized_owners, args.hot_slots_per_rank)
-    optimized_hot, tail_swaps = optimize_hot_tail_aware(
-        training, counts, optimized_owners, args.hot_slots_per_rank
-    )
+    layer_concentration = None
+    if args.mixed_layer_penalty is None:
+        optimized_hot, tail_swaps = optimize_hot_tail_aware(
+            training, counts, optimized_owners, args.hot_slots_per_rank
+        )
+        optimizer_name = "greedy-balanced-owner+bounded-tail-swap-residency-v2"
+    else:
+        optimized_hot, layer_concentration = optimize_hot_layer_concentrated(
+            training,
+            counts,
+            optimized_owners,
+            args.hot_slots_per_rank,
+            args.mixed_layer_penalty,
+        )
+        tail_swaps = []
+        optimizer_name = "greedy-balanced-owner+layer-concentrated-residency-v1"
     manifest = build_glm_w4a16_manifest(args.model)
     profile = {
         "profile_version": 1,
@@ -321,7 +514,7 @@ def main() -> None:
             np.flatnonzero(optimized_hot[layer]).tolist()
             for layer in range(len(ROUTED_LAYERS))
         ],
-        "optimizer": "greedy-balanced-owner+bounded-tail-swap-residency-v2",
+        "optimizer": optimizer_name,
         "training_request_hashes": [request[0] for request in training],
         "heldout_request_hashes": [request[0] for request in heldout],
     }
@@ -334,15 +527,28 @@ def main() -> None:
         "capacity_cold_rate": 1
         - args.hot_slots_per_rank / (len(ROUTED_LAYERS) * EXPERTS_PER_RANK),
         "tail_swaps": tail_swaps,
+        "layer_concentration": layer_concentration,
         "training": {
-            "linear_even": evaluate(training, baseline_owners, baseline_hot),
-            "frequency": evaluate(training, optimized_owners, frequency_hot),
-            "optimized": evaluate(training, optimized_owners, optimized_hot),
+            "linear_even": evaluate_with_domains(
+                training, baseline_owners, baseline_hot, metadata
+            ),
+            "frequency": evaluate_with_domains(
+                training, optimized_owners, frequency_hot, metadata
+            ),
+            "optimized": evaluate_with_domains(
+                training, optimized_owners, optimized_hot, metadata
+            ),
         },
         "heldout": {
-            "linear_even": evaluate(heldout, baseline_owners, baseline_hot),
-            "frequency": evaluate(heldout, optimized_owners, frequency_hot),
-            "optimized": evaluate(heldout, optimized_owners, optimized_hot),
+            "linear_even": evaluate_with_domains(
+                heldout, baseline_owners, baseline_hot, metadata
+            ),
+            "frequency": evaluate_with_domains(
+                heldout, optimized_owners, frequency_hot, metadata
+            ),
+            "optimized": evaluate_with_domains(
+                heldout, optimized_owners, optimized_hot, metadata
+            ),
         },
     }
     args.output_profile.write_text(json.dumps(profile, indent=2) + "\n")
