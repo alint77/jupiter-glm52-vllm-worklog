@@ -1,0 +1,4 @@
+server-*.err
+server-*.out
+slurm-*.err
+slurm-*.out

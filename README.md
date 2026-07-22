@@ -335,6 +335,14 @@ versus 98.03 end-to-end tok/s (-2.65%). V2 remains the c4/DCP4 choice, while
 V1 remains the c1/q4 default. See the
 [V2 c1/q4 qualification](experiments/2026-07-19-v2-c1/README.md).
 
+Phase 19 deploys the qualified c1/q4 V1 configuration as a four-hour,
+authenticated Booster API for Claude Code on the login node. A single wrapper
+submits or reuses the Slurm job, discovers its allocated hostname, verifies the
+direct internal connection, exports all Anthropic model variables, and launches
+Claude. Native messages, token counting, automatic tool calls, and a complete
+two-turn Claude Code `Bash(pwd)` loop pass. See the
+[Claude Code deployment](experiments/2026-07-22-claude-local/README.md).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout
