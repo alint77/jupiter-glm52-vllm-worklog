@@ -340,7 +340,10 @@ authenticated Booster API for Claude Code on the login node. A single wrapper
 submits or reuses the Slurm job, discovers its allocated hostname, verifies the
 direct internal connection, exports all Anthropic model variables, and launches
 Claude. Native messages, token counting, automatic tool calls, and a complete
-two-turn Claude Code `Bash(pwd)` loop pass. See the
+two-turn Claude Code `Bash(pwd)` loop pass. A metrics monitor reports rolling
+computed-prefill and decode throughput. Its load test exposed and fixed a
+quantized chunked-context dtype dereference; repeated shared-prefix Claude
+requests now pass at roughly 114 decode tok/s. See the
 [Claude Code deployment](experiments/2026-07-22-claude-local/README.md).
 
 ## Reproducing
