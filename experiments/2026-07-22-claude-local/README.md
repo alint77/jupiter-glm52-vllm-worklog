@@ -38,6 +38,10 @@ For rolling throughput in a second login-node terminal:
 rates, so they read zero while the engine is idle. The monitor also shows
 running and waiting request counts and stops if the server job exits.
 
+Claude Code defaults unknown/custom model names to a 200,000-token context
+window. The wrapper exports `CLAUDE_CODE_MAX_CONTEXT_TOKENS=400000` so its UI
+and auto-compaction budget match this server's `max-model-len=400000`.
+
 ## Deployment
 
 - One Booster node with four GH200 GPUs, TP4/EP4, DCP1, and `max-num-seqs=1`.
