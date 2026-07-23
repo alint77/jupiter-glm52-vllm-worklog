@@ -114,15 +114,82 @@ The deeper batch improves hot-path roof efficiency from a 32--39% bound at
 MTP1 to 46--53% at MTP3.
 
 The main new anomaly is MTP2's 13.78 ms of idle time: its p99/max GPU gap is
-95.8/686.5 us versus 38.0/245.8 us for MTP3. That excess launch/arrival tail
-explains why MTP3 completes a larger verification batch slightly faster.
-The next optimization targets are therefore:
+95.8/686.5 us versus 38.0/245.8 us for MTP3. The critical-path analysis below
+identifies the concrete graph-capture hole behind it and changes the priority
+of the cold-path and communication work.
 
-1. remove the MTP2 graph/collective arrival gaps;
-2. reduce the always-active cold-expert layer count or improve hot/cold
-   overlap under the c4 domain routing distribution; and
-3. reduce the 7--9 ms TP all-reduce chain, whose modeled link efficiency is
-   only 4.4--6.8%.
+## Critical-path diagnosis
+
+CUDA-runtime correlations identify one 4,436-kernel target graph per engine
+step. The target graph is followed by the recurrent MTP proposer work before
+the next target graph starts. Averaging the four ranks and four interior
+cycles gives:
+
+| Critical-path component (ms/step) | MTP1 | MTP2 | MTP3 |
+| --- | ---: | ---: | ---: |
+| Target-start to next target-start | 45.12 | 63.62 | 62.49 |
+| Target graph span | 43.30 | 50.48 | 55.70 |
+| Idle inside target graph | 3.80 | 3.79 | 3.79 |
+| Post-target proposer/orchestration span | 1.82 | 13.14 | 6.79 |
+| Post-target GPU work | 0.95 | 3.15 | 2.63 |
+| Post-target GPU idle | 0.87 | **9.99** | 4.16 |
+
+This is not a return to thousands of host kernel launches. MTP3 replays one
+large target graph and three small proposer graphs. Its remaining host-side
+opportunity is the 4.16 ms of bubbles while sequencing those recurrent draft
+graphs and the next engine step. The invariant 3.79 ms inside the target graph
+is graph-node/dependency overhead, not CPU launch latency for 4,436 individual
+kernels.
+
+MTP2 has a configuration-specific capture hole. The server requested graph
+sizes `[3, 6, 9, 12]`, which cover its three-token verification multiples but
+omit the four-token draft batch at c4. The trace consequently contains about
+70 `cudaLaunchKernel` and 20 `cudaLaunchKernelExC` calls per draft tail and
+9.99 ms of post-target idle. MTP1's size list includes four, while MTP3's
+`[4, 8, 12, 16]` does too. Future runs must capture the union of verification
+sizes and draft batch sizes.
+
+For MTP3, the target graph is the dominant 55.70 ms of the 62.49 ms cycle.
+Routed Marlin occupies a 25.35 ms union, or 40.6% of the outer step, and is
+alone on the GPU critical path for 20.23 ms. The hot path controls 99.6% of
+the 1,200 observed rank/layer expert clusters. Cold C2C work is active in
+every routed layer but extends the observed hot/cold union by only 1.10 ms in
+total. Eliminating cold work therefore has only a 1.8% direct step-time
+ceiling unless it also relieves contention that slows the hot kernels.
+
+The apparent TP communication problem is primarily an expert-balance problem.
+Across the 166 custom reductions per MTP3 step, ranks enter a reduction
+99.4 us apart on average but finish only 3.1 us apart. Comparing each
+reduction's rank durations attributes about 8.36 ms/step to early-rank
+waiting. Independently, summing the per-layer difference between the slowest
+rank's routed span and the four-rank mean gives a 7.80 ms/step imbalance
+proxy. The close match shows that the reductions are exposing the
+layer-by-layer slowest expert rank; their low analytical 6.8% link efficiency
+does not by itself establish a raw NVLink bandwidth bottleneck.
+
+At 396K, MTP depth is limited by acceptance as much as latency:
+
+| Depth | Step (ms) | Accepted tokens/sequence | Position acceptance |
+| --- | ---: | ---: | --- |
+| MTP1 | 45.12 | 1.925 | 92.5% |
+| MTP2 | 63.63 | 2.451 | 90.6%, 54.5% |
+| MTP3 | 62.43 | 2.665 | 90.8%, 52.0%, 23.7% |
+
+MTP3 accepts 38.4% more tokens than MTP1 while its traced step is also 38.4%
+longer, leaving almost no long-context speculative gain. On the realistic
+suite the third position accepts 43.6%, so MTP3 has enough useful work to win.
+This domain/context sensitivity explains why a kernel-only optimization
+cannot guarantee the same aggregate gain on every workload.
+
+The resulting priorities are:
+
+1. include draft batch sizes in graph capture, which should remove the MTP2
+   anomaly;
+2. balance routed expert work per layer/rank, then remeasure custom
+   all-reduce wait;
+3. reduce the 4.16 ms MTP3 recurrent-proposer/engine bubbles; and
+4. pursue target-graph fusion only after the first three, since cold removal
+   alone has little direct critical-path leverage.
 
 Raw Perfetto traces:
 
