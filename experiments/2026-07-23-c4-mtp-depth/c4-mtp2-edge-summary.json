@@ -1,0 +1,433 @@
+{
+  "method": {
+    "trace_directory": "/e/scratch/profound/naeimitabiei1/glm52-c4-mtp2-edge-profile-1022401",
+    "trace_files": [
+      "dp0_pp0_tp0_dcp0_ep0_rank0.1784785505110623619.pt.trace.json.gz",
+      "dp0_pp0_tp1_dcp1_ep1_rank1.1784785505011893593.pt.trace.json.gz",
+      "dp0_pp0_tp2_dcp2_ep2_rank2.1784785505015750868.pt.trace.json.gz",
+      "dp0_pp0_tp3_dcp3_ep3_rank3.1784785505034154119.pt.trace.json.gz"
+    ],
+    "steady_cycles": 4,
+    "sequences": 4,
+    "target_verification_tokens": 12,
+    "draft_tokens_per_pass": 4,
+    "context_tokens": 395904,
+    "dcp_size": 4,
+    "mtp_depth": 2,
+    "trace_has_hardware_counters": false,
+    "duration_source": "PyTorch profiler CUDA events",
+    "traffic_source": "Model geometry and kernel contracts",
+    "allgather_attribution": "LSE by launch shape; candidate and vocabulary collectives are matched one-to-one with their producer kernels; the remainder are query all-gathers. This handles shared NCCL launch shapes."
+  },
+  "ceilings": {
+    "hbm_bytes_per_second": 3500000000000.0,
+    "grace_c2c_bytes_per_second": 421000000000.0,
+    "peer_nvlink_bytes_per_second": 150000000000.0,
+    "bf16_flops_per_second": 630000000000000.0,
+    "fp8_flops_per_second": 1260000000000000.0
+  },
+  "timeline": {
+    "per_rank": [
+      {
+        "rank": 0,
+        "wall_us": 63631.146484375,
+        "target_us": 38281.91075,
+        "draft_tail_us": 25349.235734375,
+        "union_busy_us": 51401.03820800781,
+        "cumulative_activity_us": 71869.71425,
+        "idle_us": 12230.108276367188,
+        "kernel_count": 4694
+      },
+      {
+        "rank": 1,
+        "wall_us": 63631.08349609375,
+        "target_us": 38283.23925,
+        "draft_tail_us": 25347.84424609375,
+        "union_busy_us": 48705.96942138672,
+        "cumulative_activity_us": 68346.71075,
+        "idle_us": 14925.114074707031,
+        "kernel_count": 4695
+      },
+      {
+        "rank": 2,
+        "wall_us": 63630.858459472656,
+        "target_us": 38282.5265,
+        "draft_tail_us": 25348.331959472656,
+        "union_busy_us": 49008.378845214844,
+        "cumulative_activity_us": 68716.80675,
+        "idle_us": 14622.479614257812,
+        "kernel_count": 4694
+      },
+      {
+        "rank": 3,
+        "wall_us": 63631.25048828125,
+        "target_us": 38282.92675,
+        "draft_tail_us": 25348.32373828125,
+        "union_busy_us": 50297.388732910156,
+        "cumulative_activity_us": 70714.09725,
+        "idle_us": 13333.861755371094,
+        "kernel_count": 4694
+      }
+    ],
+    "mean": {
+      "wall_us": 63631.084732055664,
+      "target_us": 38282.6508125,
+      "draft_tail_us": 25348.433919555664,
+      "union_busy_us": 49853.19380187988,
+      "cumulative_activity_us": 69911.83225,
+      "idle_us": 13777.890930175781,
+      "kernel_count": 4694.25
+    },
+    "busy_depth_pct": {
+      "1": 59.865431262797124,
+      "2": 40.03372810093027,
+      "3": 0.1008406362726064
+    },
+    "solo_us_per_step": {
+      "Target routed W4 MoE": 17302.541549682617,
+      "TP custom all-reduce": 9031.718704223633,
+      "Target W4 Machete": 3606.290542602539,
+      "Elementwise and metadata": 3201.4949493408203,
+      "Sparse MLA": 2056.4608612060547,
+      "Routed MoE support": 1189.7672119140625,
+      "DCP query all-gather": 1188.8319854736328,
+      "Target QKV-A W4": 915.5715942382812,
+      "DCP reduce-scatter": 885.9166412353516,
+      "MLA/DSA BF16 GEMMs": 807.0412445068359,
+      "DCP LSE all-gather": 787.5412750244141,
+      "DSA top-k": 770.4073791503906,
+      "DSA full-context scan": 642.7292785644531,
+      "DCP candidate all-gather": 439.8929443359375,
+      "Vocabulary GEMM": 433.13243103027344,
+      "MTP FP8 block": 396.0289611816406,
+      "Vocabulary all-gather": 320.1259002685547,
+      "Target MoE router": 319.8817901611328,
+      "Attention/index support": 267.9883270263672,
+      "DCP/index metadata": 229.8295440673828,
+      "Memsets": 227.08700561523438,
+      "DCP LSE correction": 152.58682250976562,
+      "MTP BF16 projection": 103.20216369628906,
+      "Explicit copies": 24.373870849609375
+    },
+    "idle_gap_us": {
+      "mean": 3.8492448905677055,
+      "p50": 0.47998046875,
+      "p90": 3.80810546875,
+      "p99": 95.77490234375,
+      "max": 686.514892578125
+    }
+  },
+  "activity_by_role_us_per_step": {
+    "Target routed W4 MoE": 36536.781625,
+    "TP custom all-reduce": 9031.718437499996,
+    "Routed MoE support": 5908.73975000001,
+    "Target W4 Machete": 3662.913062499997,
+    "Elementwise and metadata": 3424.8229999999944,
+    "Sparse MLA": 2341.6318125000007,
+    "DCP query all-gather": 1188.8324375000007,
+    "Target QKV-A W4": 915.5718749999993,
+    "DCP reduce-scatter": 885.9164375000005,
+    "MLA/DSA BF16 GEMMs": 807.0403125000007,
+    "DCP LSE all-gather": 787.5416875,
+    "DSA top-k": 770.4113749999999,
+    "DSA full-context scan": 642.7333124999999,
+    "DCP candidate all-gather": 439.89300000000003,
+    "Vocabulary GEMM": 433.1324375,
+    "MTP FP8 block": 429.2808124999999,
+    "Vocabulary all-gather": 320.125875,
+    "Target MoE router": 320.00581250000033,
+    "Memsets": 284.3770624999999,
+    "Attention/index support": 267.99137499999995,
+    "DCP/index metadata": 229.83175000000023,
+    "DCP LSE correction": 152.59149999999977,
+    "MTP BF16 projection": 103.202125,
+    "Explicit copies": 26.745375
+  },
+  "roofline": [
+    {
+      "name": "Target QKV-A W4 Marlin",
+      "time_us_per_step": 915.571875,
+      "flops_per_step": 30180114432,
+      "logical_bytes_per_step": 648400896.0,
+      "arithmetic_intensity_flop_per_byte": 46.54545454545455,
+      "achieved_tflops": 32.963129663632365,
+      "effective_bandwidth_gbs": 708.1922388671015,
+      "roof_tflops": 162.9090909090909,
+      "roof_efficiency_pct": 20.234063967631474,
+      "note": ""
+    },
+    {
+      "name": "Target W4 Machete projections/MLPs",
+      "time_us_per_step": 3662.9130625000003,
+      "flops_per_step": 83877691392,
+      "logical_bytes_per_step": 1802059776.0,
+      "arithmetic_intensity_flop_per_byte": 46.54545454545455,
+      "achieved_tflops": 22.899176136807366,
+      "effective_bandwidth_gbs": 491.97448731422077,
+      "roof_tflops": 162.9090909090909,
+      "roof_efficiency_pct": 14.05641392326345,
+      "note": ""
+    },
+    {
+      "name": "Target MoE router BF16",
+      "time_us_per_step": 320.00581250000005,
+      "flops_per_step": 2831155200,
+      "logical_bytes_per_step": 235929600,
+      "arithmetic_intensity_flop_per_byte": 12.0,
+      "achieved_tflops": 8.847199298918982,
+      "effective_bandwidth_gbs": 737.2666082432486,
+      "roof_tflops": 42.0,
+      "roof_efficiency_pct": 21.064760235521387,
+      "note": ""
+    },
+    {
+      "name": "MLA W_UK/W_UV BF16 contractions",
+      "time_us_per_step": 683.47025,
+      "flops_per_step": 7300186112,
+      "logical_bytes_per_step": 618659840,
+      "arithmetic_intensity_flop_per_byte": 11.8,
+      "achieved_tflops": 10.681059068774392,
+      "effective_bandwidth_gbs": 905.174497353762,
+      "roof_tflops": 41.3,
+      "roof_efficiency_pct": 25.862128495821775,
+      "note": ""
+    },
+    {
+      "name": "Target DSA Wq BF16",
+      "time_us_per_step": 167.39481250000003,
+      "flops_per_step": 4227858432,
+      "logical_bytes_per_step": 352321536,
+      "arithmetic_intensity_flop_per_byte": 12.0,
+      "achieved_tflops": 25.25680676036481,
+      "effective_bandwidth_gbs": 2104.7338966970674,
+      "roof_tflops": 42.0,
+      "roof_efficiency_pct": 60.135254191344785,
+      "note": ""
+    },
+    {
+      "name": "DSA WK+score projection BF16",
+      "time_us_per_step": 81.48093750000001,
+      "flops_per_step": 511180800,
+      "logical_bytes_per_step": 45219840,
+      "arithmetic_intensity_flop_per_byte": 11.304347826086957,
+      "achieved_tflops": 6.273624429026728,
+      "effective_bandwidth_gbs": 554.9744687215951,
+      "roof_tflops": 39.56521739130435,
+      "roof_efficiency_pct": 15.856413392045573,
+      "note": ""
+    },
+    {
+      "name": "DSA local-shard FP8 scan",
+      "time_us_per_step": 642.7333125,
+      "flops_per_step": 210810961920.0,
+      "logical_bytes_per_step": 300491136.0,
+      "arithmetic_intensity_flop_per_byte": 701.5546772068511,
+      "achieved_tflops": 327.99134231898086,
+      "effective_bandwidth_gbs": 467.52071217718316,
+      "roof_tflops": 1260.0,
+      "roof_efficiency_pct": 26.03105891420483,
+      "note": "Each rank scans one quarter of the 400K index cache."
+    },
+    {
+      "name": "DSA local + global stable top-k",
+      "time_us_per_step": 770.411375,
+      "flops_per_step": null,
+      "logical_bytes_per_step": 119974400.0,
+      "arithmetic_intensity_flop_per_byte": null,
+      "achieved_tflops": null,
+      "effective_bandwidth_gbs": 155.72771105566815,
+      "roof_tflops": null,
+      "roof_efficiency_pct": 4.44936317301909,
+      "note": "Minimum local-logit and gathered-candidate reads; selection FLOPs are not modeled."
+    },
+    {
+      "name": "Sparse MLA FP8 split+combine",
+      "time_us_per_step": 2341.6318125000003,
+      "flops_per_step": 67310190592.0,
+      "logical_bytes_per_step": 317063168.0,
+      "arithmetic_intensity_flop_per_byte": 212.29268292682926,
+      "achieved_tflops": 28.744993227666097,
+      "effective_bandwidth_gbs": 135.4026565181882,
+      "roof_tflops": 630.0,
+      "roof_efficiency_pct": 4.562697337724778,
+      "note": "Useful work for roughly 512 rank-owned candidates. DCP compacts them into a fixed 2,048-entry row whose -1 tail the kernel skips; 64 gathered heads are real, with no 16-to-64 head padding."
+    },
+    {
+      "name": "MTP eh_proj BF16",
+      "time_us_per_step": 103.202125,
+      "flops_per_step": 1207959552,
+      "logical_bytes_per_step": 301989888,
+      "arithmetic_intensity_flop_per_byte": 4.0,
+      "achieved_tflops": 11.704793404205581,
+      "effective_bandwidth_gbs": 2926.1983510513955,
+      "roof_tflops": 14.0,
+      "roof_efficiency_pct": 83.60566717289701,
+      "note": ""
+    },
+    {
+      "name": "MTP FP8 dense/index/shared linears",
+      "time_us_per_step": 105.0163125,
+      "flops_per_step": 1080033280,
+      "logical_bytes_per_step": 135004160,
+      "arithmetic_intensity_flop_per_byte": 8.0,
+      "achieved_tflops": 10.28443347789421,
+      "effective_bandwidth_gbs": 1285.554184736776,
+      "roof_tflops": 28.0,
+      "roof_efficiency_pct": 36.73011956390789,
+      "note": ""
+    },
+    {
+      "name": "MTP FP8 routed experts",
+      "time_us_per_step": 255.31956250000002,
+      "flops_per_step": 1207959552,
+      "logical_bytes_per_step": 603979776,
+      "arithmetic_intensity_flop_per_byte": 2.0,
+      "achieved_tflops": 4.7311672484947165,
+      "effective_bandwidth_gbs": 2365.5836242473583,
+      "roof_tflops": 7.0,
+      "roof_efficiency_pct": 67.58810354992453,
+      "note": "Assumes two expert assignments per rank/token/pass."
+    },
+    {
+      "name": "BF16 vocabulary projection",
+      "time_us_per_step": 433.13243750000004,
+      "flops_per_step": 9515827200,
+      "logical_bytes_per_step": 1903165440,
+      "arithmetic_intensity_flop_per_byte": 5.0,
+      "achieved_tflops": 21.96978655056284,
+      "effective_bandwidth_gbs": 4393.957310112568,
+      "roof_tflops": 17.5,
+      "roof_efficiency_pct": 125.54163743178766,
+      "note": ""
+    }
+  ],
+  "routed_moe_bounds": {
+    "total_assignments_per_rank_step": 1800.0,
+    "rank_stats": [
+      {
+        "rank": 0,
+        "hot_us": 21254.5595,
+        "cold_us": 16070.071999999993,
+        "serial_us": 37324.6315,
+        "union_us": 22081.166137695312,
+        "cold_active": 75.0,
+        "clusters": 75.0
+      },
+      {
+        "rank": 1,
+        "hot_us": 20391.17550000002,
+        "cold_us": 15424.295250000016,
+        "serial_us": 35815.47075,
+        "union_us": 21283.623107910156,
+        "cold_active": 75.0,
+        "clusters": 75.0
+      },
+      {
+        "rank": 2,
+        "hot_us": 20521.53249999998,
+        "cold_us": 15265.849499999995,
+        "serial_us": 35787.38199999999,
+        "union_us": 21319.35821533203,
+        "cold_active": 75.0,
+        "clusters": 75.0
+      },
+      {
+        "rank": 3,
+        "hot_us": 21379.48725000001,
+        "cold_us": 15840.155,
+        "serial_us": 37219.64225,
+        "union_us": 22134.23944091797,
+        "cold_active": 75.0,
+        "clusters": 75.0
+      }
+    ],
+    "observed_overlap": {
+      "serial_kernel_us": 36536.781624999996,
+      "union_kernel_us": 21704.596725463867,
+      "saved_us": 14832.184899536129,
+      "saved_pct": 40.59521457518669
+    },
+    "hot_hbm": {
+      "assignment_bound": [
+        1461.4969104965928,
+        1725.0
+      ],
+      "logical_bytes_bound": [
+        28446856473.312496,
+        33575731200.0
+      ],
+      "effective_bandwidth_gbs": [
+        1361.9610508360288,
+        1607.5181519842336
+      ],
+      "roof_efficiency_pct": [
+        38.91317288102939,
+        45.92909005669238
+      ],
+      "time_us_per_step": 20886.688687500002
+    },
+    "cold_c2c": {
+      "assignment_bound": [
+        75.0,
+        338.5030895034071
+      ],
+      "logical_bytes_bound": [
+        1459814400.0,
+        6588689126.687501
+      ],
+      "effective_bandwidth_gbs": [
+        93.27832146619798,
+        421.0
+      ],
+      "roof_efficiency_pct": [
+        22.156370894583844,
+        99.99999999999999
+      ],
+      "time_us_per_step": 15650.092937500001
+    }
+  },
+  "communication": [
+    {
+      "name": "DCP query all-gather",
+      "time_us_per_step": 1188.8324375000007,
+      "logical_remote_bytes_per_rank_step": 26099712,
+      "effective_gbs": 21.95407121872042,
+      "link_efficiency_pct": 14.636047479146944
+    },
+    {
+      "name": "DCP LSE all-gather",
+      "time_us_per_step": 787.5416875,
+      "logical_remote_bytes_per_rank_step": 724992,
+      "effective_gbs": 0.920576029824453,
+      "link_efficiency_pct": 0.6137173532163019
+    },
+    {
+      "name": "DCP candidate all-gather",
+      "time_us_per_step": 439.89300000000003,
+      "logical_remote_bytes_per_rank_step": 12779520,
+      "effective_gbs": 29.05142841554651,
+      "link_efficiency_pct": 19.36761894369767
+    },
+    {
+      "name": "DCP reduce-scatter",
+      "time_us_per_step": 885.9164375000005,
+      "logical_remote_bytes_per_rank_step": 46399488,
+      "effective_gbs": 52.37456495438372,
+      "link_efficiency_pct": 34.91637663625581
+    },
+    {
+      "name": "TP custom all-reduce",
+      "time_us_per_step": 9031.718437499996,
+      "logical_remote_bytes_per_rank_step": 70336512,
+      "effective_gbs": 7.787721958643048,
+      "link_efficiency_pct": 5.191814639095365
+    },
+    {
+      "name": "Vocabulary all-gather",
+      "time_us_per_step": 320.125875,
+      "logical_remote_bytes_per_rank_step": 4646400,
+      "effective_gbs": 14.514290667694388,
+      "link_efficiency_pct": 9.676193778462924
+    }
+  ]
+}

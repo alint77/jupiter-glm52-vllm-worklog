@@ -22,6 +22,7 @@ cd "${repo_dir}"
 source agent_space/jupiter-env.sh
 
 export VLLM_USE_V2_MODEL_RUNNER=1
+export VLLM_SERVER_DEV_MODE=1
 export VLLM_CACHE_ROOT="${cache_root}"
 export TRTLLM_DG_CACHE_DIR="/e/scratch/profound/naeimitabiei1/trtllm-deepgemm-${SLURM_JOB_ID}"
 export TIERED_MOE_PLACEMENT_PROFILE="${repo_dir}/agent_space/experiments/2026-07-19-c1q4-placement/per-expert-profile.json"

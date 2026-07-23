@@ -115,10 +115,25 @@ def windows(trace: dict) -> list[dict]:
         if event.get("cat") == "gpu_user_annotation"
         and event.get("name", "").startswith("execute_context")
     ]
-    by_tid = collections.Counter(event["tid"] for event in annotations)
-    main_tid = by_tid.most_common(1)[0][0]
+    geometries = collections.Counter(
+        re.search(r"generation_\d+\(\d+\)", event["name"]).group()
+        for event in annotations
+    )
+    dominant_geometry = geometries.most_common(1)[0][0]
+    total_by_tid = collections.Counter(event["tid"] for event in annotations)
+    matching_by_tid = collections.defaultdict(list)
+    for event in annotations:
+        if dominant_geometry in event["name"]:
+            matching_by_tid[event["tid"]].append(event)
+    main_tid = max(
+        matching_by_tid,
+        key=lambda tid: (
+            len(matching_by_tid[tid]),
+            len(matching_by_tid[tid]) / total_by_tid[tid],
+        ),
+    )
     return sorted(
-        (event for event in annotations if event["tid"] == main_tid),
+        matching_by_tid[main_tid],
         key=lambda event: event["ts"],
     )
 
@@ -477,7 +492,12 @@ def byte_row(name: str, time_us: float, byte_count: float, note: str) -> dict:
 
 
 def modeled_roofline(
-    traces: list[dict], sequences: int, target_q: int, context: int, dcp_size: int
+    traces: list[dict],
+    sequences: int,
+    target_q: int,
+    context: int,
+    dcp_size: int,
+    mtp_depth: int,
 ) -> list[dict]:
     draft_q = sequences
     w4_bytes = 0.5 + 2 / 128
@@ -494,8 +514,8 @@ def modeled_roofline(
     contractions_weights = (
         ATTN_HEADS_PER_TP * ATTN_QK_DIM * 192 + ATTN_HEADS_PER_TP * ATTN_V_DIM * 256
     )
-    mla_queries = target_q * LAYERS + 3 * draft_q
-    index_queries = target_q * INDEX_LAYERS + 3 * draft_q
+    mla_queries = target_q * LAYERS + mtp_depth * draft_q
+    index_queries = target_q * INDEX_LAYERS + mtp_depth * draft_q
     mtp_shapes = [
         (2624, HIDDEN),
         (4096, 2048),
@@ -537,7 +557,7 @@ def modeled_roofline(
                 and ("_bz_NNT" in event["name"] or "_2x1_v_bz_TNT" in event["name"]),
             ),
             2 * contractions_weights * mla_queries,
-            contractions_weights * 2 * (LAYERS + 3),
+            contractions_weights * 2 * (LAYERS + mtp_depth),
         ),
         roofline_row(
             "Target DSA Wq BF16",
@@ -549,13 +569,13 @@ def modeled_roofline(
             "DSA WK+score projection BF16",
             matching_time(traces, is_name("nvjet_sm90_tss")),
             2 * HIDDEN * 160 * index_queries,
-            HIDDEN * 160 * 2 * (INDEX_LAYERS + 3),
+            HIDDEN * 160 * 2 * (INDEX_LAYERS + mtp_depth),
         ),
         roofline_row(
             "DSA local-shard FP8 scan",
             matching_time(traces, is_name("paged_mqa_logits")),
             2 * local_context * INDEX_DIM * INDEX_HEADS * index_queries,
-            local_context * INDEX_CACHE_STRIDE * (INDEX_LAYERS + 3),
+            local_context * INDEX_CACHE_STRIDE * (INDEX_LAYERS + mtp_depth),
             compute_ceiling=FP8_FLOPS_S,
             note="Each rank scans one quarter of the 400K index cache.",
         ),
@@ -595,8 +615,8 @@ def modeled_roofline(
                 )
                 or "triton_tem_fused_mm_t_3" in event["name"],
             ),
-            3 * 2 * draft_q * 12_288 * HIDDEN,
-            3 * 12_288 * HIDDEN * 2,
+            mtp_depth * 2 * draft_q * 12_288 * HIDDEN,
+            mtp_depth * 12_288 * HIDDEN * 2,
         ),
         roofline_row(
             "MTP FP8 dense/index/shared linears",
@@ -605,8 +625,8 @@ def modeled_roofline(
                 lambda event: "deep_gemm::fp8_gemm_kernel_swapAB" in event["name"]
                 and "GroupedWithOffset" not in event["name"],
             ),
-            3 * 2 * draft_q * mtp_weights,
-            3 * mtp_weights,
+            mtp_depth * 2 * draft_q * mtp_weights,
+            mtp_depth * mtp_weights,
             compute_ceiling=FP8_FLOPS_S,
         ),
         roofline_row(
@@ -616,8 +636,8 @@ def modeled_roofline(
                 lambda event: "deep_gemm::fp8_gemm_kernel_swapAB" in event["name"]
                 and "GroupedWithOffset" in event["name"],
             ),
-            3 * 2 * draft_q * EXPERT_FLOPS,
-            3 * 2 * draft_q * 3 * HIDDEN * 2048,
+            mtp_depth * 2 * draft_q * EXPERT_FLOPS,
+            mtp_depth * 2 * draft_q * 3 * HIDDEN * 2048,
             compute_ceiling=FP8_FLOPS_S,
             note="Assumes two expert assignments per rank/token/pass.",
         ),
@@ -628,7 +648,7 @@ def modeled_roofline(
                 lambda event: "nvjet_sm90_tst_192" in event["name"]
                 and "splitK" not in event["name"],
             ),
-            2 * (target_q + 3 * draft_q) * HIDDEN * VOCAB_LOCAL,
+            2 * (target_q + mtp_depth * draft_q) * HIDDEN * VOCAB_LOCAL,
             4 * HIDDEN * VOCAB_LOCAL * 2,
         ),
     ]
@@ -731,11 +751,15 @@ def routed_bounds(traces: list[dict], target_q: int) -> dict:
 
 
 def communication(
-    role_times: dict, sequences: int, target_q: int, dcp_size: int
+    role_times: dict,
+    sequences: int,
+    target_q: int,
+    dcp_size: int,
+    mtp_depth: int,
 ) -> list[dict]:
     draft_q = sequences
-    mla_queries = target_q * LAYERS + 3 * draft_q
-    index_queries = target_q * INDEX_LAYERS + 3 * draft_q
+    mla_queries = target_q * LAYERS + mtp_depth * draft_q
+    index_queries = target_q * INDEX_LAYERS + mtp_depth * draft_q
     local_heads = ATTN_HEADS_PER_TP
     remote_factor = dcp_size - 1
     payloads = {
@@ -748,9 +772,12 @@ def communication(
         * ATTN_V_DIM
         * 2,
         "TP custom all-reduce": remote_factor
-        * (157 * target_q * HIDDEN * 2 + 9 * draft_q * HIDDEN * 2),
+        * (
+            157 * target_q * HIDDEN * 2
+            + 3 * mtp_depth * draft_q * HIDDEN * 2
+        ),
         "Vocabulary all-gather": remote_factor
-        * (target_q + 3 * draft_q)
+        * (target_q + mtp_depth * draft_q)
         * VOCAB_LOCAL
         * 2,
     }
@@ -823,6 +850,7 @@ def main() -> None:
     parser.add_argument("prefix")
     parser.add_argument("--context", type=int, default=399_744)
     parser.add_argument("--dcp-size", type=int, default=4)
+    parser.add_argument("--mtp-depth", type=int, default=3)
     args = parser.parse_args()
 
     traces = load_traces(args.trace_dir)
@@ -830,7 +858,12 @@ def main() -> None:
     allgather_roles = {}
     kernel_rows, role_times = inventory(traces, allgather_roles)
     roofline = modeled_roofline(
-        traces, sequences, target_q, args.context, args.dcp_size
+        traces,
+        sequences,
+        target_q,
+        args.context,
+        args.dcp_size,
+        args.mtp_depth,
     )
     summary = {
         "method": {
@@ -842,6 +875,7 @@ def main() -> None:
             "draft_tokens_per_pass": sequences,
             "context_tokens": args.context,
             "dcp_size": args.dcp_size,
+            "mtp_depth": args.mtp_depth,
             "trace_has_hardware_counters": False,
             "duration_source": "PyTorch profiler CUDA events",
             "traffic_source": "Model geometry and kernel contracts",
@@ -862,7 +896,13 @@ def main() -> None:
         "activity_by_role_us_per_step": role_times,
         "roofline": roofline,
         "routed_moe_bounds": routed_bounds(traces, target_q),
-        "communication": communication(role_times, sequences, target_q, args.dcp_size),
+        "communication": communication(
+            role_times,
+            sequences,
+            target_q,
+            args.dcp_size,
+            args.mtp_depth,
+        ),
     }
     args.output_dir.mkdir(parents=True, exist_ok=True)
     stem = args.output_dir / args.prefix

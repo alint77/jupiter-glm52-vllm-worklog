@@ -1,0 +1,251 @@
+role,kernel,grid,block,calls_per_step,time_us_per_step,rank_min_us,rank_max_us,mean_call_us,p50_call_us,p90_call_us,p99_call_us,launch_occupancy_pct
+Target routed W4 MoE,marlin_moe_wna16::Marlin,396x1x1,128x1x1,300.0,42443.365437500004,41637.20575,43717.43425,141.47788479166667,117.821,255.291,368.025,0
+TP custom all-reduce,vLLM custom all-reduce,24x1x1,512x1x1,160.0,8997.6124375,8457.3375,9544.424,56.235077734375,6.72,192.381,376.442,5
+Target W4 Machete,Machete GEMM,1x132x1,384x1x1,312.0,3645.3555,3611.85775,3673.6665000000003,11.683831730769231,12.96,16.959,17.728,0
+Routed MoE support,vllm::act_and_mul_kernel,128x1x1,256x1x1,150.0,3118.5608125,2959.2445,3282.8295,20.790405416666665,11.84,39.583,107.166,12
+Routed MoE support,vllm::moe::moe_sum_vec_kernel,48x1x1,256x1x1,150.0,2314.0983125000002,2201.24175,2461.26775,15.427322083333333,5.952,37.279,51.903,5
+Sparse MLA,sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_sparse_kernel,1x16x8,384x1x1,79.0,1990.01275,1973.3622500000001,2006.607,25.190034810126583,25.215,25.6,25.888,0
+DCP query all-gather,NCCL AllGather,24x1x1,512x1x1,79.0,1104.626,1011.513,1212.98575,13.98260759493671,13.088,17.088,19.36,0
+DSA full-context scan,deep_gemm::sm90_fp8_paged_mqa_logits,132x1x1,640x1x1,24.0,1056.736875,1053.56575,1058.65225,44.030703125,45.887,48.608,50.495,0
+Target QKV-A W4,marlin::Marlin,132x1x1,128x1x1,78.0,914.31275,906.175,921.17525,11.721958333333333,11.68,12.095,12.704,0
+DCP reduce-scatter,NCCL ReduceScatter,24x1x1,512x1x1,79.0,816.7255625,806.58425,830.1465,10.338298259493671,10.208,11.616,12.832,0
+DCP LSE all-gather,NCCL AllGather,1x1x1,512x1x1,79.0,614.9556875000001,597.60625,624.92825,7.78424920886076,7.584,8.992,10.271,0
+Sparse MLA,smxx::decode::flash_fwd_mla_combine_kernel,1x16x8,256x1x1,79.0,611.1708125,604.75125,616.92625,7.736339398734177,7.744,8.096,8.384,12
+MTP FP8 block,deep_gemm::fp8_gemm_kernel_swapAB,132x1x1,384x1x1,24.0,531.6806875,487.264,555.845,22.153361979166668,10.304,62.623,147.902,0
+Routed MoE support,vllm::moe::moe_align_block_size_kernel,2x1x1,1024x1x1,150.0,507.82156249999997,501.3195,513.813,3.3854770833333334,3.392,3.52,3.648,1
+DSA top-k,vllm::cooperative::cooperative_topk_cs4,16x4x1,1024x1x1,22.0,451.03375,446.031,457.67225,20.50153409090909,20.415,21.44,22.207,0
+Elementwise and metadata,at::native::vectorized_elementwise_kernel,1x1x1,128x1x1,348.0,444.02875,442.37625,448.3855,1.275944683908046,1.216,1.728,1.92,0
+Vocabulary GEMM,nvjet_sm90_tst_192x8_64x8_2x1_v_bz_TNT,2x66x1,384x1x1,3.0,425.3184375,414.66525,430.44025,141.7728125,140.221,147.933,148.317,0
+MLA/DSA BF16 GEMMs,nvjet_sm90_tst_64x8_64x16_1x2_h_bz_NNT,2x64x1,384x1x1,79.0,365.32775,363.42474999999996,367.4405,4.624401898734177,4.608,4.736,4.96,0
+Routed MoE support,vllm::moe::count_and_sort_expert_tokens_kernel,1x1x1,256x1x1,150.0,357.17224999999996,354.64925,361.76275,2.3811483333333334,2.4,2.624,2.784,0
+DCP candidate all-gather,NCCL AllGather,24x1x1,512x1x1,22.0,334.5279375,327.16275,346.64175,15.20581534090909,14.624,17.76,20.64,0
+Target MoE router,kernel_cutlass_kernel_vllmmodel_executorkernelslinearcute_dsl_ll_bf16_splitkLLBf16SplitK_object_at__tensorptrbf16_gmem_align16_o_i64_div81_tensorptrbf16_gmem_align16_o_i64_div81_tensorptr_0,1x16x6,256x1x1,75.0,332.9478125,330.8095,335.6175,4.439304166666667,4.415,4.703,5.024,0
+DSA top-k,DCP stable top-k,16x1x1,512x1x1,22.0,322.92087499999997,319.66675,327.43375,14.678221590909091,14.848,15.552,17.664,3
+MLA/DSA BF16 GEMMs,nvjet_sm90_tst_64x16_64x16_2x1_v_bz_TNT,2x64x1,384x1x1,79.0,314.950875,313.69875,315.7865,3.9867199367088606,3.936,4.32,4.576,0
+Routed MoE support,vllm::moe::grouped_topk_fused_small_expert_count_kernel,16x1x1,384x1x1,76.0,293.516875,292.08525,295.76875,3.8620641447368422,3.84,4.0,4.608,2
+Memsets,Memset ,,,240.0,281.987375,277.01925,285.57775,1.1749473958333334,1.184,1.312,1.792,
+Elementwise and metadata,at::native::elementwise_kernel,1024x1x1,128x1x1,101.0,247.08025,244.7635,249.836,2.446339108910891,2.496,2.56,2.592,48
+Elementwise and metadata,at::native::,264x2x1,512x1x1,81.0,240.603625,238.6415,244.0615,2.97041512345679,2.975,3.168,3.328,100
+Elementwise and metadata,at::native::elementwise_kernel,1152x1x1,128x1x1,79.0,234.7240625,233.2935,235.64275,2.971190664556962,2.976,3.072,3.168,55
+TP custom all-reduce,vLLM custom all-reduce,6x1x1,512x1x1,6.0,228.870125,112.35825,357.33825,38.145020833333334,7.808,106.75,174.557,1
+Elementwise and metadata,triton_red_fused_fused_add_rms_norm_moe_forward_shared_0,16x1x1,512x1x1,75.75,211.4078125,206.58,222.90125,2.790862211221122,2.752,3.008,3.232,3
+Elementwise and metadata,at::native::elementwise_kernel,256x1x1,128x1x1,83.0,194.686875,193.95649999999998,195.98075,2.345625,2.368,2.4,2.463,12
+DCP/index metadata,_convert_req_index_to_global_index_kernel,16x16x1,128x1x1,79.0,182.62631249999998,182.204,183.3405,2.311725474683544,2.304,2.432,2.56,12
+Elementwise and metadata,triton_red_fused_4,4x1x1,128x1x1,28.5,168.647125,0.0,338.93874999999997,5.91744298245614,5.92,6.176,6.432,0
+DCP LSE correction,_correct_attn_cp_out_kernel,16x64x1,128x1x1,79.0,159.074375,156.4455,161.97175000000001,2.013599683544304,2.016,2.08,2.176,48
+Attention/index support,vllm::concat_and_cache_ds_mla_kernel,16x1x1,96x1x1,79.0,155.1269375,149.70175,159.74975,1.9636321202531646,1.92,2.176,2.368,1
+Vocabulary GEMM,nvjet_sm90_tst_192x16_64x8_2x1_v_bz_TNT,2x66x1,384x1x1,1.0,142.8313125,141.71725,144.09300000000002,142.8313125,142.781,145.117,145.501,0
+MTP BF16 projection,triton_tem_fused_mm_t_3,192x1x1,64x1x1,2.5,130.5835625,56.007000000000005,158.261,52.233425,50.527,56.895,57.599,5
+Elementwise and metadata,memcpy32_post,192x1x1,256x1x1,77.0,120.409125,118.7015,122.67575,1.56375487012987,1.536,2.016,2.208,18
+Elementwise and metadata,at::native::elementwise_kernel,4x1x1,128x1x1,79.0,120.2429375,113.6535,127.2135,1.5220625,1.504,1.664,1.824,0
+Elementwise and metadata,triton_tem_fused_mm_t_7,128x1x1,64x1x1,15.0,118.1219375,16.45525,157.8365,7.874795833333334,7.84,8.256,8.608,3
+Elementwise and metadata,at::native::vectorized_elementwise_kernel,96x1x1,128x1x1,75.0,113.4015,110.63825,116.2125,1.51202,1.28,2.08,2.72,5
+Elementwise and metadata,triton_poi_fused_mul_silu_slice_0,16x1x1,256x1x1,76.0,109.5041875,105.671,113.38225,1.4408445723684211,1.376,1.856,2.176,2
+Vocabulary all-gather,NCCL AllGather,24x1x1,544x1x1,1.0,105.70025000000001,40.1435,136.34175,105.70025,128.734,139.038,140.605,0
+Elementwise and metadata,at::native::vectorized_elementwise_kernel,32x1x1,128x1x1,101.0,92.6325,91.631,93.8935,0.9171534653465346,0.896,0.96,1.119,2
+Elementwise and metadata,triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_5,256x1x1,128x1x1,56.5,84.883125,81.13525,89.35125000000001,1.5023561946902655,1.504,1.6,1.728,12
+Elementwise and metadata,memcpy32_post,4x1x1,256x1x1,79.0,78.37043750000001,76.006,80.503,0.9920308544303797,0.992,1.056,1.184,0
+Elementwise and metadata,triton_red_fused_fused_add_rms_norm_marlin_gemm_2,16x1x1,512x1x1,28.5,78.31887499999999,0.0,164.718,2.748030701754386,2.752,2.976,3.104,3
+Elementwise and metadata,triton_red_fused_fused_add_rms_norm_marlin_gemm_2,16x1x1,1024x1x1,28.5,71.718875,0.0,143.60575,2.516451754385965,2.496,2.592,2.848,6
+Elementwise and metadata,triton_red_fused_4,32x1x1,512x1x1,28.5,64.35475,0.0,129.142,2.258061403508772,2.24,2.4,2.464,6
+Vocabulary all-gather,NCCL AllGather,24x1x1,512x1x1,3.0,60.7929375,44.87175,71.19875,20.2643125,18.463,28.576,31.615,0
+MLA/DSA BF16 GEMMs,nvjet_sm90_tss_64x8_64x16_1x2_h_bz_TNT,2x48x1,384x1x1,15.0,56.6104375,3.632,80.60625,3.7740291666666668,3.68,4.096,4.352,0
+Attention/index support,_fused_indexer_q_rope_quant_kernel,16x32x1,32x1x1,22.0,52.506625,51.32725,53.23025,2.3866647727272725,2.4,2.495,2.56,6
+Elementwise and metadata,triton_tem_fused_mm_t_6,128x1x1,64x1x1,6.0,47.227375,7.9197500000000005,148.966,7.871229166666667,7.808,8.255,8.896,3
+Elementwise and metadata,triton_red_fused_fused_add_rms_norm_2,16x1x1,512x1x1,15.0,43.69725,0.0,58.63875,2.91315,2.912,3.04,3.168,3
+Attention/index support,vllm::indexer_k_quant_and_cache_kernel,16x1x1,32x4x1,22.0,42.3634375,41.80775,42.9035,1.9256107954545454,1.92,2.048,2.336,1
+DCP/index metadata,_pack_dcp_topk_candidates_triton_kernel,16x4x1,256x1x1,22.0,41.175312500000004,40.46325,42.783,1.8716051136363636,1.856,2.048,2.336,6
+Elementwise and metadata,triton_poi_fused_3,4x1x1,128x1x1,28.25,37.6133125,0.0,77.68625,1.3314446902654866,1.312,1.44,1.6,0
+MTP FP8 block,tensorrt_llm::kernels::fp8_blockscale_gemm::scale_1x128_kernel,1056x1x1,256x1x1,18.0,35.1555625,34.327,35.91975,1.9530868055555555,1.76,2.368,3.936,100
+DSA top-k,vllm::cooperative::cooperative_topk_cs8,4x8x1,1024x1x1,2.0,30.4674375,30.1755,30.783749999999998,15.23371875,15.263,15.487,16.16,0
+Sparse MLA,sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_sparse_kernel,1x4x33,384x1x1,2.0,29.497625,29.14375,29.77525,14.7488125,14.752,14.944,15.072,0
+Elementwise and metadata,triton_poi_fused_add_mul_1,192x1x1,256x1x1,23.0,28.72925,0.0,92.43775,1.2490978260869565,1.248,1.344,1.44,18
+Elementwise and metadata,triton_red_fused_fused_add_rms_norm_2,1x1x1,64x1x1,0.25,27.1475,0.0,108.59,108.59,108.926,108.958,108.958,0
+DSA top-k,DCP stable top-k,4x1x1,512x1x1,2.0,27.05975,26.623749999999998,27.432,13.529875,13.504,14.112,14.336,1
+DCP candidate all-gather,NCCL AllGather,16x1x1,512x1x1,2.0,26.8493125,18.632,34.75925,13.42465625,13.44,18.816,21.599,0
+Elementwise and metadata,at::native::reduce_kernel,4x19x1,128x4x1,3.0,25.9214375,25.735,26.255750000000003,8.640479166666667,8.64,8.992,9.056,14
+MTP FP8 block,tensorrt_llm::kernels::fp8_blockscale_gemm::scale_1x128_kernel,132x1x1,256x1x1,6.0,25.7555625,23.70325,27.15975,4.29259375,4.032,5.664,8.672,13
+Elementwise and metadata,triton_poi_fused_add_mul_1,192x1x1,128x1x1,19.75,25.5615,0.0,99.398,1.294253164556962,1.28,1.408,1.632,9
+MLA/DSA BF16 GEMMs,nvjet_sm90_tst_64x16_64x16_4x1_v_bz_splitK_TNT,4x4x1,384x1x1,5.0,25.4936875,0.0,91.18275,5.0987375,5.056,5.44,5.568,0
+MTP BF16 projection,nvjet_sm90_tst_192x8_64x8_2x1_v_bz_splitK_TNT,2x64x1,384x1x1,0.5,24.067625,0.0,96.2705,48.13525,48.48,48.703,48.703,0
+Elementwise and metadata,triton_poi_fused_add_mul_1,96x1x1,128x1x1,19.25,24.0293125,0.0,94.86149999999999,1.248275974025974,1.247,1.344,1.472,5
+Attention/index support,smxx::decode::get_mla_metadata_kernel,1x1x1,32x1x1,4.0,20.9775,20.75125,21.2475,5.244375,7.264,7.584,7.616,0
+Elementwise and metadata,triton_poi_fused_3,8x1x1,128x1x1,14.5,19.8755,0.0,77.062,1.3707241379310344,1.376,1.408,1.6,0
+Elementwise and metadata,triton_poi_fused_add_mul_1,384x1x1,256x1x1,14.25,18.291687500000002,0.0,73.16675000000001,1.283627192982456,1.28,1.344,1.472,36
+Elementwise and metadata,triton_poi_fused_3,16x1x1,128x1x1,14.25,18.1958125,0.0,72.78325,1.2768991228070175,1.28,1.344,1.472,1
+DCP query all-gather,NCCL AllGather,18x1x1,512x1x1,2.0,17.5836875,16.31975,18.735500000000002,8.79184375,8.384,10.432,11.2,0
+Sparse MLA,smxx::decode::flash_fwd_mla_combine_kernel,1x4x8,256x1x1,2.0,17.5458125,17.312,17.74375,8.77290625,8.768,8.928,9.056,3
+Elementwise and metadata,triton_red_fused_6,32x1x1,512x1x1,10.5,17.4679375,0.0,33.512,1.6636130952380952,1.664,1.76,1.824,6
+Routed MoE support,vllm::moe::grouped_topk_fused_small_expert_count_kernel,4x1x1,384x1x1,2.0,16.2716875,15.927000000000001,16.672,8.13584375,8.416,8.736,8.927,1
+Elementwise and metadata,triton_red_fused_add_fused_add_rms_norm_rms_norm_2,1x1x1,128x1x1,1.0,15.2436875,0.0,31.4795,15.2436875,15.327,16.256,16.96,0
+DCP reduce-scatter,NCCL ReduceScatter,16x1x1,512x1x1,2.0,14.5778125,13.272,15.6,7.28890625,7.424,7.903,8.288,0
+Elementwise and metadata,triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_8,256x1x1,128x1x1,10.0,14.455625,0.0,28.7915,1.4455624999999999,1.44,1.536,1.664,12
+MTP FP8 block,tensorrt_llm::kernels::cutlass_kernels::finalizeMoeRoutingKernel,4x1x1,256x1x1,2.0,14.3396875,12.688,15.28725,7.16984375,7.264,9.376,11.071,0
+Elementwise and metadata,at::native::reduce_kernel,1x1x1,128x4x1,3.0,13.745625,13.4315,14.0555,4.581875,4.544,4.832,5.024,0
+Elementwise and metadata,triton_per_fused__to_copy_native_layer_norm_slice_4,16x1x1,64x1x1,9.5,13.5178125,0.0,28.54375,1.4229276315789474,1.408,1.536,1.632,0
+MTP FP8 block,tensorrt_llm::kernels::cutlass_kernels::fusedBuildExpertMapsSortFirstTokenKernel,1x1x1,32x1x1,3.0,13.4796875,13.2315,13.89575,4.493229166666667,4.832,5.408,5.823,0
+Elementwise and metadata,router_gemm_kernel_float_output,256x1x1,128x1x1,3.0,13.307937500000001,13.05575,13.552,4.435979166666667,3.648,6.176,6.272,12
+DCP LSE all-gather,NCCL AllGather,1x1x1,128x1x1,2.0,13.1395625,11.21575,14.19125,6.56978125,5.984,8.255,8.736,0
+Elementwise and metadata,_compute_slot_mappings_kernel,1x5x1,128x1x1,3.0,13.00375,12.672,13.53525,4.334583333333334,4.256,5.152,5.44,0
+Elementwise and metadata,triton_red_fused_fused_add_rms_norm_2,16x1x1,1024x1x1,5.0,12.3318125,0.0,49.32725,2.4663625,2.464,2.528,2.624,6
+Explicit copies,Memcpy HtoD ,,,11.0,11.943875,11.08775,13.112,1.0858068181818181,0.832,2.144,2.464,
+Elementwise and metadata,triton_per_fused_mm_t_3,80x1x1,128x1x1,9.0,11.693625,0.0,23.42275,1.2992916666666667,1.312,1.344,1.408,4
+Elementwise and metadata,at::native::elementwise_kernel,1210x1x1,128x1x1,3.0,11.326,11.144,11.488,3.775333333333333,3.776,3.904,3.968,57
+Elementwise and metadata,triton_per_fused__to_copy_native_layer_norm_slice_4,1x1x1,64x1x1,5.0,9.5759375,0.0,38.30375,1.9151875,1.888,2.112,2.304,0
+Elementwise and metadata,triton_red_fused_5,32x1x1,512x1x1,5.5,9.395812500000002,0.0,32.74325,1.7083295454545455,1.696,1.856,1.952,6
+MTP FP8 block,tensorrt_llm::kernels::cutlass_kernels::finalizeMoeRoutingKernel,16x1x1,256x1x1,1.0,9.223875,8.4,10.224,9.223875,9.12,11.072,11.392,2
+Elementwise and metadata,at::native::index_elementwise_kernel,1x1x1,128x1x1,5.0,9.219625,8.43175,10.31925,1.843925,1.792,2.336,2.751,0
+Elementwise and metadata,triton_poi_fused_5,8x1x1,128x1x1,6.0,8.841625,0.0,29.79075,1.4736041666666666,1.472,1.536,1.696,0
+Elementwise and metadata,at::native::unrolled_elementwise_kernel,48x1x1,128x1x1,3.0,8.779937499999999,8.48,8.93575,2.926645833333333,2.944,3.072,3.2,2
+Explicit copies,Memcpy DtoD ,,,9.0,8.5539375,8.336,8.744,0.9504375,0.8,1.408,1.856,
+Elementwise and metadata,triton_red_fused_fused_add_rms_norm_2,8x1x1,64x1x1,0.25,8.4998125,0.0,33.99925,33.99925,34.015,34.112,34.112,0
+Elementwise and metadata,triton_red_fused_6,16x1x1,512x1x1,4.5,8.465875,0.0,33.8635,1.8813055555555556,1.856,2.016,2.144,3
+DSA full-context scan,deep_gemm::sched::smxx_paged_mqa_logits_metadata,1x1x1,32x1x1,3.0,8.244,8.056000000000001,8.456,2.7479999999999998,2.752,2.848,2.912,0
+Elementwise and metadata,cublasLt::splitKreduce_kernel,5x1x1,32x16x1,5.0,7.95575,0.0,28.647,1.59115,1.6,1.695,1.792,1
+Elementwise and metadata,at::native::elementwise_kernel,1x1x1,128x1x1,6.0,7.8798125,7.7515,8.12,1.3133020833333333,1.28,1.536,1.759,0
+MLA/DSA BF16 GEMMs,nvjet_sm90_tst_64x8_64x16_4x1_v_bz_NNT,4x16x1,384x1x1,2.0,7.819875,7.671749999999999,8.016,3.9099375,3.904,4.0,4.416,0
+Elementwise and metadata,triton_poi_fused_4,8x1x1,256x1x1,5.0,7.6159375,0.0,29.02375,1.5231875,1.504,1.631,1.92,1
+Elementwise and metadata,at::native::unrolled_elementwise_kernel,4840x1x1,128x1x1,1.0,7.538,7.416,7.64,7.538,7.52,7.744,7.776,100
+Elementwise and metadata,triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_7,256x1x1,64x1x1,5.0,7.531937500000001,0.0,28.65575,1.5063875,1.504,1.568,1.664,6
+MLA/DSA BF16 GEMMs,nvjet_sm90_tst_64x8_64x16_2x1_v_bz_TNT,2x64x1,384x1x1,2.0,7.459875,7.4155,7.496,3.7299375,3.744,3.808,3.936,0
+Elementwise and metadata,at::native::elementwise_kernel,48x1x1,128x1x1,3.0,7.4539375,7.231999999999999,7.6240000000000006,2.4846458333333334,2.464,2.624,2.688,2
+Elementwise and metadata,triton_red_fused_fused_add_rms_norm_2,2x1x1,128x1x1,0.5,7.409937500000001,0.0,16.903750000000002,14.819875,16.608,17.088,17.088,0
+Elementwise and metadata,at::native::elementwise_kernel,4840x1x1,128x1x1,1.0,7.237875,7.12,7.4155,7.237875,7.232,7.424,7.455,100
+Elementwise and metadata,triton_red_fused_fused_add_rms_norm_machete_mm_0,16x1x1,512x1x1,2.25,7.06975,0.0,9.456,3.1421111111111113,3.136,3.328,3.456,3
+Elementwise and metadata,triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_8,128x1x1,128x1x1,4.5,7.0479375,0.0,28.19175,1.5662083333333334,1.568,1.632,1.888,6
+Elementwise and metadata,triton_per_fused__to_copy_native_layer_norm_slice_3,8x1x1,64x1x1,5.0,7.011875,0.0,26.6315,1.402375,1.408,1.504,1.568,0
+MLA/DSA BF16 GEMMs,nvjet_sm90_tss_64x8_64x16_4x1_v_bz_TNT,4x24x1,384x1x1,2.0,6.9318124999999995,6.64775,7.128,3.46590625,3.456,3.552,4.096,0
+Elementwise and metadata,at::native::vectorized_elementwise_kernel,24x1x1,128x1x1,6.0,6.7999375,6.720000000000001,6.912,1.1333229166666667,1.12,1.184,1.344,1
+Elementwise and metadata,at::native::vectorized_elementwise_kernel,8x1x1,128x1x1,8.0,6.76375,6.64,6.93575,0.84546875,0.832,0.96,1.152,0
+Elementwise and metadata,_compute_local_logits_stats_kernel,16x19x1,128x1x1,1.0,6.7218125,6.432,7.11975,6.7218124999999995,6.975,7.264,8.096,14
+Elementwise and metadata,triton_poi_fused_5,16x1x1,64x1x1,4.5,6.593999999999999,0.0,26.375999999999998,1.4653333333333334,1.472,1.504,1.6,0
+Elementwise and metadata,triton_poi_fused_5,16x1x1,128x1x1,4.5,6.437875,0.0,25.7515,1.4306388888888888,1.439,1.504,1.632,1
+Elementwise and metadata,at::native::unrolled_elementwise_kernel,1x1x1,128x1x1,6.0,6.339875,6.232,6.47175,1.0566458333333333,1.088,1.472,1.76,0
+MLA/DSA BF16 GEMMs,nvjet_sm90_tss_64x16_64x16_4x1_v_bz_TNT,4x24x1,384x1x1,1.5,5.8559375000000005,0.0,11.72,3.903958333333333,3.968,4.16,4.32,0
+MTP FP8 block,tensorrt_llm::kernels::cutlass_kernels::expandInputRowsKernel,32x1x1,256x1x1,2.0,5.807875,5.496,6.16,2.9039375,3.008,3.232,3.616,3
+Elementwise and metadata,triton_per_fused_mm_t_3,80x1x1,64x1x1,4.5,5.6859375,0.0,22.74375,1.2635416666666666,1.248,1.376,1.472,2
+Elementwise and metadata,_rejection_kernel,4x1x1,32x1x1,1.0,5.5439375,5.24,5.68775,5.5439375,5.536,5.92,6.144,0
+Elementwise and metadata,_update_draft_inputs_kernel,4x1x1,128x1x1,2.0,5.4218125,5.264,5.5200000000000005,2.71090625,3.999,4.224,4.351,0
+Elementwise and metadata,at::native::elementwise_kernel,96x1x1,128x1x1,3.0,5.3779375,5.33575,5.408,1.7926458333333333,1.792,1.888,1.92,5
+Elementwise and metadata,at::native::elementwise_kernel,288x1x1,128x1x1,2.0,5.068,4.784,5.208,2.534,2.56,2.624,2.688,14
+MTP FP8 block,tensorrt_llm::kernels::cutlass_kernels::doActivationKernel,32x1x1,256x1x1,2.0,4.9659375,4.896,4.99975,2.48296875,2.56,2.72,2.816,3
+Elementwise and metadata,_resample_kernel,4x152x1,128x1x1,1.0,4.741875,4.6080000000000005,4.848,4.741875,4.8,4.991,5.152,29
+Elementwise and metadata,at::native::elementwise_kernel,64x1x1,128x1x1,2.0,4.5438125,4.424,4.608,2.27190625,2.303,2.304,2.336,3
+Elementwise and metadata,triton_red_fused_1,4x1x1,512x1x1,2.0,4.478,4.272,4.608,2.239,2.24,2.4,2.432,1
+Explicit copies,Memcpy DtoH ,,,2.0,4.095875,3.7680000000000002,4.464,2.0479375,1.856,2.72,3.424,
+DCP/index metadata,_convert_req_index_to_global_index_kernel,4x16x1,128x1x1,2.0,3.9938125,3.88,4.1435,1.99690625,1.984,2.08,2.207,3
+Elementwise and metadata,triton_red_fused_8,4x1x1,128x1x1,0.75,3.9679375,0.0,5.61575,5.290583333333333,5.216,5.631,5.664,0
+Elementwise and metadata,_post_update_kernel,4x1x1,32x1x1,1.0,3.801875,3.6959999999999997,4.0,3.801875,3.776,4.288,4.288,0
+Elementwise and metadata,triton_red_fused_rms_norm_4,4x1x1,512x1x1,1.5,3.6719999999999997,0.0,5.04,2.448,2.464,2.656,2.752,1
+Elementwise and metadata,triton_red_fused_8,2x1x1,128x1x1,1.0,3.636,0.0,7.28,3.636,3.712,3.808,3.936,0
+Attention/index support,_fused_indexer_q_rope_quant_kernel,4x32x1,32x1x1,2.0,3.635875,3.424,4.02375,1.8179375,1.728,2.048,2.112,2
+Elementwise and metadata,triton_red_fused_eq_rms_norm_scalar_tensor_unsqueeze_where_2,4x1x1,512x1x1,1.5,3.62,0.0,4.88,2.413333333333333,2.432,2.56,2.592,1
+DCP/index metadata,_pack_dcp_topk_candidates_triton_kernel,4x4x1,256x1x1,2.0,3.5979375,3.488,3.7277500000000003,1.79896875,1.792,1.888,2.048,2
+Attention/index support,vllm::indexer_k_quant_and_cache_kernel,4x1x1,32x4x1,2.0,3.541875,3.232,3.9195,1.7709375,1.856,2.111,2.176,0
+Elementwise and metadata,_gather_block_tables_kernel,1x4x1,128x1x1,1.0,3.482,3.464,3.512,3.4819999999999998,3.488,3.616,3.776,0
+Elementwise and metadata,at::native::vectorized_gather_kernel,4x3x1,256x1x1,2.0,3.4679375,3.39175,3.592,1.73396875,1.792,1.92,2.016,1
+Elementwise and metadata,at::native::,1x1x1,1x1x1,1.0,3.4459999999999997,3.424,3.48,3.4459999999999997,3.456,3.52,3.552,0
+Elementwise and metadata,triton_red_fused_fused_add_rms_norm_machete_mm_0,8x1x1,512x1x1,0.75,3.3838125,0.0,13.53525,4.51175,4.448,4.8,4.991,2
+Attention/index support,vllm::concat_and_cache_ds_mla_kernel,4x1x1,96x1x1,2.0,3.3219375,2.98375,3.544,1.66096875,1.824,2.048,2.112,0
+DCP LSE correction,_correct_attn_cp_out_kernel,4x64x1,128x1x1,2.0,3.291875,3.22375,3.352,1.6459375,1.632,1.664,1.728,12
+Elementwise and metadata,memcpy32_post,48x1x1,256x1x1,3.0,3.2339375,3.168,3.3200000000000003,1.0779791666666667,1.088,1.12,1.184,5
+Elementwise and metadata,memcpy32_post,1x1x1,256x1x1,3.0,3.214,3.072,3.288,1.0713333333333332,1.024,1.248,1.376,0
+Elementwise and metadata,_insert_resampled_kernel,4x1x1,128x1x1,1.0,3.167875,3.0,3.2640000000000002,3.167875,3.2,3.36,3.392,0
+Elementwise and metadata,_dcp_local_seq_lens_kernel,1x1x1,128x1x1,3.0,2.9758750000000003,2.7520000000000002,3.2157500000000003,0.9919583333333334,0.992,1.152,1.312,0
+MTP FP8 block,tensorrt_llm::kernels::cutlass_kernels::expandInputRowsKernel,128x1x1,256x1x1,1.0,2.9398125,2.848,3.03975,2.9398125,2.944,3.104,3.168,12
+Elementwise and metadata,triton_poi_fused_mul_silu_slice_0,4x1x1,256x1x1,2.0,2.935875,2.832,3.0237499999999997,1.4679375,1.44,1.664,1.824,0
+Elementwise and metadata,triton_red_fused_fused_add_rms_norm_moe_forward_shared_0,2x1x1,128x1x1,0.5,2.898,0.0,11.592,5.796,6.016,6.08,6.08,0
+MTP FP8 block,tensorrt_llm::kernels::cutlass_kernels::doActivationKernel,128x1x1,256x1x1,1.0,2.777875,2.69575,2.81575,2.777875,2.784,2.88,2.912,12
+Elementwise and metadata,triton_red_fused_5,4x1x1,128x1x1,0.5,2.7459375,0.0,5.8157499999999995,5.491875,5.664,5.984,5.984,0
+Elementwise and metadata,_get_num_sampled_and_rejected_kernel,4x1x1,128x1x1,1.0,2.7439375,2.512,3.11175,2.7439375,2.624,3.424,3.744,0
+Elementwise and metadata,triton_red_fused_fused_add_rms_norm_moe_forward_shared_0,4x1x1,512x1x1,1.0,2.739875,0.0,5.9275,2.739875,2.784,3.136,3.136,1
+Elementwise and metadata,triton_red_fused_add_fused_add_rms_norm_rms_norm_2,4x1x1,512x1x1,1.0,2.708,0.0,5.4959999999999996,2.708,2.752,2.88,2.88,1
+Elementwise and metadata,triton_per_fused_mm_t_5,5x1x1,256x1x1,1.0,2.384,0.0,4.792,2.384,2.368,2.496,2.528,0
+Elementwise and metadata,_combine_sampled_and_draft_tokens_kernel,4x1x1,128x1x1,1.0,2.248,2.208,2.344,2.248,2.208,2.4,2.432,0
+Elementwise and metadata,triton_red_fused_add_fused_add_rms_norm_rms_norm_2,16x1x1,512x1x1,0.75,2.1879999999999997,0.0,2.936,2.917333333333333,2.88,3.072,3.072,3
+Elementwise and metadata,triton_poi_fused_0,48x1x1,128x1x1,1.25,2.1558124999999997,0.0,5.5355,1.72465,1.664,2.208,2.432,2
+Elementwise and metadata,at::native::vectorized_gather_kernel,16x3x1,256x1x1,1.0,1.9640000000000002,1.592,2.4000000000000004,1.964,1.92,2.56,2.592,5
+Elementwise and metadata,_prepare_uniform_decode_kernel,16x1x1,128x1x1,1.0,1.8,1.752,1.8399999999999999,1.8,1.792,1.952,2.048,1
+Elementwise and metadata,triton_red_fused_rms_norm_4,16x1x1,512x1x1,0.75,1.7739375,0.0,2.392,2.36525,2.368,2.432,2.464,3
+Elementwise and metadata,triton_red_fused_eq_rms_norm_scalar_tensor_unsqueeze_where_2,8x1x1,512x1x1,0.25,1.7679375,0.0,7.07175,7.07175,7.168,7.296,7.296,2
+Elementwise and metadata,triton_red_fused_1,16x1x1,512x1x1,0.75,1.7479375,0.0,2.392,2.3305833333333332,2.336,2.432,2.496,3
+Elementwise and metadata,_prepare_decode_inputs_kernel,5x1x1,128x1x1,1.0,1.6499375,1.54375,1.776,1.6499375,1.664,1.792,1.888,0
+Elementwise and metadata,triton_poi_fused_7,4x1x1,128x1x1,1.0,1.638,0.0,3.456,1.6380000000000001,1.6,1.824,1.92,0
+Elementwise and metadata,triton_per_fused__to_copy_native_layer_norm_slice_6,2x1x1,64x1x1,1.0,1.6139374999999998,0.0,4.7357499999999995,1.6139375,1.664,1.92,1.92,0
+Elementwise and metadata,triton_poi_fused_machete_mm_mul_silu_slice_1,96x1x1,128x1x1,1.0,1.5339999999999998,0.0,4.568,1.534,1.536,1.632,1.664,5
+Elementwise and metadata,triton_poi_fused_add_mul_1,96x1x1,256x1x1,1.0,1.508,0.0,4.4479999999999995,1.508,1.536,1.6,1.696,9
+Elementwise and metadata,_prepare_prefill_inputs_kernel,4x1x1,128x1x1,1.0,1.496,1.456,1.512,1.496,1.504,1.536,1.664,0
+Elementwise and metadata,at_cuda_detail::cub::detail::scan::DeviceScanKernel,1x1x1,128x1x1,1.0,1.376,1.3359999999999999,1.456,1.376,1.376,1.472,1.472,0
+Elementwise and metadata,triton_red_fused_fused_add_rms_norm_moe_forward_shared_0,4x1x1,1024x1x1,0.5,1.3719999999999999,0.0,5.4879999999999995,2.7439999999999998,2.816,2.848,2.848,2
+Elementwise and metadata,triton_per_fused__to_copy_native_layer_norm_slice_6,4x1x1,32x1x1,1.0,1.3119375,0.0,2.75975,1.3119375,1.344,1.408,1.568,0
+Elementwise and metadata,_prepare_pos_seq_lens_kernel,5x1x1,128x1x1,1.0,1.28,1.2,1.336,1.28,1.312,1.344,1.472,0
+Elementwise and metadata,triton_red_fused_rms_norm_1,16x1x1,512x1x1,0.5,1.238,0.0,2.6,2.476,2.496,2.688,2.688,3
+Elementwise and metadata,compute_cuda_kernel,1x1x1,512x1x1,1.0,1.236,1.216,1.248,1.236,1.248,1.248,1.28,0
+Elementwise and metadata,triton_poi_fused_add_mul_1,48x1x1,128x1x1,0.75,1.188,0.0,2.992,1.584,1.568,2.144,2.4,2
+Elementwise and metadata,triton_poi_fused_machete_mm_mul_silu_slice_1,384x1x1,128x1x1,0.75,1.188,0.0,4.752,1.584,1.568,1.6,1.728,18
+Elementwise and metadata,triton_per_fused_mm_t_5,20x1x1,256x1x1,0.5,1.184,0.0,2.392,2.368,2.368,2.432,2.432,2
+Elementwise and metadata,triton_poi_fused_machete_mm_mul_silu_slice_1,96x1x1,64x1x1,0.75,1.1800000000000002,0.0,4.720000000000001,1.5733333333333335,1.568,1.6,1.6,2
+Elementwise and metadata,triton_poi_fused_7,16x1x1,128x1x1,0.75,1.1600000000000001,0.0,1.576,1.5466666666666666,1.536,1.632,1.632,1
+Elementwise and metadata,triton_red_fused_eq_rms_norm_scalar_tensor_unsqueeze_where_2,16x1x1,512x1x1,0.5,1.1440000000000001,0.0,2.48,2.2880000000000003,2.4,2.528,2.528,3
+Elementwise and metadata,triton_red_fused_rms_norm_3,4x1x1,512x1x1,0.5,1.1139999999999999,0.0,4.4559999999999995,2.2279999999999998,2.272,2.4,2.4,1
+Elementwise and metadata,triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_7,512x1x1,64x1x1,0.75,1.0659999999999998,0.0,4.263999999999999,1.4213333333333333,1.408,1.472,1.504,12
+Elementwise and metadata,_expand_idx_mapping_kernel,4x1x1,128x1x1,1.0,1.054,0.976,1.1360000000000001,1.054,1.024,1.184,1.216,0
+MLA/DSA BF16 GEMMs,nvjet_sm90_tss_64x8_64x16_4x2_h_bz_TNT,8x12x1,384x1x1,0.25,1.046,0.0,4.184,4.184,4.288,4.448,4.448,0
+Elementwise and metadata,triton_poi_fused_4,8x1x1,128x1x1,0.75,1.036,0.0,2.792,1.3813333333333333,1.376,1.408,1.44,0
+Elementwise and metadata,triton_red_fused_eq_rms_norm_scalar_tensor_unsqueeze_where_2,4x1x1,1024x1x1,0.5,1.005875,0.0,4.0235,2.01175,2.048,2.08,2.08,2
+Elementwise and metadata,cublasLt::splitKreduce_kernel,192x1x1,32x16x1,0.5,0.994,0.0,3.976,1.988,1.952,2.08,2.08,36
+MLA/DSA BF16 GEMMs,nvjet_sm90_tss_64x16_64x16_1x1_h_bz_TNT,1x96x1,384x1x1,0.25,0.9219999999999999,0.0,3.6879999999999997,3.6879999999999997,3.776,3.808,3.808,0
+Elementwise and metadata,triton_red_fused_8,8x1x1,256x1x1,0.5,0.8819375,0.0,3.52775,1.763875,1.728,2.048,2.048,1
+Elementwise and metadata,triton_red_fused_rms_norm_1,8x1x1,256x1x1,0.25,0.854,0.0,3.416,3.416,3.488,3.488,3.488,1
+Elementwise and metadata,triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_8,512x1x1,128x1x1,0.5,0.833875,0.0,3.3355,1.66775,1.727,1.919,1.919,24
+Elementwise and metadata,triton_poi_fused_add_bitwise_and_bitwise_not_bitwise_or_embedding_ge_lt_masked_fill_mul_sub_unsqueeze_0,96x1x1,256x1x1,0.5,0.8260000000000001,0.0,1.752,1.652,1.632,1.92,1.92,9
+Elementwise and metadata,triton_per_fused__to_copy_native_layer_norm_slice_4,2x1x1,64x1x1,0.5,0.81,0.0,3.24,1.62,1.6,1.856,1.856,0
+Elementwise and metadata,triton_red_fused_7,8x1x1,512x1x1,0.5,0.802,0.0,3.208,1.604,1.568,1.76,1.76,2
+Elementwise and metadata,triton_poi_fused_machete_mm_mul_silu_slice_1,48x1x1,128x1x1,0.5,0.798,0.0,3.192,1.596,1.6,1.664,1.664,2
+Elementwise and metadata,triton_poi_fused_0,384x1x1,128x1x1,0.5,0.776,0.0,3.104,1.552,1.472,1.824,1.824,18
+Elementwise and metadata,triton_poi_fused_0,24x1x1,128x1x1,0.5,0.764,0.0,3.056,1.528,1.504,1.728,1.728,1
+Elementwise and metadata,at_cuda_detail::cub::detail::scan::DeviceScanInitKernel,1x1x1,128x1x1,1.0,0.7619375,0.752,0.768,0.7619375,0.768,0.768,0.8,0
+Elementwise and metadata,triton_poi_fused_7,4x1x1,256x1x1,0.5,0.746,0.0,2.984,1.492,1.472,1.728,1.728,0
+Elementwise and metadata,triton_per_fused_mm_t_3,80x1x1,256x1x1,0.5,0.726,0.0,2.904,1.452,1.472,1.472,1.472,8
+Elementwise and metadata,triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_9,64x1x1,64x1x1,0.5,0.718,0.0,2.872,1.436,1.44,1.472,1.472,2
+Elementwise and metadata,triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_9,64x1x1,128x1x1,0.5,0.712,0.0,2.848,1.424,1.44,1.472,1.472,3
+Elementwise and metadata,triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_8,64x1x1,64x1x1,0.5,0.706,0.0,2.824,1.412,1.408,1.536,1.536,2
+Elementwise and metadata,triton_per_fused_mm_t_3,160x1x1,128x1x1,0.5,0.702,0.0,2.808,1.404,1.408,1.44,1.44,8
+Elementwise and metadata,triton_red_fused_fused_add_rms_norm_moe_forward_shared_0,16x1x1,1024x1x1,0.25,0.7019375,0.0,2.80775,2.80775,2.784,2.88,2.88,6
+Elementwise and metadata,triton_per_fused_mm_t_3,40x1x1,128x1x1,0.5,0.6979375,0.0,2.79175,1.395875,1.376,1.568,1.568,2
+Elementwise and metadata,triton_per_fused__to_copy_native_layer_norm_slice_3,16x1x1,64x1x1,0.5,0.688,0.0,2.752,1.376,1.376,1.408,1.408,0
+Elementwise and metadata,triton_poi_fused_6,4x1x1,128x1x1,0.5,0.688,0.0,2.752,1.376,1.376,1.408,1.408,0
+Elementwise and metadata,triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_9,128x1x1,64x1x1,0.5,0.6799999999999999,0.0,2.7199999999999998,1.3599999999999999,1.376,1.376,1.376,3
+Elementwise and metadata,triton_per_fused_mm_t_5,20x1x1,128x1x1,0.5,0.6619375000000001,0.0,2.6477500000000003,1.3238750000000001,1.312,1.407,1.407,1
+Elementwise and metadata,triton_per_fused__to_copy_native_layer_norm_slice_5,4x1x1,32x1x1,0.5,0.652,0.0,2.608,1.304,1.344,1.408,1.408,0
+Elementwise and metadata,triton_per_fused__to_copy_native_layer_norm_slice_3,1x1x1,32x1x1,0.25,0.628,0.0,2.512,2.512,2.528,2.528,2.528,0
+Elementwise and metadata,triton_per_fused_mm_t_5,2560x1x1,64x1x1,0.25,0.6259375,0.0,2.50375,2.50375,2.464,2.624,2.624,61
+Elementwise and metadata,triton_red_fused_add_fused_add_rms_norm_rms_norm_2,16x1x1,1024x1x1,0.25,0.61,0.0,2.44,2.44,2.496,2.496,2.496,6
+Elementwise and metadata,triton_per_fused_mm_t_4,40x1x1,32x1x1,0.5,0.5839375,0.0,2.33575,1.167875,1.152,1.311,1.311,0
+Elementwise and metadata,triton_poi_fused_0,384x1x1,256x1x1,0.25,0.5740000000000001,0.0,2.2960000000000003,2.2960000000000003,2.336,2.368,2.368,36
+Elementwise and metadata,triton_poi_fused_0,96x1x1,512x1x1,0.25,0.56,0.0,2.24,2.24,2.272,2.336,2.336,18
+Elementwise and metadata,triton_red_fused_eq_rms_norm_scalar_tensor_unsqueeze_where_2,16x1x1,1024x1x1,0.25,0.538,0.0,2.152,2.152,2.176,2.176,2.176,6
+Elementwise and metadata,triton_red_fused_8,32x1x1,512x1x1,0.25,0.536,0.0,2.144,2.144,2.176,2.208,2.208,6
+Elementwise and metadata,triton_red_fused_rms_norm_4,16x1x1,1024x1x1,0.25,0.524,0.0,2.096,2.096,2.048,2.272,2.272,6
+Elementwise and metadata,triton_poi_fused_0,192x1x1,128x1x1,0.25,0.512,0.0,2.048,2.048,2.08,2.144,2.144,9
+Elementwise and metadata,triton_red_fused_1,16x1x1,1024x1x1,0.25,0.508,0.0,2.032,2.032,2.048,2.048,2.048,6
+Elementwise and metadata,triton_red_fused_rms_norm_1,16x1x1,1024x1x1,0.25,0.506,0.0,2.024,2.024,2.048,2.112,2.112,6
+Elementwise and metadata,triton_poi_fused_7,8x1x1,256x1x1,0.25,0.41200000000000003,0.0,1.6480000000000001,1.6480000000000001,1.664,1.728,1.728,1
+Elementwise and metadata,triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_5,256x1x1,256x1x1,0.25,0.4119375,0.0,1.64775,1.64775,1.536,2.016,2.016,24
+Elementwise and metadata,triton_per_fused__to_copy_native_layer_norm_slice_6,4x1x1,64x1x1,0.25,0.388,0.0,1.552,1.552,1.568,1.632,1.632,0
+Elementwise and metadata,triton_poi_fused_add_bitwise_and_bitwise_not_bitwise_or_embedding_ge_lt_masked_fill_mul_sub_unsqueeze_0,48x1x1,256x1x1,0.25,0.388,0.0,1.552,1.552,1.6,1.6,1.6,5
+Elementwise and metadata,triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_9,512x1x1,32x1x1,0.25,0.3879375,0.0,1.55175,1.55175,1.568,1.568,1.568,6
+Elementwise and metadata,triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_9,256x1x1,256x1x1,0.25,0.374,0.0,1.496,1.496,1.504,1.504,1.504,24
+Elementwise and metadata,triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_9,512x1x1,128x1x1,0.25,0.372,0.0,1.488,1.488,1.504,1.504,1.504,24
+Elementwise and metadata,triton_poi_fused_add_bitwise_and_bitwise_not_bitwise_or_embedding_ge_lt_masked_fill_mul_sub_unsqueeze_0,192x1x1,256x1x1,0.25,0.372,0.0,1.488,1.488,1.536,1.632,1.632,18
+Elementwise and metadata,triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_5,256x1x1,64x1x1,0.25,0.37,0.0,1.48,1.48,1.472,1.664,1.664,6
+Elementwise and metadata,triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_7,256x1x1,128x1x1,0.25,0.366,0.0,1.464,1.464,1.472,1.504,1.504,12
+Elementwise and metadata,triton_poi_fused_4,16x1x1,64x1x1,0.25,0.366,0.0,1.464,1.464,1.472,1.504,1.504,0
+Elementwise and metadata,triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_9,256x1x1,128x1x1,0.25,0.36,0.0,1.44,1.44,1.44,1.472,1.472,12
+Elementwise and metadata,triton_per_fused__to_copy_native_layer_norm_slice_3,8x1x1,32x1x1,0.25,0.36,0.0,1.44,1.44,1.44,1.536,1.536,0
+Elementwise and metadata,triton_per_fused_mm_t_2,160x1x1,128x1x1,0.25,0.358,0.0,1.432,1.432,1.44,1.44,1.44,8
+Elementwise and metadata,triton_per_fused_mm_t_2,80x1x1,128x1x1,0.25,0.354,0.0,1.416,1.416,1.376,1.6,1.6,4
+Elementwise and metadata,triton_per_fused_mm_t_5,40x1x1,128x1x1,0.25,0.35,0.0,1.4,1.4,1.408,1.408,1.408,2
+Elementwise and metadata,triton_per_fused__to_copy_native_layer_norm_slice_6,16x1x1,32x1x1,0.25,0.32,0.0,1.28,1.28,1.28,1.28,1.28,0
+Elementwise and metadata,triton_per_fused_mm_t_2,40x1x1,64x1x1,0.25,0.288,0.0,1.152,1.152,1.152,1.152,1.152,1
+Elementwise and metadata,triton_per_fused_mm_t_2,80x1x1,32x1x1,0.25,0.286,0.0,1.144,1.144,1.152,1.152,1.152,1
