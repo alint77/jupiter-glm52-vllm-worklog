@@ -191,6 +191,10 @@ The resulting priorities are:
 4. pursue target-graph fusion only after the first three, since cold removal
    alone has little direct critical-path leverage.
 
+The follow-up [MTP3 SOL and idle-gap analysis](c4-mtp3-sol-idle-analysis.md)
+separates modeled kernel roof efficiency from measured GPU utilization and
+attributes every 7.95 ms of idle time.
+
 Raw Perfetto traces:
 
 - MTP1:
