@@ -1,0 +1,66 @@
+{
+ "rows": [
+  {
+   "phase": "A4",
+   "case": "cold_first_default",
+   "order": "cold_first",
+   "hot_us": 143.44640046358109,
+   "cold_us": 160.67583858966827,
+   "union_us": 272.5881612300873,
+   "serial_us": 304.12223905324936,
+   "ideal_us": 160.67583858966827,
+   "overlap_us": 31.53407782316208,
+   "coresident_frac": 0.21983178191472372,
+   "over_ideal_pct": 69.65099645517901,
+   "cold_lag_us": -108.457600325346
+  },
+  {
+   "phase": "A4",
+   "case": "hot_first_default",
+   "order": "hot_first",
+   "hot_us": 218.1849604845047,
+   "cold_us": 155.11040031909943,
+   "union_us": 240.11839985847473,
+   "serial_us": 373.2953608036041,
+   "ideal_us": 218.1849604845047,
+   "overlap_us": 133.1769609451294,
+   "coresident_frac": 0.8585946569098676,
+   "over_ideal_pct": 10.05268159879779,
+   "cold_lag_us": 78.29184031113982
+  },
+  {
+   "phase": "A4",
+   "case": "cold_first_lowpri_cold",
+   "order": "cold_first",
+   "hot_us": 142.42368012666702,
+   "cold_us": 161.11167967319489,
+   "union_us": 273.0144011974335,
+   "serial_us": 303.5353597998619,
+   "ideal_us": 161.11167967319489,
+   "overlap_us": 30.520958602428436,
+   "coresident_frac": 0.21429693836926614,
+   "over_ideal_pct": 69.45661652291525,
+   "cold_lag_us": -110.15616025775671
+  },
+  {
+   "phase": "A4",
+   "case": "cold_first_hipri_cold",
+   "order": "cold_first",
+   "hot_us": 156.9894391298294,
+   "cold_us": 159.2563197016716,
+   "union_us": 273.3689606189728,
+   "serial_us": 316.245758831501,
+   "ideal_us": 159.2563197016716,
+   "overlap_us": 42.87679821252823,
+   "coresident_frac": 0.2731189973681564,
+   "over_ideal_pct": 71.65344592356759,
+   "cold_lag_us": -95.25695975869894
+  }
+ ],
+ "summary": {
+  "thread_tile": [
+   64,
+   128
+  ]
+ }
+}

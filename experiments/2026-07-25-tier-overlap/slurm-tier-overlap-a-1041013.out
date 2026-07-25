@@ -1,0 +1,250 @@
+=== stage a1 ===
+device: NVIDIA GH200 120GB
+SMs=132  per-expert bytes: w13=12,976,128 w2=6,488,064
+shape: hot_act=19 cold_act=3 cold_share=0.13 tokens=[16] bps=[1, 2, 3]
+Allocating weight banks (hot HBM + cold pinned Grace)...
+    Grace alias (64, 384, 8192): 100% of sampled pages on NUMA node 0
+    Grace alias (64, 48, 4096): 100% of sampled pages on NUMA node 0
+
+=== A1: pin auto thread config ===
+  (bps=-1, tk=-1, tn=-1)          112.70 us   19 blk   2187.6 GB/s  Δauto=+0.00%
+  (bps=3, tk=128, tn=128)         132.74 us   19 blk   1857.4 GB/s  Δauto=+17.77%
+  (bps=3, tk=64, tn=128)          113.03 us   19 blk   2181.3 GB/s  Δauto=+0.29%
+  (bps=3, tk=128, tn=64)          120.77 us   19 blk   2041.5 GB/s  Δauto=+7.16%
+  (bps=1, tk=128, tn=128)         124.30 us   19 blk   1983.5 GB/s  Δauto=+10.29%
+  (bps=1, tk=64, tn=128)          155.21 us   19 blk   1588.4 GB/s  Δauto=+37.72%
+  (bps=1, tk=128, tn=64)          182.08 us   19 blk   1354.1 GB/s  Δauto=+61.55%
+  (bps=2, tk=64, tn=128)          117.02 us   19 blk   2107.0 GB/s  Δauto=+3.83%
+  (bps=2, tk=128, tn=64)          127.70 us   19 blk   1930.6 GB/s  Δauto=+13.31%
+  positive control: bps=1 vs bps=3 at tile (64, 128): 155.2 vs 113.0 us (37.3% relative) — bps IS live
+  SELECTED thread tile: thread_k=64, thread_n=128 (matched via (bps=3, tk=64, tn=128), |Δauto|=0.32 us)
+
+wrote /e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-25-tier-overlap/phase-a-a1.json
+=== stage a2 ===
+device: NVIDIA GH200 120GB
+SMs=132  per-expert bytes: w13=12,976,128 w2=6,488,064
+shape: hot_act=19 cold_act=3 cold_share=0.13 tokens=[16] bps=[1, 2, 3]
+Allocating weight banks (hot HBM + cold pinned Grace)...
+    Grace alias (64, 384, 8192): 100% of sampled pages on NUMA node 0
+    Grace alias (64, 48, 4096): 100% of sampled pages on NUMA node 0
+
+=== A1: pin auto thread config ===
+  (bps=-1, tk=-1, tn=-1)          113.03 us   19 blk   2181.2 GB/s  Δauto=+0.00%
+  (bps=3, tk=128, tn=128)         133.20 us   19 blk   1851.0 GB/s  Δauto=+17.84%
+  (bps=3, tk=64, tn=128)          113.34 us   19 blk   2175.2 GB/s  Δauto=+0.28%
+  (bps=3, tk=128, tn=64)          120.48 us   19 blk   2046.4 GB/s  Δauto=+6.59%
+  (bps=1, tk=128, tn=128)         125.87 us   19 blk   1958.8 GB/s  Δauto=+11.36%
+  (bps=1, tk=64, tn=128)          152.21 us   19 blk   1619.8 GB/s  Δauto=+34.66%
+  (bps=1, tk=128, tn=64)          157.72 us   19 blk   1563.2 GB/s  Δauto=+39.53%
+  (bps=2, tk=64, tn=128)          117.08 us   19 blk   2105.8 GB/s  Δauto=+3.58%
+  (bps=2, tk=128, tn=64)          127.17 us   19 blk   1938.8 GB/s  Δauto=+12.50%
+  positive control: bps=1 vs bps=3 at tile (64, 128): 152.2 vs 113.3 us (34.3% relative) — bps IS live
+  SELECTED thread tile: thread_k=64, thread_n=128 (matched via (bps=3, tk=64, tn=128), |Δauto|=0.31 us)
+
+=== A2: SM-partition sweep (pinned thread tile) ===
+  M=16 tile=(64,128) hot_blocks=19 cold_blocks=3 cold_share=0.13
+  solo hot  bps=1:   141.17 us   19 blk   1746.4 GB/s   49.9% roof
+  solo hot  bps=2:   117.15 us   19 blk   2104.6 GB/s   60.1% roof
+  solo hot  bps=3:   114.04 us   19 blk   2161.9 GB/s   61.8% roof
+  solo cold bps=1:   105.65 us    3 blk    368.5 GB/s   87.5% roof
+  solo cold bps=2:   108.94 us    3 blk    357.4 GB/s   84.9% roof
+  solo cold bps=3:   105.10 us    3 blk    370.4 GB/s   88.0% roof
+  --- overlapped (cold_first, production order) ---
+  hot_bps=1 cold_bps=1: hot   141.2  cold   105.6  union   247.9  serial   246.8  ideal   141.2  over_ideal +75.6%  save -0.5%  captured -1.1% of available
+  hot_bps=1 cold_bps=2: hot   141.2  cold   108.9  union   243.0  serial   250.1  ideal   141.2  over_ideal +72.2%  save  2.8%  captured  6.5% of available
+  hot_bps=1 cold_bps=3: hot   141.2  cold   105.1  union   242.7  serial   246.3  ideal   141.2  over_ideal +71.9%  save  1.5%  captured  3.4% of available
+  hot_bps=2 cold_bps=1: hot   117.1  cold   105.6  union   205.7  serial   222.8  ideal   117.1  over_ideal +75.6%  save  7.7%  captured 16.1% of available
+  hot_bps=2 cold_bps=2: hot   117.1  cold   108.9  union   203.2  serial   226.1  ideal   117.1  over_ideal +73.5%  save 10.1%  captured 21.0% of available
+  hot_bps=2 cold_bps=3: hot   117.1  cold   105.1  union   205.0  serial   222.3  ideal   117.1  over_ideal +75.0%  save  7.8%  captured 16.4% of available
+  hot_bps=3 cold_bps=1: hot   114.0  cold   105.6  union   197.8  serial   219.7  ideal   114.0  over_ideal +73.5%  save  9.9%  captured 20.7% of available
+  hot_bps=3 cold_bps=2: hot   114.0  cold   108.9  union   194.4  serial   223.0  ideal   114.0  over_ideal +70.5%  save 12.8%  captured 26.2% of available
+  hot_bps=3 cold_bps=3: hot   114.0  cold   105.1  union   194.2  serial   219.1  ideal   114.0  over_ideal +70.3%  save 11.4%  captured 23.7% of available
+  BEST union: hot_bps=3 cold_bps=3 union=194.2 us  over_ideal=+70.3%
+  A2 success criterion (union within 25% of ideal): FAIL
+
+wrote /e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-25-tier-overlap/phase-a-a2.json
+=== stage a3 ===
+device: NVIDIA GH200 120GB
+SMs=132  per-expert bytes: w13=12,976,128 w2=6,488,064
+shape: hot_act=19 cold_act=3 cold_share=0.13 tokens=[16] bps=[1, 2, 3]
+Allocating weight banks (hot HBM + cold pinned Grace)...
+    Grace alias (64, 384, 8192): 100% of sampled pages on NUMA node 0
+    Grace alias (64, 48, 4096): 100% of sampled pages on NUMA node 0
+
+=== A1: pin auto thread config ===
+  (bps=-1, tk=-1, tn=-1)          109.09 us   19 blk   2260.0 GB/s  Δauto=+0.00%
+  (bps=3, tk=128, tn=128)         131.82 us   19 blk   1870.4 GB/s  Δauto=+20.83%
+  (bps=3, tk=64, tn=128)          107.68 us   19 blk   2289.6 GB/s  Δauto=-1.29%
+  (bps=3, tk=128, tn=64)          114.60 us   19 blk   2151.4 GB/s  Δauto=+5.04%
+  (bps=1, tk=128, tn=128)         125.64 us   19 blk   1962.3 GB/s  Δauto=+15.17%
+  (bps=1, tk=64, tn=128)          148.85 us   19 blk   1656.3 GB/s  Δauto=+36.45%
+  (bps=1, tk=128, tn=64)          170.59 us   19 blk   1445.3 GB/s  Δauto=+56.37%
+  (bps=2, tk=64, tn=128)          116.82 us   19 blk   2110.5 GB/s  Δauto=+7.08%
+  (bps=2, tk=128, tn=64)          127.07 us   19 blk   1940.3 GB/s  Δauto=+16.48%
+  positive control: bps=1 vs bps=3 at tile (64, 128): 148.9 vs 107.7 us (38.2% relative) — bps IS live
+  SELECTED thread tile: thread_k=64, thread_n=128 (matched via (bps=3, tk=64, tn=128), |Δauto|=1.41 us)
+
+=== A2: SM-partition sweep (pinned thread tile) ===
+  M=16 tile=(64,128) hot_blocks=19 cold_blocks=3 cold_share=0.13
+  solo hot  bps=1:   143.73 us   19 blk   1715.3 GB/s   49.0% roof
+  solo hot  bps=2:   117.34 us   19 blk   2101.1 GB/s   60.0% roof
+  solo hot  bps=3:   114.08 us   19 blk   2161.1 GB/s   61.7% roof
+  solo cold bps=1:   102.20 us    3 blk    380.9 GB/s   90.5% roof
+  solo cold bps=2:   102.39 us    3 blk    380.2 GB/s   90.3% roof
+  solo cold bps=3:   104.75 us    3 blk    371.6 GB/s   88.3% roof
+  --- overlapped (cold_first, production order) ---
+  hot_bps=1 cold_bps=1: hot   143.7  cold   102.2  union   243.0  serial   245.9  ideal   143.7  over_ideal +69.1%  save  1.2%  captured  2.9% of available
+  hot_bps=1 cold_bps=2: hot   143.7  cold   102.4  union   240.8  serial   246.1  ideal   143.7  over_ideal +67.5%  save  2.2%  captured  5.2% of available
+  hot_bps=1 cold_bps=3: hot   143.7  cold   104.8  union   241.5  serial   248.5  ideal   143.7  over_ideal +68.0%  save  2.8%  captured  6.7% of available
+  hot_bps=2 cold_bps=1: hot   117.3  cold   102.2  union   202.4  serial   219.5  ideal   117.3  over_ideal +72.5%  save  7.8%  captured 16.8% of available
+  hot_bps=2 cold_bps=2: hot   117.3  cold   102.4  union   202.3  serial   219.7  ideal   117.3  over_ideal +72.4%  save  7.9%  captured 17.0% of available
+  hot_bps=2 cold_bps=3: hot   117.3  cold   104.8  union   203.7  serial   222.1  ideal   117.3  over_ideal +73.6%  save  8.3%  captured 17.6% of available
+  hot_bps=3 cold_bps=1: hot   114.1  cold   102.2  union   195.1  serial   216.3  ideal   114.1  over_ideal +71.0%  save  9.8%  captured 20.7% of available
+  hot_bps=3 cold_bps=2: hot   114.1  cold   102.4  union   191.5  serial   216.5  ideal   114.1  over_ideal +67.9%  save 11.5%  captured 24.4% of available
+  hot_bps=3 cold_bps=3: hot   114.1  cold   104.8  union   192.2  serial   218.8  ideal   114.1  over_ideal +68.4%  save 12.2%  captured 25.5% of available
+  BEST union: hot_bps=3 cold_bps=2 union=191.5 us  over_ideal=+67.9%
+  A2 success criterion (union within 25% of ideal): FAIL
+
+=== A3: concurrency evidence (CUDA-event intervals) ===
+  auto          hot   142.2  cold   162.4  union   274.1  overlap    30.4  coresident  21.4%  over_ideal +68.8%  cold_lag -111.8 us
+  pinned_3_3    hot   140.9  cold   158.0  union   269.5  overlap    29.4  coresident  20.9%  over_ideal +70.5%  cold_lag -108.5 us
+  pinned_2_1    hot   176.1  cold   153.4  union   272.7  overlap    56.8  coresident  37.1%  over_ideal +54.8%  cold_lag  -76.7 us
+  pinned_1_1    hot   214.2  cold   152.6  union   311.0  overlap    55.8  coresident  36.6%  over_ideal +45.2%  cold_lag  -76.8 us
+  a2_best       hot   153.9  cold   153.4  union   263.9  overlap    43.4  coresident  28.3%  over_ideal +71.5%  cold_lag  -89.9 us
+  verdict: H1-leaning: kernels barely co-resident (mean coresident=28.8%, mean over_ideal=+62.2%)
+
+wrote /e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-25-tier-overlap/phase-a-a3.json
+=== stage a4 ===
+device: NVIDIA GH200 120GB
+SMs=132  per-expert bytes: w13=12,976,128 w2=6,488,064
+shape: hot_act=19 cold_act=3 cold_share=0.13 tokens=[16] bps=[1, 2, 3]
+Allocating weight banks (hot HBM + cold pinned Grace)...
+    Grace alias (64, 384, 8192): 100% of sampled pages on NUMA node 0
+    Grace alias (64, 48, 4096): 100% of sampled pages on NUMA node 0
+
+=== A1: pin auto thread config ===
+  (bps=-1, tk=-1, tn=-1)          112.97 us   19 blk   2182.5 GB/s  Δauto=+0.00%
+  (bps=3, tk=128, tn=128)         133.03 us   19 blk   1853.3 GB/s  Δauto=+17.76%
+  (bps=3, tk=64, tn=128)          113.25 us   19 blk   2177.0 GB/s  Δauto=+0.25%
+  (bps=3, tk=128, tn=64)          121.07 us   19 blk   2036.4 GB/s  Δauto=+7.17%
+  (bps=1, tk=128, tn=128)         122.00 us   19 blk   2020.9 GB/s  Δauto=+8.00%
+  (bps=1, tk=64, tn=128)          149.67 us   19 blk   1647.3 GB/s  Δauto=+32.49%
+  (bps=1, tk=128, tn=64)          169.26 us   19 blk   1456.6 GB/s  Δauto=+49.83%
+  (bps=2, tk=64, tn=128)          116.75 us   19 blk   2111.8 GB/s  Δauto=+3.35%
+  (bps=2, tk=128, tn=64)          127.23 us   19 blk   1937.8 GB/s  Δauto=+12.63%
+  positive control: bps=1 vs bps=3 at tile (64, 128): 149.7 vs 113.2 us (32.2% relative) — bps IS live
+  SELECTED thread tile: thread_k=64, thread_n=128 (matched via (bps=3, tk=64, tn=128), |Δauto|=0.28 us)
+
+=== A2: SM-partition sweep (pinned thread tile) ===
+  M=16 tile=(64,128) hot_blocks=19 cold_blocks=3 cold_share=0.13
+  solo hot  bps=1:   146.88 us   19 blk   1678.6 GB/s   48.0% roof
+  solo hot  bps=2:   117.15 us   19 blk   2104.5 GB/s   60.1% roof
+  solo hot  bps=3:   114.28 us   19 blk   2157.5 GB/s   61.6% roof
+  solo cold bps=1:   102.61 us    3 blk    379.4 GB/s   90.1% roof
+  solo cold bps=2:   104.65 us    3 blk    372.0 GB/s   88.4% roof
+  solo cold bps=3:   106.02 us    3 blk    367.2 GB/s   87.2% roof
+  --- overlapped (cold_first, production order) ---
+  hot_bps=1 cold_bps=1: hot   146.9  cold   102.6  union   243.3  serial   249.5  ideal   146.9  over_ideal +65.7%  save  2.5%  captured  6.0% of available
+  hot_bps=1 cold_bps=2: hot   146.9  cold   104.7  union   243.2  serial   251.5  ideal   146.9  over_ideal +65.6%  save  3.3%  captured  8.0% of available
+  hot_bps=1 cold_bps=3: hot   146.9  cold   106.0  union   243.2  serial   252.9  ideal   146.9  over_ideal +65.5%  save  3.9%  captured  9.2% of available
+  hot_bps=2 cold_bps=1: hot   117.2  cold   102.6  union   204.1  serial   219.8  ideal   117.2  over_ideal +74.3%  save  7.1%  captured 15.2% of available
+  hot_bps=2 cold_bps=2: hot   117.2  cold   104.7  union   202.7  serial   221.8  ideal   117.2  over_ideal +73.0%  save  8.6%  captured 18.3% of available
+  hot_bps=2 cold_bps=3: hot   117.2  cold   106.0  union   205.6  serial   223.2  ideal   117.2  over_ideal +75.5%  save  7.9%  captured 16.6% of available
+  hot_bps=3 cold_bps=1: hot   114.3  cold   102.6  union   195.4  serial   216.9  ideal   114.3  over_ideal +71.0%  save  9.9%  captured 21.0% of available
+  hot_bps=3 cold_bps=2: hot   114.3  cold   104.7  union   194.0  serial   218.9  ideal   114.3  over_ideal +69.8%  save 11.4%  captured 23.8% of available
+  hot_bps=3 cold_bps=3: hot   114.3  cold   106.0  union   193.0  serial   220.3  ideal   114.3  over_ideal +68.9%  save 12.4%  captured 25.8% of available
+  BEST union: hot_bps=3 cold_bps=3 union=193.0 us  over_ideal=+68.9%
+  A2 success criterion (union within 25% of ideal): FAIL
+
+=== A4: launch order + stream priority ===
+  using hot_bps=3 cold_bps=3 tile=(64,128)
+  stream priority range: least=0 greatest=-3
+  cold_first_default            union   272.6  hot   143.4  cold   160.7  coresident  22.0%  over_ideal +69.7%
+  hot_first_default             union   240.1  hot   218.2  cold   155.1  coresident  85.9%  over_ideal +10.1%
+  cold_first_lowpri_cold        union   273.0  hot   142.4  cold   161.1  coresident  21.4%  over_ideal +69.5%
+  cold_first_hipri_cold         union   273.4  hot   157.0  cold   159.3  coresident  27.3%  over_ideal +71.7%
+  vs cold_first_default: hot_first_default -11.9% union
+  vs cold_first_default: cold_first_lowpri_cold +0.2% union
+  vs cold_first_default: cold_first_hipri_cold +0.3% union
+
+wrote /e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-25-tier-overlap/phase-a-a4.json
+
+=== full phase-a in one process (grid control + all stages) ===
+device: NVIDIA GH200 120GB
+SMs=132  per-expert bytes: w13=12,976,128 w2=6,488,064
+shape: hot_act=19 cold_act=3 cold_share=0.13 tokens=[16] bps=[1, 2, 3]
+Allocating weight banks (hot HBM + cold pinned Grace)...
+    Grace alias (64, 384, 8192): 100% of sampled pages on NUMA node 0
+    Grace alias (64, 48, 4096): 100% of sampled pages on NUMA node 0
+
+=== A1: pin auto thread config ===
+  (bps=-1, tk=-1, tn=-1)          112.76 us   19 blk   2186.5 GB/s  Δauto=+0.00%
+  (bps=3, tk=128, tn=128)         132.78 us   19 blk   1856.9 GB/s  Δauto=+17.75%
+  (bps=3, tk=64, tn=128)          113.12 us   19 blk   2179.6 GB/s  Δauto=+0.32%
+  (bps=3, tk=128, tn=64)          120.96 us   19 blk   2038.2 GB/s  Δauto=+7.27%
+  (bps=1, tk=128, tn=128)         129.60 us   19 blk   1902.4 GB/s  Δauto=+14.93%
+  (bps=1, tk=64, tn=128)          156.42 us   19 blk   1576.2 GB/s  Δauto=+38.72%
+  (bps=1, tk=128, tn=64)          183.13 us   19 blk   1346.3 GB/s  Δauto=+62.40%
+  (bps=2, tk=64, tn=128)          116.61 us   19 blk   2114.2 GB/s  Δauto=+3.42%
+  (bps=2, tk=128, tn=64)          127.88 us   19 blk   1927.9 GB/s  Δauto=+13.41%
+  positive control: bps=1 vs bps=3 at tile (64, 128): 156.4 vs 113.1 us (38.3% relative) — bps IS live
+  SELECTED thread tile: thread_k=64, thread_n=128 (matched via (bps=3, tk=64, tn=128), |Δauto|=0.36 us)
+
+=== A0: positive control — launched grid per config ===
+  (bps=-1, tk=-1, tn=-1)        grid=396
+  (bps=1, tk=64, tn=128)        grid=132  APPLIED
+  (bps=2, tk=64, tn=128)        grid=264  APPLIED
+  (bps=3, tk=64, tn=128)        grid=396  APPLIED
+  control: PASS — 3 configs applied, 3 distinct grids [132, 264, 396]
+
+=== A2: SM-partition sweep (pinned thread tile) ===
+  M=16 tile=(64,128) hot_blocks=19 cold_blocks=3 cold_share=0.13
+  solo hot  bps=1:   142.03 us   19 blk   1735.9 GB/s   49.6% roof
+  solo hot  bps=2:   116.70 us   19 blk   2112.6 GB/s   60.4% roof
+  solo hot  bps=3:   114.13 us   19 blk   2160.2 GB/s   61.7% roof
+  solo cold bps=1:   102.72 us    3 blk    379.0 GB/s   90.0% roof
+  solo cold bps=2:   103.09 us    3 blk    377.6 GB/s   89.7% roof
+  solo cold bps=3:   104.53 us    3 blk    372.4 GB/s   88.5% roof
+  --- overlapped (cold_first, production order) ---
+  hot_bps=1 cold_bps=1: hot   142.0  cold   102.7  union   242.3  serial   244.7  ideal   142.0  over_ideal +70.6%  save  1.0%  captured  2.3% of available
+  hot_bps=1 cold_bps=2: hot   142.0  cold   103.1  union   241.2  serial   245.1  ideal   142.0  over_ideal +69.8%  save  1.6%  captured  3.8% of available
+  hot_bps=1 cold_bps=3: hot   142.0  cold   104.5  union   241.7  serial   246.6  ideal   142.0  over_ideal +70.2%  save  2.0%  captured  4.6% of available
+  hot_bps=2 cold_bps=1: hot   116.7  cold   102.7  union   203.9  serial   219.4  ideal   116.7  over_ideal +74.7%  save  7.1%  captured 15.1% of available
+  hot_bps=2 cold_bps=2: hot   116.7  cold   103.1  union   201.4  serial   219.8  ideal   116.7  over_ideal +72.6%  save  8.3%  captured 17.8% of available
+  hot_bps=2 cold_bps=3: hot   116.7  cold   104.5  union   202.9  serial   221.2  ideal   116.7  over_ideal +73.9%  save  8.3%  captured 17.5% of available
+  hot_bps=3 cold_bps=1: hot   114.1  cold   102.7  union   195.7  serial   216.9  ideal   114.1  over_ideal +71.5%  save  9.7%  captured 20.6% of available
+  hot_bps=3 cold_bps=2: hot   114.1  cold   103.1  union   192.5  serial   217.2  ideal   114.1  over_ideal +68.7%  save 11.4%  captured 24.0% of available
+  hot_bps=3 cold_bps=3: hot   114.1  cold   104.5  union   190.0  serial   218.7  ideal   114.1  over_ideal +66.5%  save 13.1%  captured 27.4% of available
+  BEST union: hot_bps=3 cold_bps=3 union=190.0 us  over_ideal=+66.5%
+  A2 success criterion (union within 25% of ideal): FAIL
+
+=== A3: concurrency evidence (CUDA-event intervals) ===
+  auto          hot   141.5  cold   188.8  union   307.2  overlap    23.1  coresident  16.3%  over_ideal +62.7%  cold_lag -139.9 us
+  pinned_3_3    hot   141.4  cold   182.6  union   300.8  overlap    23.1  coresident  16.4%  over_ideal +64.8%  cold_lag -133.8 us
+  pinned_2_1    hot   172.3  cold   180.1  union   306.0  overlap    46.3  coresident  26.9%  over_ideal +69.9%  cold_lag -108.1 us
+  pinned_1_1    hot   212.0  cold   178.8  union   344.9  overlap    45.9  coresident  25.7%  over_ideal +62.7%  cold_lag -106.6 us
+  a2_best       hot   141.5  cold   181.5  union   299.5  overlap    23.5  coresident  16.6%  over_ideal +65.0%  cold_lag -132.6 us
+  verdict: H1-leaning: kernels barely co-resident (mean coresident=20.4%, mean over_ideal=+65.0%)
+
+=== A4: launch order + stream priority ===
+  using hot_bps=3 cold_bps=3 tile=(64,128)
+  stream priority range: least=0 greatest=-3
+  cold_first_default            union   300.4  hot   149.5  cold   181.7  coresident  20.6%  over_ideal +65.4%
+  hot_first_default             union   296.6  hot   169.6  cold   176.1  coresident  29.0%  over_ideal +68.4%
+  cold_first_lowpri_cold        union   300.2  hot   149.8  cold   181.2  coresident  20.6%  over_ideal +65.6%
+  cold_first_hipri_cold         union   298.4  hot   141.3  cold   181.1  coresident  16.9%  over_ideal +64.8%
+  vs cold_first_default: hot_first_default -1.3% union
+  vs cold_first_default: cold_first_lowpri_cold -0.1% union
+  vs cold_first_default: cold_first_hipri_cold -0.7% union
+
+=== Phase A summary ===
+  thread_tile: [64, 128]
+  a1_auto_us: 112.75967597961426
+  a1_pinned: [3, 64, 128]
+  a1_bps_live: True
+  a2_best: {'phase': 'A2', 'kind': 'overlap', 'hot_bps': 3, 'cold_bps': 3, 'hot_us': 114.12927627563477, 'cold_us': 104.5257568359375, 'union_us': 189.9852752685547, 'serial_us': 218.65503311157227, 'ideal_us': 114.12927627563477, 'over_ideal_pct': 66.46497854741436, 'save_pct': 13.111867325911666, 'captured_pct': 27.42841449884675}
+  a2_pass: False
+  a3_verdict: H1-leaning: kernels barely co-resident
+  grid_control_ok: True
+
+wrote /e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-25-tier-overlap/phase-a-full.json
