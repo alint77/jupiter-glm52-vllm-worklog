@@ -1,0 +1,11 @@
+(EngineCore pid=1655339) /e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py:139: UserWarning: Failed to get the IP address, using 0.0.0.0 by default. The value can be set by the environment variable VLLM_HOST_IP or HOST_IP.
+(EngineCore pid=1655339)   mq_connect_ip = get_ip()
+[W725 14:40:19.543463873 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:41351 (errno: 97 - Address family not supported by protocol).
+[W725 14:40:20.019466184 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:41351 (errno: 97 - Address family not supported by protocol).
+[W725 14:40:20.019650117 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:41351 (errno: 97 - Address family not supported by protocol).
+[W725 14:40:20.019670564 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:41351 (errno: 97 - Address family not supported by protocol).
+(Worker_TP0_EP0 pid=1655613) Loading safetensors checkpoint shards:   0% Completed | 0/11 [00:00<?, ?it/s]
+(Worker_TP0_EP0 pid=1655613) Loading safetensors checkpoint shards:  27% Completed | 3/11 [00:00<00:00, 14.85it/s]
+(Worker_TP0_EP0 pid=1655613) Loading safetensors checkpoint shards:  27% Completed | 3/11 [00:20<00:00, 14.85it/s]
+(Worker_TP0_EP0 pid=1655613) Loading safetensors checkpoint shards:  36% Completed | 4/11 [01:41<03:48, 32.64s/it]
+(Worker_TP0_EP0 pid=1655613) Loading safetensors checkpoint shards:  45% Completed | 5/11 [03:25<05:31, 55.33s/it]

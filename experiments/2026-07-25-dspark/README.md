@@ -245,3 +245,34 @@ Local fix: `validate_tiered_moe` draft-dtype scoping in `vllm/config/vllm.py`.
 Checkpoint downloaded to `models/GLM-5.2-speculator-dspark` (6.3 GB).
 Launcher and smoke job in this directory; both re-runnable unchanged once the
 KV page-size blocker is resolved.
+
+## Bonus-anchor variant (job 1043221): accuracy idea confirmed, throughput worse
+
+Tested "draft the full 8-slot block, but only propose 7 tokens" by flipping
+`sample_from_anchor` to false in a variant model dir (weights symlinked). That is
+the `1+N` fill-in layout: 8 query slots, 7 speculative tokens, verify batch 8
+instead of 9.
+
+| | anchor-as-first t=8 | anchor-as-first t=7 | **bonus-anchor t=7** |
+| --- | ---: | ---: | ---: |
+| query slots | 8 | 7 | **8** |
+| acceptance length | 3.98 / 8 | 2.76 / 7 | **3.36 / 7** |
+| realistic mean TPOT | 10.65 ms | 10.45 ms | **19.62 ms** |
+| realistic out tok/s | 84.67 | 87.51 | **48.45** |
+
+Output is correct in all three.
+
+**The accuracy half of the idea is confirmed.** Restoring the 8-slot block width
+lifts acceptance from 2.76 to 3.36 at the same 7 proposed tokens, which is direct
+evidence that the earlier t=7 loss came from feeding a block-8 draft a 7-slot
+input, not from proposing one fewer token.
+
+**But the step got much more expensive**, not cheaper: implied step time rises
+from 42.4 ms (t=8) to 65.9 ms, so TPOT nearly doubles despite the narrower
+verify batch. The saving predicted from one fewer verify token (~1 ms) is
+swamped by ~23 ms of something else. Most likely the draft forward is no longer
+covered by the captured graph shape, but that was not confirmed — the run was
+not profiled.
+
+Net: not a win as implemented. The idea is sound in principle and the accuracy
+evidence is real, but it would need the extra step cost diagnosed first.
