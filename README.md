@@ -353,15 +353,21 @@ the 62.43 ms MTP3 c4 step, routed Marlin is 20.15 ms of critical path, the TP
 all-reduce 9.27 ms, GPU idle 7.95 ms, and all 400K-context-specific work only
 7.6 ms. Classifying the 166 reductions shows post-attention ones sit at the
 5.0 us payload floor while post-MoE ones carry 7.82 ms of skew wait, matching an
-independent per-layer max-minus-mean of 7.76 ms; 77% of that skew is persistent
-per-layer rank ordering. Reading the uncontended cold `w13` launch as the true
-rate puts the Grace tier at the 421 GB/s C2C roof with 2.85 activated experts
-per layer and a ~10.4 ms solo cost hiding inside a 24.5 ms hot window, so the
-residency planner is moving experts the wrong way; rebalancing toward Grace is
-worth 3.5-4.3 ms/step. The routed MoE is only 35% fixed weight streaming
-(9.02 ms + 1.057 ms/token), which is the real reason c4 yields 1.35x rather
-than 4x. A further 4.3 ms/step is host round-trip with the GPU ~95% idle while
-the host sits 50 ms ahead. See the
+independent per-layer max-minus-mean of 7.76 ms. Reading the uncontended cold
+`w13` launch as the true rate puts the Grace tier at the 421 GB/s C2C roof with
+2.85 activated experts per layer and a ~10.4 ms solo cost hiding inside a
+24.5 ms hot window. Offline replay of the captured routing traces then refuted
+the two placement hypotheses that framing suggests, before any cluster time was
+spent: only 0.61 ms of the skew is expectation the owner map can reach (86% is
+an irreducible order statistic, and an earlier 77%-persistent reading was
+five-sample bias), and the hot-slot frontier is monotone in the opposite
+direction, with 24.8% of layer/rank cells already cold-bound. What remains is
+that per-expert kernel cost multiplies both the Marlin span and the skew, that
+the hot-slot frontier is flat past ~3,000 slots so HBM should buy KV, and that
+4.3 ms/step is host round-trip with the GPU ~95% idle while the host sits 50 ms
+ahead. The routed MoE is only 35% fixed weight streaming (9.02 ms +
+1.057 ms/token), which is the real reason c4 yields 1.35x rather than 4x. See
+the
 [critical-path review](experiments/2026-07-25-c4-mtp3-critical-path/README.md)
 and the [c4 MTP-depth sweep](experiments/2026-07-23-c4-mtp-depth/README.md) it
 re-analyzes.

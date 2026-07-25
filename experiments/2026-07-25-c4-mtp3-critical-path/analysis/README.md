@@ -41,3 +41,21 @@ Two non-obvious rules underpin everything:
 
 `tracelib.py` holds step segmentation, union-busy and gap helpers; `load.py` holds
 the trace paths.
+
+## Offline placement replay
+
+`p1_balance.py`, `p1_decompose.py` and `p2_tier_sweep.py` replay the captured
+routing traces from `../../2026-07-19-c1q4-placement/trace-977597` through a
+cost model of the routed span. The model predicts 25.97 ms against the 25.72 ms
+measured in the MTP3 c4 trace (~1%), so it is a usable stand-in for a cluster
+run when testing placement or tiering hypotheses.
+
+```bash
+python p1_decompose.py  --trace-dir ../../2026-07-19-c1q4-placement/trace-977597 \
+                        --profile   ../../2026-07-19-c1q4-placement/per-expert-profile.json
+python p2_tier_sweep.py --trace-dir ../../2026-07-19-c1q4-placement/trace-977597 \
+                        --profile   ../../2026-07-19-c1q4-placement/per-expert-profile.json
+```
+
+Both refuted a hypothesis from the first draft of the parent report. Run new
+placement ideas through them before requesting an allocation.

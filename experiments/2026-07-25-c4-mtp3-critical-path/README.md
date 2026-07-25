@@ -103,19 +103,54 @@ per-layer excess of the slowest rank's MoE span over the four-rank mean gives
 completely different quantities. The all-reduce is a barrier faithfully
 reporting expert-load skew, and nothing else.
 
-**New decomposition:** how much of that skew is statically fixable?
-
-| Component | ms/step | share |
-| --- | ---: | ---: |
-| Persistent per-layer rank ordering | **5.96** | 77% |
-| Step-to-step routing variation | 1.80 | 23% |
-
 The skew is *diffuse*, not concentrated: the 15 worst layers hold only 35% of
 it, the rest is ~0.08 ms spread over every layer. No single rank is globally
 slow — rank 3 is slowest in 25 layers, rank 0 in 18, rank 2 in 17, rank 1 in 15,
-and total per-rank routed time spreads only 5.0% (1.28 ms). This is a
-**per-layer** ownership problem, and 77% of it is a fixed property of the
-current owner map rather than run-to-run noise.
+and total per-rank routed time spreads only 5.0% (1.28 ms).
+
+**How much of the skew is statically fixable? Almost none.** A first pass at
+this measured per-rank means over the five steady steps and attributed
+5.96 ms/step (77%) to "persistent per-layer rank ordering". That was wrong, and
+the error was small-sample bias: with only five samples per rank, the maximum of
+four noisy means overshoots the mean of means badly. Replaying the captured
+routing traces through a validated cost model (`analysis/p1_decompose.py`) shows
+the same estimator converging as the sample grows:
+
+| Steps used | Apparent "persistent" component |
+| ---: | ---: |
+| 5 | 2.004 ms |
+| 20 | 1.106 ms |
+| 100 | 0.724 ms |
+| 400 | **0.613 ms** |
+
+The converged decomposition of the modelled 4.53 ms/step of skew is:
+
+| Component | ms/step | share |
+| --- | ---: | ---: |
+| Expectation (reachable by a static owner map) | **0.61** | 14% |
+| Per-step variance (order statistic) | 3.91 | 86% |
+
+The shipped `greedy-balanced-owner` map is already near-optimal in expectation.
+The skew is overwhelmingly the max-of-four-ranks order statistic on *which*
+experts happen to fire in a given step, and no fixed assignment removes it.
+Rebuilding the owner map against expected distinct-activation cost made things
+slightly **worse** (+0.29 ms realized) and broke the per-rank hot-slot balance
+that the HBM budget depends on ([2907, 2868, 2847, 2858] instead of 2870 each).
+
+What actually creates the cost is **barrier granularity**. Summing the
+per-layer maximum over ranks is far more expensive than taking the maximum of
+per-rank totals:
+
+| Quantity | ms/step |
+| --- | ---: |
+| `sum_layers max_rank` — 75 barriers, what we pay | 25.96 |
+| `max_rank sum_layers` — 1 barrier, hypothetical | 22.01 |
+| mean rank total | 21.43 |
+
+**3.95 ms/step is the price of synchronizing 75 times on a quantity with
+per-layer variance**, not of assigning experts badly. The layer-to-layer data
+dependency is real, so the barriers cannot simply be removed; the lever is to
+shrink the per-expert cost that the variance multiplies (see Finding 3 and P1).
 
 ## Finding 2 — the cold Grace tier is at the C2C roofline and costs half what it appears to
 
@@ -158,40 +193,59 @@ already near-perfect; the hot tier alone is the routed critical path.
 This corrects the earlier report's framing. Its conclusion that removing cold
 work saves only ~1.1 ms is right, but the reason is not that cold is a small
 amount of work running alongside a dominant hot path — it is that cold is only
-~10 ms of work hiding inside a 24.5 ms hot window, with **~14 ms of unused
-Grace bandwidth per step**.
+~10 ms of work hiding inside a 24.5 ms hot window.
 
-## Finding 3 — the residency planner is pushing experts the wrong way
+That leaves ~14 ms/step of *aggregate* Grace bandwidth unused, which looks like
+an invitation to move more experts there. Finding 3 shows it is not: the idle
+C2C capacity is spread thinly across cells that do not need it, while a quarter
+of cells are already cold-bound. Aggregate slack and per-layer slack are
+different quantities, and only the latter sets the span.
 
-Per activated expert per step across all 75 layers:
+## Finding 3 — the tier frontier is nearly flat, so HBM should buy KV, not experts
 
-- hot: **1.09–1.43 ms** (depending on the true distinct-expert count)
-- cold: **3.47 ms** (fixed by the C2C roof, measured)
+Per activated expert per step across all 75 layers: hot **1.28 ms**, cold
+**3.47 ms** (the latter fixed by the C2C roof). Cold is only ~2.7× more
+expensive than hot, not the 8.3× the raw bandwidth ratio suggests, because hot
+Marlin reaches only ~a third of HBM peak.
 
-Cold is only 2.4–3.2× more expensive than hot, not the ~8.3× that the raw
-bandwidth ratio (3.5 TB/s ÷ 421 GB/s) suggests — because the hot Marlin path
-only reaches ~a third of HBM peak. With overlap active, the span is
-`max(t_hot, t_cold)`, minimized when the two are equal. Currently
-t_hot = 24.5 ms and t_cold = 10.4 ms — far off balance in the direction of
-*too much in HBM*.
+That aggregate ratio invites an obvious inference: t_hot = 24.5 ms against
+t_cold = 10.4 ms looks badly off balance, so moving activation mass to Grace
+should shrink the span by 3.5–4.3 ms. **That inference is wrong**, for exactly
+the reason Finding 1 gives: the span is `sum_layers max_rank`, and balancing
+aggregates does not balance per-layer maxima. Sweeping the hot-slot budget
+through the validated model (`analysis/p2_tier_sweep.py`, span predicted to
+within 1% of the measured 25.72 ms) gives a monotone result in the *opposite*
+direction:
 
-| Distinct activated experts/layer | current span | balanced span | saving |
-| --- | ---: | ---: | ---: |
-| 20 | 24.52 ms | 20.24 ms | **4.28 ms (6.9% of step)** |
-| 22 | 24.52 ms | 20.57 ms | **3.95 ms (6.3%)** |
-| 25.3 (uniform-routing bound) | 24.52 ms | 21.01 ms | **3.51 ms (5.6%)** |
+| Hot slots/rank | HBM/rank | modelled span | vs shipped | cold-bound cells | cold excess |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 3,300 | 64.2 GB | 26.34 ms | −0.93 | 11.3% | 2.19 ms |
+| 3,023 *(actual run)* | 58.8 GB | 26.65 ms | −0.62 | 24.8% | 6.29 ms |
+| 2,870 *(profile)* | 55.9 GB | 27.27 ms | — | 34.1% | 9.84 ms |
+| 2,600 | 50.6 GB | 29.54 ms | +2.27 | 51.3% | 19.49 ms |
+| 2,300 | 44.8 GB | 32.96 ms | +6.99 | 67.8% | 34.37 ms |
 
-Moving activation mass from HBM to Grace is worth **3.5–4.3 ms/step**, and it
-frees HBM that can go to KV — i.e. to concurrency. The project has been moving
-experts the other way (Phase 15 promoted hot 2,870 → 3,713 as budget grew; this
-sweep runs 3,023 hot at the 7 GB reserve). **At c=4 with overlap enabled that
-direction is backwards.**
+At the real operating point **24.8% of (layer, rank) cells are already
+cold-bound**, and in those cells the Grace tier overruns the hot path by
+6.29 ms/step in total. The aggregate "cold is only 10.4 ms" view hides this
+completely: cold sits idle in three cells out of four and is badly over budget
+in the fourth. Every expert moved to Grace has a ~1-in-4 chance of landing where
+it becomes the binding constraint at 2.7× the cost.
 
-Two caveats. The planner must balance *expected activation mass*, not slot
-counts — 1,777 cold slots already yield only 2.85 activated experts per layer,
-so the frequency profile, not the slot count, is the control variable. And the
-optimum shifts if hot Marlin efficiency improves (Finding 5); the two must be
-re-tuned together.
+So the project's existing direction — promote cold experts into HBM as budget
+allows — is **correct**, and the existing `optimize_hot_tail_aware` objective is
+the right shape.
+
+The useful finding is the *shape* of the frontier, not its sign. Marginal value
+per hot slot collapses:
+
+- 2,870 → 3,023 slots: 0.617 ms for 153 slots = **4.0 us/slot**
+- 3,023 → 3,300 slots: 0.310 ms for 277 slots = **1.1 us/slot**
+
+At the current point one more hot slot costs 19.46 MB of HBM and buys 1.1 us,
+or 0.002% of the step. The same 5.4 GB/rank spent on KV instead is roughly one
+more concurrent 400K sequence — about +25% aggregate throughput for a 0.31 ms
+(0.5%) step cost. **Past ~3,000 hot slots per rank, HBM should go to KV.**
 
 ## Finding 4 — 4.3 ms/step of pure host round-trip, at ~95% GPU idle
 
@@ -269,8 +323,12 @@ probably somewhat worse. That needs a direct measurement, not an extrapolation.
 
 ## What is not worth pursuing
 
-- **Cold-path elimination.** Removing all cold work shortens the routed span by
-  ~1.2 ms. The right move is the opposite (Finding 3).
+- **Rebuilding the EP owner map.** Refuted offline (Finding 1). The shipped
+  `greedy-balanced-owner` map leaves ≤0.61 ms/step of expectation imbalance;
+  86% of the skew is an irreducible order statistic. A rebuild against expected
+  activation cost measured *worse*.
+- **Moving activation mass to Grace.** Refuted offline (Finding 3). The span is
+  monotone in the wrong direction and 24.8% of cells are already cold-bound.
 - **All-reduce as a bandwidth problem.** The payload floor is 5.0 us and the
   measured link utilization is a consequence of skew, not a cause. Fix expert
   balance and remeasure before touching the collective.
@@ -286,117 +344,105 @@ probably somewhat worse. That needs a direct measurement, not an extrapolation.
 
 ## Plan
 
-Ordered by expected gain × confidence ÷ effort. Gains are per-step reductions
-against the 62.43 ms baseline; they are not fully additive, since P1 and P2 both
-act on the routed-MoE region.
+Two of the three items this report originally proposed were refuted by offline
+replay of the captured routing traces before any cluster time was spent; see
+"What is not worth pursuing". The revised ordering is below. Gains are per-step
+reductions against the 62.43 ms baseline and are not fully additive.
 
-### P1 — Per-layer EP load balancing (≈5.9 ms, 9.5%)
+### P1 — A W4A16 MoE kernel that suits M=16 (large, and it pays twice)
 
-The Phase 6 machinery already supports a fingerprinted arbitrary per-layer EP4
-owner map, validated and loadable in the full graphed server. Its objective was
-"minimize cold routing". Add a second term: **minimize, per layer, the maximum
-over ranks of expected activation mass**, using the existing domain-trained
-per-expert frequency profile from `optimize_routing_profile.py`.
+Hot Marlin runs at 29–38% of HBM peak, with a grid fixed at exactly one
+occupancy wave (396 blocks = 3 × 132 SMs, shared-memory limited) *regardless of
+token count* — a shape tuned for large-M GEMMs, not a 16-row decode batch.
 
-- Recoverable: the 5.96 ms persistent component. The 1.80 ms step-to-step
-  component is out of reach for a static map.
-- Gate: golden 400K SHA `d594e4d4…dcfc528` plus the 24-prompt realistic suite.
-- Risk: low. Ownership changes are already exercised end-to-end.
-- Verify: post-MoE all-reduce wait should fall from 7.82 ms toward ~2 ms; re-run
-  the per-layer max-minus-mean measurement, which should track it.
+This is now the top item because it pays on two lines at once. Scaling the
+modelled per-expert cost shows the skew shrinking in proportion, since the
+order statistic multiplies the per-expert cost:
 
-### P2 — Rebalance activation mass toward Grace (≈3.5–4.3 ms, 5.6–6.9%)
+| Per-expert kernel cost | routed span | rank skew |
+| ---: | ---: | ---: |
+| ×1.00 (today) | 25.96 ms | 4.53 ms |
+| ×0.75 | 19.47 ms | 3.39 ms |
+| ×0.50 | 12.98 ms | 2.26 ms |
 
-Change the residency planner's objective from "fill HBM with the most frequent
-experts" to "equalize expected per-tier execution time", i.e. drive
-`t_hot ≈ t_cold` using the measured per-activated-expert costs (hot 1.09–1.43 ms,
-cold 3.47 ms per step across all layers).
+A 25% kernel improvement is worth ~6.5 ms of Marlin *plus* ~1.1 ms of
+all-reduce wait — roughly 12% of the step. Nothing else in the trace has that
+leverage, and it is the only item that attacks the 3.95 ms barrier-granularity
+cost without touching the layer dependency structure.
 
-- Do P2 *after* P1, and re-fit the per-expert costs from the P1 trace.
-- Secondary payoff: releases HBM for KV, feeding P6.
-- Risk: medium. As cold mass grows, cold/hot SM contention grows; the current
-  1.19 ms overlap gap could widen. Measure the layer-span total, not the
-  per-kernel durations, which are contention-distorted.
-- Cheap first probe: rerun this sweep's MTP3 point at 9 GB and 11 GB reserve
-  (fewer hot slots) and check whether the realistic-suite aggregate *improves*.
-  If the curve is non-monotonic in the direction predicted, the model holds.
+- `WNA16MoEBackend.FLASHINFER_TRTLLM` already exists in the tree as an
+  alternative to Marlin; the config plumbing is in place.
+- Start with a standalone `benchmarks/kernels/` comparison at M ∈ {8,12,16,32}
+  on the login-node GH200 — no Booster allocation needed, no server involved.
+- Honest risk: this is a kernel-selection bet. It may return nothing.
 
-### P3 — Remove the host round-trips (≈3.5–4.3 ms, 5.6–6.9%)
+### P2 — Remove the host round-trips (≈3.5–4.3 ms, 5.6–6.9%)
 
-Two independent pieces.
+Unaffected by the refutations; measured directly and mechanically clear.
 
-- **Draft loop (1.57 ms).** Capture the three MTP proposer passes into one graph,
-  or keep the loop resident on-GPU so draft *k*+1's input is built by device
-  kernels rather than a host wake-up. The per-pass eager work is ~11 kernels and
-  3 copies.
-- **Prologue (2.73 ms).** ~50 eager launches and 20 H2D copies with 0.28 ms of
-  GPU work. Either fold the input-prep kernels into the target graph's prologue
-  region, batch the 20 H2D copies into one staged transfer, or enable async
-  scheduling so prep for step *n*+1 overlaps step *n*'s 50 ms of GPU execution.
-  The host demonstrably has the wall time free.
-- Risk: low–medium; graph capture under DCP has bitten this project twice
-  (`0d87dd9ae`, `67e6d48ff`), so expect capture-path debugging.
+- **Draft loop (1.57 ms).** Capture the three MTP proposer passes into one
+  graph, or keep the loop resident on-GPU so draft *k*+1's input is built by
+  device kernels. Today the host wakes after each draft graph, issues ~11 eager
+  kernels and 3 copies, and relaunches — 0.8 ms of wall for 25 us of GPU work.
+- **Prologue (2.73 ms).** ~50 eager launches and 20 H2D copies produce 0.28 ms
+  of GPU work in 3.01 ms of wall. Fold the input-prep kernels into the graph,
+  batch the H2D copies, or enable async scheduling so prep for step *n*+1
+  overlaps step *n*. The host demonstrably has 50 ms/step free.
+- Risk: low–medium. Graph capture under DCP has bitten this project twice
+  (`0d87dd9ae`, `67e6d48ff`); expect capture-path debugging.
 
-### P4 — Alternative W4A16 MoE kernel at M=16 (0 to ~9 ms, high variance)
+### P3 — Spend HBM on KV, not on hot experts
 
-Hot Marlin runs at 29–38% of HBM peak with a grid fixed at exactly one
-occupancy wave regardless of token count — a shape tuned for large-M GEMMs.
-`WNA16MoEBackend.FLASHINFER_TRTLLM` already exists in the tree as an
-alternative. This is a cheap A/B with a potentially large payoff and an equally
-real chance of no gain.
+Finding 3 shows the hot-slot frontier is nearly flat past ~3,000 slots/rank:
+1.1 us of span per 19.46 MB slot, or 0.002% of the step. The same HBM spent on
+KV buys concurrency, and concurrency is what this deployment is for.
 
-- Run as a standalone kernel benchmark first, under
-  `benchmarks/kernels/`, at M ∈ {8,12,16,32}, not in the server.
-- If a backend wins, P2's balance point moves and must be re-fit.
+- Do **not** lower the hot-slot count (that direction is strongly negative).
+  Simply stop raising it, and route any HBM freed elsewhere into KV.
+- Trading 5.4 GB/rank of hot experts for KV costs 0.31 ms/step (0.5%) and buys
+  roughly one more concurrent 400K sequence (~+25% aggregate).
+- Needs a measured concurrency slope first: the 1.057 ms/token figure comes
+  from varying positions *within* a sequence, and independent sequences will
+  route less coherently. An 8-sequence profile settles it.
 
-### P5 — Reduce graph node count (≈2–3 ms of ~7.6 ms, higher effort)
+### P4 — Reduce graph node count (≈2–3 ms of ~7.6 ms, higher effort)
 
 2,410 glue kernels per step cost 4.65 ms solo plus ~3 ms of dependency gaps.
-Highest-density targets: the MoE epilogue (678 calls/step of `act_and_mul`,
+Densest targets: the MoE epilogue (678 calls/step of `act_and_mul`,
 `moe_sum_vec`, `moe_align_block_size`, `count_and_sort_expert_tokens`) and the
-1,431 elementwise + 644 triton nodes. Fusing the two `moe_align`/`count_and_sort`
-pairs across tiers, and the per-tier `moe_sum_vec` + `add_` into one kernel, is
-the obvious first slice. Do this last: it is the most invasive and the gain per
-unit of work is the lowest.
-
-### P6 — Concurrency headroom for the agent workload
-
-The routed-MoE marginal cost per token is declining, so c=8 should cost well
-under 2× the c=4 MoE time. KV is the binding constraint: c=4 × 400K currently
-uses 21.9 GB/rank of a ~96 GB budget against 64.4 GB of weights.
-
-- P2 directly funds this by moving weights off HBM.
-- Autoresearch subagents will mostly run far below 400K. Measure the aggregate
-  throughput surface over (concurrency, context) rather than optimizing the
-  400K corner — the 400K synthetic case is a memory and correctness stress
-  test, and the realistic suite is already the primary gate (Phase 17).
-- Required new measurement: an 8-sequence profile to get the *concurrency*
-  slope, which the MTP-depth sweep cannot provide.
+1,431 elementwise + 644 triton nodes. Fusing the per-tier `moe_align` /
+`count_and_sort` pairs, and `moe_sum_vec` + `add_`, is the obvious first slice.
+Most invasive, lowest gain per unit of work — do it last.
 
 ### Expected outcome
 
-P1 + P2 + P3 land on independent parts of the step and are jointly worth
-~13.8 ms if fully realized, i.e. 62.4 → ~48.6 ms (+28% aggregate throughput,
-roughly 228 → 290 tok/s effective on the realistic suite). A realistic
-partial-capture estimate of 60–70% of that is **+17–20%**. P4 and P5 are
-upside on top; P6 changes the operating point rather than the step time.
+P2 and P4 are mechanical and jointly worth ~6–7 ms (62.4 → ~56 ms, +11%). P1 is
+the only item that can move the step substantially — 12% for a 25% kernel win —
+but it is a bet. P3 changes the operating point rather than the step time and is
+probably the largest *aggregate throughput* lever of the four, because it
+converts flat-frontier HBM directly into concurrent sequences.
+
+A realistic target is **+10–12% from P2/P4**, with P1 and P3 as the two paths to
+anything larger.
 
 ## Suggested experiment order
 
-Each entry is one Booster node for four hours; entries at the same level are
-independent and should be submitted in parallel.
+1. **No Booster allocation required.** (a) `benchmarks/kernels/` W4A16 MoE
+   backend comparison at M ∈ {8,12,16,32} on the login-node GH200 — decides P1
+   before any campaign; (b) extend the offline replay to an 8-sequence step to
+   get the true concurrency slope for P3.
+2. **P2** — draft-loop graph capture first (smaller, cleaner), then prologue
+   batching. Gate on the golden 400K SHA
+   `d594e4d4…dcfc528` plus the 24-prompt realistic suite.
+3. **P3** — if the concurrency slope holds up, re-plan KV against a fixed
+   ~3,000 hot slots/rank and qualify c=5 or c=6.
+4. **P1** — only if step 1(a) shows a winning backend.
+5. Re-profile and re-derive this budget before starting P4.
 
-1. **Parallel, no source changes.** (a) MTP3 at 9 GB and 11 GB reserve to test
-   the P2 direction empirically; (b) an 8-sequence c8 profile at a moderate
-   context to get the concurrency slope; (c) a standalone `benchmarks/kernels/`
-   W4A16 MoE backend comparison at M ∈ {8,12,16,32} on the login-node GH200.
-2. **P1** — rebalanced per-layer owner map, gated on the golden SHA and the
-   24-prompt suite, with a re-run of the post-MoE all-reduce measurement.
-3. **P2** — re-fit tier costs from the P1 trace, retune the residency planner,
-   remeasure.
-4. **P3** — draft-loop graph capture and prologue batching, in that order.
-5. Re-profile and re-derive this budget before starting P4 or P5.
-
+Offline replay proved cheaper than a cluster campaign for two of the three
+original items. Any future placement or tiering hypothesis should be run through
+`analysis/p1_balance.py` and `analysis/p2_tier_sweep.py` first; the span model
+matches the measured trace to ~1%.
 Analysis scripts used for this report are reproducible from the traces alone;
 the segmentation rule (graph correlation IDs) and the tier rule (`add_` stream)
 are the only two non-obvious pieces.
