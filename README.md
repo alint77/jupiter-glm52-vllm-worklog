@@ -411,6 +411,27 @@ reproduced. The bug is upstream, not in this branch; any DCP plus
 speculative-decoding deployment pays it. See the
 [draft-sync fix](experiments/2026-07-25-draft-sync/README.md).
 
+Phase 23 closes P1b, the largest lever the critical-path review had identified,
+as a refutation. The review put ~12 ms/step of headroom in hot/cold MoE overlap.
+A diagnosis sweep first showed that `blocks_per_sm` is honoured by `marlin_mm`
+only when `thread_k` and `thread_n` are also passed, so an earlier
+SM-partitioning sweep had been a null experiment; with a grid read-out proving
+the knob live (132/264/396 blocks for bps 1/2/3), partitioning is genuinely
+useless and the shipped 3/3 default is the best of nine combinations. An
+isolated benchmark then suggested issuing the hot tier first, raising
+co-residency 22% -> 86%. That change was implemented, verified live in the trace
+(hot starts first in 98.7% of layers, up from 2.0%), measured at -0.94% on the
+routed layer span, and reverted. Direct measurement explains why: in production
+the tiers are **already 81.5% co-resident** and the layer span is within 4% of
+the in-situ `max(hot, cold)`. The 12 ms came from comparing a production span
+against isolated solo kernel costs, an ideal that assumes both tiers run at solo
+speed while overlapped. The isolated benchmark's low co-residency was an
+eager-launch artifact that does not survive CUDA-graph replay. Same error class
+as the "39-40% overlap saving" corrected earlier; the rule is never to compare
+an in-situ time against an isolated time and call the difference recoverable.
+See the [tier-overlap diagnosis](experiments/2026-07-25-tier-overlap/README.md)
+and [reorder qualification](experiments/2026-07-25-tier-order/README.md).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout

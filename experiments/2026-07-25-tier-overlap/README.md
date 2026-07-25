@@ -132,3 +132,75 @@ what makes it usable.
 `over_ideal` is relative to `max(hot, cold)`, and hot's measured time itself
 changes between variants, so it is a within-row diagnostic rather than a
 cross-row ranking. Union is the honest metric.
+
+---
+
+# Phase A conclusion after qualification: P1b is refuted at its root
+
+The A4 hot-first reorder was implemented and qualified (job 1041016). It
+**works as intended and changes nothing**, because the problem it fixes does not
+exist in production.
+
+## The reorder took effect
+
+Applying the lesson this plan wrote down — verify the change reached the
+hardware — the trace confirms the issue order flipped:
+
+| | draft-sync (cold-first) | tier-order (hot-first) |
+| --- | ---: | ---: |
+| `hot_start − cold_start`, median | +2.05 us | **−2.08 us** |
+| hot starts first | 2.0% of layers | **98.7%** |
+| routed layer span | 25.869 ms/step | 25.627 ms/step (**−0.94%**) |
+
+So the change is live and its effect is ~1%, inside noise. End-to-end it is
+flat: realistic c4 warmed −0.34%, 4K c4 r1 +8.2% against r2 −3.6% (variance,
+not signal), 396K c4 median ITL −2.4%. The golden SHA reproduces.
+
+## Why: the tiers were already overlapping
+
+Measuring hot/cold co-residency directly in the production traces:
+
+| | baseline (cold-first) | tier-order (hot-first) |
+| --- | ---: | ---: |
+| **co-resident fraction of layer union** | **81.5%** | 80.0% |
+| hot chain, in situ | 329.8 us | 275.2 us |
+| cold chain, in situ | 281.4 us | 327.2 us |
+| layer span | 343.8 us | 341.7 us |
+| serial would be | 611.2 us | 602.4 us |
+| ideal `max(hot, cold)` in situ | 329.8 us | 327.2 us |
+
+**Production overlap is already 81%, and the layer span is within 4% of the
+in-situ ideal.** The isolated benchmark's "22% co-resident, +70% over ideal" was
+an artifact of *eager* launch, where the first kernel's grid is submitted before
+the second launch call returns. Under CUDA-graph replay both tiers are dispatched
+by graph topology and already run concurrently. A4 fixed a benchmark artifact.
+
+Note the roles simply swap under hot-first: hot drops 329.8 → 275.2 us and cold
+rises 281.4 → 327.2 us, with the span unchanged. That is the signature of a
+zero-sum contention effect — whichever tier goes first runs faster, and the
+other absorbs the contention.
+
+## The 12.5 ms headroom was an accounting error
+
+That figure came from comparing the production layer span (25.7 ms) against
+**isolated solo kernel costs** (13.2 ms). The implied ideal assumes each tier
+runs at its solo speed *while overlapped*. Two kernels sharing SMs and memory
+pipelines cannot both run at solo speed simultaneously; the in-situ hot chain is
+329.8 us against ~176 us isolated precisely because cold is running alongside it.
+
+The correct scheduling bound is the in-situ one: span 343.8 us against
+`max(hot, cold)` = 329.8 us, i.e. **~4% headroom, not 48%**. Everything beyond
+that requires making the kernels faster or reducing the work, not rescheduling
+them.
+
+This is the same class of error as the "39–40% overlap saving" corrected
+earlier: comparing quantities measured under different contention conditions.
+The rule that would have caught all three: **never compare an in-situ time with
+an isolated time and call the difference recoverable.**
+
+## Disposition
+
+The reorder is **reverted** — it is neutral and adds diff without benefit.
+P1b is closed as refuted. The routed MoE is not scheduling-limited; the
+remaining levers are P3 (spend HBM on KV, buy concurrency) and P4 (graph node
+count), plus anything that genuinely reduces routed work.

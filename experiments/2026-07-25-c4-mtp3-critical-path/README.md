@@ -410,7 +410,28 @@ cost without touching the layer dependency structure.
   on the login-node GH200 — no Booster allocation needed, no server involved.
 - Honest risk: this is a kernel-selection bet. It may return nothing.
 
-### P1b — Make the hot and cold tiers actually overlap (≈12 ms, 19%) — **new leading item**
+### P1b — Make the hot and cold tiers actually overlap — **REFUTED, the premise was an accounting error**
+
+> Closed by [2026-07-25-tier-overlap](../2026-07-25-tier-overlap/README.md).
+> Measured directly in the production traces, the tiers are **already 81.5%
+> co-resident** and the layer span (343.8 us) is within **4%** of the in-situ
+> ideal `max(hot, cold)` = 329.8 us. There is no scheduling headroom.
+>
+> The 12.5 ms figure came from comparing the production layer span against
+> **isolated solo** kernel costs. That implied ideal assumes each tier runs at
+> solo speed *while overlapped*, which two kernels sharing SMs and memory
+> pipelines cannot do — the in-situ hot chain is 329.8 us against ~176 us
+> isolated precisely because cold runs alongside it.
+>
+> The isolated benchmark's "22% co-resident" was an eager-launch artifact that
+> does not survive CUDA-graph replay. The hot-first reorder it suggested was
+> implemented, verified live in the trace (hot first in 98.7% of layers, up from
+> 2.0%), measured at −0.94% on the layer span, and reverted.
+>
+> This is the third instance of the same error, after the "39–40% overlap
+> saving" in this report and in the earlier SOL analysis. The rule: **never
+> compare an in-situ time against an isolated time and call the difference
+> recoverable.** Original scoping kept for the record:
 
 Measured in
 [2026-07-25-grace-bandwidth](../2026-07-25-grace-bandwidth/README.md): isolated
