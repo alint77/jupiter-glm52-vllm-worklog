@@ -89,10 +89,31 @@ the best config beats auto by 0.0–1.8%. The apparent 12–35% wins all sit at
 5 activated experts or M=32, neither of which is the operating point. The
 heuristic in `determine_exec_config` is already choosing well.
 
-**Splitting the SM budget across tiers does nothing.** Best union span versus
-the auto/auto pair: +0.0% at M=8, 0.3% at M=12, 0.4% at M=16, 0.3% at M=32.
-The full 4×4 sweep of (hot, cold) block counts is flat. Whatever prevents the
-two tiers from overlapping, it is not the threadblock budget.
+**Splitting the SM budget across tiers — VOID, the knob never applied.** The
+sweep reported +0.0% at M=8, 0.3% at M=12, 0.4% at M=16, 0.3% at M=32 and
+concluded the threadblock budget was not the limiter. That conclusion is
+withdrawn. In `csrc/libtorch_stable/moe/marlin_moe_wna16/ops.cu`, `marlin_mm`
+honours `blocks_per_sm` **only** when `thread_k` and `thread_n` are also given:
+
+```cpp
+if (thread_k != -1 && thread_n != -1) {
+    if (blocks_per_sm == -1) blocks_per_sm = 1;
+    exec_cfg = exec_config_t{blocks_per_sm, thread_tfg};   // honoured
+} else {
+    exec_cfg = determine_exec_config(...);                 // blocks_per_sm DISCARDED
+}
+```
+
+Every `(blocks_per_sm, -1, -1)` config here took the auto branch and launched
+identically, so the 0.0–0.4% spread is noise on identical work. The same defect
+makes the single-tier `blocks_per_sm` rows above meaningless; only the two rows
+that set `thread_n`/`thread_k` exercised anything, and those changed the thread
+tile as well, confounding them.
+
+SM partitioning is therefore **untested**, and is the leading hypothesis in the
+[P1b implementation plan](../2026-07-25-c4-mtp3-critical-path/p1b-implementation-plan.md).
+The other conclusions in this section stand: the auto heuristic is not obviously
+beatable on thread tiles, and the isolated hot kernel is not the bottleneck.
 
 **The hot kernel is not the problem.** Isolated at realistic shapes it reaches
 **53–59% of HBM peak**, or 2.18–2.25 TB/s:
