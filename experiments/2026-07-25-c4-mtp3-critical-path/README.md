@@ -432,7 +432,20 @@ cases rather than inference from a single trace.
    co-resident at all. If CUDA serialises them outright, the fix is structural
    rather than an occupancy tweak.
 
-### P2 — Remove the host round-trips (≈3.5–4.3 ms, 5.6–6.9%)
+### P2 — Remove the host round-trips — **DONE, 3.94 ms/step (6.3%)**
+
+> Root-caused and fixed in
+> [2026-07-25-draft-sync](../2026-07-25-draft-sync/README.md). A single upstream
+> line, `rank_offsets = torch.tensor(dcp_rank, device=...)` in
+> `get_dcp_local_seq_lens`, materialized a Python int as a 0-d device tensor —
+> a pageable H2D copy that blocks the host until the stream drains, executed
+> once per draft step via `_build_draft_attn_metadata`. Replacing it with the
+> Python scalar moved the host from launching just-in-time (37.5 us lead) to
+> running a step and a half ahead (104.9 ms lead). Inter-graph GPU gaps fell
+> from 4,547 to 607 us/step, which covers **both** halves below: the
+> draft-to-draft gaps collapsed 786 → 70 us and the gap containing the eager
+> prologue collapsed 2,617 → 173 us. Measured +3.1% to +7.0% output throughput
+> with the golden SHA reproduced. Original scoping kept for the record:
 
 Unaffected by the refutations; measured directly and mechanically clear.
 

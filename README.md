@@ -393,6 +393,24 @@ is available if the tiers genuinely overlapped. See the
 [Grace bandwidth resolution](experiments/2026-07-25-grace-bandwidth/README.md)
 and [Marlin decode tuning](experiments/2026-07-25-marlin-decode-tuning/README.md).
 
+Phase 22 completes the host-round-trip work from one upstream line. The trace's
+host API timeline showed each draft step blocking in a `cudaStreamSynchronize`
+inside an `aten::to` on a 0-d int tensor; the caller is `get_dcp_local_seq_lens`
+in `vllm/v1/attention/backends/utils.py`, which materialized the Python
+`dcp_rank` as a 0-d device tensor. That is a pageable host-to-device copy, and a
+pageable H2D blocks the host until the stream drains — once per speculative
+draft step, via `_build_draft_attn_metadata`. The value is only used in a scalar
+multiply, so a Python int is equivalent; equivalence was checked over
+`dcp_size` in {2,4,8} and interleave in {1,4,64} on CPU and CUDA, with 40 unit
+tests passing. The host moved from a 37.5 us launch lead to 104.9 ms, so
+inter-graph GPU gaps fell from 4,547 to 607 us/step: draft-to-draft collapsed
+786 -> 70 us and the gap containing the eager prologue collapsed 2,617 ->
+173 us, covering both halves of the planned work. Realistic c4 output rises
+179.47 -> 185.05 tok/s warmed and 4K c4 by 5.5-7.0%, with the golden 400K SHA
+reproduced. The bug is upstream, not in this branch; any DCP plus
+speculative-decoding deployment pays it. See the
+[draft-sync fix](experiments/2026-07-25-draft-sync/README.md).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout
