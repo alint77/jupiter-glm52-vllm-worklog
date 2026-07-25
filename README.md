@@ -372,6 +372,27 @@ the
 and the [c4 MTP-depth sweep](experiments/2026-07-23-c4-mtp-depth/README.md) it
 re-analyzes.
 
+Phase 21 resolves a 5x disagreement about Grace C2C bandwidth and, in doing so,
+finds the largest remaining lever. Sweeping the Marlin MoE launch configuration
+is a dead end: every `blocks_per_sm` value lands within 0.4% of the auto
+heuristic and splitting the SM budget across tiers gains 0.0-0.4%. A first
+isolated probe appeared to show the Grace tier collapsing to 69 GB/s, but that
+benchmark handed the cold tier's experts the whole routing and so timed
+re-streamed blocks against logical bytes; production splits one routing across
+tiers by `expert_map`, leaving one block per cold expert. With faithful routing
+the cold path holds 88-95% of the 421 GB/s roof, flat across M=8/16/32, and
+doubling the routing mass doubles blocks and time together at 95% of roof. The
+2026-07-17 probe's "within 2-4% of HBM" turns out to have been measured where
+HBM itself ran at 10.4% of its own roof, so it never spoke to bandwidth. The new
+result is that the two tiers barely overlap: hot 115.3 us and cold 104.4 us
+combine to a 194.0 us union against a 115.3 us ideal, capturing only ~25% of the
+available overlap, and the trace's 25.7 ms layer span matches a serial estimate
+rather than the 13.2 ms ideal. The "39-40% overlap saving" reported earlier
+compared against a sum of dilated durations. About 12 ms/step, 19% of the step,
+is available if the tiers genuinely overlapped. See the
+[Grace bandwidth resolution](experiments/2026-07-25-grace-bandwidth/README.md)
+and [Marlin decode tuning](experiments/2026-07-25-marlin-decode-tuning/README.md).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout

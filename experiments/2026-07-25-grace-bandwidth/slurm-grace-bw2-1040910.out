@@ -1,0 +1,164 @@
+=== A: production cold share (13% of routing mass) ===
+device: NVIDIA GH200 120GB
+per-expert bytes: w13=12,976,128 w2=6,488,064
+
+SMs=132
+
+--- w13 hot: M=8, 19 experts, cold_share=0.13
+    bsm=16 (-1, -1, -1)     113.66 us   19 blocks    246.5 MB physical   2169.1 GB/s   62.0% roof
+    bsm=16 (2, -1, -1)      113.78 us   19 blocks    246.5 MB physical   2166.8 GB/s   61.9% roof
+    bsm=16 (3, -1, -1)      114.58 us   19 blocks    246.5 MB physical   2151.6 GB/s   61.5% roof
+--- w13 cold: M=8, 3 experts, cold_share=0.13
+    bsm=16 (-1, -1, -1)      53.92 us    3 blocks     38.9 MB physical    722.0 GB/s   20.6% roof
+    bsm=16 (2, -1, -1)       55.84 us    3 blocks     38.9 MB physical    697.2 GB/s   19.9% roof
+    bsm=16 (3, -1, -1)       53.21 us    3 blocks     38.9 MB physical    731.7 GB/s   20.9% roof
+--- w13 hot: M=16, 19 experts, cold_share=0.13
+    bsm=16 (-1, -1, -1)     114.90 us   19 blocks    246.5 MB physical   2145.8 GB/s   61.3% roof
+    bsm=16 (2, -1, -1)      115.29 us   19 blocks    246.5 MB physical   2138.4 GB/s   61.1% roof
+    bsm=16 (3, -1, -1)      115.43 us   19 blocks    246.5 MB physical   2136.0 GB/s   61.0% roof
+--- w13 cold: M=16, 3 experts, cold_share=0.13
+    bsm=16 (-1, -1, -1)      53.96 us    3 blocks     38.9 MB physical    721.5 GB/s   20.6% roof
+    bsm=16 (2, -1, -1)       53.48 us    3 blocks     38.9 MB physical    727.9 GB/s   20.8% roof
+    bsm=16 (3, -1, -1)       54.44 us    3 blocks     38.9 MB physical    715.1 GB/s   20.4% roof
+--- w13 hot: M=32, 19 experts, cold_share=0.13
+    bsm=16 (-1, -1, -1)     132.27 us   22 blocks    285.5 MB physical   2158.3 GB/s   61.7% roof
+    bsm=16 (2, -1, -1)      132.40 us   22 blocks    285.5 MB physical   2156.2 GB/s   61.6% roof
+    bsm=16 (3, -1, -1)      134.71 us   22 blocks    285.5 MB physical   2119.2 GB/s   60.5% roof
+--- w13 cold: M=32, 3 experts, cold_share=0.13
+    bsm=16 (-1, -1, -1)      54.00 us    3 blocks     38.9 MB physical    720.9 GB/s   20.6% roof
+    bsm=16 (2, -1, -1)       54.19 us    3 blocks     38.9 MB physical    718.4 GB/s   20.5% roof
+    bsm=16 (3, -1, -1)       53.96 us    3 blocks     38.9 MB physical    721.5 GB/s   20.6% roof
+--- w2 hot: M=8, 19 experts, cold_share=0.13
+    bsm=16 (-1, -1, -1)      60.11 us   19 blocks    123.3 MB physical   2050.9 GB/s   58.6% roof
+    bsm=16 (2, -1, -1)       60.14 us   19 blocks    123.3 MB physical   2049.6 GB/s   58.6% roof
+    bsm=16 (3, -1, -1)       60.13 us   19 blocks    123.3 MB physical   2050.2 GB/s   58.6% roof
+--- w2 cold: M=8, 3 experts, cold_share=0.13
+    bsm=16 (-1, -1, -1)      54.49 us    3 blocks     19.5 MB physical    357.2 GB/s   10.2% roof
+    bsm=16 (2, -1, -1)       55.18 us    3 blocks     19.5 MB physical    352.8 GB/s   10.1% roof
+    bsm=16 (3, -1, -1)       55.22 us    3 blocks     19.5 MB physical    352.5 GB/s   10.1% roof
+--- w2 hot: M=16, 19 experts, cold_share=0.13
+    bsm=16 (-1, -1, -1)      60.93 us   19 blocks    123.3 MB physical   2023.2 GB/s   57.8% roof
+    bsm=16 (2, -1, -1)       61.15 us   19 blocks    123.3 MB physical   2015.8 GB/s   57.6% roof
+    bsm=16 (3, -1, -1)       61.16 us   19 blocks    123.3 MB physical   2015.7 GB/s   57.6% roof
+--- w2 cold: M=16, 3 experts, cold_share=0.13
+    bsm=16 (-1, -1, -1)      53.61 us    3 blocks     19.5 MB physical    363.1 GB/s   10.4% roof
+    bsm=16 (2, -1, -1)       53.57 us    3 blocks     19.5 MB physical    363.4 GB/s   10.4% roof
+    bsm=16 (3, -1, -1)       53.74 us    3 blocks     19.5 MB physical    362.2 GB/s   10.3% roof
+--- w2 hot: M=32, 19 experts, cold_share=0.13
+    bsm=16 (-1, -1, -1)      68.87 us   22 blocks    142.7 MB physical   2072.5 GB/s   59.2% roof
+    bsm=16 (2, -1, -1)       68.91 us   22 blocks    142.7 MB physical   2071.3 GB/s   59.2% roof
+    bsm=16 (3, -1, -1)       90.49 us   22 blocks    142.7 MB physical   1577.4 GB/s   45.1% roof
+--- w2 cold: M=32, 3 experts, cold_share=0.13
+    bsm=16 (-1, -1, -1)      90.00 us    3 blocks     19.5 MB physical    216.3 GB/s    6.2% roof
+    bsm=16 (2, -1, -1)       89.76 us    3 blocks     19.5 MB physical    216.8 GB/s    6.2% roof
+    bsm=16 (3, -1, -1)       89.89 us    3 blocks     19.5 MB physical    216.5 GB/s    6.2% roof
+
+    Grace alias (64, 384, 8192): 100% of sampled pages on NUMA node 0
+    Grace alias (64, 48, 4096): 100% of sampled pages on NUMA node 0
+--- M=8: hot 19 (HBM) / cold 3 (Grace), cold_share=0.13
+  HOT tier alone (HBM roof 3.5 TB/s)
+    bsm=16 (-1, -1, -1)     113.32 us   19 blocks    246.5 MB physical   2175.6 GB/s   62.2% roof
+  COLD tier alone (C2C roof 421 GB/s)
+    bsm=16 (-1, -1, -1)     103.55 us    3 blocks     38.9 MB physical    375.9 GB/s   89.3% roof
+  bsm=16 overlap: hot   113.5 ( 19 blk)  cold   103.4 (  3 blk)  union   189.6  serial   216.9  ideal   113.5  over ideal +67.0%
+--- M=16: hot 19 (HBM) / cold 3 (Grace), cold_share=0.13
+  HOT tier alone (HBM roof 3.5 TB/s)
+    bsm=16 (-1, -1, -1)     115.42 us   19 blocks    246.5 MB physical   2136.1 GB/s   61.0% roof
+  COLD tier alone (C2C roof 421 GB/s)
+    bsm=16 (-1, -1, -1)     104.37 us    3 blocks     38.9 MB physical    373.0 GB/s   88.6% roof
+  bsm=16 overlap: hot   115.3 ( 19 blk)  cold   104.4 (  3 blk)  union   194.0  serial   219.7  ideal   115.3  over ideal +68.2%
+--- M=32: hot 19 (HBM) / cold 3 (Grace), cold_share=0.13
+  HOT tier alone (HBM roof 3.5 TB/s)
+    bsm=16 (-1, -1, -1)     132.80 us   22 blocks    285.5 MB physical   2149.6 GB/s   61.4% roof
+  COLD tier alone (C2C roof 421 GB/s)
+    bsm=16 (-1, -1, -1)     105.13 us    3 blocks     38.9 MB physical    370.3 GB/s   88.0% roof
+  bsm=16 overlap: hot   132.5 ( 22 blk)  cold   104.7 (  3 blk)  union   207.0  serial   237.2  ideal   132.5  over ideal +56.2%
+
+wrote /e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-25-grace-bandwidth/share-013.json
+
+=== B: cold share swept — isolates re-streaming from C2C bandwidth ===
+--- cold_share=0.05
+device: NVIDIA GH200 120GB
+per-expert bytes: w13=12,976,128 w2=6,488,064
+
+
+    Grace alias (64, 384, 8192): 100% of sampled pages on NUMA node 0
+    Grace alias (64, 48, 4096): 100% of sampled pages on NUMA node 0
+--- M=16: hot 19 (HBM) / cold 3 (Grace), cold_share=0.05
+  HOT tier alone (HBM roof 3.5 TB/s)
+    bsm=16 (-1, -1, -1)     115.00 us   19 blocks    246.5 MB physical   2143.9 GB/s   61.3% roof
+  COLD tier alone (C2C roof 421 GB/s)
+    bsm=16 (-1, -1, -1)     104.42 us    3 blocks     38.9 MB physical    372.8 GB/s   88.6% roof
+  bsm=16 overlap: hot   115.2 ( 19 blk)  cold   104.3 (  3 blk)  union   193.1  serial   219.5  ideal   115.2  over ideal +67.7%
+
+wrote /e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-25-grace-bandwidth/share-0.05.json
+--- cold_share=0.25
+device: NVIDIA GH200 120GB
+per-expert bytes: w13=12,976,128 w2=6,488,064
+
+
+    Grace alias (64, 384, 8192): 100% of sampled pages on NUMA node 0
+    Grace alias (64, 48, 4096): 100% of sampled pages on NUMA node 0
+--- M=16: hot 19 (HBM) / cold 3 (Grace), cold_share=0.25
+  HOT tier alone (HBM roof 3.5 TB/s)
+    bsm=16 (-1, -1, -1)     114.40 us   19 blocks    246.5 MB physical   2155.2 GB/s   61.6% roof
+  COLD tier alone (C2C roof 421 GB/s)
+    bsm=16 (-1, -1, -1)     105.09 us    3 blocks     38.9 MB physical    370.4 GB/s   88.0% roof
+  bsm=16 overlap: hot   114.4 ( 19 blk)  cold   104.9 (  3 blk)  union   189.0  serial   219.3  ideal   114.4  over ideal +65.2%
+
+wrote /e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-25-grace-bandwidth/share-0.25.json
+--- cold_share=0.50
+device: NVIDIA GH200 120GB
+per-expert bytes: w13=12,976,128 w2=6,488,064
+
+
+    Grace alias (64, 384, 8192): 100% of sampled pages on NUMA node 0
+    Grace alias (64, 48, 4096): 100% of sampled pages on NUMA node 0
+--- M=16: hot 19 (HBM) / cold 3 (Grace), cold_share=0.5
+  HOT tier alone (HBM roof 3.5 TB/s)
+    bsm=16 (-1, -1, -1)     108.30 us   18 blocks    233.6 MB physical   2156.7 GB/s   61.6% roof
+  COLD tier alone (C2C roof 421 GB/s)
+    bsm=16 (-1, -1, -1)     194.46 us    6 blocks     77.9 MB physical    400.4 GB/s   95.1% roof
+  bsm=16 overlap: hot   103.3 ( 18 blk)  cold   194.6 (  6 blk)  union   273.6  serial   297.9  ideal   194.6  over ideal +40.6%
+
+wrote /e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-25-grace-bandwidth/share-0.50.json
+
+=== C: original probe regime (M=1 dense) for comparison ===
+{
+  "device": "NVIDIA GH200 120GB",
+  "torch": "2.11.0+cu130",
+  "shape_mkn": [
+    1,
+    6144,
+    4096
+  ],
+  "group_size": 128,
+  "packed_bytes_per_expert": 12582912,
+  "scale_bytes_per_expert": 393216,
+  "grace_only": false,
+  "working_set_bytes": 103809024,
+  "results": [
+    {
+      "source": "hbm",
+      "experts": 8,
+      "median_group_us": 283.9999943971634,
+      "median_expert_us": 35.499999299645424,
+      "p90_group_us": 311.3600015640259
+    },
+    {
+      "source": "pinned_grace_uva",
+      "experts": 8,
+      "median_group_us": 346.3200032711029,
+      "median_expert_us": 43.29000040888786,
+      "p90_group_us": 353.59999537467957
+    }
+  ],
+  "grace_over_hbm": 1.2194366552936875,
+  "grace_numa_nodes_before": {
+    "0": 192
+  },
+  "grace_numa_nodes_after": {
+    "0": 192
+  },
+  "correctness": "exact"
+}

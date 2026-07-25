@@ -1,0 +1,25 @@
+
+The following have been reloaded with a version change:
+  1) GCCcore/.14.3.0 => GCCcore/14.3.0
+
+Traceback (most recent call last):
+  File "/e/project1/profound/alint77/vllm/benchmarks/kernels/benchmark_moe_wna16_marlin_decode.py", line 432, in <module>
+    main()
+  File "/e/project1/profound/alint77/vllm/benchmarks/kernels/benchmark_moe_wna16_marlin_decode.py", line 421, in main
+    out["single"] = single(args, dev)
+                    ^^^^^^^^^^^^^^^^^
+  File "/e/project1/profound/alint77/vllm/benchmarks/kernels/benchmark_moe_wna16_marlin_decode.py", line 269, in single
+    rows += run_tier(
+            ^^^^^^^^^
+  File "/e/project1/profound/alint77/vllm/benchmarks/kernels/benchmark_moe_wna16_marlin_decode.py", line 207, in run_tier
+    tok, eids, npost, blocks = align(topk_ids, bsm, num_experts, emap)
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/e/project1/profound/alint77/vllm/benchmarks/kernels/benchmark_moe_wna16_marlin_decode.py", line 129, in align
+    blocks = int((eids >= 0).sum())
+                  ^^^^^^^^^
+torch.AcceleratorError: CUDA error: an illegal memory access was encountered
+Search for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+

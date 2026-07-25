@@ -1,0 +1,13 @@
+=== A: production cold share (13% of routing mass) ===
+device: NVIDIA GH200 120GB
+per-expert bytes: w13=12,976,128 w2=6,488,064
+
+SMs=132
+
+--- w13 hot: M=8, 19 experts, cold_share=0.13
+    bsm=16 (-1, -1, -1)     113.79 us   19 blocks    246.5 MB physical   2166.7 GB/s   61.9% roof
+    bsm=16 (2, -1, -1)      113.84 us   19 blocks    246.5 MB physical   2165.8 GB/s   61.9% roof
+    bsm=16 (3, -1, -1)      114.12 us   19 blocks    246.5 MB physical   2160.3 GB/s   61.7% roof
+    bsm=32 (-1, -1, -1)   unsupported (AcceleratorError)
+    bsm=32 (2, -1, -1)    unsupported (AcceleratorError)
+    bsm=32 (3, -1, -1)    unsupported (AcceleratorError)

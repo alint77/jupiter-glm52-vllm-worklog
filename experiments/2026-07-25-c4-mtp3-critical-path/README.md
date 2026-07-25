@@ -181,24 +181,36 @@ SMs. Reading cold w13 as the true rate:
 - cold w2 should then be 3.29 ms; it measures 11.72 ms — **3.6× dilation**
 - **cold solo cost ≈ 10.4 ms/step, not the 20.9 ms it appears to be**
 
-> **Correction.** The isolated kernel measurement in
-> [2026-07-25-marlin-decode-tuning](../2026-07-25-marlin-decode-tuning/README.md)
-> finds Grace-resident Marlin running at 69–199 GB/s, not at the 421 GB/s roof
-> this derivation assumes, so the absolute figure of 2.85 activated cold experts
-> per layer is not trustworthy. The w13/w2 ratio evidence, the 3.6× dilation and
-> the conclusion that the hot tier owns the routed critical path all rest on
-> measured ratios and layer spans, and are unaffected. That report also shows
-> the isolated hot kernel reaching 53–59% of HBM peak, so the 29–38% figure
-> below is too pessimistic — it charges cross-stream contention to the kernel.
+> **Confirmed, after one false alarm.** A first isolated measurement appeared to
+> show Grace-resident Marlin at 69–199 GB/s, and this derivation was briefly
+> retracted. That measurement was wrong — its benchmark gave the cold tier's
+> experts the whole routing, so it timed re-streamed blocks and divided by
+> logical bytes.
+> [2026-07-25-grace-bandwidth](../2026-07-25-grace-bandwidth/README.md) measures
+> the cold path at **88–95% of the 421 GB/s roof** with production routing, so
+> the roof assumption holds and ~2.85 (≈3.2 after the 0.9 factor) activated cold
+> experts per layer stands. The isolated hot kernel does reach 61–62% of HBM
+> peak, so the 29–38% figure below is too pessimistic: it charges cross-stream
+> contention to the kernel.
 
 Cross-check: 2.85 activated of 23.7 cold slots per layer (12%) against roughly
 19–22 activated of 40.3 hot slots (~50%) is exactly the profile a
 routing-frequency-ordered placement should produce. The numbers are consistent.
 
 The hot tier then carries ~19–22 activated experts per layer at
-**1.0–1.3 TB/s effective, 29–38% of HBM peak** — and the hot chain (24.52 ms)
-is within **1.19 ms** of the observed layer-span total (25.72 ms). Overlap is
-already near-perfect; the hot tier alone is the routed critical path.
+**1.0–1.3 TB/s effective in situ**, against 2.14–2.18 TB/s measured in
+isolation — so most of that gap is contention, not kernel quality.
+
+> **Correction.** This section originally read the hot chain (24.52 ms) being
+> within 1.19 ms of the layer-span total (25.72 ms) as evidence that overlap is
+> "already near-perfect". It is not: both quantities are dilated by the same
+> contention, so comparing them proves nothing. Isolated per-layer costs give an
+> ideal overlapped span of **13.2 ms** and a serial span of 25.1 ms; the measured
+> 25.7 ms matches *serial*. The tiers capture only ~25% of the available overlap,
+> leaving ~12 ms/step on the table. See
+> [2026-07-25-grace-bandwidth](../2026-07-25-grace-bandwidth/README.md). The same
+> error invalidates the "39–40% overlap saving" quoted here and in the earlier
+> SOL analysis, both of which compare against a sum of dilated durations.
 
 This corrects the earlier report's framing. Its conclusion that removing cold
 work saves only ~1.1 ms is right, but the reason is not that cold is a small
@@ -397,6 +409,28 @@ cost without touching the layer dependency structure.
 - Start with a standalone `benchmarks/kernels/` comparison at M ∈ {8,12,16,32}
   on the login-node GH200 — no Booster allocation needed, no server involved.
 - Honest risk: this is a kernel-selection bet. It may return nothing.
+
+### P1b — Make the hot and cold tiers actually overlap (≈12 ms, 19%) — **new leading item**
+
+Measured in
+[2026-07-25-grace-bandwidth](../2026-07-25-grace-bandwidth/README.md): isolated
+at production routing, hot w13 is 115.3 us and cold w13 104.4 us, but their
+union is 194.0 us against an ideal of 115.3 — only ~25% of the available
+overlap is captured, and the trace's 25.7 ms layer-span total matches the
+*serial* estimate (25.1 ms) rather than the ideal (13.2 ms).
+
+This is the largest lever found anywhere in the analysis, and unlike the three
+refuted hypotheses it rests on direct measurement of the isolated and combined
+cases rather than inference from a single trace.
+
+`blocks_per_sm` is already ruled out. Next probes, cheapest first:
+
+1. Launch cold with a grid well below one wave — `sms * blocks_per_sm` never
+   goes under 132 blocks, so the sweep never tested a genuinely small grid.
+2. Lower-priority cold stream, so the scheduler backfills hot blocks.
+3. Profile the isolated two-stream case to check whether the kernels are
+   co-resident at all. If CUDA serialises them outright, the fix is structural
+   rather than an occupancy tweak.
 
 ### P2 — Remove the host round-trips (≈3.5–4.3 ms, 5.6–6.9%)
 

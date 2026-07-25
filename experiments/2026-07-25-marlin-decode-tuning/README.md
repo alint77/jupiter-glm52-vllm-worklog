@@ -110,42 +110,34 @@ activated experts — **1.48x**. Roughly a third of the 24.5 ms hot chain, about
 The SM-split result says that contention is not recoverable through the launch
 configuration.
 
-## Unplanned result: the cold tier degrades with batch size, the hot tier does not
+## Withdrawn: "the cold tier degrades with batch size"
 
-Weight bytes are held constant (19 hot experts, 3 cold) while token count varies:
+This report originally concluded that the cold tier's cost grows 2.89x from
+M=8 to M=32 while the hot tier stays flat, and that raising concurrency would
+therefore hurt disproportionately. **Both claims are withdrawn.**
 
-| M | hot | hot GB/s | cold | cold GB/s | hot vs M=8 | cold vs M=8 |
-| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 8 | 113.0 us | 2,181 | 195.7 us | 199 | 1.00x | 1.00x |
-| 12 | 109.4 us | 2,253 | 230.5 us | 169 | 0.97x | 1.18x |
-| 16 | 110.5 us | 2,230 | 326.7 us | 119 | 0.98x | **1.67x** |
-| 32 | 142.3 us | 1,733 | 565.9 us | 69 | 1.26x | **2.89x** |
+The cause was a bug in this benchmark, not in the runtime. Its `routing()` gave
+the cold tier's three experts the entire routing (43 assignments each, three
+16-token blocks each), whereas production splits one routing across the tiers
+via per-tier `expert_map`, leaving a cold expert with one block. Marlin re-reads
+an expert's weights once per token block, so the benchmark was measuring
+re-streaming and charging it to bandwidth.
 
-The hot tier is essentially flat to M=16 — re-visits to the same expert weights
-hit L2. The cold tier grows 2.89x for the same bytes, and its effective C2C
-bandwidth collapses from 199 to 69 GB/s, because C2C reads are not cached and
-Marlin re-streams each expert tile per token block.
+With faithful routing, cold w13 is flat — 103.6 us at M=8, 104.4 at M=16,
+105.1 at M=32 — and holds 88-95% of the C2C roof.
 
-This matters for the deployment target. Raising concurrency multiplies exactly
-the traffic the cold tier handles worst, so the c=4 → c=8 extrapolation in the
-critical-path review (drawn from MTP depth, which varies positions rather than
-sequences) is optimistic wherever cold residency is non-trivial. It also
-reinforces the review's Finding 3: keep cold residency small, and spend HBM on
-KV rather than on either tier.
+The launch-tuning results above are unaffected: they run one tier at a time with
+all of the routing, which is the correct setup for that question.
 
-## Open discrepancy
+## Superseded
 
-Isolated cold bandwidth here (199 GB/s at M=8, falling to 69) is well under the
-421 GB/s C2C figure, and disagrees with the
-[2026-07-17 Marlin/UVA probe](../2026-07-17-marlin-uva/README.md), which
-measured full-footprint Grace-UVA execution within 2% of HBM. The critical-path
-review's Finding 2 derived "2.85 activated cold experts per layer" by *assuming*
-cold w13 runs at the C2C roof; that assumption is now doubtful, so the absolute
-number should not be relied on. The qualitative conclusion — cold is a minority
-of the routed work and the hot tier owns the critical path — is unaffected,
-since it rests on the measured w13/w2 ratios and the layer-span totals.
+The "open discrepancy" originally recorded here is resolved in
+[2026-07-25-grace-bandwidth](../2026-07-25-grace-bandwidth/README.md). There is
+no C2C anomaly — the cold path runs at 88-95% of its roof — and the 2026-07-17
+probe's "within 2-4% of HBM" was measured in a regime where HBM itself ran at
+10.4% of its own roof. Finding 2's roof assumption in the critical-path review
+is restored, so the retraction issued here is itself withdrawn.
 
-Resolving this is the prerequisite for any further tiering work: either the
-earlier probe used a shape that streams differently, or this benchmark's cold
-path differs from the production one. Compare against
-`agent_space/benchmarks/marlin_grace_uva.py` before trusting either number.
+That experiment also found, by measuring the isolated and combined cases
+directly, that the two tiers capture only ~25% of the available overlap — which
+is a larger lever than anything in this report.
