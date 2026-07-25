@@ -118,7 +118,9 @@ misconfiguration.
 | 3 | 1042100 | config wiring | `No valid attention backend`: the dense draft (head_size 64, sliding window) inherited the target's MLA-only `fp8_ds_mla` | `speculative_config.kv_cache_dtype: auto` |
 | 4 | 1042147 | **our contract** | `validate_tiered_moe` rejected the draft-derived `VllmConfig` | scope the dtype check to ignore the configured draft dtype |
 | 5 | 1042261 | stale base | fc sized `[6144, 18432]` vs checkpoint `[6144, 30720]` — 3x6144 vs 5x6144 | cherry-pick upstream `a7d00ec05` (#48524) |
-| 6 | 1042319 | **structural** | KV page-size unification — see below | unresolved |
+| 6 | 1042319 | stale base | KV page-size unification: MLA target + SWA draft | cherry-pick upstream `e18f0037a` (#48776) |
+| 7 | 1042647 | **our tiered KV** | `Tiered GLM KV allocation only supports MLA cache specs` | classify the draft spec, charge its pages into `bytes_per_block` |
+| 8 | 1042864 | **our planner** | fail-closed HBM audit, 1.64 GB short | unresolved — see below |
 
 Blocker 5 is worth noting: the speculators translation writes `target_layer_ids`
 as a top-level attribute, but `qwen3_dflash.py` read it only from the nested
@@ -128,55 +130,61 @@ usual three aux layers — so existing DSpark checkpoints never trip it. Ours ha
 3 draft layers but 5 aux layers, which breaks the coincidence. The upstream fix
 is titled for exactly this case.
 
-### The remaining blocker
+### Blocker 6 was already fixed upstream
+
+`unify_kv_cache_spec_page_size` requires a smaller KV spec either to divide the
+maximum page or to be paddable via `indexes_kv_by_block_stride`. The DSA indexer
+is neither once a dense draft sets the maximum. No configuration escapes it: the
+draft page is `131072 * b` bytes (a power of two for any dtype) while the indexer
+page is `64 * (128 + 4) = 8448 = 2^8 * 33`.
+
+Upstream **#48776 "Support sparse-MLA targets with SWA drafts"** (merged
+2026-07-23) fixes exactly this, and its validation section uses this very
+checkpoint: *"RedHatAI/GLM-5.2-speculator.dspark: 100/100 requests, 236.19 output
+tok/s, 40.44% draft-token acceptance, mean accepted length 3.83."* It promotes
+only the draft's allocation spec to `FullAttentionSpec` at the target's block
+size, leaving draft attention sliding-window. Cherry-picked; the nine KV
+unification tests pass and the server then reached weight loading.
+
+### The remaining blocker: the planner does not budget the draft
 
 ```
-NotImplementedError: Layer model.layers.0.self_attn.indexer.k_cache: page size is
-not divisible by the maximum page size and cannot be padded.
+Tiered MoE observed free HBM is below the runtime reserve:
+13,357,547,520 bytes available, 15,000,000,000 required.
 ```
 
-`unify_kv_cache_spec_page_size` requires every KV spec smaller than the maximum
-either to **divide** it (so its block size can be scaled up) or to be an
-`AttentionSpec` with `indexes_kv_by_block_stride` (so it can be padded). The DSA
-indexer satisfies neither once a dense draft sets the maximum page.
+Short by 1.64 GB, which is the DSpark draft's per-rank weight share
+(6.31 GB / 4 = 1.58 GB) plus change. This is the gap noted above:
+`tiered_moe_physical.py` budgets draft weights only when
+`speculative.method == "mtp"`.
 
-This is why MTP works and DSpark does not: the MTP draft is an MLA layer with
-the *same* spec as the target, so unification never triggers. DSpark's draft is
-dense attention, and its page becomes the new maximum.
+**Raising `TIERED_MOE_HBM_RESERVE_GB` cannot fix it.** The audit computes
 
-The arithmetic shows no configuration escapes it:
+```python
+required_free = max(MINIMUM_OBSERVED_HBM_RESERVE_BYTES,
+                    planned_reserve - _OBSERVED_HBM_RESERVE_TOLERANCE_BYTES)
+```
 
-- draft page = `block 64 x 16 kv heads (TP4) x head_dim 64 x 2 (K,V) x b`
-  = `131072 * b` bytes — **always a power of two**, for any dtype `b`
-- DSA indexer page = `block 64 x (128 index_head_dim + 4 scale)` = `8448`
-  = `2^8 x 33`
+so `required` scales 1:1 with the planned reserve — and so does `available`,
+because the planner simply places fewer hot experts to hit the reserve. The
+deficit stays ~1.64 GB at any reserve value. The 16 GB workaround used for
+attempts 1-7 was never going to succeed; only accounting fixes this.
 
-A power of two is never a multiple of 33, so neither `auto` (bf16) nor `fp8`
-draft KV can divide. Changing the draft dtype cannot fix this, and block_size is
-pinned at 64 by the tiered contract.
+The fix is to extend the draft-weight accounting in `tiered_moe_physical.py`
+beyond the `method == "mtp"` special case: derive the draft's per-rank parameter
+bytes from its model config and subtract them from the HBM budget before placing
+hot experts. Bounded work, but it changes the fail-closed planner the project's
+memory safety rests on, so it wants deliberate review rather than a quick patch
+at the end of a session.
 
-### Recommendation: rebase before going further
+### The recurring pattern
 
-Three of the six blockers (1, 3's support, 5) are upstream fixes our base
-predates — this branch forked at `d08eebad1` on 2026-07-16 and DSpark has been
-actively developed since (275 upstream commits, including
-`76bf55240`, `642076d26`, `a7d00ec05`, `4a394bfcd`).
-
-The remaining blocker most likely also has upstream work behind it:
-`f3a920a07 [Core][DSV4] Compact MXFP4 indexer KV cache and packed group overlays
-(#48993)` touches precisely the indexer KV layout and page grouping, and
-upstream has since rewritten both files heavily —
-`kv_cache_utils.py` (+296/-213) and `indexer.py` (+317).
-
-Cherry-picking further is the wrong shape of work here: both files carry
-substantial local modifications from the tiered DCP port, so the sensible move
-is a rebase onto current upstream, then re-run this smoke. That is a large,
-risky operation on a branch with 4,462 lines of local changes across 41 files,
-so it is a decision for the human rather than something to attempt unilaterally.
-
-The alternative — giving the DSA indexer `indexes_kv_by_block_stride=True` — is
-not safe without confirming the backend genuinely indexes by block stride; it is
-a correctness-affecting flag, not a sizing hint.
+Three of the eight blockers (4, 7, 8) share one root cause: **the tiered code
+assumes it is the only thing allocating HBM or validating configuration.**
+`validate_tiered_moe` re-ran on the draft's derived config; the tiered KV
+allocator rejected any non-MLA spec; the physical planner budgets only an MTP
+draft. Each was patched individually here. If DSpark becomes a real option, that
+assumption deserves one proper fix rather than three.
 
 ## State
 
