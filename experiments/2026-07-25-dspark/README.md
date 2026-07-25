@@ -276,3 +276,68 @@ not profiled.
 
 Net: not a win as implemented. The idea is sound in principle and the accuracy
 evidence is real, but it would need the extra step cost diagnosed first.
+
+## Wrap-up: not adopted
+
+DSpark and DFlash were both made to work on GLM-5.2 and both lose to MTP3.
+
+| | MTP3 (V2, c1) | DSpark t=8 | DSpark bonus t=7 | DFlash t=15 |
+| --- | ---: | ---: | ---: | ---: |
+| verify batch | 4 | 9 | 8 | 16 |
+| acceptance length | ~2.9 / 4 | 3.98 / 8 | 3.36 / 7 | **6.84 / 15** |
+| implied decode tok/s | **106.08** | ~93 | ~51 | ~70 |
+| realistic end-to-end | **95.44** | 84.67 | 48.45 | 65.6 |
+
+**The ranking is strictly inverse to verify-batch width, and acceptance length
+is anticorrelated with throughput.** DFlash accepts more than twice as many
+tokens per step as MTP3 and is 34% slower end-to-end.
+
+The cause is the property measured earlier in
+[the critical-path review](../2026-07-25-c4-mtp3-critical-path/README.md):
+routed MoE on this target is only 35% fixed weight streaming and 65%
+proportional to token count. Verification cost therefore grows nearly linearly
+with block width, while acceptance grows sublinearly because each deeper
+position accepts less than the last. Wide speculative blocks lose on this
+target by construction.
+
+Narrowing the block does not rescue them either. DSpark's front positions are
+weaker than MTP3's (position 0: 78.1% vs ~93%), so truncating a block-8 draft to
+MTP3's width gives ~2.84 expected acceptance against MTP3's ~2.9 — less
+acceptance for a strictly more expensive draft (3 dense layers plus Markov and
+confidence heads, versus one grafted MTP layer). The "draft wide, verify narrow"
+idea was implemented far enough to confirm the runner rejects it at the
+`propose()` layer (state buffers are sized from `num_speculative_tokens`, so
+narrowing must come from the declaration side); the arithmetic above made
+finishing it not worthwhile.
+
+### What would change the answer
+
+- A draft trained natively at a narrow block with MTP3-class position-0
+  accuracy. That is essentially what MTP3 already is.
+- A large drop in the routed-MoE per-token slope, which would flatten the
+  verification-cost curve. Nothing in this session's optimization work suggests
+  that is available.
+- For the c4 regime specifically, upstream #48392 (DCP for DFlash/DSpark) would
+  have to land first — it is still open, and #48381 explicitly fails fast on DCP.
+
+### Source changes: reverted
+
+All DSpark/DFlash source work was reverted; the branch keeps only `2f92b5365`
+(the DCP scalar-copy fix, which is unrelated and independently valuable) and the
+two benchmarks. Everything needed to reproduce this integration is recorded
+here, and is three upstream cherry-picks plus two local fixes:
+
+| Piece | Where |
+| --- | --- |
+| `sample_from_anchor` from speculators config | upstream `642076d26` (#48639) |
+| DFlash fc sized from aux layers, not draft layers | upstream `a7d00ec05` (#48524) |
+| sparse-MLA target + SWA draft KV unification | upstream `e18f0037a` (#48776) |
+| `validate_tiered_moe` must not judge the draft's derived config | local, `vllm/config/vllm.py` |
+| tiered KV allocator must classify and charge draft specs | local, `vllm/model_executor/model_loader/tiered_moe_kv.py` |
+
+Plus the operational settings: target must stay the MTP-grafted checkpoint (the
+placement profile is fingerprinted to it), `speculative_config.kv_cache_dtype:
+auto` for the dense draft, DFlash additionally needs
+`attention_backend: FLASH_ATTN`, and the placement profile must be trimmed
+(2,720 hot slots/rank with `VLLM_TIERED_MOE_PROFILE_CAP=1`) because the tiered
+planner budgets draft weights only for `method == "mtp"`.

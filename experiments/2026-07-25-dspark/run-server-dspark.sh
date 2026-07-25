@@ -18,7 +18,9 @@ models_dir="$(dirname -- "${repo_dir}")/models"
 draft="${models_dir}/GLM-5.2-speculator-dspark"
 
 # DSpark drafts a block of `spec_tokens`; verification batch is spec_tokens + 1.
-verification_size=$((spec_tokens + 1))
+# With VLLM_SPEC_PROPOSE_KEEP the target verifies keep+1, not spec_tokens+1.
+# The captured graph size must match or the step falls back to eager.
+verification_size=$(( ${VLLM_SPEC_PROPOSE_KEEP:-0} > 0 ? ${VLLM_SPEC_PROPOSE_KEEP:-0} + 1 : spec_tokens + 1 ))
 sizes=""
 for ((i = 1; i <= max_num_seqs; i++)); do
   sizes+="${sizes:+,}$((verification_size * i))"
