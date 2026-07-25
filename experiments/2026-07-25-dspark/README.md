@@ -106,6 +106,82 @@ capture size 9 (block + 1).
 | --- | --- | --- |
 | 1042092 | t=8, c1, DCP1, 16 GB reserve | submitted |
 
-## Results
+## Results: five blockers cleared, one structural blocker remains
 
-Pending.
+Five smoke attempts, each surfacing a distinct real defect rather than a
+misconfiguration.
+
+| # | Job | Origin | Defect | Fix |
+| --- | --- | --- | --- | --- |
+| 1 | — | stale base | `dspark_bonus_anchor` hardcoded, so a `sample_from_anchor: true` checkpoint loads the 1+N fill-in layout | cherry-pick upstream `642076d26` (#48639) |
+| 2 | 1042092 | our config | `Placement profile config fingerprint does not match` | target must stay `GLM-5.2-W4A16-FP8-MTP` (profile carries its `config_sha256` `1c6c983c...`) |
+| 3 | 1042100 | config wiring | `No valid attention backend`: the dense draft (head_size 64, sliding window) inherited the target's MLA-only `fp8_ds_mla` | `speculative_config.kv_cache_dtype: auto` |
+| 4 | 1042147 | **our contract** | `validate_tiered_moe` rejected the draft-derived `VllmConfig` | scope the dtype check to ignore the configured draft dtype |
+| 5 | 1042261 | stale base | fc sized `[6144, 18432]` vs checkpoint `[6144, 30720]` — 3x6144 vs 5x6144 | cherry-pick upstream `a7d00ec05` (#48524) |
+| 6 | 1042319 | **structural** | KV page-size unification — see below | unresolved |
+
+Blocker 5 is worth noting: the speculators translation writes `target_layer_ids`
+as a top-level attribute, but `qwen3_dflash.py` read it only from the nested
+`eagle_config`/`dflash_config` dicts and silently fell back to the *draft's*
+`num_hidden_layers`. That default is 3, which coincidentally matches Eagle3's
+usual three aux layers — so existing DSpark checkpoints never trip it. Ours has
+3 draft layers but 5 aux layers, which breaks the coincidence. The upstream fix
+is titled for exactly this case.
+
+### The remaining blocker
+
+```
+NotImplementedError: Layer model.layers.0.self_attn.indexer.k_cache: page size is
+not divisible by the maximum page size and cannot be padded.
+```
+
+`unify_kv_cache_spec_page_size` requires every KV spec smaller than the maximum
+either to **divide** it (so its block size can be scaled up) or to be an
+`AttentionSpec` with `indexes_kv_by_block_stride` (so it can be padded). The DSA
+indexer satisfies neither once a dense draft sets the maximum page.
+
+This is why MTP works and DSpark does not: the MTP draft is an MLA layer with
+the *same* spec as the target, so unification never triggers. DSpark's draft is
+dense attention, and its page becomes the new maximum.
+
+The arithmetic shows no configuration escapes it:
+
+- draft page = `block 64 x 16 kv heads (TP4) x head_dim 64 x 2 (K,V) x b`
+  = `131072 * b` bytes — **always a power of two**, for any dtype `b`
+- DSA indexer page = `block 64 x (128 index_head_dim + 4 scale)` = `8448`
+  = `2^8 x 33`
+
+A power of two is never a multiple of 33, so neither `auto` (bf16) nor `fp8`
+draft KV can divide. Changing the draft dtype cannot fix this, and block_size is
+pinned at 64 by the tiered contract.
+
+### Recommendation: rebase before going further
+
+Three of the six blockers (1, 3's support, 5) are upstream fixes our base
+predates — this branch forked at `d08eebad1` on 2026-07-16 and DSpark has been
+actively developed since (275 upstream commits, including
+`76bf55240`, `642076d26`, `a7d00ec05`, `4a394bfcd`).
+
+The remaining blocker most likely also has upstream work behind it:
+`f3a920a07 [Core][DSV4] Compact MXFP4 indexer KV cache and packed group overlays
+(#48993)` touches precisely the indexer KV layout and page grouping, and
+upstream has since rewritten both files heavily —
+`kv_cache_utils.py` (+296/-213) and `indexer.py` (+317).
+
+Cherry-picking further is the wrong shape of work here: both files carry
+substantial local modifications from the tiered DCP port, so the sensible move
+is a rebase onto current upstream, then re-run this smoke. That is a large,
+risky operation on a branch with 4,462 lines of local changes across 41 files,
+so it is a decision for the human rather than something to attempt unilaterally.
+
+The alternative — giving the DSA indexer `indexes_kv_by_block_stride=True` — is
+not safe without confirming the backend genuinely indexes by block stride; it is
+a correctness-affecting flag, not a sizing hint.
+
+## State
+
+Cherry-picked (local, unpushed): `642076d26`, `a7d00ec05`.
+Local fix: `validate_tiered_moe` draft-dtype scoping in `vllm/config/vllm.py`.
+Checkpoint downloaded to `models/GLM-5.2-speculator-dspark` (6.3 GB).
+Launcher and smoke job in this directory; both re-runnable unchanged once the
+KV page-size blocker is resolved.

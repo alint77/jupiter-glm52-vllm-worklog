@@ -24,7 +24,12 @@ for ((i = 1; i <= max_num_seqs; i++)); do
   sizes+="${sizes:+,}$((verification_size * i))"
 done
 
-speculative_config="{\"method\":\"dspark\",\"model\":\"${draft}\",\"num_speculative_tokens\":${spec_tokens}}"
+# The draft is a dense qwen3 backbone (head_size 64, sliding window), not MLA,
+# so it cannot inherit the target's fp8_ds_mla KV dtype -- no dense backend
+# supports it and backend selection fails outright. speculative_config carries
+# its own kv_cache_dtype for exactly this case.
+draft_kv_dtype="${DSPARK_DRAFT_KV_DTYPE:-auto}"
+speculative_config="{\"method\":\"dspark\",\"model\":\"${draft}\",\"num_speculative_tokens\":${spec_tokens},\"kv_cache_dtype\":\"${draft_kv_dtype}\"}"
 
 # Must stay the MTP-grafted checkpoint: the placement profile carries a
 # config_sha256 fingerprint of it (1c6c98...), and the tiered loader fails
