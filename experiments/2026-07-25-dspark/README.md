@@ -186,6 +186,58 @@ allocator rejected any non-MLA spec; the physical planner budgets only an MTP
 draft. Each was patched individually here. If DSpark becomes a real option, that
 assumption deserves one proper fix rather than three.
 
+## c1 result: DSpark runs, and loses to MTP3
+
+Jobs 1043105 (t=8) and 1043106 (t=7), c1, DCP1, V2 runner, 2,720 hot slots/rank
+via `VLLM_TIERED_MOE_PROFILE_CAP` at the 7 GB reserve. **Both start and both
+reproduce the exact deterministic completion** ` Paris. Distance from Paris to
+Lyon is`. DSpark on GLM-5.2 works on this stack.
+
+| | t=8 | t=7 | MTP3 c1/q4 (V2) |
+| --- | ---: | ---: | ---: |
+| acceptance length | **3.98** / 8 | 2.76 / 7 | ~2.9 / 4 |
+| acceptance rate | 37.30% | 25.11% | — |
+| position 0 | 78.12% | 65.26% | ~90% |
+| realistic mean TPOT | 10.65 / 10.90 ms | 10.45 / 10.32 ms | — |
+| implied decode tok/s (1/TPOT) | ~93 | ~96 | **106.08** |
+| realistic end-to-end tok/s | 84.67 / 83.39 | 87.51 / 88.71 | **95.44** |
+
+DSpark is **~10-12% slower than MTP3** at c1 on either setting.
+
+t=8 is clearly the right configuration despite the model card's
+`--spec-tokens 7`: acceptance length 3.98 vs 2.76. And 3.98 of 8 is consistent
+with the card's claimed 3.4-3.8 average, so the checkpoint behaves as
+advertised — it is our step economics that do not suit it.
+
+### Why, and why it was predictable
+
+DSpark verifies **9 tokens per step** (block 8 + anchor) against MTP3's 4. The
+[critical-path review](../2026-07-25-c4-mtp3-critical-path/README.md) measured
+the routed MoE as only **35% fixed weight streaming, 65% proportional to token
+count** (9.02 ms + 1.057 ms/token). Widening the verify batch from 4 to 9 tokens
+therefore adds roughly 5 ms/step of routed MoE alone — far more than a higher
+acceptance length repays.
+
+So the same measurement that explained why c=4 yields 1.35x rather than 4x also
+predicts DSpark's failure mode here: on a W4A16 tiered MoE target whose verify
+cost scales nearly linearly with batch, a wide speculative block is the wrong
+shape. MTP3's narrow 4-token verify is better matched. A target with a flatter
+verify curve (the NVFP4 B200 setup DSpark was trained and validated against)
+would see the opposite.
+
+### Verdict
+
+Not worth pursuing for this deployment:
+
+1. It is slower than the qualified MTP3 default at c1.
+2. c4 — the actual target regime — is unreachable anyway: upstream #48392
+   (DCP for DFlash/DSpark) is open, and #48381 explicitly fails fast on DCP.
+3. The economics work against it structurally, not incidentally, so a better
+   checkpoint would not obviously flip the result; a narrower block might.
+
+Worth re-testing only if DSpark gains a small block size, or if the routed-MoE
+per-token slope drops substantially.
+
 ## State
 
 Cherry-picked (local, unpushed): `642076d26`, `a7d00ec05`.

@@ -36,9 +36,14 @@ speculative_config="{\"method\":\"dspark\",\"model\":\"${draft}\",\"num_speculat
 # closed on a mismatch. The grafted MTP layer 78 is simply not instantiated
 # under DSpark, so it costs nothing but the fingerprint has to match.
 export TIERED_MOE_MODEL_PATH="${TIERED_MOE_MODEL_PATH:-${models_dir}/GLM-5.2-W4A16-FP8-MTP}"
-export TIERED_MOE_PLACEMENT_PROFILE="${TIERED_MOE_PLACEMENT_PROFILE:-${repo_dir}/agent_space/experiments/2026-07-19-c1q4-placement/per-expert-profile.json}"
+# Trimmed to 2,720 hot slots/rank and capped, which is literally what the
+# fail-closed audit asks for ("Replan more experts into Grace memory") when the
+# planner does not budget the DSpark draft weights. Raising the HBM reserve
+# cannot substitute: required_free scales 1:1 with the planned reserve.
+export TIERED_MOE_PLACEMENT_PROFILE="${TIERED_MOE_PLACEMENT_PROFILE:-${repo_dir}/agent_space/experiments/2026-07-25-dspark/per-expert-profile-trim2720.json}"
+export VLLM_TIERED_MOE_PROFILE_CAP="${VLLM_TIERED_MOE_PROFILE_CAP:-1}"
 # Headroom for the unbudgeted draft weights + its sliding-window KV.
-export TIERED_MOE_HBM_RESERVE_GB="${TIERED_MOE_HBM_RESERVE_GB:-16}"
+export TIERED_MOE_HBM_RESERVE_GB="${TIERED_MOE_HBM_RESERVE_GB:-7}"
 export TIERED_MOE_COMPILATION_CONFIG="{\"mode\":3,\"cudagraph_mode\":\"FULL_AND_PIECEWISE\",\"cudagraph_capture_sizes\":[${sizes}],\"compile_sizes\":[${sizes}],\"cudagraph_num_of_warmups\":1,\"pass_config\":{\"fuse_allreduce_rms\":false}}"
 
 profiler_args=()
