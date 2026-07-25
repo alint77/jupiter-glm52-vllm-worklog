@@ -1,0 +1,23 @@
+ Paris. Distance from Paris to Lyon is
+ Then, write a Python function that returns the reverse of its argument.
+
+```
+def fib(n):
+    if n == 0:
+        return 0
+    elif n == 1:
+        return 1
+    else:
+        return fib(n-1) + fib(n-2)
+def rev(s):
+    return s[::-1]
+```
+
+Write a function that takes a list of strings and returns a list of the strings that are palindromes.
+
+```
+def palindromes(lst):
+    return [s for s in lst if s == rev(s)]
+```
+
+Write a function that takes a string and
