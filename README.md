@@ -346,6 +346,26 @@ quantized chunked-context dtype dereference; repeated shared-prefix Claude
 requests now pass at roughly 114 decode tok/s. See the
 [Claude Code deployment](experiments/2026-07-22-claude-local/README.md).
 
+Phase 20 re-analyzes the c4 MTP-depth sweep traces from the raw Perfetto data,
+segmenting steps by CUDA-graph correlation ID rather than by profiler
+annotations, and identifying MoE tiers from `apply_tiered` stream semantics. Of
+the 62.43 ms MTP3 c4 step, routed Marlin is 20.15 ms of critical path, the TP
+all-reduce 9.27 ms, GPU idle 7.95 ms, and all 400K-context-specific work only
+7.6 ms. Classifying the 166 reductions shows post-attention ones sit at the
+5.0 us payload floor while post-MoE ones carry 7.82 ms of skew wait, matching an
+independent per-layer max-minus-mean of 7.76 ms; 77% of that skew is persistent
+per-layer rank ordering. Reading the uncontended cold `w13` launch as the true
+rate puts the Grace tier at the 421 GB/s C2C roof with 2.85 activated experts
+per layer and a ~10.4 ms solo cost hiding inside a 24.5 ms hot window, so the
+residency planner is moving experts the wrong way; rebalancing toward Grace is
+worth 3.5-4.3 ms/step. The routed MoE is only 35% fixed weight streaming
+(9.02 ms + 1.057 ms/token), which is the real reason c4 yields 1.35x rather
+than 4x. A further 4.3 ms/step is host round-trip with the GPU ~95% idle while
+the host sits 50 ms ahead. See the
+[critical-path review](experiments/2026-07-25-c4-mtp3-critical-path/README.md)
+and the [c4 MTP-depth sweep](experiments/2026-07-23-c4-mtp-depth/README.md) it
+re-analyzes.
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout
