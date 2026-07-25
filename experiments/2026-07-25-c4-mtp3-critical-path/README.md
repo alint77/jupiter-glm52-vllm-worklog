@@ -181,6 +181,16 @@ SMs. Reading cold w13 as the true rate:
 - cold w2 should then be 3.29 ms; it measures 11.72 ms — **3.6× dilation**
 - **cold solo cost ≈ 10.4 ms/step, not the 20.9 ms it appears to be**
 
+> **Correction.** The isolated kernel measurement in
+> [2026-07-25-marlin-decode-tuning](../2026-07-25-marlin-decode-tuning/README.md)
+> finds Grace-resident Marlin running at 69–199 GB/s, not at the 421 GB/s roof
+> this derivation assumes, so the absolute figure of 2.85 activated cold experts
+> per layer is not trustworthy. The w13/w2 ratio evidence, the 3.6× dilation and
+> the conclusion that the hot tier owns the routed critical path all rest on
+> measured ratios and layer spans, and are unaffected. That report also shows
+> the isolated hot kernel reaching 53–59% of HBM peak, so the 29–38% figure
+> below is too pessimistic — it charges cross-stream contention to the kernel.
+
 Cross-check: 2.85 activated of 23.7 cold slots per layer (12%) against roughly
 19–22 activated of 40.3 hot slots (~50%) is exactly the profile a
 routing-frequency-ordered placement should produce. The numbers are consistent.
@@ -349,7 +359,19 @@ replay of the captured routing traces before any cluster time was spent; see
 "What is not worth pursuing". The revised ordering is below. Gains are per-step
 reductions against the 62.43 ms baseline and are not fully additive.
 
-### P1 — A W4A16 MoE kernel that suits M=16 (large, and it pays twice)
+### P1 — A W4A16 MoE kernel that suits M=16 — **REFUTED, see below**
+
+> Measured in
+> [2026-07-25-marlin-decode-tuning](../2026-07-25-marlin-decode-tuning/README.md).
+> Sweeping `blocks_per_sm` and the thread config changes nothing (every value
+> within 0.4% of the auto heuristic; explicit thread configs 13-27% worse), and
+> splitting the SM budget across the two tiers gains 0.0-0.4%. The isolated hot
+> kernel already reaches 53-59% of HBM peak, so there is no large kernel win to
+> collect. What the experiment did establish is that in-situ hot costs 1.48x its
+> isolated time - about 7.8 ms/step of cross-stream contention - and that the
+> cold tier's cost grows 2.89x from M=8 to M=32 while the hot tier's is flat.
+> **P2 below is now the leading item.** The reasoning that motivated P1 is kept
+> for the record:
 
 Hot Marlin runs at 29–38% of HBM peak, with a grid fixed at exactly one
 occupancy wave (396 blocks = 3 × 132 SMs, shared-memory limited) *regardless of

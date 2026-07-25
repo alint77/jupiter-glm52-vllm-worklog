@@ -1,0 +1,328 @@
+=== smoke: tiny shapes, catches API errors before the real sweep ===
+device: NVIDIA GH200 120GB
+per-expert bytes: w13=12,976,128 w2=6,488,064
+
+SMs=132  configs are (blocks_per_sm, thread_n, thread_k); -1 = auto
+
+--- w13: M=16 activated=4 (52 MB of weights)
+    (-1, -1, -1)          58.74 us    0.88 TB/s   25.2% HBM  1.000x
+    (1, -1, -1)           58.70 us    0.88 TB/s   25.3% HBM  0.999x
+    (2, -1, -1)           58.71 us    0.88 TB/s   25.3% HBM  0.999x
+    (3, -1, -1)           58.79 us    0.88 TB/s   25.2% HBM  1.001x
+    (4, -1, -1)           58.88 us    0.88 TB/s   25.2% HBM  1.002x
+    (-1, 128, 128)        63.34 us    0.82 TB/s   23.4% HBM  1.078x
+    (-1, 256, 64)       unsupported (RuntimeError)
+    (2, 128, 128)         65.47 us    0.79 TB/s   22.7% HBM  1.115x
+--- w2: M=16 activated=4 (26 MB of weights)
+    (-1, -1, -1)          52.49 us    0.49 TB/s   14.1% HBM  1.000x
+    (1, -1, -1)           51.88 us    0.50 TB/s   14.3% HBM  0.988x
+    (2, -1, -1)           50.53 us    0.51 TB/s   14.7% HBM  0.963x
+    (3, -1, -1)           50.36 us    0.52 TB/s   14.7% HBM  0.959x
+    (4, -1, -1)           49.71 us    0.52 TB/s   14.9% HBM  0.947x
+    (-1, 128, 128)        49.54 us    0.52 TB/s   15.0% HBM  0.944x
+    (-1, 256, 64)       unsupported (RuntimeError)
+    (2, 128, 128)         48.47 us    0.54 TB/s   15.3% HBM  0.923x
+
+    Grace alias (4, 384, 8192): 100% of sampled pages on NUMA node 0
+    Grace alias (4, 48, 4096): 100% of sampled pages on NUMA node 0
+--- overlap M=16: hot 4 experts (HBM), cold 2 experts (Grace)
+    hot_bps=-1 cold_bps=-1  hot    72.7  cold   293.9  union   339.2 us  (serial   366.7, ideal   293.9, over ideal +15.4%)
+    hot_bps=-1 cold_bps= 1  hot    64.2  cold   293.8  union   338.3 us  (serial   358.0, ideal   293.8, over ideal +15.2%)
+    hot_bps= 3 cold_bps=-1  hot    60.6  cold   293.1  union   338.4 us  (serial   353.7, ideal   293.1, over ideal +15.5%)
+    hot_bps= 3 cold_bps= 1  hot    60.1  cold   292.9  union   338.3 us  (serial   353.0, ideal   292.9, over ideal +15.5%)
+
+=== sweep: GLM-5.2 decode shapes ===
+device: NVIDIA GH200 120GB
+per-expert bytes: w13=12,976,128 w2=6,488,064
+
+SMs=132  configs are (blocks_per_sm, thread_n, thread_k); -1 = auto
+
+--- w13: M=8 activated=5 (65 MB of weights)
+    (-1, -1, -1)          50.55 us    1.28 TB/s   36.7% HBM  1.000x
+    (1, -1, -1)           49.29 us    1.32 TB/s   37.6% HBM  0.975x
+    (2, -1, -1)           48.37 us    1.34 TB/s   38.3% HBM  0.957x
+    (3, -1, -1)           46.88 us    1.38 TB/s   39.5% HBM  0.928x
+    (4, -1, -1)           47.79 us    1.36 TB/s   38.8% HBM  0.945x
+    (-1, 128, 128)        45.08 us    1.44 TB/s   41.1% HBM  0.892x
+    (-1, 256, 64)       unsupported (RuntimeError)
+    (2, 128, 128)         43.45 us    1.49 TB/s   42.7% HBM  0.860x
+--- w13: M=8 activated=16 (208 MB of weights)
+    (-1, -1, -1)          96.65 us    2.15 TB/s   61.4% HBM  1.000x
+    (1, -1, -1)           96.91 us    2.14 TB/s   61.2% HBM  1.003x
+    (2, -1, -1)           96.91 us    2.14 TB/s   61.2% HBM  1.003x
+    (3, -1, -1)           97.01 us    2.14 TB/s   61.1% HBM  1.004x
+    (4, -1, -1)           97.08 us    2.14 TB/s   61.1% HBM  1.004x
+    (-1, 128, 128)       103.60 us    2.00 TB/s   57.3% HBM  1.072x
+    (-1, 256, 64)       unsupported (RuntimeError)
+    (2, 128, 128)        114.47 us    1.81 TB/s   51.8% HBM  1.184x
+--- w13: M=8 activated=22 (285 MB of weights)
+    (-1, -1, -1)         125.01 us    2.28 TB/s   65.2% HBM  1.000x
+    (1, -1, -1)          125.70 us    2.27 TB/s   64.9% HBM  1.006x
+    (2, -1, -1)          130.94 us    2.18 TB/s   62.3% HBM  1.047x
+    (3, -1, -1)          135.22 us    2.11 TB/s   60.3% HBM  1.082x
+    (4, -1, -1)          134.76 us    2.12 TB/s   60.5% HBM  1.078x
+    (-1, 128, 128)       155.28 us    1.84 TB/s   52.5% HBM  1.242x
+    (-1, 256, 64)       unsupported (RuntimeError)
+    (2, 128, 128)        189.09 us    1.51 TB/s   43.1% HBM  1.513x
+--- w13: M=12 activated=5 (65 MB of weights)
+    (-1, -1, -1)          50.29 us    1.29 TB/s   36.9% HBM  1.000x
+    (1, -1, -1)           49.19 us    1.32 TB/s   37.7% HBM  0.978x
+    (2, -1, -1)           48.51 us    1.34 TB/s   38.2% HBM  0.965x
+    (3, -1, -1)           48.09 us    1.35 TB/s   38.5% HBM  0.956x
+    (4, -1, -1)           48.11 us    1.35 TB/s   38.5% HBM  0.957x
+    (-1, 128, 128)        54.79 us    1.18 TB/s   33.8% HBM  1.089x
+    (-1, 256, 64)       unsupported (RuntimeError)
+    (2, 128, 128)         59.30 us    1.09 TB/s   31.3% HBM  1.179x
+--- w13: M=12 activated=16 (208 MB of weights)
+    (-1, -1, -1)          98.31 us    2.11 TB/s   60.3% HBM  1.000x
+    (1, -1, -1)           98.39 us    2.11 TB/s   60.3% HBM  1.001x
+    (2, -1, -1)           98.40 us    2.11 TB/s   60.3% HBM  1.001x
+    (3, -1, -1)           99.63 us    2.08 TB/s   59.5% HBM  1.013x
+    (4, -1, -1)          101.36 us    2.05 TB/s   58.5% HBM  1.031x
+    (-1, 128, 128)       116.19 us    1.79 TB/s   51.1% HBM  1.182x
+    (-1, 256, 64)       unsupported (RuntimeError)
+    (2, 128, 128)        121.06 us    1.72 TB/s   49.0% HBM  1.231x
+--- w13: M=12 activated=22 (285 MB of weights)
+    (-1, -1, -1)         132.77 us    2.15 TB/s   61.4% HBM  1.000x
+    (1, -1, -1)          132.80 us    2.15 TB/s   61.4% HBM  1.000x
+    (2, -1, -1)          132.93 us    2.15 TB/s   61.4% HBM  1.001x
+    (3, -1, -1)          132.94 us    2.15 TB/s   61.4% HBM  1.001x
+    (4, -1, -1)          132.96 us    2.15 TB/s   61.3% HBM  1.001x
+    (-1, 128, 128)       161.48 us    1.77 TB/s   50.5% HBM  1.216x
+    (-1, 256, 64)       unsupported (RuntimeError)
+    (2, 128, 128)        167.85 us    1.70 TB/s   48.6% HBM  1.264x
+--- w13: M=16 activated=5 (65 MB of weights)
+    (-1, -1, -1)          66.25 us    0.98 TB/s   28.0% HBM  1.000x
+    (1, -1, -1)           65.54 us    0.99 TB/s   28.3% HBM  0.989x
+    (2, -1, -1)           65.57 us    0.99 TB/s   28.3% HBM  0.990x
+    (3, -1, -1)           66.33 us    0.98 TB/s   27.9% HBM  1.001x
+    (4, -1, -1)           67.73 us    0.96 TB/s   27.4% HBM  1.022x
+    (-1, 128, 128)        81.54 us    0.80 TB/s   22.7% HBM  1.231x
+    (-1, 256, 64)       unsupported (RuntimeError)
+    (2, 128, 128)         87.02 us    0.75 TB/s   21.3% HBM  1.314x
+--- w13: M=16 activated=16 (208 MB of weights)
+    (-1, -1, -1)         103.79 us    2.00 TB/s   57.2% HBM  1.000x
+    (1, -1, -1)          101.97 us    2.04 TB/s   58.2% HBM  0.982x
+    (2, -1, -1)          101.95 us    2.04 TB/s   58.2% HBM  0.982x
+    (3, -1, -1)          106.41 us    1.95 TB/s   55.7% HBM  1.025x
+    (4, -1, -1)          106.12 us    1.96 TB/s   55.9% HBM  1.022x
+    (-1, 128, 128)       124.83 us    1.66 TB/s   47.5% HBM  1.203x
+    (-1, 256, 64)       unsupported (RuntimeError)
+    (2, 128, 128)        128.29 us    1.62 TB/s   46.2% HBM  1.236x
+--- w13: M=16 activated=22 (285 MB of weights)
+    (-1, -1, -1)         139.14 us    2.05 TB/s   58.6% HBM  1.000x
+    (1, -1, -1)          140.82 us    2.03 TB/s   57.9% HBM  1.012x
+    (2, -1, -1)          144.31 us    1.98 TB/s   56.5% HBM  1.037x
+    (3, -1, -1)          145.29 us    1.96 TB/s   56.1% HBM  1.044x
+    (4, -1, -1)          145.07 us    1.97 TB/s   56.2% HBM  1.043x
+    (-1, 128, 128)       165.76 us    1.72 TB/s   49.2% HBM  1.191x
+    (-1, 256, 64)       unsupported (RuntimeError)
+    (2, 128, 128)        166.50 us    1.71 TB/s   49.0% HBM  1.197x
+--- w13: M=32 activated=5 (65 MB of weights)
+    (-1, -1, -1)         109.02 us    0.60 TB/s   17.0% HBM  1.000x
+    (1, -1, -1)          105.45 us    0.62 TB/s   17.6% HBM  0.967x
+    (2, -1, -1)          105.34 us    0.62 TB/s   17.6% HBM  0.966x
+    (3, -1, -1)          104.14 us    0.62 TB/s   17.8% HBM  0.955x
+    (4, -1, -1)          102.24 us    0.63 TB/s   18.1% HBM  0.938x
+    (-1, 128, 128)       120.33 us    0.54 TB/s   15.4% HBM  1.104x
+    (-1, 256, 64)       unsupported (RuntimeError)
+    (2, 128, 128)        122.86 us    0.53 TB/s   15.1% HBM  1.127x
+--- w13: M=32 activated=16 (208 MB of weights)
+    (-1, -1, -1)         141.57 us    1.47 TB/s   41.9% HBM  1.000x
+    (1, -1, -1)          142.87 us    1.45 TB/s   41.5% HBM  1.009x
+    (2, -1, -1)          144.99 us    1.43 TB/s   40.9% HBM  1.024x
+    (3, -1, -1)          153.87 us    1.35 TB/s   38.6% HBM  1.087x
+    (4, -1, -1)          155.58 us    1.33 TB/s   38.1% HBM  1.099x
+    (-1, 128, 128)       176.55 us    1.18 TB/s   33.6% HBM  1.247x
+    (-1, 256, 64)       unsupported (RuntimeError)
+    (2, 128, 128)        168.82 us    1.23 TB/s   35.1% HBM  1.193x
+--- w13: M=32 activated=22 (285 MB of weights)
+    (-1, -1, -1)         142.01 us    2.01 TB/s   57.4% HBM  1.000x
+    (1, -1, -1)          144.22 us    1.98 TB/s   56.6% HBM  1.016x
+    (2, -1, -1)          153.15 us    1.86 TB/s   53.3% HBM  1.078x
+    (3, -1, -1)          151.81 us    1.88 TB/s   53.7% HBM  1.069x
+    (4, -1, -1)          151.90 us    1.88 TB/s   53.7% HBM  1.070x
+    (-1, 128, 128)       175.79 us    1.62 TB/s   46.4% HBM  1.238x
+    (-1, 256, 64)       unsupported (RuntimeError)
+    (2, 128, 128)        221.18 us    1.29 TB/s   36.9% HBM  1.558x
+--- w2: M=8 activated=5 (32 MB of weights)
+    (-1, -1, -1)          48.55 us    0.67 TB/s   19.1% HBM  1.000x
+    (1, -1, -1)           49.30 us    0.66 TB/s   18.8% HBM  1.016x
+    (2, -1, -1)           48.24 us    0.67 TB/s   19.2% HBM  0.994x
+    (3, -1, -1)           47.14 us    0.69 TB/s   19.7% HBM  0.971x
+    (4, -1, -1)           47.71 us    0.68 TB/s   19.4% HBM  0.983x
+    (-1, 128, 128)        42.53 us    0.76 TB/s   21.8% HBM  0.876x
+    (-1, 256, 64)       unsupported (RuntimeError)
+    (2, 128, 128)         42.87 us    0.76 TB/s   21.6% HBM  0.883x
+--- w2: M=8 activated=16 (104 MB of weights)
+    (-1, -1, -1)          49.48 us    2.10 TB/s   59.9% HBM  1.000x
+    (1, -1, -1)           49.72 us    2.09 TB/s   59.7% HBM  1.005x
+    (2, -1, -1)           49.56 us    2.09 TB/s   59.8% HBM  1.002x
+    (3, -1, -1)           49.62 us    2.09 TB/s   59.8% HBM  1.003x
+    (4, -1, -1)           49.60 us    2.09 TB/s   59.8% HBM  1.002x
+    (-1, 128, 128)        60.94 us    1.70 TB/s   48.7% HBM  1.232x
+    (-1, 256, 64)       unsupported (RuntimeError)
+    (2, 128, 128)         73.36 us    1.42 TB/s   40.4% HBM  1.483x
+--- w2: M=8 activated=22 (143 MB of weights)
+    (-1, -1, -1)          66.38 us    2.15 TB/s   61.4% HBM  1.000x
+    (1, -1, -1)           66.26 us    2.15 TB/s   61.6% HBM  0.998x
+    (2, -1, -1)           66.26 us    2.15 TB/s   61.5% HBM  0.998x
+    (3, -1, -1)           66.31 us    2.15 TB/s   61.5% HBM  0.999x
+    (4, -1, -1)           66.58 us    2.14 TB/s   61.3% HBM  1.003x
+    (-1, 128, 128)        85.69 us    1.67 TB/s   47.6% HBM  1.291x
+    (-1, 256, 64)       unsupported (RuntimeError)
+    (2, 128, 128)        107.31 us    1.33 TB/s   38.0% HBM  1.617x
+--- w2: M=12 activated=5 (32 MB of weights)
+    (-1, -1, -1)          46.32 us    0.70 TB/s   20.0% HBM  1.000x
+    (1, -1, -1)           44.98 us    0.72 TB/s   20.6% HBM  0.971x
+    (2, -1, -1)           46.26 us    0.70 TB/s   20.0% HBM  0.999x
+    (3, -1, -1)           46.86 us    0.69 TB/s   19.8% HBM  1.012x
+    (4, -1, -1)           46.77 us    0.69 TB/s   19.8% HBM  1.010x
+    (-1, 128, 128)        40.99 us    0.79 TB/s   22.6% HBM  0.885x
+    (-1, 256, 64)       unsupported (RuntimeError)
+    (2, 128, 128)         42.44 us    0.76 TB/s   21.8% HBM  0.916x
+--- w2: M=12 activated=16 (104 MB of weights)
+    (-1, -1, -1)          50.16 us    2.07 TB/s   59.1% HBM  1.000x
+    (1, -1, -1)           50.18 us    2.07 TB/s   59.1% HBM  1.000x
+    (2, -1, -1)           50.18 us    2.07 TB/s   59.1% HBM  1.000x
+    (3, -1, -1)           50.19 us    2.07 TB/s   59.1% HBM  1.001x
+    (4, -1, -1)           50.27 us    2.06 TB/s   59.0% HBM  1.002x
+    (-1, 128, 128)        63.63 us    1.63 TB/s   46.6% HBM  1.269x
+    (-1, 256, 64)       unsupported (RuntimeError)
+    (2, 128, 128)         78.26 us    1.33 TB/s   37.9% HBM  1.560x
+--- w2: M=12 activated=22 (143 MB of weights)
+    (-1, -1, -1)          69.75 us    2.05 TB/s   58.5% HBM  1.000x
+    (1, -1, -1)           69.82 us    2.04 TB/s   58.4% HBM  1.001x
+    (2, -1, -1)           69.75 us    2.05 TB/s   58.5% HBM  1.000x
+    (3, -1, -1)           69.72 us    2.05 TB/s   58.5% HBM  0.999x
+    (4, -1, -1)           70.01 us    2.04 TB/s   58.3% HBM  1.004x
+    (-1, 128, 128)        84.84 us    1.68 TB/s   48.1% HBM  1.216x
+    (-1, 256, 64)       unsupported (RuntimeError)
+    (2, 128, 128)         88.07 us    1.62 TB/s   46.3% HBM  1.263x
+--- w2: M=16 activated=5 (32 MB of weights)
+    (-1, -1, -1)          45.71 us    0.71 TB/s   20.3% HBM  1.000x
+    (1, -1, -1)           47.51 us    0.68 TB/s   19.5% HBM  1.039x
+    (2, -1, -1)           45.24 us    0.72 TB/s   20.5% HBM  0.990x
+    (3, -1, -1)           46.49 us    0.70 TB/s   19.9% HBM  1.017x
+    (4, -1, -1)           47.14 us    0.69 TB/s   19.7% HBM  1.031x
+    (-1, 128, 128)        41.31 us    0.79 TB/s   22.4% HBM  0.904x
+    (-1, 256, 64)       unsupported (RuntimeError)
+    (2, 128, 128)         44.70 us    0.73 TB/s   20.7% HBM  0.978x
+--- w2: M=16 activated=16 (104 MB of weights)
+    (-1, -1, -1)          50.74 us    2.05 TB/s   58.5% HBM  1.000x
+    (1, -1, -1)           50.66 us    2.05 TB/s   58.5% HBM  0.999x
+    (2, -1, -1)           50.62 us    2.05 TB/s   58.6% HBM  0.998x
+    (3, -1, -1)           50.62 us    2.05 TB/s   58.6% HBM  0.998x
+    (4, -1, -1)           50.68 us    2.05 TB/s   58.5% HBM  0.999x
+    (-1, 128, 128)        62.43 us    1.66 TB/s   47.5% HBM  1.231x
+    (-1, 256, 64)       unsupported (RuntimeError)
+    (2, 128, 128)         76.72 us    1.35 TB/s   38.7% HBM  1.512x
+--- w2: M=16 activated=22 (143 MB of weights)
+    (-1, -1, -1)          77.25 us    1.85 TB/s   52.8% HBM  1.000x
+    (1, -1, -1)           80.67 us    1.77 TB/s   50.6% HBM  1.044x
+    (2, -1, -1)           79.04 us    1.81 TB/s   51.6% HBM  1.023x
+    (3, -1, -1)           79.82 us    1.79 TB/s   51.1% HBM  1.033x
+    (4, -1, -1)           80.86 us    1.77 TB/s   50.4% HBM  1.047x
+    (-1, 128, 128)        79.35 us    1.80 TB/s   51.4% HBM  1.027x
+    (-1, 256, 64)       unsupported (RuntimeError)
+    (2, 128, 128)         79.84 us    1.79 TB/s   51.1% HBM  1.033x
+--- w2: M=32 activated=5 (32 MB of weights)
+    (-1, -1, -1)          78.18 us    0.41 TB/s   11.9% HBM  1.000x
+    (1, -1, -1)           78.23 us    0.41 TB/s   11.8% HBM  1.001x
+    (2, -1, -1)           77.09 us    0.42 TB/s   12.0% HBM  0.986x
+    (3, -1, -1)           56.93 us    0.57 TB/s   16.3% HBM  0.728x
+    (4, -1, -1)           51.14 us    0.63 TB/s   18.1% HBM  0.654x
+    (-1, 128, 128)        63.88 us    0.51 TB/s   14.5% HBM  0.817x
+    (-1, 256, 64)       unsupported (RuntimeError)
+    (2, 128, 128)         70.00 us    0.46 TB/s   13.2% HBM  0.895x
+--- w2: M=32 activated=16 (104 MB of weights)
+    (-1, -1, -1)          72.71 us    1.43 TB/s   40.8% HBM  1.000x
+    (1, -1, -1)           72.74 us    1.43 TB/s   40.8% HBM  1.000x
+    (2, -1, -1)           72.77 us    1.43 TB/s   40.8% HBM  1.001x
+    (3, -1, -1)           74.05 us    1.40 TB/s   40.1% HBM  1.018x
+    (4, -1, -1)           74.38 us    1.40 TB/s   39.9% HBM  1.023x
+    (-1, 128, 128)        94.75 us    1.10 TB/s   31.3% HBM  1.303x
+    (-1, 256, 64)       unsupported (RuntimeError)
+    (2, 128, 128)        137.40 us    0.76 TB/s   21.6% HBM  1.890x
+--- w2: M=32 activated=22 (143 MB of weights)
+    (-1, -1, -1)          73.59 us    1.94 TB/s   55.4% HBM  1.000x
+    (1, -1, -1)           77.83 us    1.83 TB/s   52.4% HBM  1.058x
+    (2, -1, -1)           77.03 us    1.85 TB/s   52.9% HBM  1.047x
+    (3, -1, -1)           77.51 us    1.84 TB/s   52.6% HBM  1.053x
+    (4, -1, -1)           78.00 us    1.83 TB/s   52.3% HBM  1.060x
+    (-1, 128, 128)        91.01 us    1.57 TB/s   44.8% HBM  1.237x
+    (-1, 256, 64)       unsupported (RuntimeError)
+    (2, 128, 128)        112.61 us    1.27 TB/s   36.2% HBM  1.530x
+
+    Grace alias (24, 384, 8192): 100% of sampled pages on NUMA node 0
+    Grace alias (24, 48, 4096): 100% of sampled pages on NUMA node 0
+--- overlap M=8: hot 19 experts (HBM), cold 3 experts (Grace)
+    hot_bps=-1 cold_bps=-1  hot   113.0  cold   195.7  union   282.1 us  (serial   308.8, ideal   195.7, over ideal +44.1%)
+    hot_bps=-1 cold_bps= 1  hot   113.8  cold   196.1  union   286.7 us  (serial   309.9, ideal   196.1, over ideal +46.2%)
+    hot_bps=-1 cold_bps= 2  hot   114.2  cold   196.6  union   283.6 us  (serial   310.7, ideal   196.6, over ideal +44.3%)
+    hot_bps=-1 cold_bps= 3  hot   114.3  cold   196.3  union   287.4 us  (serial   310.6, ideal   196.3, over ideal +46.4%)
+    hot_bps= 1 cold_bps=-1  hot   114.3  cold   196.8  union   287.5 us  (serial   311.2, ideal   196.8, over ideal +46.0%)
+    hot_bps= 1 cold_bps= 1  hot   114.5  cold   196.3  union   284.4 us  (serial   310.9, ideal   196.3, over ideal +44.8%)
+    hot_bps= 1 cold_bps= 2  hot   114.6  cold   196.7  union   289.7 us  (serial   311.3, ideal   196.7, over ideal +47.3%)
+    hot_bps= 1 cold_bps= 3  hot   114.6  cold   196.3  union   284.3 us  (serial   310.8, ideal   196.3, over ideal +44.9%)
+    hot_bps= 2 cold_bps=-1  hot   114.8  cold   196.5  union   285.3 us  (serial   311.3, ideal   196.5, over ideal +45.2%)
+    hot_bps= 2 cold_bps= 1  hot   114.8  cold   196.8  union   284.4 us  (serial   311.6, ideal   196.8, over ideal +44.5%)
+    hot_bps= 2 cold_bps= 2  hot   114.8  cold   196.0  union   284.4 us  (serial   310.8, ideal   196.0, over ideal +45.1%)
+    hot_bps= 2 cold_bps= 3  hot   114.9  cold   197.1  union   286.8 us  (serial   312.0, ideal   197.1, over ideal +45.5%)
+    hot_bps= 3 cold_bps=-1  hot   109.3  cold   196.8  union   285.4 us  (serial   306.0, ideal   196.8, over ideal +45.1%)
+    hot_bps= 3 cold_bps= 1  hot   113.3  cold   196.2  union   286.5 us  (serial   309.4, ideal   196.2, over ideal +46.1%)
+    hot_bps= 3 cold_bps= 2  hot   114.8  cold   196.6  union   285.7 us  (serial   311.4, ideal   196.6, over ideal +45.4%)
+    hot_bps= 3 cold_bps= 3  hot   109.1  cold   196.7  union   284.1 us  (serial   305.8, ideal   196.7, over ideal +44.4%)
+--- overlap M=12: hot 19 experts (HBM), cold 3 experts (Grace)
+    hot_bps=-1 cold_bps=-1  hot   109.4  cold   230.5  union   318.7 us  (serial   340.0, ideal   230.5, over ideal +38.3%)
+    hot_bps=-1 cold_bps= 1  hot   115.2  cold   229.9  union   322.5 us  (serial   345.1, ideal   229.9, over ideal +40.3%)
+    hot_bps=-1 cold_bps= 2  hot   109.6  cold   230.8  union   321.8 us  (serial   340.4, ideal   230.8, over ideal +39.4%)
+    hot_bps=-1 cold_bps= 3  hot   115.1  cold   230.3  union   320.0 us  (serial   345.4, ideal   230.3, over ideal +38.9%)
+    hot_bps= 1 cold_bps=-1  hot   115.2  cold   230.7  union   320.0 us  (serial   345.9, ideal   230.7, over ideal +38.7%)
+    hot_bps= 1 cold_bps= 1  hot   109.8  cold   230.7  union   321.4 us  (serial   340.5, ideal   230.7, over ideal +39.3%)
+    hot_bps= 1 cold_bps= 2  hot   115.5  cold   229.5  union   320.9 us  (serial   345.1, ideal   229.5, over ideal +39.8%)
+    hot_bps= 1 cold_bps= 3  hot   115.6  cold   230.8  union   319.6 us  (serial   346.4, ideal   230.8, over ideal +38.4%)
+    hot_bps= 2 cold_bps=-1  hot   110.1  cold   229.5  union   317.8 us  (serial   339.6, ideal   229.5, over ideal +38.5%)
+    hot_bps= 2 cold_bps= 1  hot   115.4  cold   229.4  union   317.9 us  (serial   344.8, ideal   229.4, over ideal +38.6%)
+    hot_bps= 2 cold_bps= 2  hot   115.6  cold   229.1  union   319.2 us  (serial   344.7, ideal   229.1, over ideal +39.3%)
+    hot_bps= 2 cold_bps= 3  hot   109.9  cold   229.2  union   319.4 us  (serial   339.1, ideal   229.2, over ideal +39.3%)
+    hot_bps= 3 cold_bps=-1  hot   115.5  cold   229.8  union   321.3 us  (serial   345.3, ideal   229.8, over ideal +39.8%)
+    hot_bps= 3 cold_bps= 1  hot   115.8  cold   229.9  union   321.7 us  (serial   345.7, ideal   229.9, over ideal +39.9%)
+    hot_bps= 3 cold_bps= 2  hot   109.9  cold   229.4  union   319.2 us  (serial   339.2, ideal   229.4, over ideal +39.1%)
+    hot_bps= 3 cold_bps= 3  hot   115.6  cold   229.2  union   321.4 us  (serial   344.8, ideal   229.2, over ideal +40.2%)
+--- overlap M=16: hot 19 experts (HBM), cold 3 experts (Grace)
+    hot_bps=-1 cold_bps=-1  hot   110.5  cold   326.7  union   415.8 us  (serial   437.2, ideal   326.7, over ideal +27.3%)
+    hot_bps=-1 cold_bps= 1  hot   116.2  cold   326.3  union   416.1 us  (serial   442.5, ideal   326.3, over ideal +27.5%)
+    hot_bps=-1 cold_bps= 2  hot   116.1  cold   326.8  union   414.1 us  (serial   442.9, ideal   326.8, over ideal +26.7%)
+    hot_bps=-1 cold_bps= 3  hot   116.3  cold   326.5  union   416.1 us  (serial   442.8, ideal   326.5, over ideal +27.4%)
+    hot_bps= 1 cold_bps=-1  hot   116.1  cold   326.8  union   414.7 us  (serial   442.9, ideal   326.8, over ideal +26.9%)
+    hot_bps= 1 cold_bps= 1  hot   116.1  cold   326.1  union   414.8 us  (serial   442.2, ideal   326.1, over ideal +27.2%)
+    hot_bps= 1 cold_bps= 2  hot   110.5  cold   326.9  union   415.3 us  (serial   437.4, ideal   326.9, over ideal +27.1%)
+    hot_bps= 1 cold_bps= 3  hot   110.4  cold   326.1  union   415.0 us  (serial   436.5, ideal   326.1, over ideal +27.3%)
+    hot_bps= 2 cold_bps=-1  hot   116.2  cold   326.1  union   415.9 us  (serial   442.3, ideal   326.1, over ideal +27.5%)
+    hot_bps= 2 cold_bps= 1  hot   116.1  cold   326.0  union   415.0 us  (serial   442.2, ideal   326.0, over ideal +27.3%)
+    hot_bps= 2 cold_bps= 2  hot   116.2  cold   326.2  union   416.5 us  (serial   442.3, ideal   326.2, over ideal +27.7%)
+    hot_bps= 2 cold_bps= 3  hot   116.1  cold   326.2  union   415.2 us  (serial   442.4, ideal   326.2, over ideal +27.3%)
+    hot_bps= 3 cold_bps=-1  hot   116.2  cold   326.8  union   416.2 us  (serial   443.0, ideal   326.8, over ideal +27.3%)
+    hot_bps= 3 cold_bps= 1  hot   110.6  cold   326.2  union   414.5 us  (serial   436.8, ideal   326.2, over ideal +27.1%)
+    hot_bps= 3 cold_bps= 2  hot   116.1  cold   326.4  union   415.0 us  (serial   442.5, ideal   326.4, over ideal +27.2%)
+    hot_bps= 3 cold_bps= 3  hot   110.5  cold   326.8  union   416.4 us  (serial   437.3, ideal   326.8, over ideal +27.4%)
+--- overlap M=32: hot 19 experts (HBM), cold 3 experts (Grace)
+    hot_bps=-1 cold_bps=-1  hot   142.3  cold   565.9  union   675.8 us  (serial   708.2, ideal   565.9, over ideal +19.4%)
+    hot_bps=-1 cold_bps= 1  hot   137.0  cold   566.2  union   678.4 us  (serial   703.2, ideal   566.2, over ideal +19.8%)
+    hot_bps=-1 cold_bps= 2  hot   135.0  cold   566.6  union   678.2 us  (serial   701.6, ideal   566.6, over ideal +19.7%)
+    hot_bps=-1 cold_bps= 3  hot   142.3  cold   565.8  union   676.5 us  (serial   708.1, ideal   565.8, over ideal +19.6%)
+    hot_bps= 1 cold_bps=-1  hot   142.1  cold   566.4  union   675.1 us  (serial   708.4, ideal   566.4, over ideal +19.2%)
+    hot_bps= 1 cold_bps= 1  hot   135.3  cold   566.6  union   677.4 us  (serial   701.9, ideal   566.6, over ideal +19.6%)
+    hot_bps= 1 cold_bps= 2  hot   142.4  cold   565.8  union   675.8 us  (serial   708.2, ideal   565.8, over ideal +19.4%)
+    hot_bps= 1 cold_bps= 3  hot   142.5  cold   566.5  union   675.9 us  (serial   709.0, ideal   566.5, over ideal +19.3%)
+    hot_bps= 2 cold_bps=-1  hot   142.6  cold   566.3  union   677.2 us  (serial   708.9, ideal   566.3, over ideal +19.6%)
+    hot_bps= 2 cold_bps= 1  hot   141.9  cold   566.2  union   676.5 us  (serial   708.1, ideal   566.2, over ideal +19.5%)
+    hot_bps= 2 cold_bps= 2  hot   140.5  cold   566.4  union   675.6 us  (serial   706.9, ideal   566.4, over ideal +19.3%)
+    hot_bps= 2 cold_bps= 3  hot   137.3  cold   566.7  union   677.6 us  (serial   704.0, ideal   566.7, over ideal +19.6%)
+    hot_bps= 3 cold_bps=-1  hot   142.2  cold   566.3  union   676.9 us  (serial   708.5, ideal   566.3, over ideal +19.5%)
+    hot_bps= 3 cold_bps= 1  hot   139.6  cold   565.9  union   674.3 us  (serial   705.5, ideal   565.9, over ideal +19.2%)
+    hot_bps= 3 cold_bps= 2  hot   135.0  cold   566.1  union   674.1 us  (serial   701.1, ideal   566.1, over ideal +19.1%)
+    hot_bps= 3 cold_bps= 3  hot   142.1  cold   566.6  union   676.9 us  (serial   708.7, ideal   566.6, over ideal +19.5%)
+
+wrote /e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-25-marlin-decode-tuning/marlin-decode-tuning.json
