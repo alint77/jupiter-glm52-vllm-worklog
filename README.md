@@ -432,6 +432,21 @@ an in-situ time against an isolated time and call the difference recoverable.
 See the [tier-overlap diagnosis](experiments/2026-07-25-tier-overlap/README.md)
 and [reorder qualification](experiments/2026-07-25-tier-order/README.md).
 
+Phase 24 prices P4 before building it. The per-graph-node cost model implied by
+the trace is confirmed by direct measurement: a serial chain of dependent
+kernels gives 1.089-1.201 us marginal per node, and a controlled fusion holding
+total work constant while halving the node count returns 1.074 us per node
+removed, linearly across three halvings, with the gap flat at ~0.9-1.4 us for
+every kernel width the glue occupies. So node removal genuinely pays, and the
+trace's ~1.14 us inference was right. The ceiling is what disappoints: 3.78 ms
+of intra-graph idle across 4,436 nodes is 0.85 us of exposed cost per node, so
+removing every node would return 6.1% of the step and a realistic fusion
+campaign of ~900 nodes returns 0.77 ms, about 1.2%. Recommendation is not to
+start one, to carry the ~0.45 ms along if a single-tier MoE merge is built for
+other reasons, and to reuse 0.85 us/node as a constant for pricing future
+designs that change node count. See the
+[graph node cost measurement](experiments/2026-07-25-graph-node-cost/README.md).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout

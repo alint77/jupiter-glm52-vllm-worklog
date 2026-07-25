@@ -1,0 +1,37 @@
+device: NVIDIA GH200 120GB
+trace reference: 4,436 nodes/replay, ~3.78 ms intra-graph idle over ~3,326 gaps (~1.14 us each)
+
+=== marginal cost per graph node (serial chain of trivial kernels) ===
+  numel=1024
+      128 nodes     108.44 us    0.847 us/node
+      256 nodes     282.05 us    1.102 us/node
+      512 nodes     519.74 us    1.015 us/node
+     1024 nodes    1120.89 us    1.095 us/node
+     2048 nodes    2073.28 us    1.012 us/node
+     4096 nodes    4477.35 us    1.093 us/node
+    -> 1.089 us/node marginal, -33.26 us fixed
+  numel=65536
+      128 nodes     153.69 us    1.201 us/node
+      256 nodes     307.36 us    1.201 us/node
+      512 nodes     619.84 us    1.211 us/node
+     1024 nodes    1230.14 us    1.201 us/node
+     2048 nodes    2469.35 us    1.206 us/node
+     4096 nodes    4919.35 us    1.201 us/node
+    -> 1.201 us/node marginal, 2.14 us fixed
+
+=== fusion control: same total work, half the nodes ===
+   nodes     numel   total elems         us   vs prev
+    2048      4096       8388608    2256.05          
+    1024      8192       8388608    1156.72   -48.73%
+     512     16384       8388608     587.10   -49.24%
+     256     32768       8388608     304.18   -48.19%
+  halving 2048 -> 1024 nodes saved 1099.33 us over 1024 removed nodes = 1.074 us per node removed
+
+=== per-node cost vs kernel width ===
+       numel   total us   us/node   solo us   gap us
+        1024    1038.17     1.014     0.109    0.905
+       16384    1181.25     1.154     0.000    1.154
+      262144    1438.31     1.405     0.000    1.405
+     4194304    6307.58     6.160     4.031    2.129
+
+wrote /e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-25-graph-node-cost/node-cost.json

@@ -495,7 +495,22 @@ KV buys concurrency, and concurrency is what this deployment is for.
   from varying positions *within* a sequence, and independent sequences will
   route less coherently. An 8-sequence profile settles it.
 
-### P4 — Reduce graph node count (≈2–3 ms of ~7.6 ms, higher effort)
+### P4 — Reduce graph node count — **model validated, prize is ~1%**
+
+> Measured in [2026-07-25-graph-node-cost](../2026-07-25-graph-node-cost/README.md).
+> The per-node model is correct: marginal cost is 1.089–1.201 us/node, and a
+> controlled fusion (same work, half the nodes) returns 1.074 us per node
+> removed, linearly across three halvings. The gap is a fixed scheduling cost,
+> flat at ~0.9–1.4 us for every kernel width our glue occupies.
+>
+> But the ceiling is fixed too: 3.78 ms of intra-graph idle over 4,436 nodes is
+> **0.85 us of exposed cost per node**, so eliminating *all* of it is 6.1% of
+> the step, and realistic fusion slices total ~900 nodes = **0.77 ms, 1.2%**.
+> The "2–3 ms" below was optimistic; the honest figure is ~1–1.5% for a large
+> refactor. Do not start a fusion campaign for that, but carry the ~0.45 ms
+> along if a single-tier MoE merge is built for other reasons, and use
+> 0.85 us/node to price any future design that changes node count.
+> Original scoping kept for the record:
 
 2,410 glue kernels per step cost 4.65 ms solo plus ~3 ms of dependency gaps.
 Densest targets: the MoE epilogue (678 calls/step of `act_and_mul`,
