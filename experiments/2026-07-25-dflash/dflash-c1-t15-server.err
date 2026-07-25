@@ -779,3 +779,4 @@
 (APIServer pid=1711253) INFO:     Started server process [1711253]
 (APIServer pid=1711253) INFO:     Waiting for application startup.
 (APIServer pid=1711253) INFO:     Application startup complete.
+(APIServer pid=1711253) INFO:     Shutting down
