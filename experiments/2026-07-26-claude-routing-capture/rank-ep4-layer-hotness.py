@@ -140,7 +140,7 @@ def main() -> None:
         axis.grid(alpha=0.2)
     figure.supxlabel("Model layer")
     figure.supylabel("Share of layer routes owned by rank (%)")
-    figure.suptitle("EP4 per-layer routing load from 109-request Claude capture")
+    figure.suptitle("EP4 per-layer routing load from 108 valid Claude requests")
     figure.tight_layout()
     figure.savefig(args.output_dir / "ep4-layer-load.png", dpi=180)
     plt.close(figure)

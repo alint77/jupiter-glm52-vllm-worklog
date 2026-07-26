@@ -1,14 +1,14 @@
 {
   "current": {
-    "cells_above_4x_percent": 3.3645833333333335,
-    "gini": 0.5796147098316107,
-    "maximum_relative_hotness": 16.178487410263028,
-    "mean_effective_experts_per_layer": 111.96930332090196,
-    "median_relative_hotness": 0.5581677720946469,
-    "p95_relative_hotness": 2.1963057962875805,
-    "p99_relative_hotness": 12.10226478668021,
-    "top_1_percent_route_share_percent": 12.640644209024542,
-    "total_routes": 158128800,
+    "cells_above_4x_percent": 1.15625,
+    "gini": 0.3869305412471724,
+    "maximum_relative_hotness": 15.508353559393925,
+    "mean_effective_experts_per_layer": 197.62623190984797,
+    "median_relative_hotness": 0.8447345476824469,
+    "p95_relative_hotness": 2.388161274359638,
+    "p99_relative_hotness": 4.1463194853547405,
+    "top_1_percent_route_share_percent": 5.693384703599846,
+    "total_routes": 101848800,
     "zero_cells": 1
   },
   "normalization": "count / mean count within each routed layer",

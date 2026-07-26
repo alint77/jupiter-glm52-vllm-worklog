@@ -59,51 +59,63 @@ requests with no server errors. Their two valid `84 * 78 * 8` traces aggregated
 to `100,800` routed selections and were moved to `routes-1047954-smoke`.
 `routes-1047954` is empty for real Claude Code activity.
 
-## 109-request hotness snapshot
+## Corrected 108-request hotness snapshot
 
-The first natural-use snapshot contains 109 requests, 263,548 routed positions,
-and 158,128,800 target-router selections. `expert-hotness-distribution.png`
-compares its 75-by-256 grid with the earlier 24-prompt, fixed-256-token capture.
-Counts are divided by the mean within each layer so the unequal capture sizes
-remain comparable; 1x is uniform traffic within a layer.
+An audit of the initial 109-record aggregation found one invalid 23,451-output
+token trace. All 93,800 of its routed positions contained the dummy top-k
+`[0, 1, ..., 7]` in every routed layer. It accounted for 35.6% of the original
+positions and made the first histogram and EP-rank split invalid.
 
-Natural Claude Code use is substantially more concentrated. Its Gini
-coefficient is 0.580 versus 0.385, the top 1% of layer-expert cells receive
-12.64% versus 5.99% of routes, and mean entropy-effective experts per layer
-fall from 197.5 to 112.0. This makes the real-use grid a better placement
-candidate, but throughput still needs a matched placement A/B.
+The grid builder now detects and reports all-default routed traces. Excluding
+that record leaves 108 requests, 169,748 routed positions, and 101,848,800
+target-router selections. `expert-hotness-distribution.png` compares the
+corrected 75-by-256 grid with the earlier 24-prompt, fixed-256-token capture.
+Counts are divided by the mean within each layer so capture sizes remain
+comparable.
 
-The two count grids, histogram, JSON summary, and plotting script are stored
-in this directory.
+The aggregate distributions are nearly identical: Gini is 0.387 versus 0.385,
+mean entropy-effective experts per layer are 197.6 versus 197.5, and p99
+relative hotness is 4.146x versus 4.142x. Expert identities still move:
+normalized cell-frequency correlation is 0.406, and only 74.3% of the current
+profile's HBM slots overlap a frequency profile retrained on this capture.
 
 ## Layer concentration ranking
 
-Every routed layer has exactly 2,108,384 selections because each routed
+Every routed layer has exactly 1,357,984 selections because each routed
 position invokes top-8 routing in all 75 layers. Layers therefore cannot be
 ranked by total traffic. `layer-hotness-ranking.csv` instead ranks how
 concentrated each layer's traffic is, using entropy-effective expert count:
 lower means that fewer experts carry the traffic and the layer is more
 placement-sensitive.
 
-Layer 56 is most concentrated at 97.1 effective experts; layers 68, 58, 64,
-and 55 follow. Layer 7 is most diffuse at 128.8 effective experts, followed by
-layers 3, 4, 5, and 13. The CSV also records Gini, top-8/16/32 shares,
+Layer 64 is most concentrated at 162.0 effective experts; layers 59, 55, 56,
+and 58 follow. Layer 3 is most diffuse at 244.6 effective experts, followed by
+layers 7, 5, 4, and 6. The CSV also records Gini, top-8/16/32 shares,
 50%/80% coverage sizes, and each layer's hottest expert.
 
 ## EP4 rank split
 
 `rank-ep4-layer-hotness.py` applies the actual non-linear ownership map in
 `../2026-07-26-autoround-w4g64/hybrid-p0.5-profile.json`. Aggregate routing is
-close to balanced: ranks 0–3 receive 25.11%, 25.93%, 24.86%, and 24.10% of all
-routes. Individual layers are much less balanced.
+balanced: ranks 0–3 receive 25.36%, 24.78%, 25.16%, and 24.70% of all routes.
 
-The critical rank receives 31.56% of a layer's routes on average and 39.48% at
-p95, versus the balanced target of 25%. It exceeds 30% in 44 of 75 layers,
-35% in 10, and 40% in 3. The worst cases are layer 25 on rank 2 at 43.27%,
-layer 46 on rank 0 at 41.54%, and layer 48 on rank 0 at 41.31%. This is a
-routing-load proxy rather than a kernel-time measurement, but it exposes
-owner imbalance that aggregate per-rank totals hide.
+The critical rank receives 27.54% of a layer's routes on average and 30.42% at
+p95, versus the balanced target of 25%. Six of 75 layers exceed 30%; none
+exceed 35%. The worst case is layer 48 on rank 2 at 33.85%. This is a
+routing-load proxy rather than a kernel-time measurement.
 
 The four per-rank CSVs rank layers by local route load and include local
 expert concentration. `ep4-layer-criticality.csv` ranks layers by their
 busiest rank, while `ep4-layer-load.png` shows the complete layer sequence.
+
+## Offline placement opportunity
+
+At the same 2,870 HBM expert slots per rank, the current old-data placement
+covers 71.02% of valid Claude routes. Reselecting residency from this capture
+with the existing owners covers 83.75% and reduces the mean critical-rank cold
+route share from 8.57% to 4.85%. Rebalancing owners as well reduces that proxy
+to 4.19% and makes the busiest-rank layer share nearly 25%.
+
+These are in-sample routing estimates, not throughput results. A new profile
+should be trained on a chronological subset, checked on held-out requests,
+then compared against the current profile at identical HBM budget and reserve.

@@ -66,7 +66,7 @@ def main() -> None:
     previous_counts, previous = load_hotness(args.previous)
 
     labels = (
-        "Claude Code · 109 natural requests",
+        "Claude Code · 108 valid natural requests",
         "Curated prompts · 24 × 256 output tokens",
     )
     colors = ("#00a6d6", "#e4572e")
