@@ -57,9 +57,7 @@ def main() -> None:
         ),
         reverse=True,
     )
-    with (args.output_dir / "expert-hotness-ranking.csv").open(
-        "w", newline=""
-    ) as file:
+    with (args.output_dir / "expert-hotness-ranking.csv").open("w", newline="") as file:
         writer = csv.writer(file)
         writer.writerow(("rank", "layer", "expert", "count", "layer_fraction"))
         for rank, (count, layer, expert) in enumerate(ranking, 1):
@@ -93,7 +91,6 @@ def main() -> None:
 
     summary = {
         "request_count": len(records),
-        "accepted_output_tokens": sum(r["output_tokens"] for r in records),
         "routed_positions": sum(r["routed_positions"] for r in records),
         "total_routes": int(counts.sum()),
         "maximum_cell_count": int(counts.max()),

@@ -26,7 +26,7 @@ source agent_space/jupiter-env.sh
 api_key="$(<"${token_file}")"
 export VLLM_API_KEY="${api_key}"
 export CUDA_VISIBLE_DEVICES=0,1,2,3
-export VLLM_USE_V2_MODEL_RUNNER=1
+unset VLLM_USE_V2_MODEL_RUNNER
 export VLLM_SERVER_DEV_MODE=1
 export VLLM_ENFORCE_STRICT_TOOL_CALLING=false
 export VLLM_CACHE_ROOT=/e/scratch/profound/${USER:-$(id -un)}/vllm-cache-claude-routing-capture
