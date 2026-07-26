@@ -447,6 +447,18 @@ other reasons, and to reuse 0.85 us/node as a constant for pricing future
 designs that change node count. See the
 [graph node cost measurement](experiments/2026-07-25-graph-node-cost/README.md).
 
+Phase 25 adds AutoRound W4G64 support and compares it with the W4G128 baseline.
+The new checkpoint loads through the same tiered Marlin path and is viable, but
+its qualified c1/MTP3 prompt-suite throughput is 3.5% lower. A subsequent
+five-shot GSM8K screen runs 256 fixed questions twice across four parallel
+nodes. MTP3 raises end-to-end output throughput from 41.52 to 80.05 tok/s for
+W4G128 and from 42.40 to 78.09 tok/s for AutoRound. AutoRound averages 1.4-2.0
+accuracy points higher, but identical W4 repetitions vary by 2.0 points, so the
+quality difference is inconclusive without the full 1,319-question set. Active
+minimum free HBM ranges from 7.35 GiB for W4+MTP3 to 12.76 GiB for target-only
+W4. See the [AutoRound bring-up](experiments/2026-07-26-autoround-w4g64/README.md)
+and [GSM8K comparison](experiments/2026-07-26-gsm8k-quant-mtp/README.md).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout

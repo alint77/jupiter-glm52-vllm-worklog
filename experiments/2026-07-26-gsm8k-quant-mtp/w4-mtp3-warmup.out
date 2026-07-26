@@ -1,0 +1,9 @@
+Running GSM8K evaluation: 8 questions, 5-shot
+
+Results:
+Accuracy: 1.000
+Invalid responses: 0.000
+Total latency: 38.994 s
+Questions per second: 0.205
+Total output tokens: 692
+Output tokens per second: 17.746

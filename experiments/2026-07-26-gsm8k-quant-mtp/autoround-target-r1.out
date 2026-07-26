@@ -1,0 +1,10 @@
+Running GSM8K evaluation: 256 questions, 5-shot
+
+Results:
+Accuracy: 0.953
+Invalid responses: 0.000
+Total latency: 581.385 s
+Questions per second: 0.440
+Total output tokens: 24654
+Output tokens per second: 42.406
+Results saved to /e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-26-gsm8k-quant-mtp/autoround-target-r1.json

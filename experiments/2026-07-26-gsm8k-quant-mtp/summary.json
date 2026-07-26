@@ -1,0 +1,51 @@
+{
+  "source_commit": "4e563c69900dfaf22e80451043710243b16818e9",
+  "dataset": "GSM8K",
+  "num_questions": 256,
+  "num_shots": 5,
+  "repetitions": 2,
+  "temperature": 0,
+  "max_tokens": 256,
+  "results": [
+    {
+      "label": "w4-target",
+      "job_id": 1046095,
+      "accuracy": [0.9453125, 0.92578125],
+      "mean_accuracy": 0.935546875,
+      "output_tps": [41.52295094533574, 41.524919989491686],
+      "mean_output_tps": 41.52393546741371,
+      "minimum_free_hbm_mib": 13068
+    },
+    {
+      "label": "w4-mtp3",
+      "job_id": 1046096,
+      "accuracy": [0.9453125, 0.94140625],
+      "mean_accuracy": 0.943359375,
+      "output_tps": [79.71990773528462, 80.37626217952695],
+      "mean_output_tps": 80.04808495740579,
+      "mtp_acceptance_rate": 0.7682444097997581,
+      "mtp_acceptance_length": 3.3046633517000405,
+      "minimum_free_hbm_mib": 7530
+    },
+    {
+      "label": "autoround-target",
+      "job_id": 1046097,
+      "accuracy": [0.953125, 0.95703125],
+      "mean_accuracy": 0.955078125,
+      "output_tps": [42.40564541454575, 42.385462283887534],
+      "mean_output_tps": 42.39555384921664,
+      "minimum_free_hbm_mib": 12426
+    },
+    {
+      "label": "autoround-mtp3",
+      "job_id": 1046098,
+      "accuracy": [0.9609375, 0.953125],
+      "mean_accuracy": 0.95703125,
+      "output_tps": [77.86572579868117, 78.30680513947298],
+      "mean_output_tps": 78.08626546907708,
+      "mtp_acceptance_rate": 0.7776361114830202,
+      "mtp_acceptance_length": 3.3329418870017447,
+      "minimum_free_hbm_mib": 10345
+    }
+  ]
+}

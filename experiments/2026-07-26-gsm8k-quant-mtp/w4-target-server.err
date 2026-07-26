@@ -1,0 +1,33 @@
+(EngineCore pid=743968) /e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py:139: UserWarning: Failed to get the IP address, using 0.0.0.0 by default. The value can be set by the environment variable VLLM_HOST_IP or HOST_IP.
+(EngineCore pid=743968)   mq_connect_ip = get_ip()
+[W726 08:57:13.960652382 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:55415 (errno: 97 - Address family not supported by protocol).
+[W726 08:57:14.257795542 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:55415 (errno: 97 - Address family not supported by protocol).
+[W726 08:57:14.257938387 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:55415 (errno: 97 - Address family not supported by protocol).
+[W726 08:57:14.258932286 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:55415 (errno: 97 - Address family not supported by protocol).
+(Worker_TP0_EP0 pid=744245) Loading safetensors checkpoint shards:   0% Completed | 0/11 [00:00<?, ?it/s]
+(Worker_TP0_EP0 pid=744245) Loading safetensors checkpoint shards:  27% Completed | 3/11 [00:00<00:00, 14.21it/s]
+(Worker_TP0_EP0 pid=744245) Loading safetensors checkpoint shards:  27% Completed | 3/11 [00:20<00:00, 14.21it/s]
+(Worker_TP0_EP0 pid=744245) Loading safetensors checkpoint shards:  36% Completed | 4/11 [01:41<03:50, 32.87s/it]
+(Worker_TP0_EP0 pid=744245) Loading safetensors checkpoint shards:  45% Completed | 5/11 [03:22<05:25, 54.18s/it]
+(Worker_TP0_EP0 pid=744245) Loading safetensors checkpoint shards:  55% Completed | 6/11 [05:04<05:45, 69.11s/it]
+(Worker_TP0_EP0 pid=744245) Loading safetensors checkpoint shards:  64% Completed | 7/11 [06:50<05:21, 80.50s/it]
+(Worker_TP0_EP0 pid=744245) Loading safetensors checkpoint shards:  73% Completed | 8/11 [08:30<04:18, 86.24s/it]
+(Worker_TP0_EP0 pid=744245) Loading safetensors checkpoint shards:  82% Completed | 9/11 [10:11<03:01, 90.72s/it]
+(Worker_TP0_EP0 pid=744245) Loading safetensors checkpoint shards:  91% Completed | 10/11 [11:50<01:33, 93.21s/it]
+(Worker_TP0_EP0 pid=744245) Loading safetensors checkpoint shards: 100% Completed | 11/11 [13:04<00:00, 87.67s/it]
+(Worker_TP0_EP0 pid=744245) Loading safetensors checkpoint shards: 100% Completed | 11/11 [13:04<00:00, 71.35s/it]
+(Worker_TP0_EP0 pid=744245) 
+(Worker_TP3_EP3 pid=744251) 2026-07-26 09:13:02,672 - INFO - autotuner.py:651 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(Worker_TP0_EP0 pid=744245) 2026-07-26 09:13:02,700 - INFO - autotuner.py:651 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(Worker_TP2_EP2 pid=744249) 2026-07-26 09:13:02,758 - INFO - autotuner.py:651 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(Worker_TP1_EP1 pid=744247) 2026-07-26 09:13:02,764 - INFO - autotuner.py:651 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(Worker_TP0_EP0 pid=744245) 2026-07-26 09:13:07,545 - INFO - autotuner.py:674 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(Worker_TP3_EP3 pid=744251) 2026-07-26 09:13:07,546 - INFO - autotuner.py:674 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(Worker_TP2_EP2 pid=744249) 2026-07-26 09:13:07,547 - INFO - autotuner.py:674 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(Worker_TP1_EP1 pid=744247) 2026-07-26 09:13:07,560 - INFO - autotuner.py:674 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(Worker_TP0_EP0 pid=744245) Capturing CUDA graphs (PIECEWISE):   0%|          | 0/1 [00:00<?, ?it/s]Capturing CUDA graphs (PIECEWISE): 100%|██████████| 1/1 [00:09<00:00,  9.17s/it]Capturing CUDA graphs (PIECEWISE): 100%|██████████| 1/1 [00:09<00:00,  9.17s/it]
+(Worker_TP0_EP0 pid=744245) Capturing CUDA graphs (FULL):   0%|          | 0/1 [00:00<?, ?it/s]Capturing CUDA graphs (FULL): 100%|██████████| 1/1 [00:01<00:00,  1.93s/it]Capturing CUDA graphs (FULL): 100%|██████████| 1/1 [00:01<00:00,  1.95s/it]
+(APIServer pid=742816) INFO:     Started server process [742816]
+(APIServer pid=742816) INFO:     Waiting for application startup.
+(APIServer pid=742816) INFO:     Application startup complete.
+(APIServer pid=742816) INFO:     Shutting down
