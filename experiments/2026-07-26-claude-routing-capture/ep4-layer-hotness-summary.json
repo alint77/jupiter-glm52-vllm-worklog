@@ -1,0 +1,142 @@
+{
+  "balanced_layer_route_share": 0.25,
+  "critical_layer_count_by_rank": [
+    18,
+    28,
+    18,
+    11
+  ],
+  "layers_above_30pct_on_one_rank": 44,
+  "layers_above_35pct_on_one_rank": 10,
+  "layers_above_40pct_on_one_rank": 3,
+  "maximum_critical_rank_route_share": 0.43269869245829984,
+  "mean_critical_rank_route_share": 0.3155791481374677,
+  "ownership_profile": "agent_space/experiments/2026-07-26-autoround-w4g64/hybrid-p0.5-profile.json",
+  "p95_critical_rank_route_share": 0.3947844415438554,
+  "ranks": [
+    {
+      "coldest_layers": [
+        30,
+        13,
+        32,
+        25,
+        17,
+        68,
+        22,
+        10,
+        45,
+        47
+      ],
+      "ep_rank": 0,
+      "hottest_layers": [
+        46,
+        48,
+        75,
+        56,
+        8,
+        20,
+        11,
+        57,
+        59,
+        66
+      ],
+      "maximum_layer_route_share": 0.4154224277930396,
+      "minimum_layer_route_share": 0.15491058554798368,
+      "total_route_count": 39711755,
+      "total_route_share": 0.2511354984038328
+    },
+    {
+      "coldest_layers": [
+        49,
+        72,
+        38,
+        39,
+        48,
+        61,
+        20,
+        32,
+        56,
+        50
+      ],
+      "ep_rank": 1,
+      "hottest_layers": [
+        30,
+        47,
+        17,
+        10,
+        27,
+        55,
+        75,
+        58,
+        45,
+        52
+      ],
+      "maximum_layer_route_share": 0.39283640930684355,
+      "minimum_layer_route_share": 0.14825193133698605,
+      "total_route_count": 40997092,
+      "total_route_share": 0.25926391650350855
+    },
+    {
+      "coldest_layers": [
+        8,
+        76,
+        18,
+        75,
+        20,
+        46,
+        12,
+        55,
+        27,
+        44
+      ],
+      "ep_rank": 2,
+      "hottest_layers": [
+        25,
+        38,
+        49,
+        68,
+        23,
+        61,
+        39,
+        17,
+        40,
+        77
+      ],
+      "maximum_layer_route_share": 0.43269869245829984,
+      "minimum_layer_route_share": 0.1483818886882086,
+      "total_route_count": 39315674,
+      "total_route_share": 0.24863069851918182
+    },
+    {
+      "coldest_layers": [
+        48,
+        23,
+        75,
+        46,
+        9,
+        38,
+        57,
+        17,
+        71,
+        77
+      ],
+      "ep_rank": 3,
+      "hottest_layers": [
+        32,
+        18,
+        5,
+        72,
+        69,
+        20,
+        63,
+        21,
+        4,
+        13
+      ],
+      "maximum_layer_route_share": 0.39665165358872007,
+      "minimum_layer_route_share": 0.15056128295414878,
+      "total_route_count": 38104279,
+      "total_route_share": 0.24096988657347682
+    }
+  ]
+}

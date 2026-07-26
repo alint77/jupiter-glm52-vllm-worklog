@@ -89,3 +89,21 @@ Layer 56 is most concentrated at 97.1 effective experts; layers 68, 58, 64,
 and 55 follow. Layer 7 is most diffuse at 128.8 effective experts, followed by
 layers 3, 4, 5, and 13. The CSV also records Gini, top-8/16/32 shares,
 50%/80% coverage sizes, and each layer's hottest expert.
+
+## EP4 rank split
+
+`rank-ep4-layer-hotness.py` applies the actual non-linear ownership map in
+`../2026-07-26-autoround-w4g64/hybrid-p0.5-profile.json`. Aggregate routing is
+close to balanced: ranks 0–3 receive 25.11%, 25.93%, 24.86%, and 24.10% of all
+routes. Individual layers are much less balanced.
+
+The critical rank receives 31.56% of a layer's routes on average and 39.48% at
+p95, versus the balanced target of 25%. It exceeds 30% in 44 of 75 layers,
+35% in 10, and 40% in 3. The worst cases are layer 25 on rank 2 at 43.27%,
+layer 46 on rank 0 at 41.54%, and layer 48 on rank 0 at 41.31%. This is a
+routing-load proxy rather than a kernel-time measurement, but it exposes
+owner imbalance that aggregate per-rank totals hide.
+
+The four per-rank CSVs rank layers by local route load and include local
+expert concentration. `ep4-layer-criticality.csv` ranks layers by their
+busiest rank, while `ep4-layer-load.png` shows the complete layer sequence.
