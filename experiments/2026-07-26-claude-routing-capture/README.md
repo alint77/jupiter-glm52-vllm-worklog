@@ -58,3 +58,20 @@ streamed stress requests with 10,020 and 45,521 input tokens. Both generated
 requests with no server errors. Their two valid `84 * 78 * 8` traces aggregated
 to `100,800` routed selections and were moved to `routes-1047954-smoke`.
 `routes-1047954` is empty for real Claude Code activity.
+
+## 109-request hotness snapshot
+
+The first natural-use snapshot contains 109 requests, 263,548 routed positions,
+and 158,128,800 target-router selections. `expert-hotness-distribution.png`
+compares its 75-by-256 grid with the earlier 24-prompt, fixed-256-token capture.
+Counts are divided by the mean within each layer so the unequal capture sizes
+remain comparable; 1x is uniform traffic within a layer.
+
+Natural Claude Code use is substantially more concentrated. Its Gini
+coefficient is 0.580 versus 0.385, the top 1% of layer-expert cells receive
+12.64% versus 5.99% of routes, and mean entropy-effective experts per layer
+fall from 197.5 to 112.0. This makes the real-use grid a better placement
+candidate, but throughput still needs a matched placement A/B.
+
+The two count grids, histogram, JSON summary, and plotting script are stored
+in this directory.
