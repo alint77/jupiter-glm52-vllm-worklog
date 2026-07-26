@@ -119,3 +119,89 @@ to 4.19% and makes the busiest-rank layer share nearly 25%.
 These are in-sample routing estimates, not throughput results. A new profile
 should be trained on a chronological subset, checked on held-out requests,
 then compared against the current profile at identical HBM budget and reserve.
+
+## Profile retraining
+
+The 108 valid requests are frozen under
+`/e/scratch/profound/naeimitabiei1/claude-routing-profile-1047954-108`.
+`routing-dataset-manifest.json` records route checksums and a chronological
+86-request training / 22-request held-out split. It contains no prompts,
+responses, tool arguments, or repository content.
+
+Three profiles use exactly 2,870 HBM expert slots per EP rank:
+
+1. Fresh frequency residency with the existing owner map.
+2. Fresh frequency residency with owners balanced on the training split.
+3. The balanced profile followed by eight bounded tail-aware swaps.
+
+Held-out route results:
+
+| Profile | HBM route coverage | Mean cold critical count | CVaR95 | Owner max |
+|---|---:|---:|---:|---:|
+| Current control | 69.66% | 113.36 | 133.61 | 263.13 |
+| Existing owners + fresh residency | 78.22% | 89.54 | 119.25 | 263.13 |
+| Balanced owners + fresh residency | **78.27%** | 89.21 | 118.91 | 262.69 |
+| Balanced owners + tail swaps | 78.26% | **89.21** | **118.88** | 262.69 |
+
+Residency selection provides almost all of the offline gain. Owner balancing
+improves the mean cold critical proxy by another 0.36%; tail swaps are neutral
+on held-out routes.
+
+Matched c1/V1/MTP3 jobs use the same AutoRound checkpoint, 2,870 slots/rank,
+5 GB HBM reserve, 0.85 GPU-memory utilization, one full warmup, and two
+measured 24-request repetitions. Jobs: control `1048314`, existing-owner
+frequency `1048315`, balanced-owner frequency `1048316`, and tail-aware
+`1048318`.
+
+The c4 tests use Model Runner V2, DCP4, MTP3, four concurrent requests, and a
+7 GB reserve. Jobs: control `1048330`, existing-owner frequency `1048331`,
+balanced-owner frequency `1048332`, and tail-aware `1048333`. All eight jobs
+completed successfully.
+
+| Mode | Profile | Output tok/s | Delta | TPOT (ms) | TTFT (ms) | MTP accept | Min free VRAM |
+|---|---|---:|---:|---:|---:|---:|---:|
+| c1 | Current control | **99.78** | — | **9.08** | 249.1 | 64.58% | 5,656 MiB |
+| c1 | Existing owners + frequency | 92.57 | -7.23% | 9.95 | **229.7** | 64.73% | 5,645 MiB |
+| c1 | Balanced owners + frequency | 93.91 | -5.88% | 9.75 | 238.9 | 65.09% | 5,642 MiB |
+| c1 | Balanced owners + tail | 92.18 | -7.62% | 9.84 | 267.7 | 64.59% | 5,669 MiB |
+| c4/DCP4 | Current control | **173.32** | — | **21.11** | 456.2 | 64.38% | 7,130 MiB |
+| c4/DCP4 | Existing owners + frequency | 158.27 | -8.68% | 23.29 | 448.5 | 64.08% | 7,168 MiB |
+| c4/DCP4 | Balanced owners + frequency | 162.01 | -6.53% | 22.84 | 435.3 | 64.54% | 7,149 MiB |
+| c4/DCP4 | Balanced owners + tail | 160.02 | -7.68% | 23.21 | **428.1** | 64.09% | 7,166 MiB |
+
+Each value is the mean of two repetitions. Every repetition completed all 24
+requests with no failures. Acceptance and VRAM are effectively matched, so
+neither explains the throughput loss.
+
+The old profile was trained on the same short, decode-heavy prompt suite used
+by this benchmark. The Claude-derived profile has much better held-out
+coverage on real Claude routing, but only 74.3% HBM-slot overlap with the old
+profile. It therefore cannot replace the control as a universal default based
+on the offline proxy alone. Real Claude end-to-end replay or online latency
+measurement is required before deployment.
+
+`placement-ab-summary.json` contains the complete means, repetition ranges,
+and per-GPU VRAM minima. Parallel c4 traces compare the control with the best
+new variant, balanced owners plus frequency residency: jobs `1048432` and
+`1048433`.
+
+## Trace diagnosis
+
+The trace comparison explains the regression. Relative to control, the new
+profile increases GPU busy time by 15.58% and Marlin kernel time by 25.30%;
+kernel count is identical and GPU idle share falls from 5.74% to 4.84%. This
+is more MoE work on the critical path, not a launch-bound or communication
+regression.
+
+The hot chain grows by 32.02%, the cold chain by 17.07%, and their combined
+layer span by 25.97%. Cold finishes before hot in 91.83% of control layers and
+96.08% of candidate layers. The cold-route-count objective therefore targets
+the wrong bottleneck: higher HBM coverage can overload the hot chain while
+the cold chain was already hidden.
+
+`placement-trace-analysis.md` records the kernel breakdown and Perfetto trace
+paths. The next optimizer should model
+`max(cost_hot(route shape), cost_cold(route shape))` per layer with separately
+calibrated W13 and W2 costs. Keep the current owner map initially; the
+held-out benefit from changing owners is too small to justify combining both
+changes.

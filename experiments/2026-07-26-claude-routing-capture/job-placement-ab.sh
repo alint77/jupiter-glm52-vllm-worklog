@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+#SBATCH --account=profound
+#SBATCH --partition=booster
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --gres=gpu:4
+#SBATCH --time=04:00:00
+#SBATCH --output=agent_space/experiments/2026-07-26-claude-routing-capture/slurm-%x-%j.out
+#SBATCH --error=agent_space/experiments/2026-07-26-claude-routing-capture/slurm-%x-%j.err
+
+set -euo pipefail
+
+label="${1:?configuration label is required}"
+repo_dir=/e/project1/profound/alint77/vllm
+result_dir="${repo_dir}/agent_space/experiments/2026-07-26-claude-routing-capture"
+model="$(dirname -- "${repo_dir}")/models/GLM-5.2-AutoRound-W4G64-MTP-e1ba887"
+prompts="${repo_dir}/agent_space/experiments/2026-07-19-c1q4-placement/prompts.jsonl"
+
+case "${label}" in
+  control)
+    profile="${repo_dir}/agent_space/experiments/2026-07-26-autoround-w4g64/hybrid-p0.5-profile.json"
+    ;;
+  current-owners-frequency)
+    profile="${result_dir}/claude-current-owners-frequency-profile.json"
+    ;;
+  balanced-owners-frequency)
+    profile="${result_dir}/claude-balanced-owners-frequency-profile.json"
+    ;;
+  balanced-owners-tail)
+    profile="${result_dir}/claude-balanced-owners-tail-profile.json"
+    ;;
+  *)
+    echo "Unknown configuration: ${label}" >&2
+    exit 2
+    ;;
+esac
+
+cd "${repo_dir}"
+source agent_space/jupiter-env.sh
+
+unset VLLM_USE_V2_MODEL_RUNNER
+export VLLM_SERVER_DEV_MODE=1
+export VLLM_CACHE_ROOT=/e/scratch/profound/naeimitabiei1/vllm-cache-claude-routing-capture
+export TRTLLM_DG_CACHE_DIR=/e/scratch/profound/naeimitabiei1/trtllm-dg-claude-routing-capture
+export TIERED_MOE_MODEL_PATH="${model}"
+export TIERED_MOE_PLACEMENT_PROFILE="${profile}"
+export VLLM_TIERED_MOE_PROFILE_CAP=0
+export TIERED_MOE_HBM_RESERVE_GB=5
+export TIERED_MOE_COMPILATION_CONFIG='{"mode":3,"cudagraph_mode":"FULL_AND_PIECEWISE","cudagraph_capture_sizes":[4],"compile_sizes":[4],"cudagraph_num_of_warmups":1,"pass_config":{"fuse_allreduce_rms":false}}'
+mkdir -p "${VLLM_CACHE_ROOT}" "${TRTLLM_DG_CACHE_DIR}"
+
+agent_space/experiments/2026-07-17-end-to-end-tuning/run-server.sh \
+  --speculative-config '{"method":"mtp","num_speculative_tokens":3}' \
+  --gpu-memory-utilization 0.85 \
+  --no-enable-prefix-caching \
+  >"${result_dir}/${label}-server.out" \
+  2>"${result_dir}/${label}-server.err" &
+server_pid=$!
+monitor_pid=
+cleanup() {
+  if [[ -n "${monitor_pid}" ]]; then
+    kill "${monitor_pid}" 2>/dev/null || true
+  fi
+  kill "${server_pid}" 2>/dev/null || true
+}
+trap cleanup EXIT
+
+ready=false
+for _ in $(seq 1 720); do
+  if curl -fsS http://127.0.0.1:8027/health >/dev/null 2>&1; then
+    ready=true
+    break
+  fi
+  if ! kill -0 "${server_pid}" 2>/dev/null; then
+    tail -80 "${result_dir}/${label}-server.err"
+    exit 1
+  fi
+  sleep 10
+done
+[[ "${ready}" == true ]]
+
+nvidia-smi \
+  --query-gpu=timestamp,index,memory.total,memory.used,memory.free,utilization.gpu \
+  --format=csv,noheader,nounits \
+  --loop=2 \
+  >"${result_dir}/${label}-vram-timeseries.csv" &
+monitor_pid=$!
+
+bench_args=(
+  --backend openai
+  --base-url http://127.0.0.1:8027
+  --endpoint /v1/completions
+  --model glm52-w4a16-tiered
+  --served-model-name glm52-w4a16-tiered
+  --tokenizer "${model}"
+  --dataset-name custom
+  --dataset-path "${prompts}"
+  --custom-output-len 256
+  --skip-chat-template
+  --disable-shuffle
+  --num-prompts 24
+  --max-concurrency 1
+  --request-rate inf
+  --temperature 0
+  --ignore-eos
+  --disable-tqdm
+)
+
+.venv/bin/vllm bench serve "${bench_args[@]}"
+curl -fsS http://127.0.0.1:8027/metrics \
+  >"${result_dir}/${label}-metrics-before.txt"
+for repeat in 1 2; do
+  .venv/bin/vllm bench serve "${bench_args[@]}" \
+    --save-result \
+    --save-detailed \
+    --result-dir "${result_dir}" \
+    --result-filename "${label}-r${repeat}.json"
+done
+curl -fsS http://127.0.0.1:8027/metrics \
+  >"${result_dir}/${label}-metrics-after.txt"

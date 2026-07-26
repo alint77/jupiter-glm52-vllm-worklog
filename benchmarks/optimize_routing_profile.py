@@ -26,15 +26,36 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--hot-slots-per-rank", type=int, required=True)
     parser.add_argument("--train-requests", type=int)
     parser.add_argument("--mixed-layer-penalty", type=float)
+    parser.add_argument("--owners-profile", type=Path)
+    parser.add_argument(
+        "--residency-mode",
+        choices=("frequency", "tail"),
+        default="tail",
+    )
     return parser.parse_args()
 
 
 def load_requests(trace_dir: Path) -> list[tuple[str, np.ndarray]]:
     requests = []
-    for path in sorted(trace_dir.glob("request-*.npz")):
-        with np.load(path) as data:
-            raw_routes = data["routes"]
-            request_hash = str(data["request_hash"])
+    paths = sorted(trace_dir.glob("request-*.npz"))
+    if paths:
+        records = [(path, None) for path in paths]
+    else:
+        manifest_path = trace_dir / "manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+        records = [
+            (trace_dir / record["file"], record["request_hash"])
+            for record in manifest
+        ]
+    for path, manifest_hash in records:
+        if path.suffix == ".npz":
+            with np.load(path) as data:
+                raw_routes = data["routes"]
+                request_hash = str(data["request_hash"])
+        else:
+            raw_routes = np.load(path, mmap_mode="r")
+            request_hash = manifest_hash
+            assert request_hash is not None
         if raw_routes.ndim == 3:
             routes = raw_routes[:, ROUTED_LAYERS, :]
         elif raw_routes.ndim == 4:
@@ -49,6 +70,19 @@ def load_requests(trace_dir: Path) -> list[tuple[str, np.ndarray]]:
     if len(requests) < 2:
         raise ValueError("At least two trace requests are required")
     return requests
+
+
+def owners_from_profile(path: Path) -> np.ndarray:
+    data = json.loads(path.read_text())
+    if data["routed_layers"] != list(ROUTED_LAYERS):
+        raise ValueError("Owner profile routed layers do not match")
+    owners = np.asarray(data["owners"], dtype=np.int16)
+    if owners.shape != (len(ROUTED_LAYERS), NUM_EXPERTS):
+        raise ValueError("Owner profile has an invalid shape")
+    for rank in range(EP_SIZE):
+        if not np.all(np.sum(owners == rank, axis=1) == EXPERTS_PER_RANK):
+            raise ValueError(f"Owner profile does not assign 64 experts to rank {rank}")
+    return owners
 
 
 def route_counts(requests: list[tuple[str, np.ndarray]]) -> np.ndarray:
@@ -483,14 +517,29 @@ def main() -> None:
 
     baseline_owners = linear_owners()
     baseline_hot = even_hot(baseline_owners, args.hot_slots_per_rank)
-    optimized_owners = optimize_owners(counts)
+    optimized_owners = (
+        owners_from_profile(args.owners_profile)
+        if args.owners_profile is not None
+        else optimize_owners(counts)
+    )
     frequency_hot = optimize_hot(counts, optimized_owners, args.hot_slots_per_rank)
     layer_concentration = None
-    if args.mixed_layer_penalty is None:
+    owner_name = (
+        "profile-owner"
+        if args.owners_profile is not None
+        else "greedy-balanced-owner"
+    )
+    if args.residency_mode == "frequency":
+        if args.mixed_layer_penalty is not None:
+            raise ValueError("Frequency residency does not use a mixed-layer penalty")
+        optimized_hot = frequency_hot
+        tail_swaps = []
+        optimizer_name = f"{owner_name}+frequency-residency-v1"
+    elif args.mixed_layer_penalty is None:
         optimized_hot, tail_swaps = optimize_hot_tail_aware(
             training, counts, optimized_owners, args.hot_slots_per_rank
         )
-        optimizer_name = "greedy-balanced-owner+bounded-tail-swap-residency-v2"
+        optimizer_name = f"{owner_name}+bounded-tail-swap-residency-v2"
     else:
         optimized_hot, layer_concentration = optimize_hot_layer_concentrated(
             training,
@@ -500,7 +549,7 @@ def main() -> None:
             args.mixed_layer_penalty,
         )
         tail_swaps = []
-        optimizer_name = "greedy-balanced-owner+layer-concentrated-residency-v1"
+        optimizer_name = f"{owner_name}+layer-concentrated-residency-v1"
     manifest = build_glm_w4a16_manifest(args.model)
     profile = {
         "profile_version": 1,

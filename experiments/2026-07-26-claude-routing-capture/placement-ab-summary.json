@@ -1,0 +1,454 @@
+{
+  "c1": {
+    "control": {
+      "output_throughput": {
+        "mean": 99.78196014320098,
+        "range": [
+          99.6230953529609,
+          99.94082493344105
+        ],
+        "delta_vs_control_percent": 0.0
+      },
+      "total_token_throughput": {
+        "mean": 112.5957567826843,
+        "range": [
+          112.4164908987757,
+          112.7750226665929
+        ]
+      },
+      "mean_ttft_ms": {
+        "mean": 249.12550344015472,
+        "range": [
+          248.3780725063601,
+          249.87293437394933
+        ]
+      },
+      "mean_tpot_ms": {
+        "mean": 9.084035122770516,
+        "range": [
+          9.065089405710609,
+          9.102980839830423
+        ]
+      },
+      "spec_decode_acceptance_rate": {
+        "mean": 64.57903175169244,
+        "range": [
+          64.47096260938743,
+          64.68710089399745
+        ]
+      },
+      "spec_decode_acceptance_length": {
+        "mean": 2.937370952550773,
+        "range": [
+          2.934128878281623,
+          2.940613026819923
+        ]
+      },
+      "completed_per_repetition": 24,
+      "failed_per_repetition": 0,
+      "vram_headroom": {
+        "minimum_mib": 5656.0,
+        "per_gpu_minimum_mib": {
+          "0": 5675.0,
+          "1": 5660.0,
+          "2": 5656.0,
+          "3": 5660.0
+        }
+      }
+    },
+    "current-owners-frequency": {
+      "output_throughput": {
+        "mean": 92.56781908649265,
+        "range": [
+          91.24717743194624,
+          93.88846074103905
+        ],
+        "delta_vs_control_percent": -7.229905131503767
+      },
+      "total_token_throughput": {
+        "mean": 104.45519038519751,
+        "range": [
+          102.96495461192762,
+          105.94542615846741
+        ]
+      },
+      "mean_ttft_ms": {
+        "mean": 229.6545348338744,
+        "range": [
+          228.35879779207366,
+          230.95027187567516
+        ]
+      },
+      "mean_tpot_ms": {
+        "mean": 9.946608146271377,
+        "range": [
+          9.796935749381744,
+          10.096280543161008
+        ]
+      },
+      "spec_decode_acceptance_rate": {
+        "mean": 64.7345577215626,
+        "range": [
+          63.560391043834755,
+          65.90872439929043
+        ]
+      },
+      "spec_decode_acceptance_length": {
+        "mean": 2.942036731646878,
+        "range": [
+          2.9068117313150426,
+          2.977261731978713
+        ]
+      },
+      "completed_per_repetition": 24,
+      "failed_per_repetition": 0,
+      "vram_headroom": {
+        "minimum_mib": 5645.0,
+        "per_gpu_minimum_mib": {
+          "0": 5674.0,
+          "1": 5645.0,
+          "2": 5671.0,
+          "3": 5679.0
+        }
+      }
+    },
+    "balanced-owners-frequency": {
+      "output_throughput": {
+        "mean": 93.91299016952502,
+        "range": [
+          92.8699561290263,
+          94.95602421002371
+        ],
+        "delta_vs_control_percent": -5.881794630265002
+      },
+      "total_token_throughput": {
+        "mean": 105.97310560633414,
+        "range": [
+          104.79612725301749,
+          107.15008395965079
+        ]
+      },
+      "mean_ttft_ms": {
+        "mean": 238.90336636638193,
+        "range": [
+          235.67903953274558,
+          242.12769320001826
+        ]
+      },
+      "mean_tpot_ms": {
+        "mean": 9.75415145681967,
+        "range": [
+          9.622765705122589,
+          9.885537208516752
+        ]
+      },
+      "spec_decode_acceptance_rate": {
+        "mean": 65.09160560524938,
+        "range": [
+          63.74407582938388,
+          66.4391353811149
+        ]
+      },
+      "spec_decode_acceptance_length": {
+        "mean": 2.9527481681574814,
+        "range": [
+          2.9123222748815163,
+          2.993174061433447
+        ]
+      },
+      "completed_per_repetition": 24,
+      "failed_per_repetition": 0,
+      "vram_headroom": {
+        "minimum_mib": 5642.0,
+        "per_gpu_minimum_mib": {
+          "0": 5692.0,
+          "1": 5642.0,
+          "2": 5679.0,
+          "3": 5679.0
+        }
+      }
+    },
+    "balanced-owners-tail": {
+      "output_throughput": {
+        "mean": 92.18294046963796,
+        "range": [
+          91.75791682765835,
+          92.60796411161756
+        ],
+        "delta_vs_control_percent": -7.615624770907859
+      },
+      "total_token_throughput": {
+        "mean": 104.02088643815102,
+        "range": [
+          103.54128212339766,
+          104.5004907529044
+        ]
+      },
+      "mean_ttft_ms": {
+        "mean": 267.7424942109307,
+        "range": [
+          262.70443089985446,
+          272.780557522007
+        ]
+      },
+      "mean_tpot_ms": {
+        "mean": 9.84059468408578,
+        "range": [
+          9.770615895170707,
+          9.91057347300085
+        ]
+      },
+      "spec_decode_acceptance_rate": {
+        "mean": 64.5914835542173,
+        "range": [
+          64.03800475059383,
+          65.14496235784078
+        ]
+      },
+      "spec_decode_acceptance_length": {
+        "mean": 2.937744506626519,
+        "range": [
+          2.9211401425178147,
+          2.9543488707352235
+        ]
+      },
+      "completed_per_repetition": 24,
+      "failed_per_repetition": 0,
+      "vram_headroom": {
+        "minimum_mib": 5669.0,
+        "per_gpu_minimum_mib": {
+          "0": 5695.0,
+          "1": 5682.0,
+          "2": 5669.0,
+          "3": 5673.0
+        }
+      }
+    }
+  },
+  "c4_dcp4": {
+    "control": {
+      "output_throughput": {
+        "mean": 173.3208896818648,
+        "range": [
+          170.8060962000632,
+          175.83568316366643
+        ],
+        "delta_vs_control_percent": 0.0
+      },
+      "total_token_throughput": {
+        "mean": 195.57840627675273,
+        "range": [
+          192.7406681241924,
+          198.41614442931305
+        ]
+      },
+      "mean_ttft_ms": {
+        "mean": 456.2145414747647,
+        "range": [
+          447.55223736865446,
+          464.87684558087494
+        ]
+      },
+      "mean_tpot_ms": {
+        "mean": 21.112133608950266,
+        "range": [
+          20.709484718432588,
+          21.514782499467948
+        ]
+      },
+      "spec_decode_acceptance_rate": {
+        "mean": 64.37662163981673,
+        "range": [
+          63.13226515865536,
+          65.62097812097812
+        ]
+      },
+      "spec_decode_acceptance_length": {
+        "mean": 2.931298649194502,
+        "range": [
+          2.8939679547596606,
+          2.9686293436293436
+        ]
+      },
+      "completed_per_repetition": 24,
+      "failed_per_repetition": 0,
+      "vram_headroom": {
+        "minimum_mib": 7130.0,
+        "per_gpu_minimum_mib": {
+          "0": 7169.0,
+          "1": 7130.0,
+          "2": 7154.0,
+          "3": 7154.0
+        }
+      }
+    },
+    "current-owners-frequency": {
+      "output_throughput": {
+        "mean": 158.2724826439411,
+        "range": [
+          156.70021972511933,
+          159.84474556276285
+        ],
+        "delta_vs_control_percent": -8.682396602940056
+      },
+      "total_token_throughput": {
+        "mean": 178.59751337409563,
+        "range": [
+          176.82334364489782,
+          180.37168310329344
+        ]
+      },
+      "mean_ttft_ms": {
+        "mean": 448.49525087920483,
+        "range": [
+          433.0491261401524,
+          463.94137561825727
+        ]
+      },
+      "mean_tpot_ms": {
+        "mean": 23.286958773212593,
+        "range": [
+          23.16985751657817,
+          23.404060029847017
+        ]
+      },
+      "spec_decode_acceptance_rate": {
+        "mean": 64.08370266073936,
+        "range": [
+          64.03800475059383,
+          64.12940057088488
+        ]
+      },
+      "spec_decode_acceptance_length": {
+        "mean": 2.9225110798221805,
+        "range": [
+          2.9211401425178147,
+          2.9238820171265463
+        ]
+      },
+      "completed_per_repetition": 24,
+      "failed_per_repetition": 0,
+      "vram_headroom": {
+        "minimum_mib": 7168.0,
+        "per_gpu_minimum_mib": {
+          "0": 7189.0,
+          "1": 7168.0,
+          "2": 7176.0,
+          "3": 7174.0
+        }
+      }
+    },
+    "balanced-owners-frequency": {
+      "output_throughput": {
+        "mean": 162.01143681382916,
+        "range": [
+          161.24445604040127,
+          162.77841758725702
+        ],
+        "delta_vs_control_percent": -6.525152789599941
+      },
+      "total_token_throughput": {
+        "mean": 182.81661644373008,
+        "range": [
+          181.9511415573083,
+          183.68209133015185
+        ]
+      },
+      "mean_ttft_ms": {
+        "mean": 435.2641305328385,
+        "range": [
+          429.7529813823833,
+          440.7752796832938
+        ]
+      },
+      "mean_tpot_ms": {
+        "mean": 22.84041838264861,
+        "range": [
+          22.747222216818113,
+          22.93361454847911
+        ]
+      },
+      "spec_decode_acceptance_rate": {
+        "mean": 64.54107338444688,
+        "range": [
+          63.63636363636363,
+          65.44578313253012
+        ]
+      },
+      "spec_decode_acceptance_length": {
+        "mean": 2.9362322015334064,
+        "range": [
+          2.909090909090909,
+          2.9633734939759035
+        ]
+      },
+      "completed_per_repetition": 24,
+      "failed_per_repetition": 0,
+      "vram_headroom": {
+        "minimum_mib": 7149.0,
+        "per_gpu_minimum_mib": {
+          "0": 7169.0,
+          "1": 7153.0,
+          "2": 7165.0,
+          "3": 7149.0
+        }
+      }
+    },
+    "balanced-owners-tail": {
+      "output_throughput": {
+        "mean": 160.01605383654115,
+        "range": [
+          159.0026478419986,
+          161.0294598310837
+        ],
+        "delta_vs_control_percent": -7.676417926162871
+      },
+      "total_token_throughput": {
+        "mean": 180.5649904376204,
+        "range": [
+          179.42144490373963,
+          181.7085359715012
+        ]
+      },
+      "mean_ttft_ms": {
+        "mean": 428.11281231600634,
+        "range": [
+          419.6436087998639,
+          436.5820158321488
+        ]
+      },
+      "mean_tpot_ms": {
+        "mean": 23.205894502195576,
+        "range": [
+          23.036624314366186,
+          23.37516469002497
+        ]
+      },
+      "spec_decode_acceptance_rate": {
+        "mean": 64.09177668132324,
+        "range": [
+          62.86563428750196,
+          65.3179190751445
+        ]
+      },
+      "spec_decode_acceptance_length": {
+        "mean": 2.9227533004396973,
+        "range": [
+          2.8859690286250586,
+          2.9595375722543356
+        ]
+      },
+      "completed_per_repetition": 24,
+      "failed_per_repetition": 0,
+      "vram_headroom": {
+        "minimum_mib": 7166.0,
+        "per_gpu_minimum_mib": {
+          "0": 7169.0,
+          "1": 7166.0,
+          "2": 7170.0,
+          "3": 7180.0
+        }
+      }
+    }
+  }
+}

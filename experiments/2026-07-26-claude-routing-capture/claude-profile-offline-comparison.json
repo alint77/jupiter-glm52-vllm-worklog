@@ -1,0 +1,66 @@
+{
+  "balanced-owners-frequency": {
+    "heldout": {
+      "cvar95_request_cold_critical_count": 118.90606660798122,
+      "hot_route_coverage": 0.7826876331203407,
+      "mean_token_cold_critical_count": 89.21490784800032,
+      "mean_token_owner_max_count": 262.68886717868105,
+      "tail_objective": 118.94142449999563
+    },
+    "train": {
+      "cvar95_request_cold_critical_count": 89.62197003125576,
+      "hot_route_coverage": 0.8461399392800214,
+      "mean_token_cold_critical_count": 68.7721190908427,
+      "mean_token_owner_max_count": 262.13940377715045,
+      "tail_objective": 91.17761159865663
+    }
+  },
+  "balanced-owners-tail": {
+    "heldout": {
+      "cvar95_request_cold_critical_count": 118.88475645539906,
+      "hot_route_coverage": 0.7826448349307774,
+      "mean_token_cold_critical_count": 89.20699123975713,
+      "mean_token_owner_max_count": 262.68886717868105,
+      "tail_objective": 118.92818035360689
+    },
+    "train": {
+      "cvar95_request_cold_critical_count": 89.27730143408715,
+      "hot_route_coverage": 0.8461380043489879,
+      "mean_token_cold_critical_count": 68.67290457891748,
+      "mean_token_owner_max_count": 262.13940377715045,
+      "tail_objective": 90.99222993743928
+    }
+  },
+  "control": {
+    "heldout": {
+      "cvar95_request_cold_critical_count": 133.6129375,
+      "hot_route_coverage": 0.6965814030883919,
+      "mean_token_cold_critical_count": 113.3615953088021,
+      "mean_token_owner_max_count": 263.13476122976886,
+      "tail_objective": 146.76482968380208
+    },
+    "train": {
+      "cvar95_request_cold_critical_count": 126.1716222459133,
+      "hot_route_coverage": 0.712510872469617,
+      "mean_token_cold_critical_count": 109.44015388328425,
+      "mean_token_owner_max_count": 263.20747933250436,
+      "tail_objective": 140.98305944476257
+    }
+  },
+  "current-owners-frequency": {
+    "heldout": {
+      "cvar95_request_cold_critical_count": 119.24611208920187,
+      "hot_route_coverage": 0.7822474041533547,
+      "mean_token_cold_critical_count": 89.5389407120886,
+      "mean_token_owner_max_count": 263.13476122976886,
+      "tail_objective": 119.35046873438907
+    },
+    "train": {
+      "cvar95_request_cold_critical_count": 89.26064304100018,
+      "hot_route_coverage": 0.8461342842137269,
+      "mean_token_cold_critical_count": 68.87109458090562,
+      "mean_token_owner_max_count": 263.20747933250436,
+      "tail_objective": 91.18625534115566
+    }
+  }
+}

@@ -1,0 +1,8 @@
+dp0_pp0_tp0_dcp0_ep0_rank0.1785097196661385441.pt.trace.json 32511707
+dp0_pp0_tp1_dcp1_ep1_rank1.1785097196661480063.pt.trace.json 32507238
+dp0_pp0_tp2_dcp2_ep2_rank2.1785097196661569662.pt.trace.json 32524901
+dp0_pp0_tp3_dcp3_ep3_rank3.1785097196661590877.pt.trace.json 32507978
+profiler_out_0.txt 20657
+profiler_out_1.txt 20657
+profiler_out_2.txt 20657
+profiler_out_3.txt 20657

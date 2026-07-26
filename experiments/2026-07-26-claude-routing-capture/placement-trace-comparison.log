@@ -1,0 +1,34 @@
+{
+  "rank_mean": {
+    "p95_gap_us": -1.5013589181047227,
+    "gpu_span_ms": 14.485565252663047,
+    "maximum_gap_us": -59.23045072497155,
+    "mean_gap_us": -3.8611325043087064,
+    "kernel_count": 0.0,
+    "gpu_idle_percent": -15.658963069712595,
+    "gpu_busy_ms": 15.577828105664281
+  },
+  "rank_mean_category_kernel_time_ms": {
+    "other_gemm": -0.6724502479013239,
+    "marlin_moe": 25.296646087438003,
+    "collective": 10.585872139426922,
+    "deep_gemm": 0.2388096425127939,
+    "memset": -0.5352721044106334,
+    "memcpy": 1.7673943785300628,
+    "moe_aux": 28.321093818208375,
+    "other": 0.6679807184137854,
+    "routing": 0.2501965003853801
+  },
+  "rank_mean_tier_chains": {
+    "hot_w13_ms": 30.721991108890066,
+    "hot_kernel_time_ms": 32.021650022074375,
+    "cold_w2_ms": 36.69022078603248,
+    "layer_span_ms": 25.967544374834684,
+    "cold_finished_first_percent": 4.627949183303093,
+    "tier_overlap_percent": -0.6500743054798974,
+    "cold_kernel_time_ms": 17.073527024326406,
+    "hot_w2_ms": 35.043632330271166,
+    "cold_w13_ms": -9.315526611259706,
+    "marlin_kernel_time_ms": 25.496207875119236
+  }
+}
