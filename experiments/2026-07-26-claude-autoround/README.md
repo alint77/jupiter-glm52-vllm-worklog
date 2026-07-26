@@ -12,7 +12,8 @@ From the vLLM checkout:
 ```
 
 The wrapper submits or reuses the four-hour job, waits for the authenticated
-endpoint, and launches Claude Code. Lifecycle commands:
+endpoint, and launches Claude Code with per-request reasoning effort set to
+`max`. Pass `--effort LEVEL` to override it for a session. Lifecycle commands:
 
 ```bash
 ./claude-local.sh --start

@@ -11,7 +11,9 @@ From the vLLM checkout:
 ```
 
 The c4 launcher has separate Slurm state, credentials, caches, and job name,
-so it can coexist with `claude-local.sh`. Its lifecycle commands are:
+so it can coexist with `claude-local.sh`. Like the c1 launcher, it defaults
+Claude Code's per-request reasoning effort to `max`; pass `--effort LEVEL` to
+override it. Its lifecycle commands are:
 
 ```bash
 ./claude-local-c4.sh --start
