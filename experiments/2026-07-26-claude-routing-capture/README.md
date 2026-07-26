@@ -39,6 +39,22 @@ Messages-API smoke test. Its trace contained 336 routed positions with shape
 activity.
 
 The smoke test also caught a streamed output-token metadata bug. Commit
-`ffae5a399` fixes future launches with a cumulative counter. The active
-`1047770` process predates that fix, so the grid builder ignores its
-`output_tokens` field; routed-expert arrays and hotness counts are unaffected.
+`ffae5a399` fixes later launches with a cumulative counter. The grid builder
+does not depend on the `output_tokens` field; routed-expert arrays and hotness
+counts were unaffected.
+
+## OOM recovery
+
+Job `1047770` later wedged during a real request after rank 2 failed a 2 GiB
+FlashMLA temporary allocation with 2.10 GiB free. The HTTP health endpoint
+continued returning 200 while the remaining ranks waited in a collective.
+There were no completed real traces to preserve.
+
+The replacement server reduces `gpu_memory_utilization` from 0.90 to 0.85,
+shrinking the per-rank KV cache from about 16.9 GiB to 10.5 GiB while retaining
+the 400k-token context limit. Four-hour job `1047954` on `jpbo-036-32` passed
+streamed stress requests with 10,020 and 45,521 input tokens. Both generated
+64 tokens, completed in 4.2 and 11.5 seconds, and left zero running or waiting
+requests with no server errors. Their two valid `84 * 78 * 8` traces aggregated
+to `100,800` routed selections and were moved to `routes-1047954-smoke`.
+`routes-1047954` is empty for real Claude Code activity.

@@ -54,6 +54,7 @@ trap cleanup EXIT INT TERM
 
 agent_space/experiments/2026-07-17-end-to-end-tuning/run-server.sh \
   --speculative-config '{"method":"mtp","num_speculative_tokens":3}' \
+  --gpu-memory-utilization 0.85 \
   --enable-return-routed-experts \
   --host 0.0.0.0 \
   --port "${port}" \
