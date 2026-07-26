@@ -75,3 +75,17 @@ candidate, but throughput still needs a matched placement A/B.
 
 The two count grids, histogram, JSON summary, and plotting script are stored
 in this directory.
+
+## Layer concentration ranking
+
+Every routed layer has exactly 2,108,384 selections because each routed
+position invokes top-8 routing in all 75 layers. Layers therefore cannot be
+ranked by total traffic. `layer-hotness-ranking.csv` instead ranks how
+concentrated each layer's traffic is, using entropy-effective expert count:
+lower means that fewer experts carry the traffic and the layer is more
+placement-sensitive.
+
+Layer 56 is most concentrated at 97.1 effective experts; layers 68, 58, 64,
+and 55 follow. Layer 7 is most diffuse at 128.8 effective experts, followed by
+layers 3, 4, 5, and 13. The CSV also records Gini, top-8/16/32 shares,
+50%/80% coverage sizes, and each layer's hottest expert.
