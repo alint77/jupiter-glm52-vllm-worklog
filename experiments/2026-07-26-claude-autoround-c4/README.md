@@ -17,5 +17,6 @@ so it can coexist with `claude-local.sh`. Its lifecycle commands are:
 ./claude-local-c4.sh --start
 ./claude-local-c4.sh --status
 ./claude-local-c4.sh --monitor
+./claude-local-c4.sh --abort
 ./claude-local-c4.sh --stop
 ```

@@ -18,5 +18,10 @@ endpoint, and launches Claude Code. Lifecycle commands:
 ./claude-local.sh --start
 ./claude-local.sh --status
 ./claude-local.sh --monitor
+./claude-local.sh --abort
 ./claude-local.sh --stop
 ```
+
+`--abort` cancels a runaway generation without stopping or reloading the
+model. Auto tool calls use GLM's parser without strict structural-tag
+constraints, avoiding the xgrammar failure seen with long Claude turns.

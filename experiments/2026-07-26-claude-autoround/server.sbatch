@@ -28,6 +28,7 @@ export VLLM_API_KEY="${api_key}"
 export CUDA_VISIBLE_DEVICES=0,1,2,3
 export VLLM_USE_V2_MODEL_RUNNER=1
 export VLLM_SERVER_DEV_MODE=1
+export VLLM_ENFORCE_STRICT_TOOL_CALLING=false
 export VLLM_CACHE_ROOT=/e/scratch/profound/naeimitabiei1/vllm-cache-claude-autoround
 export TRTLLM_DG_CACHE_DIR=/e/scratch/profound/naeimitabiei1/trtllm-dg-claude-autoround
 export TIERED_MOE_MODEL_PATH="$(dirname -- "${repo_dir}")/models/GLM-5.2-AutoRound-W4G64-MTP-e1ba887"
