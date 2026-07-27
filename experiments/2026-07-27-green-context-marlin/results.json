@@ -1,0 +1,37 @@
+{
+  "slice": "Track A \u00a74.1-4.2 \u2014 green-context mechanism feasibility",
+  "device": "GH200 (login node), CUDA 13.0.48 (CUDA_VERSION 13000), sm_90a",
+  "api": "driver API (cuGreenCtxCreate/cuDevSmResourceSplitByCount/cuGreenCtxStreamCreate). Runtime wrappers cuda* named in the plan are ABSENT in CUDA 13.0 \u2014 driver API is the only path.",
+  "stream_create_requirement": "CU_STREAM_NON_BLOCKING is REQUIRED (flags=0 -> CUDA_ERROR_INVALID_VALUE)",
+  "env": "CUDA_DEVICE_MAX_CONNECTIONS=8",
+  "split": {
+    "cold_sm": 16,
+    "hot_sm": 116,
+    "device_sm": 132,
+    "minSmPartitionSize": 8,
+    "smCoscheduledAlignment": 8,
+    "disjoint_sum_eq_device": true
+  },
+  "green_ctx_ids": {
+    "cold": 2,
+    "hot": 3,
+    "distinct": true
+  },
+  "stream_to_ctx_mapping_verified": true,
+  "pinned_host_uva_device_accessible": true,
+  "iters": 5000000,
+  "solo_ms": {
+    "cold": 29.79,
+    "hot": 29.702
+  },
+  "concurrent_ms": {
+    "cold_ov": 29.693,
+    "hot_ov": 29.679,
+    "union": 29.693,
+    "serial_sum": 59.492
+  },
+  "overlap_speedup_x": 2.0,
+  "nsys_kern_sum": "each kernel 2 calls (solo+concurrent) at identical ~29.67ms/call -> no mutual interference",
+  "finding": "PASS-A-mechanism: disjoint green contexts execute genuinely concurrently (union = max, not sum). Track A is feasible on this stack.",
+  "next": "Integrate green streams into the Marlin hot(HBM)/cold(C2C) probe (\u00a74.5) on a Booster node to test whether real Marlin kernels \u2014 which contend for the shared HBM port/L2 \u2014 retain this concurrency. This is the critique-#1 question the trivial-kernel probe cannot answer."
+}

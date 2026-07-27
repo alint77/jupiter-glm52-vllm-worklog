@@ -7,3 +7,8 @@ __pycache__/
 core
 core.*
 
+
+# Green-context experiment: build artifacts + large nsys/ncu reports
+agent_space/experiments/2026-07-27-green-context-marlin/green_context_probe
+agent_space/experiments/2026-07-27-green-context-marlin/nsys/*.nsys-rep
+agent_space/experiments/2026-07-27-green-context-marlin/ncu/*.ncu-rep
