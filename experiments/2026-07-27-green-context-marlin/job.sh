@@ -15,6 +15,7 @@
 
 set -euo pipefail
 repo_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../.." 2>/dev/null && pwd)"
+[[ -f "${repo_dir}/agent_space/jupiter-env.sh" ]] || repo_dir=/e/project1/profound/alint77/vllm
 exp="${repo_dir}/agent_space/experiments/2026-07-27-green-context-marlin"
 cd "${repo_dir}"
 source agent_space/jupiter-env.sh

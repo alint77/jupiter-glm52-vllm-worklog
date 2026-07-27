@@ -144,3 +144,54 @@ tiered NUMA pairing.
 
 nsys report: `nsys/probe-16-116.nsys-rep`. Raw run log in `logs/`.
 
+## Status — §4.5 Marlin hot/cold probe (in flight, 2026-07-28)
+
+`marlin_green_probe.py` extends the proven Phase-21 Marlin-MoE harness
+(`benchmarks/kernels/benchmark_moe_wna16_marlin_decode.py`: `make_tier`,
+`build_gemm`, `global_routing`, `tier_map`, `align`) with the driver-API
+green-context streams validated above. Both tiers run on their **own** green
+streams with the production fork/join (`cold.wait(hot_start)` → both run →
+`hot.wait(cold_join)`), timed with per-stream CUDA events plus an outer union
+pair (`time_green_both`). The reused harness's `time_both_with_events` was wrong
+for this test — it parks hot on the default stream, not the hot green stream.
+
+Two modes:
+
+- `--hbm-cold` (login-valid pessimistic): cold tier also in HBM. Isolates the
+  **shared-HBM-port** contention from C2C. No Grace/C2C → login-node-safe.
+- default (Booster only): cold tier in Grace-pinned UVA (`numa-node 2`,
+  GPU0-paired), real C2C reads.
+
+### HBM-cold login run (partial)
+
+SOLO on a 16/116-SM green split, M=16, 19 hot / 3 cold experts, iters=20:
+
+| | hot (116 SM) | cold (16 SM) | serial sum |
+|---|---:|---:|---:|
+| solo µs | 127.3 | 141.4 | 268.7 |
+
+Concurrent was not captured on the login node (the first run used the wrong
+timer; the green-aware `time_green_both` fix landed after). Deferred to the
+Booster sweep — login-node concurrency numbers are not citable anyway
+(benchmark-on-Booster rule).
+
+### Booster §4.5 Grace-cold sweep — submitted
+
+`job.sh` (Booster, 4× GH200, `numa-node 2`). First attempt (job 1068961)
+failed: `agent_space/jupiter-env.sh: No such file or directory` — `repo_dir`
+resolved to `/var/spool` under Slurm before `cd`. Fixed with an absolute
+`repo_dir` fallback.
+
+Re-submitted as **job 1069196** (2026-07-28): `--sweep` over cold=8/16/24/32 SM
+(hot=124/116/104/96), M=16, 19 hot / 3 cold experts, `cold_share=0.13`, iters=50,
+Grace-cold on NUMA node 2. Preceded by the cheap mechanism-probe sanity check.
+
+Verdict (plan §4.5/§10) pending job completion:
+
+- **PASS-A**: hot/cold interference ≤ ~10% AND overlap speedup approaching
+  serial/min → green contexts rescue the Phase-23 zero-sum dilation → proceed to
+  vLLM integration (§4.3-4.4, CUDA-graph capture under green streams).
+- **FAIL-A**: interference high / overlap speedup ≈ 1 → the shared HBM port /
+  L2 / power domain is the real bottleneck, not SM scheduling → drop to Track B
+  (low-SM cold Marlin kernel).
+

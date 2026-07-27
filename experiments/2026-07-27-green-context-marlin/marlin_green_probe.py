@@ -154,13 +154,17 @@ def green_stream(handle: int) -> torch.cuda.Stream:
     return torch.cuda.ExternalStream(handle)
 
 
-def build_probe(m: int, hot_e: int, cold_e: int, cold_share: float, seed: int, device, numa_node: int):
-    """Construct hot (HBM) and cold (Grace-UVA) Marlin tiers + gemm callables.
+def build_probe(m: int, hot_e: int, cold_e: int, cold_share: float, seed: int, device, numa_node: int, hbm_cold: bool = False):
+    """Construct hot (HBM) and cold (Marlin, HBM or Grace-UVA) tiers + gemm callables.
 
     Production model: ONE shared topk_ids over both tiers; each tier filters to
     its owned experts via its own expert_map (moe_align_block_size maps non-owned
     experts to -1). So build one combined routing with `cold_share` of the mass
     to cold, and align each tier against it with that tier's emap.
+
+    hbm_cold=True places the cold tier in HBM too — a login-node-valid pessimistic
+    test of whether two HBM-bound Marlin kernels contend under green contexts
+    (shared HBM port). The real Booster run uses hbm_cold=False (cold -> Grace/C2C).
     """
     NUM = hot_e + cold_e
     device = torch.device(device) if not isinstance(device, torch.device) else device
@@ -168,8 +172,12 @@ def build_probe(m: int, hot_e: int, cold_e: int, cold_share: float, seed: int, d
     n = 2 * p1b.INTERMEDIATE  # w13 = gate+up; make_tier + build_gemm both use this n
     print(f"  make hot tier ({hot_e} experts, HBM)...")
     hq, hs = make_tier(hot_e, k, n, device, pinned=False)
-    print(f"  make cold tier ({cold_e} experts, Grace NUMA {numa_node})...")
-    cq, cs = make_tier(cold_e, k, n, device, pinned=True, numa_node=numa_node)
+    if hbm_cold:
+        print(f"  make cold tier ({cold_e} experts, HBM [hbm_cold mode])...")
+        cq, cs = make_tier(cold_e, k, n, device, pinned=False)
+    else:
+        print(f"  make cold tier ({cold_e} experts, Grace NUMA {numa_node})...")
+        cq, cs = make_tier(cold_e, k, n, device, pinned=True, numa_node=numa_node)
 
     hot_ids = list(range(0, hot_e))
     cold_ids = list(range(hot_e, hot_e + cold_e))
@@ -198,29 +206,105 @@ def build_probe(m: int, hot_e: int, cold_e: int, cold_share: float, seed: int, d
     return fh, fc
 
 
-def run_split(cold_sm: int, m: int, hot_e: int, cold_e: int, iters: int, device, numa_node):
+def time_on_stream(fn, stream, warmup=10, iters=50) -> float:
+    """Solo timing with events recorded on the given (green) stream, so solo and
+    concurrent (time_green_both, also per-stream) are measured consistently."""
+    with torch.cuda.stream(stream):
+        for _ in range(warmup):
+            fn()
+    torch.cuda.synchronize()
+    s = torch.cuda.Event(True)
+    e = torch.cuda.Event(True)
+    with torch.cuda.stream(stream):
+        s.record(stream)
+        for _ in range(iters):
+            fn()
+        e.record(stream)
+    torch.cuda.synchronize()
+    return s.elapsed_time(e) * 1000.0 / iters  # us
+
+
+def time_green_both(fh, fc, hstream, cstream, warmup=10, iters=50) -> dict:
+    """Concurrent hot(on hstream)+cold(on cstream) under disjoint green contexts,
+    mirroring production apply_tiered fork/join but with BOTH tiers on green
+    streams (the harness's time_both_with_events puts hot on the default stream,
+    which is wrong for the green-context test).
+
+    Returns per-stream durations + union (wall) in us, plus co-residency.
+    """
+    def both():
+        # fork: cold waits for hot's start point; both then run concurrently
+        cstream.wait_stream(hstream)
+        cs = torch.cuda.Event(True); ce = torch.cuda.Event(True)
+        with torch.cuda.stream(cstream):
+            cs.record(cstream)
+            fc()
+            ce.record(cstream)
+        hs = torch.cuda.Event(True); he = torch.cuda.Event(True)
+        with torch.cuda.stream(hstream):
+            hs.record(hstream)
+            fh()
+            he.record(hstream)
+        hstream.wait_stream(cstream)  # join
+        return hs, he, cs, ce
+
+    for _ in range(warmup):
+        both()
+    torch.cuda.synchronize()
+
+    # per-stream durations
+    hot_ms = 0.0; cold_ms = 0.0
+    for _ in range(iters):
+        hs, he, cs, ce = both()
+        torch.cuda.synchronize()
+        hot_ms += hs.elapsed_time(he)
+        cold_ms += cs.elapsed_time(ce)
+    # union (wall) via outer events on hstream around the whole both()
+    u0 = torch.cuda.Event(True); u1 = torch.cuda.Event(True)
+    for _ in range(warmup):
+        both()
+    torch.cuda.synchronize()
+    utot = 0.0
+    for _ in range(iters):
+        u0.record(hstream)
+        both()
+        u1.record(hstream)
+        torch.cuda.synchronize()
+        utot += u0.elapsed_time(u1)
+    inv = 1000.0 / iters
+    hot_us = hot_ms * inv
+    cold_us = cold_ms * inv
+    union_us = utot * inv
+    serial_us = hot_us + cold_us
+    overlap_us = max(0.0, serial_us - union_us)
+    coresident = overlap_us / min(hot_us, cold_us) if min(hot_us, cold_us) > 0 else 0.0
+    return {"hot_us": hot_us, "cold_us": cold_us, "union_us": union_us,
+            "serial_us": serial_us, "coresident_frac": coresident}
+
+
+def run_split(cold_sm: int, m: int, hot_e: int, cold_e: int, iters: int, device, numa_node, hbm_cold: bool = False):
     device = torch.device(device) if not isinstance(device, torch.device) else device
     print(f"\n=== split cold={cold_sm} SMs (hot={132-cold_sm}) ===")
     cold_h, hot_h, csm, hsm = make_green_streams(cold_sm)
     cstream = green_stream(cold_h)
     hstream = green_stream(hot_h)
-    fh, fc = build_probe(m, hot_e, cold_e, cold_share=0.13, seed=13, device=device, numa_node=numa_node)
+    fh, fc = build_probe(m, hot_e, cold_e, cold_share=0.13, seed=13, device=device, numa_node=numa_node, hbm_cold=hbm_cold)
     torch.cuda.synchronize()
 
-    # solo on green streams
-    t_hot_solo = time_call(lambda: (fh(), hstream.synchronize()), warmup=10, iters=iters)
-    t_cold_solo = time_call(lambda: (fc(), cstream.synchronize()), warmup=10, iters=iters)
+    # solo on green streams (events on each green stream for consistency with concurrent)
+    t_hot_solo = time_on_stream(fh, hstream, warmup=10, iters=iters)
+    t_cold_solo = time_on_stream(fc, cstream, warmup=10, iters=iters)
     print(f"  SOLO us: hot={t_hot_solo:.1f} cold={t_cold_solo:.1f}  serial_sum={t_hot_solo+t_cold_solo:.1f}")
 
-    # concurrent under green contexts
-    r = time_both_with_events(fh, fc, cold_stream=cstream, order="cold_first", warmup=10, iters=iters)
+    # concurrent under green contexts (both tiers on their green streams)
+    r = time_green_both(fh, fc, hstream, cstream, warmup=10, iters=iters)
     union = r["union_us"]
     print(f"  CONCURRENT us: hot_ov={r['hot_us']:.1f} cold_ov={r['cold_us']:.1f} union={union:.1f} coresident={r['coresident_frac']:.2f}")
     hot_interf = r["hot_us"] / t_hot_solo - 1
     cold_interf = r["cold_us"] / t_cold_solo - 1
     print(f"  interference: hot={hot_interf:+.1%} cold={cold_interf:+.1%}  overlap_speedup={((t_hot_solo+t_cold_solo)/union):.2f}x")
     return {
-        "cold_sm": cold_sm, "hot_sm": hsm,
+        "cold_sm": cold_sm, "hot_sm": hsm, "hbm_cold": hbm_cold,
         "hot_solo_us": t_hot_solo, "cold_solo_us": t_cold_solo,
         **r,
         "hot_interference": hot_interf, "cold_interference": cold_interf,
@@ -237,18 +321,21 @@ def main():
     ap.add_argument("--cold-experts", type=int, default=3)
     ap.add_argument("--iters", type=int, default=50)
     ap.add_argument("--numa-node", type=int, default=2)  # GPU0-paired Grace node
+    ap.add_argument("--hbm-cold", action="store_true",
+                    help="place cold tier in HBM too (login-node pessimistic test; no Grace/C2C)")
     ap.add_argument("--out", default="results-marlin-green.json")
     args = ap.parse_args()
 
     os.environ.setdefault("CUDA_DEVICE_MAX_CONNECTIONS", "8")
     device = torch.device("cuda:0")
-    print(f"=== Marlin green-context probe (GH200) M={args.m} hot={args.hot_experts} cold={args.cold_experts} ===")
+    mode = "HBM-cold (pessimistic, login-valid)" if args.hbm_cold else "Grace/C2C cold (Booster)"
+    print(f"=== Marlin green-context probe (GH200) M={args.m} hot={args.hot_experts} cold={args.cold_experts}  [{mode}] ===")
 
     splits = [8, 16, 24, 32] if args.sweep else [args.cold_sm]
     out = []
     for cs in splits:
         try:
-            out.append(run_split(cs, args.m, args.hot_experts, args.cold_experts, args.iters, device, args.numa_node))
+            out.append(run_split(cs, args.m, args.hot_experts, args.cold_experts, args.iters, device, args.numa_node, hbm_cold=args.hbm_cold))
         except Exception:
             traceback.print_exc()
             out.append({"cold_sm": cs, "error": traceback.format_exc()})
