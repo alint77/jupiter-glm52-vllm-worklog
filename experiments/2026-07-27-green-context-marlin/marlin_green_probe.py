@@ -154,6 +154,18 @@ def green_stream(handle: int) -> torch.cuda.Stream:
     return torch.cuda.ExternalStream(handle)
 
 
+def detect_grace_numa_node(device_index: int = 0) -> int:
+    """Resolve the GPU-paired Grace NUMA node the way production does
+    (gpu_model_runner -> get_device_numa_node -> nvmlDeviceGetNumaNodeId, with a
+    CPU-affinity fallback for HBM-only NUMA nodes). The GPU<->Grace mapping is
+    node-specific, so never hardcode it."""
+    from vllm.platforms import current_platform
+    node = current_platform.get_device_numa_node(device_index)
+    if node is None:
+        raise RuntimeError(f"could not detect Grace NUMA node for device {device_index}")
+    return node
+
+
 def build_probe(m: int, hot_e: int, cold_e: int, cold_share: float, seed: int, device, numa_node: int, hbm_cold: bool = False):
     """Construct hot (HBM) and cold (Marlin, HBM or Grace-UVA) tiers + gemm callables.
 
@@ -192,17 +204,24 @@ def build_probe(m: int, hot_e: int, cold_e: int, cold_share: float, seed: int, d
 
     a = torch.randn((m, k), dtype=torch.bfloat16, device=device)
     w = torch.ones((m, p1b.TOP_K), dtype=torch.float32, device=device)
-    ws = p1b.marlin_make_workspace_new(device, 4)  # max_blocks_per_sm=4 -> 528 >= min 384
+    # Each tier needs its OWN Marlin workspace. The kernel's `locks` buffer is a
+    # device-side spin-barrier for the cross-CTA reduction (marlin_template.h:
+    # barrier_acquire spins `while (state != count)`). Two concurrent kernels
+    # sharing one locks buffer corrupt each other's barrier counts -> infinite
+    # spin = the 100%-GPU concurrent hang. Production uses separate workspace
+    # views per tier (plan §1).
+    ws_h = p1b.marlin_make_workspace_new(device, 4)  # max_blocks_per_sm=4 -> 528 >= min 384
+    ws_c = p1b.marlin_make_workspace_new(device, 4)
 
-    def mk(q, s, emap):
+    def mk(q, s, emap, ws):
         tok, eids, npost, blocks = align(topo, p1b.BLOCK_M, NUM, emap)
         out = torch.empty((m * p1b.TOP_K, n), dtype=torch.bfloat16, device=device)
         return build_gemm(a, out, q, s, ws, tok, eids, npost, weights=w,
                           m=m, n=n, k=k, cfg=(0, -1, -1))
 
     print(f"  align: hot blocks={align(topo, p1b.BLOCK_M, NUM, hmap)[3]}  cold blocks={align(topo, p1b.BLOCK_M, NUM, cmap)[3]}")
-    fh = mk(hq, hs, hmap)
-    fc = mk(cq, cs, cmap)
+    fh = mk(hq, hs, hmap, ws_h)
+    fc = mk(cq, cs, cmap, ws_c)
     return fh, fc
 
 
@@ -225,61 +244,97 @@ def time_on_stream(fn, stream, warmup=10, iters=50) -> float:
 
 
 def time_green_both(fh, fc, hstream, cstream, warmup=10, iters=50) -> dict:
-    """Concurrent hot(on hstream)+cold(on cstream) under disjoint green contexts,
-    mirroring production apply_tiered fork/join but with BOTH tiers on green
-    streams (the harness's time_both_with_events puts hot on the default stream,
-    which is wrong for the green-context test).
+    """Concurrent hot(on hstream)+cold(on cstream) under disjoint green contexts.
 
-    Returns per-stream durations + union (wall) in us, plus co-residency.
+    Launches both tiers INDEPENDENTLY with no cross-stream event waits. This
+    mirrors production's overlap phase (hot on the main stream, cold on the aux
+    stream; they join only downstream at the output add) and avoids the
+    cross-green-context wait_stream() dependency that deadlocked the earlier
+    fork/join version (isolated per-context workqueues + cross-context
+    cudaStreamWaitEvent — the C++ mechanism probe never exercised that path, it
+    launched both kernels independently and host-synced, which is why it passed).
+
+    Union uses a single anchor event recorded before either launch; elapsed_time
+    works across events on different streams, so
+    union = max(anchor->hot_end, anchor->cold_end). Per-stream durations come
+    from each stream's own start/end events.
     """
-    def both():
-        # fork: cold waits for hot's start point; both then run concurrently
-        cstream.wait_stream(hstream)
-        cs = torch.cuda.Event(True); ce = torch.cuda.Event(True)
+    def launch():
         with torch.cuda.stream(cstream):
-            cs.record(cstream)
             fc()
-            ce.record(cstream)
-        hs = torch.cuda.Event(True); he = torch.cuda.Event(True)
         with torch.cuda.stream(hstream):
-            hs.record(hstream)
             fh()
-            he.record(hstream)
-        hstream.wait_stream(cstream)  # join
-        return hs, he, cs, ce
 
     for _ in range(warmup):
-        both()
+        launch()
     torch.cuda.synchronize()
 
-    # per-stream durations
-    hot_ms = 0.0; cold_ms = 0.0
+    hot_ms = cold_ms = union_ms = 0.0
     for _ in range(iters):
-        hs, he, cs, ce = both()
+        t0 = torch.cuda.Event(True)
+        hs = torch.cuda.Event(True); he = torch.cuda.Event(True)
+        cs = torch.cuda.Event(True); ce = torch.cuda.Event(True)
+        t0.record(hstream)
+        with torch.cuda.stream(cstream):
+            cs.record(cstream); fc(); ce.record(cstream)
+        with torch.cuda.stream(hstream):
+            hs.record(hstream); fh(); he.record(hstream)
         torch.cuda.synchronize()
         hot_ms += hs.elapsed_time(he)
         cold_ms += cs.elapsed_time(ce)
-    # union (wall) via outer events on hstream around the whole both()
-    u0 = torch.cuda.Event(True); u1 = torch.cuda.Event(True)
-    for _ in range(warmup):
-        both()
-    torch.cuda.synchronize()
-    utot = 0.0
-    for _ in range(iters):
-        u0.record(hstream)
-        both()
-        u1.record(hstream)
-        torch.cuda.synchronize()
-        utot += u0.elapsed_time(u1)
+        union_ms += max(t0.elapsed_time(he), t0.elapsed_time(ce))
     inv = 1000.0 / iters
     hot_us = hot_ms * inv
     cold_us = cold_ms * inv
-    union_us = utot * inv
+    union_us = union_ms * inv
     serial_us = hot_us + cold_us
     overlap_us = max(0.0, serial_us - union_us)
     coresident = overlap_us / min(hot_us, cold_us) if min(hot_us, cold_us) > 0 else 0.0
     return {"hot_us": hot_us, "cold_us": cold_us, "union_us": union_us,
             "serial_us": serial_us, "coresident_frac": coresident}
+
+
+def measure_clocks(launch_once, duration_ms=300, sample_s=0.005) -> dict:
+    """Drive launch_once for ~duration_ms while a monitor thread polls SM clock,
+    mem clock, and board power via NVML; return medians. Tests the plan §3 rule-7
+    hypothesis: does concurrent execution drop SM clocks under the power cap (a
+    wall no SM partition can fix)? NVML is context-independent, so polling from a
+    side thread while CUDA runs is safe."""
+    import statistics
+    import threading
+    import time
+
+    from vllm.third_party import pynvml
+    pynvml.nvmlInit()
+    h = pynvml.nvmlDeviceGetHandleByIndex(torch.cuda.current_device())
+    sm_l, mem_l, pw_l = [], [], []
+    stop = threading.Event()
+
+    def mon():
+        while not stop.is_set():
+            try:
+                sm_l.append(pynvml.nvmlDeviceGetClockInfo(h, pynvml.NVML_CLOCK_SM))
+                mem_l.append(pynvml.nvmlDeviceGetClockInfo(h, pynvml.NVML_CLOCK_MEM))
+                pw_l.append(pynvml.nvmlDeviceGetPowerUsage(h) / 1000.0)
+            except Exception:
+                pass
+            time.sleep(sample_s)
+
+    for _ in range(8):
+        launch_once()
+    torch.cuda.synchronize()
+    t = threading.Thread(target=mon, daemon=True)
+    t.start()
+    t_end = time.time() + duration_ms / 1000.0
+    while time.time() < t_end:
+        for _ in range(64):
+            launch_once()
+        torch.cuda.synchronize()
+    stop.set()
+    t.join()
+    med = lambda v: statistics.median(v) if v else 0.0
+    return {"sm_mhz": med(sm_l), "mem_mhz": med(mem_l),
+            "power_w": med(pw_l), "nsamples": len(sm_l)}
 
 
 def run_split(cold_sm: int, m: int, hot_e: int, cold_e: int, iters: int, device, numa_node, hbm_cold: bool = False):
@@ -303,12 +358,93 @@ def run_split(cold_sm: int, m: int, hot_e: int, cold_e: int, iters: int, device,
     hot_interf = r["hot_us"] / t_hot_solo - 1
     cold_interf = r["cold_us"] / t_cold_solo - 1
     print(f"  interference: hot={hot_interf:+.1%} cold={cold_interf:+.1%}  overlap_speedup={((t_hot_solo+t_cold_solo)/union):.2f}x")
+
+    # same-job production control (plan §4.5 F): hot on main stream, cold on aux
+    # stream with the apply_tiered fork/join.
+    ctrl = torch.cuda.Stream()
+    rp = time_both_with_events(fh, fc, cold_stream=ctrl, order="cold_first", warmup=10, iters=iters)
+    print(f"  PROD control: hot={rp['hot_us']:.1f} cold={rp['cold_us']:.1f} union={rp['union_us']:.1f} "
+          f"(hot_intf={rp['hot_us']/t_hot_solo-1:+.1%}) coresident={rp.get('coresident_frac', 0):.2f}")
     return {
         "cold_sm": cold_sm, "hot_sm": hsm, "hbm_cold": hbm_cold,
         "hot_solo_us": t_hot_solo, "cold_solo_us": t_cold_solo,
         **r,
         "hot_interference": hot_interf, "cold_interference": cold_interf,
         "overlap_speedup_x": (t_hot_solo + t_cold_solo) / union,
+        "prod": rp,
+        "prod_hot_interference": rp["hot_us"] / t_hot_solo - 1,
+        "green_vs_prod_union_frac": union / rp["union_us"] - 1,
+    }
+
+
+def run_diag(cold_sm: int, m: int, hot_e: int, cold_e: int, iters: int, device, numa_node, hbm_cold: bool = False):
+    """Mechanism diagnosis for one split (plan §3 rules 2,7 + §4.5 control F).
+
+    Adds to the sweep: (1) a plain-stream concurrent control (no SM isolation) to
+    tell whether green contexts help/hurt vs the stock two-stream path, and
+    (2) NVML SM/mem clock + board power during solo vs concurrent, to test the
+    power/clock-wall hypothesis for the split-independent hot dilation.
+    """
+    device = torch.device(device) if not isinstance(device, torch.device) else device
+    print(f"\n=== DIAG cold={cold_sm} SMs (hot={132-cold_sm}) ===")
+    cold_h, hot_h, csm, hsm = make_green_streams(cold_sm)
+    cstream = green_stream(cold_h)
+    hstream = green_stream(hot_h)
+    fh, fc = build_probe(m, hot_e, cold_e, cold_share=0.13, seed=13, device=device, numa_node=numa_node, hbm_cold=hbm_cold)
+    torch.cuda.synchronize()
+
+    def hot_only():
+        with torch.cuda.stream(hstream):
+            fh()
+
+    def cold_only():
+        with torch.cuda.stream(cstream):
+            fc()
+
+    def both():
+        with torch.cuda.stream(cstream):
+            fc()
+        with torch.cuda.stream(hstream):
+            fh()
+
+    t_hot_solo = time_on_stream(fh, hstream, warmup=10, iters=iters)
+    t_cold_solo = time_on_stream(fc, cstream, warmup=10, iters=iters)
+    r_green = time_green_both(fh, fc, hstream, cstream, warmup=10, iters=iters)
+
+    # Control (plan §4.5 F): the production concurrent path — hot on the main
+    # stream, cold on an aux stream, with the apply_tiered fork/join
+    # (cold.wait(main) -> both -> main.wait(cold)). This co-runs the tiers the
+    # way production does, so it is the real bar the green-context variant must
+    # beat. Also keep a plain two-stream fork (no isolation, no join) to show the
+    # scheduler-serialization floor.
+    ctrl_stream = torch.cuda.Stream()
+    r_prod = time_both_with_events(fh, fc, cold_stream=ctrl_stream, order="cold_first", warmup=10, iters=iters)
+    plain_h = torch.cuda.Stream()
+    plain_c = torch.cuda.Stream()
+    r_plain = time_green_both(fh, fc, plain_h, plain_c, warmup=10, iters=iters)
+
+    print(f"  SOLO us:        hot={t_hot_solo:.1f} cold={t_cold_solo:.1f}")
+    print(f"  GREEN  concur:  hot={r_green['hot_us']:.1f} cold={r_green['cold_us']:.1f} union={r_green['union_us']:.1f} "
+          f"(hot_intf={r_green['hot_us']/t_hot_solo-1:+.1%})")
+    print(f"  PROD   concur:  hot={r_prod['hot_us']:.1f} cold={r_prod['cold_us']:.1f} union={r_prod['union_us']:.1f} "
+          f"(hot_intf={r_prod['hot_us']/t_hot_solo-1:+.1%}) coresident={r_prod.get('coresident_frac', 0):.2f}  [production control]")
+    print(f"  PLAIN  concur:  hot={r_plain['hot_us']:.1f} cold={r_plain['cold_us']:.1f} union={r_plain['union_us']:.1f} "
+          f"(hot_intf={r_plain['hot_us']/t_hot_solo-1:+.1%})  [no isolation, no join]")
+
+    clk_hot = measure_clocks(hot_only)
+    clk_cold = measure_clocks(cold_only)
+    clk_both = measure_clocks(both)
+    print(f"  CLOCKS hot-solo:    SM={clk_hot['sm_mhz']:.0f}MHz mem={clk_hot['mem_mhz']:.0f}MHz pow={clk_hot['power_w']:.0f}W (n={clk_hot['nsamples']})")
+    print(f"  CLOCKS cold-solo:   SM={clk_cold['sm_mhz']:.0f}MHz mem={clk_cold['mem_mhz']:.0f}MHz pow={clk_cold['power_w']:.0f}W (n={clk_cold['nsamples']})")
+    print(f"  CLOCKS concurrent:  SM={clk_both['sm_mhz']:.0f}MHz mem={clk_both['mem_mhz']:.0f}MHz pow={clk_both['power_w']:.0f}W (n={clk_both['nsamples']})")
+    sm_drop = clk_both['sm_mhz'] / clk_hot['sm_mhz'] - 1 if clk_hot['sm_mhz'] else 0.0
+    print(f"  concurrent SM-clock vs hot-solo: {sm_drop:+.1%}")
+    return {
+        "cold_sm": cold_sm, "hot_sm": hsm, "hbm_cold": hbm_cold,
+        "hot_solo_us": t_hot_solo, "cold_solo_us": t_cold_solo,
+        "green": r_green, "prod": r_prod, "plain": r_plain,
+        "clocks": {"hot_solo": clk_hot, "cold_solo": clk_cold, "concurrent": clk_both},
+        "sm_clock_drop_concurrent_vs_hot_solo": sm_drop,
     }
 
 
@@ -316,11 +452,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cold-sm", type=int, default=16)
     ap.add_argument("--sweep", action="store_true")
+    ap.add_argument("--diag", action="store_true",
+                    help="run one split with plain-stream control + NVML clock/power diagnosis")
     ap.add_argument("--m", type=int, default=16)
     ap.add_argument("--hot-experts", type=int, default=19)
     ap.add_argument("--cold-experts", type=int, default=3)
     ap.add_argument("--iters", type=int, default=50)
-    ap.add_argument("--numa-node", type=int, default=2)  # GPU0-paired Grace node
+    ap.add_argument("--numa-node", type=int, default=-1,
+                    help="GPU-paired Grace NUMA node; -1 = auto-detect via nvml (production path)")
     ap.add_argument("--hbm-cold", action="store_true",
                     help="place cold tier in HBM too (login-node pessimistic test; no Grace/C2C)")
     ap.add_argument("--out", default="results-marlin-green.json")
@@ -331,20 +470,26 @@ def main():
     mode = "HBM-cold (pessimistic, login-valid)" if args.hbm_cold else "Grace/C2C cold (Booster)"
     print(f"=== Marlin green-context probe (GH200) M={args.m} hot={args.hot_experts} cold={args.cold_experts}  [{mode}] ===")
 
+    if args.numa_node < 0 and not args.hbm_cold:
+        args.numa_node = detect_grace_numa_node(0)
+        print(f"  auto-detected GPU0-paired Grace NUMA node: {args.numa_node}")
+
     splits = [8, 16, 24, 32] if args.sweep else [args.cold_sm]
+    runner = run_diag if args.diag else run_split
     out = []
     for cs in splits:
         try:
-            out.append(run_split(cs, args.m, args.hot_experts, args.cold_experts, args.iters, device, args.numa_node, hbm_cold=args.hbm_cold))
+            out.append(runner(cs, args.m, args.hot_experts, args.cold_experts, args.iters, device, args.numa_node, hbm_cold=args.hbm_cold))
         except Exception:
             traceback.print_exc()
             out.append({"cold_sm": cs, "error": traceback.format_exc()})
     json.dump({"args": vars(args), "results": out}, open(args.out, "w"), indent=2)
     print(f"\nwrote {args.out}")
     # summary
-    for r in out:
-        if "error" not in r:
-            print(f"  cold={r['cold_sm']:2d}SM  interf hot={r['hot_interference']:+.0%} cold={r['cold_interference']:+.0%}  speedup={r['overlap_speedup_x']:.2f}x  union={r['union_us']:.0f}us")
+    if not args.diag:
+        for r in out:
+            if "error" not in r:
+                print(f"  cold={r['cold_sm']:2d}SM  interf hot={r['hot_interference']:+.0%} cold={r['cold_interference']:+.0%}  speedup={r['overlap_speedup_x']:.2f}x  union={r['union_us']:.0f}us")
 
 
 if __name__ == "__main__":

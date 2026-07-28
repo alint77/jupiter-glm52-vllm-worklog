@@ -144,54 +144,106 @@ tiered NUMA pairing.
 
 nsys report: `nsys/probe-16-116.nsys-rep`. Raw run log in `logs/`.
 
-## Status — §4.5 Marlin hot/cold probe (in flight, 2026-07-28)
+## Verdict — §4.5 Track A: **FAIL-A. Green contexts are worse than the existing production path (2026-07-28)**
 
 `marlin_green_probe.py` extends the proven Phase-21 Marlin-MoE harness
-(`benchmarks/kernels/benchmark_moe_wna16_marlin_decode.py`: `make_tier`,
-`build_gemm`, `global_routing`, `tier_map`, `align`) with the driver-API
+(`benchmarks/kernels/benchmark_moe_wna16_marlin_decode.py`) with the driver-API
 green-context streams validated above. Both tiers run on their **own** green
-streams with the production fork/join (`cold.wait(hot_start)` → both run →
-`hot.wait(cold_join)`), timed with per-stream CUDA events plus an outer union
-pair (`time_green_both`). The reused harness's `time_both_with_events` was wrong
-for this test — it parks hot on the default stream, not the hot green stream.
+streams and are launched **independently** (no cross-stream event waits — see
+"two implementation bugs" below), timed with per-stream CUDA events plus an
+anchor-event union. Grace locality is auto-detected per node via the production
+`get_device_numa_node` (nvml) path — never hardcode it; the GPU0↔Grace mapping
+is node-specific (node 0 on jpbo-022/025/044, node 2 on jpbo-011).
 
-Two modes:
+Representative w13, M=16, 19 hot / 3 cold experts, cold_share=0.13, Grace-cold on
+the GPU0-paired node (100% pages local), iters=30, Booster:
 
-- `--hbm-cold` (login-valid pessimistic): cold tier also in HBM. Isolates the
-  **shared-HBM-port** contention from C2C. No Grace/C2C → login-node-safe.
-- default (Booster only): cold tier in Grace-pinned UVA (`numa-node 2`,
-  GPU0-paired), real C2C reads.
+| cold SM (hot SM) | hot solo | green hot ov | **green union** | green hot intf | **prod union** | prod hot intf | green union vs prod |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 8 (124) | 134.0 | 196.6 | 388.5 | +46.7% | 278.4 | +3.2% | **+39% worse** |
+| 16 (116) | 131.7 | 191.9 | 307.4 | +45.7% | 278.6 | +6.4% | **+10% worse** |
+| 24 (108) | 131.4 | 188.0 | 300.5 | +43.1% | 276.9 | +5.3% | **+9% worse** |
+| 32 (100) | 132.8 | 192.6 | 304.1 | +45.1% | 278.4 | +5.8% | **+9% worse** |
 
-### HBM-cold login run (partial)
+(`prod` = same-job production control, plan §4.5 F: hot on main stream, cold on
+aux stream with the apply_tiered fork/join. Its union is ~278 µs on every split
+because it does not use green contexts — the split is irrelevant to it.)
 
-SOLO on a 16/116-SM green split, M=16, 19 hot / 3 cold experts, iters=20:
+**Green contexts lose to production on every split and every axis**: ~9–40%
+higher union and ~8× higher hot interference. Overlap speedup vs serial is
+0.82–1.11× (≥ serial time on 3 of 4 splits — concurrency with green contexts is
+slower than just running the tiers back-to-back).
 
-| | hot (116 SM) | cold (16 SM) | serial sum |
-|---|---:|---:|---:|
-| solo µs | 127.3 | 141.4 | 268.7 |
+### Why — the mechanism (this is the valuable part)
 
-Concurrent was not captured on the login node (the first run used the wrong
-timer; the green-aware `time_green_both` fix landed after). Deferred to the
-Booster sweep — login-node concurrency numbers are not citable anyway
-(benchmark-on-Booster rule).
+The hot dilation is **memory-subsystem contention during forced co-residency, not
+SM scheduling and not clocks/power.** Evidence, all from this same job:
 
-### Booster §4.5 Grace-cold sweep — submitted
+1. **Split-independent.** Hot interference is +43–47% whether cold has 8, 16, 24,
+   or 32 SMs. If it were SM-scheduling contention, shrinking cold's SM share
+   would relieve hot. It does not.
+2. **Not SM confinement.** Hot *solo* on the 116-SM green context is 131.7 µs;
+   hot *concurrent on the same 116 SMs* is 191.9 µs. The +45.7% is purely from
+   cold co-running on the *other* 16 SMs.
+3. **Source-independent.** HBM-cold (both tiers in HBM) dilates hot +42%;
+   Grace-cold (cold over C2C) dilates +46%. Moving cold's weights to Grace/C2C
+   does **not** relieve hot — refuting the tiering premise that the C2C path
+   frees hot's HBM. The shared resource is downstream of the weight source:
+   the L2 cache and the memory fabric that both kernels (and cold's HBM-resident
+   output/activations) traverse.
+4. **Not clocks/power.** Concurrent SM clock is 1920 MHz vs 1875 MHz hot-solo
+   (**+2.4%**, i.e. no throttle), board power 361 W (far under the GH200 cap).
+   The plan §3 rule-7 power-wall hypothesis is refuted.
+5. **Production already avoids it.** The production fork/join co-runs the tiers
+   only ~22% of the time (coresident=0.22–0.23), so hot stays near solo
+   (+3–6%). Green contexts *force* co-residency (coresident up to 0.93), which
+   *creates* the memory contention. Green contexts move production in the wrong
+   direction: more co-residency = more dilation.
 
-`job.sh` (Booster, 4× GH200, `numa-node 2`). First attempt (job 1068961)
-failed: `agent_space/jupiter-env.sh: No such file or directory` — `repo_dir`
-resolved to `/var/spool` under Slurm before `cd`. Fixed with an absolute
-`repo_dir` fallback.
+### Consequences for Tracks B and C
 
-Re-submitted as **job 1069196** (2026-07-28): `--sweep` over cold=8/16/24/32 SM
-(hot=124/116/104/96), M=16, 19 hot / 3 cold experts, `cold_share=0.13`, iters=50,
-Grace-cold on NUMA node 2. Preceded by the cheap mechanism-probe sanity check.
+- **Track B (low-SM cold kernel) is undercut by the same mechanism.** Its goal is
+  to shrink cold's SM footprint to free SMs for hot. But hot is HBM-bandwidth-bound
+  (solo ~132 µs on 100–124 SMs alike — it does not need the freed SMs), and the
+  dilation tracks cold's *co-residency*, not its *SM count*. A smaller cold grid
+  moves the same weight bytes through the same shared L2/fabric, so it cannot
+  recover hot's isolated rate either.
+- **Track C (combine)** inherits both failures.
+- The probe also measured that the **stock** cold kernel, confined to few SMs,
+  serializes its large persistent grid (cold solo over C2C: 297.6 µs @8 SM →
+  117.3 µs @32 SM). A purpose-built low-grid cold kernel (Track B §5.2) would fix
+  *that*, but per the above it would not reduce hot's co-run dilation.
 
-Verdict (plan §4.5/§10) pending job completion:
+### Disposition
 
-- **PASS-A**: hot/cold interference ≤ ~10% AND overlap speedup approaching
-  serial/min → green contexts rescue the Phase-23 zero-sum dilation → proceed to
-  vLLM integration (§4.3-4.4, CUDA-graph capture under green streams).
-- **FAIL-A**: interference high / overlap speedup ≈ 1 → the shared HBM port /
-  L2 / power domain is the real bottleneck, not SM scheduling → drop to Track B
-  (low-SM cold Marlin kernel).
+**Do not integrate green contexts (Track A) into production. Do not pursue
+Track B/C for the goal of relieving hot's co-run dilation** — the bottleneck is
+shared memory-bandwidth/L2 during co-residency, which no SM-partitioning or
+SM-footprint scheme adds to. The effective levers are the ones that reduce total
+co-resident memory traffic (routing/placement: fewer/smaller cold experts per
+layer, raising hot-cache hit so cold is invoked less), not kernel/SM scheduling.
+
+### Two implementation bugs worth recording (cost real debugging time)
+
+1. **Shared Marlin workspace = device-side deadlock.** The kernel's `int* locks`
+   workspace is a spin-barrier for the cross-CTA reduction (`barrier_acquire`
+   spins `while (state != count)` in `marlin_template.h`). Two concurrent kernels
+   sharing one workspace corrupt each other's barrier counts → infinite spin →
+   100% GPU, host `synchronize()` never returns. This reproduced on login and
+   Booster and looked exactly like a "green-context deadlock." Fix: **one
+   workspace per tier** (production already does this — plan §1 "separate
+   workspace views"). The probe originally shared one.
+2. **Cross-green-context `wait_stream` is fragile.** The first concurrent timer
+   used `cold.wait_stream(hot)` / `hot.wait_stream(cold)` between two green
+   contexts (isolated workqueues) and hung. The C++ mechanism probe never
+   exercised cross-context event waits (it launched both kernels independently
+   and host-synced), which is why it passed. Fix: launch both tiers
+   independently with no cross-stream waits (which also matches production's
+   overlap phase — the tiers only join downstream at the output add).
+
+Artifacts: `results-marlin-green.json` (sweep + prod control),
+`results-diag-16.json` (solo/green/prod/plain + NVML clock/power),
+`marlin_green_probe.py`. Mode flags: `--sweep`, `--diag`, `--hbm-cold`
+(pessimistic both-tiers-HBM ablation), `--numa-node -1` (auto-detect).
+
 

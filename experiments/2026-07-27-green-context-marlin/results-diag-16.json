@@ -1,0 +1,69 @@
+{
+  "args": {
+    "cold_sm": 16,
+    "sweep": false,
+    "diag": true,
+    "m": 16,
+    "hot_experts": 19,
+    "cold_experts": 3,
+    "iters": 20,
+    "numa_node": 0,
+    "hbm_cold": false,
+    "out": "agent_space/experiments/2026-07-27-green-context-marlin/results-diag-16.json"
+  },
+  "results": [
+    {
+      "cold_sm": 16,
+      "hot_sm": 116,
+      "hbm_cold": false,
+      "hot_solo_us": 132.49759674072266,
+      "cold_solo_us": 159.7856044769287,
+      "green": {
+        "hot_us": 181.70240074396133,
+        "cold_us": 219.9744001030922,
+        "union_us": 288.9071986079216,
+        "serial_us": 401.6768008470535,
+        "coresident_frac": 0.6206280257025151
+      },
+      "prod": {
+        "hot_us": 139.62079882621765,
+        "cold_us": 160.26560068130493,
+        "union_us": 268.67360174655914,
+        "serial_us": 299.8863995075226,
+        "ideal_us": 160.26560068130493,
+        "overlap_us": 31.21279776096344,
+        "coresident_frac": 0.22355406947508724,
+        "over_ideal_pct": 67.64271347338484,
+        "cold_lag_us": -106.20800014585257
+      },
+      "plain": {
+        "hot_us": 133.20640102028847,
+        "cold_us": 160.68319976329803,
+        "union_us": 260.3600025177002,
+        "serial_us": 293.8896007835865,
+        "coresident_frac": 0.2517116145250367
+      },
+      "clocks": {
+        "hot_solo": {
+          "sm_mhz": 1875,
+          "mem_mhz": 2619,
+          "power_w": 231.893,
+          "nsamples": 57
+        },
+        "cold_solo": {
+          "sm_mhz": 1965.0,
+          "mem_mhz": 2619.0,
+          "power_w": 302.059,
+          "nsamples": 56
+        },
+        "concurrent": {
+          "sm_mhz": 1920.0,
+          "mem_mhz": 2619.0,
+          "power_w": 361.157,
+          "nsamples": 56
+        }
+      },
+      "sm_clock_drop_concurrent_vs_hot_solo": 0.02400000000000002
+    }
+  ]
+}
