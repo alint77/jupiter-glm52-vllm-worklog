@@ -330,21 +330,41 @@ common-start/final-join timing shared by both controls, L2 flush between iters
 balanced routing (cells comparable), cold=0 control. Booster, NUMA-verified,
 iters=50.
 
-**Staged vs direct-Grace (negative = staging helps):**
+**Staged vs direct-Grace (negative = staging helps). Corrected schedule (see
+disclosure below); `results-fullchain-grid-fixed.json`:**
 
 | m=4 (dominant q4) | cold=0 | cold=1 | cold=2 | cold=4 |
 |---|---:|---:|---:|---:|
-| hot=4 | −1.0% | **+16.4%** | **+28.8%** | **+34.1%** |
-| hot=6 | +1.7% | **+16.8%** | **+29.1%** | **+29.3%** |
-| hot=8 | −1.0% | **+18.7%** | **+27.3%** | **+26.3%** |
+| hot=4 | −2.3% | **+24.3%** | **+36.7%** | **+43.7%** |
+| hot=6 | −1.1% | **+22.1%** | −4.7% ⚠ | **+36.2%** |
+| hot=8 | −0.0% | +23.3% ⚠ | **+34.2%** | +32.2% ⚠ |
 
 | m=16 | hot=6/cold=1 | hot=6/cold=4 | hot=15/cold=4 |
 |---|---:|---:|---:|
-| | **+17.5%** | **+30.3%** | **+22.0%** |
+| | **+9.5%** | **+37.3%** | **+14.4%** |
 
-- **cold=0 → flat (±1.7%)**: staging is neutral with no cold (control passes).
-- **cold≥1 → HURT +16–34% everywhere**, including m=16. Stable across two
-  independent clean runs.
+(⚠ = per-cell transient: that cell's `coldH`, `dil`, or `direct` was shifted far
+from its stable value — e.g. hot=6/cold=2 coldH=217 vs the ~130 seen everywhere
+else — so its point value is unreliable. The clean cells are unanimous.)
+
+- **cold=0 → flat (±2.3%)**: staging is neutral with no cold (control passes).
+- **cold≥1 → HURT everywhere** the measurement is clean; the dominant cell
+  (m=4, hot=6, cold=1) is stably **+22%**, and clean cells span **+9.5% to +44%**.
+- **Weight-copy correctness: bit-exact in every cell** (`weight_bitexact=True`).
+
+### Disclosure — staged-schedule bug (fixed; verdict unchanged, magnitude worse)
+
+The first version of this probe had a scheduling bug in the staged control:
+`hot_chain()` was enqueued *after* `main.wait_stream(aux)`, so the measured
+staged path was `transfer → cold_HBM → hot` (serialized), not the intended
+`{transfer ∥ hot} → cold_HBM`. The direct control was correctly overlapped, so
+the comparison was not apples-to-apples. Fixed by enqueuing `hot_chain()` before
+the join. The corrected schedule makes staging **slightly worse** (+22–44% vs
++16–34% buggy), because genuinely overlapping hot with the transfer dilates hot
+(+44–146%); the buggy serialized version accidentally let hot run at solo speed
+after the transfer. The HURT verdict is unchanged and now rests on a valid
+schedule. (`results-fullchain-grid.json` holds the pre-fix run; the `-fixed`
+file is authoritative.)
 
 ### Why staging hurts here
 

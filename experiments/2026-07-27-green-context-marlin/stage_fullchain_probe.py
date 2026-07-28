@@ -189,6 +189,16 @@ def run_cell(m, n_hot, n_cold, device, numa_node, l2, iters, cold_pool=4):
     nbytes = sum(t.numel() * t.element_size() for t in (sq13, ss13, sq2, ss2))
     if n_cold:
         cold_staged, _ = build_chain(a13, a2, sq13, ss13, sq2, ss2, cmap, topo, ws(), ws(), m, device)
+        # Correctness: the staged HBM copies must be bit-exact copies of the
+        # source Grace slices (gate: copied packed weights == source packed weights).
+        transfer()
+        torch.cuda.synchronize()
+        weight_exact = all(
+            torch.equal(d, s)
+            for d, s in ((sq13, dcq13), (ss13, dcs13), (sq2, dcq2), (ss2, dcs2))
+        )
+    else:
+        weight_exact = True
 
     main = torch.cuda.current_stream()
     aux = torch.cuda.Stream()
@@ -251,21 +261,26 @@ def run_cell(m, n_hot, n_cold, device, numa_node, l2, iters, cold_pool=4):
     t_direct = time_common_start(direct, main, l2, warmup=8, iters=iters)
 
     # --- STAGED: {transfer || hot} then cold-from-HBM, common start + final join ---
+    # hot_chain() MUST be enqueued BEFORE main.wait_stream(aux); otherwise main
+    # waits for the transfer first and hot runs serialized after it (the bug the
+    # review caught: staged was measuring transfer -> cold_HBM -> hot, not the
+    # intended {transfer || hot} -> cold_HBM).
     def staged(start_event=None):
         if start_event is not None:
             aux.wait_event(start_event)
         if n_cold:
             with torch.cuda.stream(aux):
                 transfer()
-            main.wait_stream(aux)   # cold needs the staged weights
+        hot_chain()              # overlap hot with the transfer
+        if n_cold:
+            main.wait_stream(aux)   # cold needs the staged weights (and runs after hot)
             cold_staged()
-        hot_chain()
     t_staged = time_common_start(staged, main, l2, warmup=8, iters=iters)
 
     est = (max(t_hot_under_transfer, t_transfer) + t_cold_hbm) if n_cold else t_hot
     frac = t_staged / t_direct - 1
     print(f"  m={m:3d} hot={n_hot} cold={n_cold} | hot={t_hot:.1f} coldG={t_cold_grace:.1f} "
-          f"coldH={t_cold_hbm:.1f} xfer={t_transfer:.1f}({c2c_gbs:.0f}GB/s) dil={hot_dil:+.0%} | "
+          f"coldH={t_cold_hbm:.1f} xfer={t_transfer:.1f}({c2c_gbs:.0f}GB/s) dil={hot_dil:+.0%} wExact={weight_exact} | "
           f"direct={t_direct:.1f} staged={t_staged:.1f} est={est:.1f} | staged vs direct {frac:+.1%} "
           f"{'HELP' if frac < -0.01 else ('HURT' if frac > 0.01 else 'flat')}")
     return {
@@ -273,6 +288,7 @@ def run_cell(m, n_hot, n_cold, device, numa_node, l2, iters, cold_pool=4):
         "hot_us": t_hot, "cold_grace_us": t_cold_grace, "cold_hbm_us": t_cold_hbm,
         "transfer_us": t_transfer, "c2c_gbs": c2c_gbs, "hot_dil_under_transfer": hot_dil,
         "direct_us": t_direct, "staged_us": t_staged, "est_us": est, "staged_vs_direct": frac,
+        "weight_bitexact": weight_exact,
     }
 
 
@@ -288,7 +304,7 @@ def main():
     device = torch.device("cuda:0")
     if args.numa_node < 0:
         args.numa_node = detect_grace_numa_node(0)
-    print(f"=== Full-chain staging probe (q4 regime)  Grace NUMA {args.numa_node} ===")
+    print(f"=== W13+W2 weight-streaming staging probe (q4 regime)  Grace NUMA {args.numa_node} ===")
     l2 = L2Flusher(device)
 
     # Grid centered on the measured c1q4 point (m=4, ~5 hot, ~1 cold, 18.5% cold),
