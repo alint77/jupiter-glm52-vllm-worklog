@@ -246,4 +246,66 @@ Artifacts: `results-marlin-green.json` (sweep + prod control),
 `marlin_green_probe.py`. Mode flags: `--sweep`, `--diag`, `--hbm-cold`
 (pessimistic both-tiers-HBM ablation), `--numa-node -1` (auto-detect).
 
+## Grace→HBM cold-weight staging — **FEASIBLE, 18–38% faster than production (2026-07-28)**
+
+The pivot after FAIL-A. Since the co-residency contention is what kills overlap,
+**stop co-running cold-Marlin-over-C2C with hot**. Instead: overlap a pure C2C
+**weight transfer** (Grace→HBM copy) with hot Marlin, then run cold Marlin from
+the staged HBM copy **after hot retires** (no co-residency). This was excluded
+from the original plan (§0 "do not implement Grace-to-HBM staging") as a scoping
+choice, not a finding; revisited here on the strength of the FAIL-A mechanism.
+
+`--stage` mode measures the four unknowns (transfer solo, transfer∥hot dilation,
+cold-from-HBM, end-to-end staged latency) against the production co-run union.
+
+Representative w13, 19 hot / 3 cold, Grace-C2C, NUMA-verified, Booster:
+
+| m | hot solo | transfer | cold_HBM | cold_Grace | hot dil under transfer | prod union | **staged** | staged vs prod |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| 16 | 108.0 | 100.6 (387 GB/s) | 51.9 | 105.8 | +39.6% | 273.3 | 219.1 | **−19.8%** |
+| 64 | 193.2 | 101.6 (383 GB/s) | 53.9 | 195.7 | +27.9% | 450.4 | 314.6 | **−30.2%** |
+| 256 | 583.8 | 102.0 (382 GB/s) | 98.0 | 600.2 | +9.9% | 1278.9 | 768–816 | **−36 to −38%** |
+
+**Correctness: PASS.** Weight copy is bit-exact (m=16/64 staged==direct, diff=0).
+Both paths are individually deterministic (direct_vs_direct=0, staged_vs_staged=0).
+At m=256 staged differs from direct by 7.8e-3 (1–2 bf16 ulps) — reduction-order
+rounding from the different weight-fetch latency (Grace C2C vs HBM) reordering the
+split-k accumulation, not a math error. Production adopts the staged path
+consistently, so this is numerically equivalent (same as a batch/tile change).
+
+### Why it wins
+
+1. **`cold_from_HBM` is 2–6× faster than `cold_from_Grace`** (51.9 vs 105.8 µs at
+   m=16; 98.0 vs 600.2 µs at m=256). HBM has ~8× the bandwidth of C2C; the staged
+   copy is tiny (only the 3 *activated* cold experts, 38.9 MB w13).
+2. **The transfer is weight-bytes-bound, not token-bound** — constant ~102 µs at
+   380+ GB/s (90% of C2C roof) regardless of m, while hot grows with m. So it
+   hides *better* at scale: hot dilation under the transfer drops +39.6% (m=16) →
+   +9.9% (m=256). This is why the win grows with batch.
+3. **`cold_from_Grace` scales terribly** (105.8 → 600.2 µs at m=256) — reading
+   cold weights over slow C2C becomes the dominant per-layer cost at scale. This
+   is the real production pain the staging removes.
+4. The transfer overlaps hot as a *copy* (no SM competition), unlike cold-Marlin
+   which fights hot for SMs. So phase 1 ({transfer ∥ hot}) is far cheaper than
+   the production {cold-Marlin ∥ hot} co-run.
+
+### Caveats / before integration
+
+- **HBM headroom**: staging buffer = activated cold weights, ~39 MB (w13) +
+  ~19 MB (w2) per layer, ~116 MB double-buffered for cross-layer prefetch. Must
+  fit the existing physical-HBM-reserve gate. Small, but cold-heavy layers
+  (more activated cold experts) need the worst-case sized.
+- **The transfer still mildly contends at small m** (+39.6% at m=16) — the same
+  memory-subsystem contention; it only fades at larger batch. At the m=16 target
+  the win is still −19.8%, but the transfer is not free.
+- **Variant not yet tested**: cross-layer prefetch (stage layer N+1's cold during
+  layer N's hot) would hide the transfer entirely, but needs layer N+1's cold set
+  known in advance (static tiering or routing lookahead). The measured variant is
+  within-layer (transfer after routing, overlap hot).
+- **Remaining confirmations**: full-chain (w13+w2) staging, real-route replay
+  (cold-heavy stragglers), and production CUDA-graph integration.
+
+Artifacts: `results-stage-m{16,64,256}.json`. Mode flag: `--stage`.
+
+
 

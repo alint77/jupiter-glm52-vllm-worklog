@@ -1,0 +1,37 @@
+{
+  "args": {
+    "cold_sm": 16,
+    "sweep": false,
+    "diag": false,
+    "stage": true,
+    "m": 256,
+    "hot_experts": 19,
+    "cold_experts": 3,
+    "iters": 20,
+    "numa_node": 0,
+    "hbm_cold": false,
+    "out": "agent_space/experiments/2026-07-27-green-context-marlin/results-stage-m256.json"
+  },
+  "result": {
+    "hot_solo_us": 603.0975818634033,
+    "transfer_solo_us": 101.69600248336792,
+    "transfer_mb": 38.928384,
+    "c2c_gbs": 382.7916835410184,
+    "cold_from_hbm_us": 99.8848021030426,
+    "cold_from_grace_us": 597.2367763519287,
+    "transfer_hot_concurrent": {
+      "hot_us": 639.776000380516,
+      "cold_us": 113.18560093641281,
+      "union_us": 688.4784013032913,
+      "serial_us": 752.9616013169289,
+      "coresident_frac": 0.5697120435828575
+    },
+    "hot_dilation_under_transfer": 0.06081672289878304,
+    "prod_union_us": 1278.9455890655518,
+    "staged_measured_us": 816.0575956106186,
+    "staged_est_us": 702.9823839664459,
+    "staged_vs_prod_frac": -0.36192938731125956,
+    "correct_bitexact": false,
+    "correct_maxabsdiff": 0.0078125
+  }
+}

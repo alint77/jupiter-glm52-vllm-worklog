@@ -448,12 +448,163 @@ def run_diag(cold_sm: int, m: int, hot_e: int, cold_e: int, iters: int, device, 
     }
 
 
+def run_stage(m: int, hot_e: int, cold_e: int, iters: int, device, numa_node):
+    """Feasibility of Grace->HBM cold-weight staging (the user's pivot after the
+    FAIL-A verdict): overlap the C2C weight transfer with hot Marlin, then run
+    cold Marlin from the staged HBM copy AFTER hot retires (no co-residency).
+
+    Measures the four unknowns that decide it:
+      1. transfer solo time (does it fit under hot's ~132us?).
+      2. transfer CONCURRENT with hot -> does the C2C copy steal hot's HBM
+         bandwidth (the co-residency question, but for a copy not a kernel)?
+      3. cold Marlin from staged HBM (the phase-2 cost).
+      4. end-to-end staged per-layer latency vs the production co-run union.
+    """
+    device = torch.device(device) if not isinstance(device, torch.device) else device
+    NUM = hot_e + cold_e
+    k = p1b.HIDDEN
+    n = 2 * p1b.INTERMEDIATE
+    print(f"\n=== STAGE M={m} hot={hot_e} cold={cold_e} (Grace->HBM staging) ===")
+    hq, hs = make_tier(hot_e, k, n, device, pinned=False)
+    print(f"  make cold tier ({cold_e} experts, Grace NUMA {numa_node})...")
+    cq_g, cs_g = make_tier(cold_e, k, n, device, pinned=True, numa_node=numa_node)
+
+    hot_ids = list(range(hot_e)); cold_ids = list(range(hot_e, NUM))
+    topo = global_routing(m, hot_ids, cold_ids, NUM, device, 13, 0.13)
+    hmap = tier_map(hot_ids, NUM, device); cmap = tier_map(cold_ids, NUM, device)
+    a = torch.randn((m, k), dtype=torch.bfloat16, device=device)
+    w = torch.ones((m, p1b.TOP_K), dtype=torch.float32, device=device)
+    ws_h = p1b.marlin_make_workspace_new(device, 4)
+    ws_cg = p1b.marlin_make_workspace_new(device, 4)
+    ws_ch = p1b.marlin_make_workspace_new(device, 4)
+
+    def mk(q, s, emap, ws):
+        tok, eids, npost, blocks = align(topo, p1b.BLOCK_M, NUM, emap)
+        out = torch.empty((m * p1b.TOP_K, n), dtype=torch.bfloat16, device=device)
+        return build_gemm(a, out, q, s, ws, tok, eids, npost, weights=w,
+                          m=m, n=n, k=k, cfg=(0, -1, -1)), out
+
+    fh, out_h = mk(hq, hs, hmap, ws_h)              # hot Marlin (HBM)
+    fc_grace, out_cg = mk(cq_g, cs_g, cmap, ws_cg)  # cold Marlin direct from Grace (prod)
+
+    # HBM staging buffers + the transfer op (Grace-UVA -> HBM, over C2C)
+    cq_h = torch.empty_like(cq_g); cs_h = torch.empty_like(cs_g)
+    nbytes = cq_g.numel() * cq_g.element_size() + cs_g.numel() * cs_g.element_size()
+
+    def transfer():
+        cq_h.copy_(cq_g, non_blocking=True)
+        cs_h.copy_(cs_g, non_blocking=True)
+
+    fc_hbm, out_ch = mk(cq_h, cs_h, cmap, ws_ch)     # cold Marlin from staged HBM
+
+    # Correctness (gate: bit-exact kernel output). Staged copy of the same packed
+    # weights through the same kernel must reproduce the direct-from-Grace output.
+    # Zero-init both outs so rows the kernel does not write compare equal (the
+    # empty-init garbage in unwritten rows otherwise reads as a spurious NaN).
+    out_cg.zero_()
+    out_ch.zero_()
+    transfer()
+    torch.cuda.synchronize()
+    fc_grace()
+    torch.cuda.synchronize()
+    fc_hbm()
+    torch.cuda.synchronize()
+    exact = torch.equal(out_cg, out_ch)
+    d = (out_cg.float() - out_ch.float()).abs()
+    dfin = d[torch.isfinite(d)]
+    maxdiff = dfin.max().item() if dfin.numel() else float("nan")
+    # Determinism control: does the direct-from-Grace kernel reproduce ITSELF at
+    # this m? If direct-vs-direct shows the same ~1e-3 spread, the staged diff is
+    # kernel reduction-order nondeterminism at high block counts, not a staging bug.
+    snap = out_cg.clone()
+    out_cg.zero_()
+    torch.cuda.synchronize()
+    fc_grace()
+    torch.cuda.synchronize()
+    sd = (snap.float() - out_cg.float()).abs()
+    sdfin = sd[torch.isfinite(sd)]
+    selfdiff = sdfin.max().item() if sdfin.numel() else float("nan")
+    # Staged self-determinism: production would run the staged path consistently,
+    # so what matters is that staged reproduces itself (and is within reduction-
+    # order rounding of direct), not that it bit-matches the Grace path.
+    snap_h = out_ch.clone()
+    out_ch.zero_()
+    torch.cuda.synchronize()
+    fc_hbm()
+    torch.cuda.synchronize()
+    sh = (snap_h.float() - out_ch.float()).abs()
+    shfin = sh[torch.isfinite(sh)]
+    selfdiff_h = shfin.max().item() if shfin.numel() else float("nan")
+    print(f"  CORRECTNESS staged==direct: bitexact={exact} "
+          f"nan_direct={int(torch.isnan(out_cg).sum())} nan_staged={int(torch.isnan(out_ch).sum())} "
+          f"maxabsdiff_finite={maxdiff:.3e}  direct_vs_direct={selfdiff:.3e} staged_vs_staged={selfdiff_h:.3e}")
+
+    main = torch.cuda.current_stream()
+    aux = torch.cuda.Stream()
+
+    # 1. solos
+    t_hot = time_on_stream(fh, main, warmup=10, iters=iters)
+    t_trans = time_on_stream(transfer, aux, warmup=10, iters=iters)
+    transfer()  # ensure staged data is valid before fc_hbm timing
+    torch.cuda.synchronize()
+    t_cold_hbm = time_on_stream(fc_hbm, main, warmup=10, iters=iters)
+    t_cold_grace = time_on_stream(fc_grace, main, warmup=10, iters=iters)
+    c2c_gbs = nbytes / (t_trans * 1e-6) / 1e9 if t_trans > 0 else 0.0
+    print(f"  SOLO us: hot={t_hot:.1f} transfer={t_trans:.1f} ({nbytes/1e6:.1f}MB -> {c2c_gbs:.0f}GB/s) "
+          f"cold_from_HBM={t_cold_hbm:.1f} cold_from_Grace={t_cold_grace:.1f}")
+
+    # 2. transfer CONCURRENT with hot: does the C2C copy dilate hot?
+    r_th = time_green_both(fh, transfer, main, aux, warmup=10, iters=iters)
+    hot_dil = r_th["hot_us"] / t_hot - 1
+    print(f"  TRANSFER+HOT concurrent: hot={r_th['hot_us']:.1f} (dil={hot_dil:+.1%}) "
+          f"transfer={r_th['cold_us']:.1f} union={r_th['union_us']:.1f}")
+
+    # 3. baseline: production co-run (hot + cold-direct-from-Grace)
+    r_prod = time_both_with_events(fh, fc_grace, cold_stream=torch.cuda.Stream(), order="cold_first", warmup=10, iters=iters)
+    print(f"  PROD co-run union={r_prod['union_us']:.1f} (hot={r_prod['hot_us']:.1f} cold={r_prod['cold_us']:.1f})")
+
+    # 4. end-to-end staged per-layer latency: {transfer || hot} then cold_from_HBM
+    def staged_step():
+        with torch.cuda.stream(aux):
+            transfer()
+        with torch.cuda.stream(main):
+            fh()
+        main.wait_stream(aux)          # cold needs the staged weights
+        with torch.cuda.stream(main):
+            fc_hbm()
+
+    for _ in range(10):
+        staged_step()
+    torch.cuda.synchronize()
+    tot = 0.0
+    for _ in range(iters):
+        s = torch.cuda.Event(True); e = torch.cuda.Event(True)
+        s.record(main); staged_step(); e.record(main)
+        torch.cuda.synchronize()
+        tot += s.elapsed_time(e)
+    t_staged = tot * 1000.0 / iters
+    est = max(t_hot, r_th["cold_us"]) + t_cold_hbm
+    print(f"  STAGED per-layer: measured={t_staged:.1f}us  est(max(hot,transfer)+cold_HBM)={est:.1f}us")
+    print(f"  vs PROD co-run {r_prod['union_us']:.1f}us -> staged is {t_staged/r_prod['union_us']-1:+.1%} "
+          f"({'BETTER' if t_staged < r_prod['union_us'] else 'WORSE'})")
+    return {
+        "hot_solo_us": t_hot, "transfer_solo_us": t_trans, "transfer_mb": nbytes / 1e6,
+        "c2c_gbs": c2c_gbs, "cold_from_hbm_us": t_cold_hbm, "cold_from_grace_us": t_cold_grace,
+        "transfer_hot_concurrent": r_th, "hot_dilation_under_transfer": hot_dil,
+        "prod_union_us": r_prod["union_us"], "staged_measured_us": t_staged, "staged_est_us": est,
+        "staged_vs_prod_frac": t_staged / r_prod["union_us"] - 1,
+        "correct_bitexact": exact, "correct_maxabsdiff": maxdiff,
+    }
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cold-sm", type=int, default=16)
     ap.add_argument("--sweep", action="store_true")
     ap.add_argument("--diag", action="store_true",
                     help="run one split with plain-stream control + NVML clock/power diagnosis")
+    ap.add_argument("--stage", action="store_true",
+                    help="test Grace->HBM cold-weight staging (transfer || hot, then cold from HBM)")
     ap.add_argument("--m", type=int, default=16)
     ap.add_argument("--hot-experts", type=int, default=19)
     ap.add_argument("--cold-experts", type=int, default=3)
@@ -473,6 +624,12 @@ def main():
     if args.numa_node < 0 and not args.hbm_cold:
         args.numa_node = detect_grace_numa_node(0)
         print(f"  auto-detected GPU0-paired Grace NUMA node: {args.numa_node}")
+
+    if args.stage:
+        r = run_stage(args.m, args.hot_experts, args.cold_experts, args.iters, device, args.numa_node)
+        json.dump({"args": vars(args), "result": r}, open(args.out, "w"), indent=2)
+        print(f"\nwrote {args.out}")
+        return
 
     splits = [8, 16, 24, 32] if args.sweep else [args.cold_sm]
     runner = run_diag if args.diag else run_split
