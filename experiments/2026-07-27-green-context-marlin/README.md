@@ -246,7 +246,7 @@ Artifacts: `results-marlin-green.json` (sweep + prod control),
 `marlin_green_probe.py`. Mode flags: `--sweep`, `--diag`, `--hbm-cold`
 (pessimistic both-tiers-HBM ablation), `--numa-node -1` (auto-detect).
 
-## Grace→HBM cold-weight staging — **FEASIBLE, 18–38% faster than production (2026-07-28)**
+## Grace→HBM cold-weight staging, W13-only — 18–38% faster (2026-07-28) — **⚠ SUPERSEDED: this was a straggler-workload + W13-only artifact. See the realistic-q4 verdict below, which reverses it.**
 
 The pivot after FAIL-A. Since the co-residency contention is what kills overlap,
 **stop co-running cold-Marlin-over-C2C with hot**. Instead: overlap a pure C2C
@@ -306,6 +306,76 @@ consistently, so this is numerically equivalent (same as a batch/tile change).
   (cold-heavy stragglers), and production CUDA-graph integration.
 
 Artifacts: `results-stage-m{16,64,256}.json`. Mode flag: `--stage`.
+
+## Realistic q4 full-chain staging — **staging HURTS (+16–34%) everywhere; the W13-only win was an artifact (2026-07-28)**
+
+This reverses the W13-only result above. Two corrections drive it:
+
+1. **Test the real operating point.** The dominant decode shape is **q4** (4 MTP
+   verify tokens, concurrency-1). Measured from the c1q4 routing traces
+   (`../../2026-07-19-c1q4-placement/trace-977597`): per layer, per EP4 rank the
+   MoE activates **mean 5.9 experts (p90 9)**, of which **mean 1.1 cold
+   (18.5% — the "20% cold" figure is right; "32/layer" is the max not the mean,
+   "8/rank" is ~p75 not the mean)**. The earlier probe's 19 hot + 3 cold was the
+   much larger **c4q4 straggler** regime (m=16, mean 19.6/rank), not the dominant
+   point.
+2. **Test the full W13+W2 chain, not W13-only.** The full chain **doubles** the
+   staged transfer (both weight matrices), and the dominant point has a *short*
+   hot phase, so the transfer can no longer hide.
+
+`stage_fullchain_probe.py` measures staged vs direct-Grace per cell with the
+review's fixes: full W13+W2 chain, non-contiguous per-expert staging, one
+common-start/final-join timing shared by both controls, L2 flush between iters
+(production-realistic: 74 other layers evict L2 between reads), deterministic
+balanced routing (cells comparable), cold=0 control. Booster, NUMA-verified,
+iters=50.
+
+**Staged vs direct-Grace (negative = staging helps):**
+
+| m=4 (dominant q4) | cold=0 | cold=1 | cold=2 | cold=4 |
+|---|---:|---:|---:|---:|
+| hot=4 | −1.0% | **+16.4%** | **+28.8%** | **+34.1%** |
+| hot=6 | +1.7% | **+16.8%** | **+29.1%** | **+29.3%** |
+| hot=8 | −1.0% | **+18.7%** | **+27.3%** | **+26.3%** |
+
+| m=16 | hot=6/cold=1 | hot=6/cold=4 | hot=15/cold=4 |
+|---|---:|---:|---:|
+| | **+17.5%** | **+30.3%** | **+22.0%** |
+
+- **cold=0 → flat (±1.7%)**: staging is neutral with no cold (control passes).
+- **cold≥1 → HURT +16–34% everywhere**, including m=16. Stable across two
+  independent clean runs.
+
+### Why staging hurts here
+
+- **`cold_from_HBM` is ~flat (~130 µs) regardless of cold count** (HBM is fast;
+  the tiny cold tier is overhead-bound, not bandwidth-bound), while
+  **`cold_from_Grace` grows** (145→265 µs as cold goes 1→4). So the staging
+  *benefit* (coldG−coldH) is real and grows with cold.
+- **But the transfer dilates hot +44–107%**, growing faster than the benefit.
+- **Root cause:** the transfer reads the same cold weights from Grace over C2C
+  that direct cold-from-Grace reads — so staging does **not** avoid the co-residency
+  C2C/HBM contention, it **front-loads** it and then adds cold-from-HBM on top.
+  And a bulk transfer **steals HBM bandwidth more aggressively** than the
+  interleaved cold-from-Grace compute kernel, which time-slices gracefully with
+  hot. Front-loading the C2C read as a copy is *worse* than letting the cold
+  kernel stream it interleaved.
+- Staging only wins when the hot phase is **long enough to hide the transfer**
+  (the m=256 W13-only straggler: hot 585 µs vs transfer 102 µs). At the short-hot
+  q4 point (hot ~140 µs) even one cold expert's W13+W2 transfer (~70 µs) is ~half
+  the hot phase and cannot hide.
+
+### Disposition
+
+**Do not pursue Grace→HBM staging for the dominant q4 decode path.** The direct
+cold-from-Grace two-stream path (current production) is better at the real
+operating point. Staging is only worth revisiting for the long-hot straggler
+regime (large m, many hot experts, few cold) — and even there the full-chain
+(W13+W2) transfer cost erodes the W13-only win. This is **not** a production
+direction.
+
+Artifacts: `results-fullchain-grid.json`, `stage_fullchain_probe.py`
+(`--selftest`, `--iters`, `--numa-node -1`).
 
 
 
