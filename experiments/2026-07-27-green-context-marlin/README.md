@@ -188,9 +188,12 @@ SM scheduling and not clocks/power.** Evidence, all from this same job:
 3. **Source-independent.** HBM-cold (both tiers in HBM) dilates hot +42%;
    Grace-cold (cold over C2C) dilates +46%. Moving cold's weights to Grace/C2C
    does **not** relieve hot — refuting the tiering premise that the C2C path
-   frees hot's HBM. The shared resource is downstream of the weight source:
-   the L2 cache and the memory fabric that both kernels (and cold's HBM-resident
-   output/activations) traverse.
+   frees hot's HBM. The shared resource is therefore downstream of the weight
+   source, in a memory-system resource both kernels traverse. **Leading
+   hypothesis: L2 / memory fabric** (both kernels stream through L2 regardless of
+   source, and cold's output/activations touch HBM). This is an inference from
+   the split- and source-independence, **not yet a counter measurement** — see
+   the attribution note below.
 4. **Not clocks/power.** Concurrent SM clock is 1920 MHz vs 1875 MHz hot-solo
    (**+2.4%**, i.e. no throttle), board power 361 W (far under the GH200 cap).
    The plan §3 rule-7 power-wall hypothesis is refuted.
@@ -200,28 +203,48 @@ SM scheduling and not clocks/power.** Evidence, all from this same job:
    *creates* the memory contention. Green contexts move production in the wrong
    direction: more co-residency = more dilation.
 
-### Consequences for Tracks B and C
+### Consequences for Tracks B and C (scoped carefully)
 
-- **Track B (low-SM cold kernel) is undercut by the same mechanism.** Its goal is
-  to shrink cold's SM footprint to free SMs for hot. But hot is HBM-bandwidth-bound
-  (solo ~132 µs on 100–124 SMs alike — it does not need the freed SMs), and the
-  dilation tracks cold's *co-residency*, not its *SM count*. A smaller cold grid
-  moves the same weight bytes through the same shared L2/fabric, so it cannot
-  recover hot's isolated rate either.
-- **Track C (combine)** inherits both failures.
-- The probe also measured that the **stock** cold kernel, confined to few SMs,
+- **"Same Marlin, fewer SMs" is undercut.** Shrinking cold's *SM footprint* to
+  free SMs for hot does not help: hot is HBM-bandwidth-bound (solo ~132 µs on
+  100–124 SMs alike — it does not need the freed SMs), and the dilation tracks
+  cold's *co-residency*, not its *SM count*. Under the narrow assumption that a
+  low-SM kernel issues the *same* memory transactions at the same intensity, it
+  cannot recover hot's isolated rate.
+- **A *redesigned* cold kernel is NOT ruled out by this experiment.** A
+  purpose-built low-SM kernel could change the memory-traffic pattern itself —
+  fewer redundant weight reads, different C2C request burstiness, different L2
+  residency/eviction, double-buffering, output-store timing, or spreading cold
+  traffic out of hot's critical section. Whether that reduces hot's co-run
+  dilation is an open question this W13 probe did not test.
+- The probe did measure that the **stock** cold kernel, confined to few SMs,
   serializes its large persistent grid (cold solo over C2C: 297.6 µs @8 SM →
   117.3 µs @32 SM). A purpose-built low-grid cold kernel (Track B §5.2) would fix
-  *that*, but per the above it would not reduce hot's co-run dilation.
+  *that*; whether it also reduces co-run dilation is untested.
 
 ### Disposition
 
-**Do not integrate green contexts (Track A) into production. Do not pursue
-Track B/C for the goal of relieving hot's co-run dilation** — the bottleneck is
-shared memory-bandwidth/L2 during co-residency, which no SM-partitioning or
-SM-footprint scheme adds to. The effective levers are the ones that reduce total
-co-resident memory traffic (routing/placement: fewer/smaller cold experts per
-layer, raising hot-cache hit so cold is invoked less), not kernel/SM scheduling.
+**Do not integrate green contexts (Track A) into production — the FAIL-A verdict
+is solid.** The results point to contention in a shared memory-system resource
+downstream of the SM partitions; **identifying L2/fabric as the exact bottleneck
+requires hardware-counter profiling** (see the attribution note). Track B should
+**not** be pursued merely as an SM-footprint reduction (undercut above); it
+remains viable only if a redesigned cold kernel can materially reduce or reshape
+shared memory traffic. The levers that clearly help are the ones that reduce
+total co-resident memory traffic (routing/placement: fewer/smaller cold experts
+per layer, raising hot-cache hit so cold is invoked less), not kernel/SM
+scheduling.
+
+### Bottleneck attribution — status
+
+The "L2/memory fabric" claim above is currently an **inference** from the
+split-independence (hot dilates ~+45% at 8/16/24/32 SM alike), source-independence
+(HBM-cold +42% ≈ Grace-cold +46%), and no-throttle (SM clock +2.4%, 361 W)
+observations. It has **not** been confirmed with hardware counters (L2 sectors/
+hit-rate/throughput, HBM read/write throughput, C2C throughput, fabric pressure).
+`green_ncu_probe.py` runs sustained NVTX-marked phases (hot solo, cold solo,
+green concurrent, full-device hot solo, production concurrent, hot-first) for
+nsys `--gpu-metrics` / ncu attribution. Result: **pending.**
 
 ### Two implementation bugs worth recording (cost real debugging time)
 
