@@ -1,0 +1,202 @@
+{
+  "1092954/off": {
+    "arm_dir": "/e/project1/profound/alint77/traces/marlin-smem-profile-1092954/off",
+    "rank_steps": 44,
+    "graphs_per_step": 7,
+    "kernels_per_graph": {
+      "0": 3469.0,
+      "1": 16.25,
+      "2": 20.0,
+      "3": 16.25,
+      "4": 20.0,
+      "5": 16.25,
+      "6": 20.0
+    },
+    "in_graph_gap_ms_per_step": {
+      "0": 0.9527013520949719,
+      "1": 0.0073140929509856985,
+      "2": 0.005221727183941286,
+      "3": 0.007293072620730211,
+      "4": 0.002575999999999387,
+      "5": 0.00735046866123175,
+      "6": 0.0027272943004208665
+    },
+    "in_graph_gap_total_ms_per_step": 0.985184007812281,
+    "between_graph_gap_ms_per_step": 0.9400300658735936,
+    "between_graph_gap_by_boundary_ms_per_step": {
+      "0": 0.6898250854935906,
+      "1": 0.06851670685369537,
+      "2": 0.021486365145601205,
+      "3": 0.053117644975158515,
+      "4": 0.02146662313565746,
+      "5": 0.041774720791914355,
+      "6": 0.02158949023437128,
+      "7": 0.02225342924360478
+    },
+    "host_inside_cuda_api_ms_per_step": 0.2888376401811006,
+    "host_not_in_cuda_api_ms_per_step": 0.6511924256924925,
+    "ungraphed_kernels_ms_per_step": {
+      "nvjet_sm90_tst_192x8_64x8_2x1_v_bz_TNT": 0.5633347045454543,
+      "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>": 0.06501845454545457,
+      "smxx::decode::get_mla_metadata_kernel(GetDecodeSchedMetaParams)": 0.058145159090909074,
+      "Memcpy HtoD (Pinned -> Device)": 0.0433798181818181,
+      "void sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_sparse_": 0.03599047727272725,
+      "void at::native::unrolled_elementwise_kernel<at::native::direct_": 0.03293913636363632,
+      "void smxx::decode::flash_fwd_mla_combine_kernel<cutlass::bfloat1": 0.031982000000000003,
+      "void at::native::reduce_kernel<512, 1, at::native::ReduceOp<c10:": 0.02638945454545454,
+      "void at::native::index_elementwise_kernel<128, 4, at::native::gp": 0.026175522727272738,
+      "void at::native::reduce_kernel<512, 1, at::native::ReduceOp<floa": 0.023426636363636365
+    },
+    "ungraphed_total_ms_per_step": 1.0748395454545452
+  },
+  "1092954/on": {
+    "arm_dir": "/e/project1/profound/alint77/traces/marlin-smem-profile-1092954/on",
+    "rank_steps": 44,
+    "graphs_per_step": 7,
+    "kernels_per_graph": {
+      "0": 3466.0,
+      "1": 16.0,
+      "2": 20.0,
+      "3": 16.0,
+      "4": 20.0,
+      "5": 16.0,
+      "6": 20.0
+    },
+    "in_graph_gap_ms_per_step": {
+      "0": 0.9853667033909624,
+      "1": 0.0073568542258581485,
+      "2": 0.0050909515269905725,
+      "3": 0.007371476740054158,
+      "4": 0.003351118785521866,
+      "5": 0.007361343217331557,
+      "6": 0.0030682486683183507
+    },
+    "in_graph_gap_total_ms_per_step": 1.0189666965550372,
+    "between_graph_gap_ms_per_step": 0.9343300210404943,
+    "between_graph_gap_by_boundary_ms_per_step": {
+      "0": 0.6883660770596509,
+      "1": 0.06585854785154797,
+      "2": 0.021235951970883512,
+      "3": 0.05198047105824231,
+      "4": 0.021584727982961172,
+      "5": 0.04147872363282066,
+      "6": 0.021216282404126166,
+      "7": 0.022609239080261547
+    },
+    "host_inside_cuda_api_ms_per_step": 0.2893327491122104,
+    "host_not_in_cuda_api_ms_per_step": 0.6449972719282838,
+    "ungraphed_kernels_ms_per_step": {
+      "nvjet_sm90_tst_192x8_64x8_2x1_v_bz_TNT": 0.5625090909090908,
+      "smxx::decode::get_mla_metadata_kernel(GetDecodeSchedMetaParams)": 0.05820813636363636,
+      "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>": 0.05531177272727273,
+      "Memcpy HtoD (Pinned -> Device)": 0.04356088636363624,
+      "void sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_sparse_": 0.03605965909090907,
+      "void at::native::unrolled_elementwise_kernel<at::native::direct_": 0.03292668181818184,
+      "void smxx::decode::flash_fwd_mla_combine_kernel<cutlass::bfloat1": 0.0321505,
+      "void at::native::reduce_kernel<512, 1, at::native::ReduceOp<c10:": 0.02639595454545454,
+      "void at::native::index_elementwise_kernel<128, 4, at::native::gp": 0.026368863636363652,
+      "void at::native::reduce_kernel<512, 1, at::native::ReduceOp<floa": 0.023428090909090926
+    },
+    "ungraphed_total_ms_per_step": 1.0650434318181816
+  },
+  "1092955/off": {
+    "arm_dir": "/e/project1/profound/alint77/traces/marlin-smem-profile-1092955/off",
+    "rank_steps": 44,
+    "graphs_per_step": 7,
+    "kernels_per_graph": {
+      "0": 3469.0,
+      "1": 16.5,
+      "2": 20.0,
+      "3": 16.5,
+      "4": 20.0,
+      "5": 16.5,
+      "6": 20.0
+    },
+    "in_graph_gap_ms_per_step": {
+      "0": 0.964078671786098,
+      "1": 0.006108325994309913,
+      "2": 0.005261685102984485,
+      "3": 0.00752647327769538,
+      "4": 0.0030488132990079786,
+      "5": 0.006113298739350948,
+      "6": 0.003859567737925638
+    },
+    "in_graph_gap_total_ms_per_step": 0.9959968359373722,
+    "between_graph_gap_ms_per_step": 0.9928632957209239,
+    "between_graph_gap_by_boundary_ms_per_step": {
+      "0": 0.7519862737038299,
+      "1": 0.06327647318891377,
+      "2": 0.020521913707392626,
+      "3": 0.052422318359402406,
+      "4": 0.021293504705250852,
+      "5": 0.03971692365058162,
+      "6": 0.021043257723722873,
+      "7": 0.022602630681829924
+    },
+    "host_inside_cuda_api_ms_per_step": 0.23760040154474493,
+    "host_not_in_cuda_api_ms_per_step": 0.755262894176179,
+    "ungraphed_kernels_ms_per_step": {
+      "nvjet_sm90_tst_192x8_64x8_2x1_v_bz_TNT": 0.5597997272727273,
+      "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>": 0.06167315909090911,
+      "smxx::decode::get_mla_metadata_kernel(GetDecodeSchedMetaParams)": 0.05820036363636361,
+      "Memcpy HtoD (Pinned -> Device)": 0.04346768181818172,
+      "void sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_sparse_": 0.03618345454545454,
+      "void at::native::unrolled_elementwise_kernel<at::native::direct_": 0.03306204545454543,
+      "void smxx::decode::flash_fwd_mla_combine_kernel<cutlass::bfloat1": 0.031964500000000014,
+      "void at::native::reduce_kernel<512, 1, at::native::ReduceOp<c10:": 0.026525386363636383,
+      "void at::native::index_elementwise_kernel<128, 4, at::native::gp": 0.026319545454545453,
+      "void at::native::reduce_kernel<512, 1, at::native::ReduceOp<floa": 0.023538499999999997
+    },
+    "ungraphed_total_ms_per_step": 1.0690362272727272
+  },
+  "1092955/on": {
+    "arm_dir": "/e/project1/profound/alint77/traces/marlin-smem-profile-1092955/on",
+    "rank_steps": 44,
+    "graphs_per_step": 7,
+    "kernels_per_graph": {
+      "0": 3466.0,
+      "1": 16.25,
+      "2": 20.0,
+      "3": 16.25,
+      "4": 20.0,
+      "5": 16.25,
+      "6": 20.0
+    },
+    "in_graph_gap_ms_per_step": {
+      "0": 0.9849515765265907,
+      "1": 0.007415813742892009,
+      "2": 0.00506973055751849,
+      "3": 0.00758819566761188,
+      "4": 0.003410088245735339,
+      "5": 0.007566343306099409,
+      "6": 0.00326973819246716
+    },
+    "in_graph_gap_total_ms_per_step": 1.0192714862389152,
+    "between_graph_gap_ms_per_step": 1.0466993907138067,
+    "between_graph_gap_by_boundary_ms_per_step": {
+      "0": 0.8016541095525422,
+      "1": 0.06544827565695789,
+      "2": 0.021070138671880366,
+      "3": 0.052025786843051994,
+      "4": 0.0216912246093745,
+      "5": 0.040975984463800526,
+      "6": 0.021400223455257716,
+      "7": 0.022433647460941473
+    },
+    "host_inside_cuda_api_ms_per_step": 0.285947224520597,
+    "host_not_in_cuda_api_ms_per_step": 0.7607521661932097,
+    "ungraphed_kernels_ms_per_step": {
+      "nvjet_sm90_tst_192x8_64x8_2x1_v_bz_TNT": 0.5608068636363636,
+      "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>": 0.0700987272727273,
+      "smxx::decode::get_mla_metadata_kernel(GetDecodeSchedMetaParams)": 0.05812120454545449,
+      "Memcpy HtoD (Pinned -> Device)": 0.04344070454545445,
+      "void sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_sparse_": 0.03617261363636364,
+      "void at::native::unrolled_elementwise_kernel<at::native::direct_": 0.03308090909090907,
+      "void smxx::decode::flash_fwd_mla_combine_kernel<cutlass::bfloat1": 0.031819136363636376,
+      "void at::native::index_elementwise_kernel<128, 4, at::native::gp": 0.026188568181818198,
+      "void at::native::reduce_kernel<512, 1, at::native::ReduceOp<c10:": 0.025991727272727274,
+      "void at::native::reduce_kernel<512, 1, at::native::ReduceOp<floa": 0.02352556818181817
+    },
+    "ungraphed_total_ms_per_step": 1.077645818181818
+  }
+}

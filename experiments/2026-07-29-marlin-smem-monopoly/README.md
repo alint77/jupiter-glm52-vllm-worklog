@@ -809,6 +809,48 @@ staging was tested and refuted twice in this worklog
 ([staging hurts +16-34%](../2026-07-27-green-context-marlin/README.md)). The
 lever on cold is placement quality, not kernels and not more HBM.
 
+### Where the GPU-empty time actually is
+
+`analyze_graph_gaps.py` splits the empty bucket by position relative to the CUDA
+graph replays. Averaged over both post-fix captures:
+
+| GPU-empty, per rank-step | ms | note |
+| --- | ---: | --- |
+| inside graph replays | 1.019 | 0.985 of it in the target graph |
+| between graph replays | 0.991 | |
+| — after the target graph | **0.745** | one boundary out of seven |
+| — across the other six boundaries | 0.246 | 0.02-0.07 ms each |
+| host not inside any CUDA API during those gaps | 0.703 | |
+| GPU time in kernels outside every graph | 1.071 | 0.561 of it one GEMM |
+
+Two things this settles.
+
+**The MTP drafts are already graphed, so "capture the draft path" is not a
+lever.** The step replays seven graphs, not one: the target at 3,466 kernels,
+then a 16-kernel and a 20-kernel graph for each of the three draft rounds. The
+six draft graphs contain 0.003-0.008 ms of internal idle *each*. There is nothing
+to win there.
+
+**Two thirds of the between-graph idle is one boundary: the sampling and logits
+region right after the target graph.** It costs 0.745 ms of device idle plus
+1.071 ms of un-graphed GPU work, dominated by 0.561 ms of
+`nvjet_sm90_tst_192x8_64x8_2x1_v_bz_TNT` - the vocabulary projection, which the
+eager trace confirms as `[4, 6144] x [6144, 38720]` for the target and
+`[1, 6144] x [6144, 38720]` for each draft (38,720 = 154,880/4). The rest is the
+logits all-gather, MLA metadata, a pinned HtoD copy and sampler reductions. For
+0.703 ms of that idle the host is inside no CUDA call at all, so it is Python
+sampler work, not launch latency - which means graph capture alone would not
+recover it.
+
+The whole region is about 1.8 ms of the 24.307 ms step (7.5%), of which 0.745 ms
+is device idle. It is a c1 measurement, so the per-step host cost amortises over
+more tokens at higher concurrency.
+
+The gap structure is **identical between the off and on arms** (in-graph 0.991
+against 1.019, between-graph 0.966 against 0.991, host-dark 0.703 in both), which
+is the right invariance: the shared-memory fix touches the device schedule and
+nothing on the host path. It is also a check on the measurement itself.
+
 The target is replayed as one CUDA graph, so its 0.985 ms of idle cannot be
 CPU-per-kernel launch latency. The trace contains seven graph launches and 140
 eager launches per engine step overall, but the shared-memory fix leaves those
@@ -982,8 +1024,10 @@ many more steps.
 - Replicate: `/e/project1/profound/alint77/traces/marlin-smem-profile-1092955/`
 - Reproducers: `analyze_step_budget.py` (correlation-attributed budget, tier
   split and EP skew; supersedes the per-family aggregates in
-  `analyze_profile_ab.py`), `analyze_comms.py` (collective dissection)
-- Machine-readable: `step-budget.json`, `comm-kernel-analysis.json`
+  `analyze_profile_ab.py`), `analyze_comms.py` (collective dissection),
+  `analyze_graph_gaps.py` (GPU-empty time by graph position)
+- Machine-readable: `step-budget.json`, `comm-kernel-analysis.json`,
+  `graph-gaps.json`
 - Full per-step collective table: `comm-step-breakdown.csv`
 - Superseded but kept for comparison:
   `profile-ab-{1092954,1092955}-analysis.{txt,json}` and

@@ -5,7 +5,7 @@
 #SBATCH --ntasks=1
 #SBATCH --gres=gpu:4
 #SBATCH --time=00:30:00
-#SBATCH --time-min=00:10:00
+#SBATCH --time-min=00:20:00
 #SBATCH --job-name=glm52-c4-mtp3-mixed
 #SBATCH --output=agent_space/experiments/2026-07-29-c4-mtp3-mixed-suite/slurm-%j.out
 #SBATCH --error=agent_space/experiments/2026-07-29-c4-mtp3-mixed-suite/slurm-%j.err
