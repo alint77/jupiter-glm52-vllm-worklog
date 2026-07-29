@@ -1,0 +1,47 @@
+metric                                off         on      delta
+step wall (ms)                     25.194     24.281     -3.63%
+GPU union busy (ms)                23.314     22.373     -4.04%
+GPU idle (ms)                       1.880      1.907     +1.46%
+graph launches/step                 7.000      7.000     +0.00%
+eager launches/step               140.000    140.000     +0.00%
+target graph wall (ms)             23.944     23.126     -3.42%
+target graph busy (ms)             22.991     22.140     -3.70%
+
+Kernel families: cumulative device time per rank-step
+family                             off ms      on ms      delta
+DCP NCCL                            0.059      0.050    -14.67%
+DSA indexer                         0.075      0.075     -0.64%
+DSA top-k                           0.041      0.041     -0.83%
+FlashMLA                            1.754      1.761     +0.40%
+KV cache                            0.178      0.177     -0.25%
+MoE activation                      0.930      0.431    -53.72%
+MoE routing/sort                    1.042      1.039     -0.28%
+MoE sum                             1.037      0.646    -37.74%
+TP custom all-reduce                4.963      4.816     -2.96%
+Triton glue                         1.136      1.149     +1.21%
+dense/shared GEMM                   5.535      5.601     +1.19%
+memory/glue                         0.919      0.895     -2.66%
+other                               0.942      0.949     +0.69%
+routed W4 Marlin                   12.096      9.261    -23.44%
+
+Tiered routed layers
+layers_per_step                    75.000     75.000
+hot_ms_per_step                     6.979      5.843
+cold_ms_per_step                    5.801      3.976
+marlin_sum_ms_per_step             12.779      9.819
+layer_span_ms_per_step              8.286      7.577
+timeline_overlap_percent           35.160     22.831
+
+Largest post-fix idle successors
+memory/glue                         0.660 ms/step
+Triton glue                         0.635 ms/step
+dense/shared GEMM                   0.260 ms/step
+other                               0.201 ms/step
+TP custom all-reduce                0.062 ms/step
+MoE routing/sort                    0.057 ms/step
+KV cache                            0.050 ms/step
+FlashMLA                            0.038 ms/step
+MoE sum                             0.026 ms/step
+DSA top-k                           0.014 ms/step
+MoE activation                      0.014 ms/step
+routed W4 Marlin                    0.014 ms/step

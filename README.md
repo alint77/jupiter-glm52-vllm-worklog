@@ -490,6 +490,17 @@ ulp, deterministically, so the exact-400K golden SHA has to be re-established
 rather than treated as a regression. See the
 [shared-memory monopoly](experiments/2026-07-29-marlin-smem-monopoly/README.md).
 
+The post-fix production trace closes the mechanism at engine-step scale. Two
+same-configuration off/on captures on separate Booster nodes measure
+**25.47 -> 24.31 ms mean step wall (-4.56%)**; routed-layer critical spans save
+1.04 ms and account for about 90% of the step improvement, while GPU idle stays
+flat. The target graph has only 0.985 ms of internal idle across ~2,430
+sub-microsecond dependency gaps, so it is not CPU kernel-launch-bound. The next
+measured lever is per-layer EP-rank balance: the post-fix trace retains
+1.485 ms/step of summed max-minus-mean routed-layer skew, mostly in the hot
+chain, followed by custom all-reduce tails. Trace paths and full attribution are
+in the [Phase 26 report](experiments/2026-07-29-marlin-smem-monopoly/README.md#post-fix-production-trace-2026-07-29).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout

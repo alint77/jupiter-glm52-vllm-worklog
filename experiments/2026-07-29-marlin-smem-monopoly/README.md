@@ -609,3 +609,83 @@ nvcc -O3 -arch=sm_90a -o /tmp/tier_union   $D/tier_union.cu   && /tmp/tier_union
 
 `setup_tight.py` patches its staged copy of `ops.cu`; run it against a checkout
 that does **not** already contain the in-tree fix, or drop its patch step.
+
+## Post-fix production trace (2026-07-29)
+
+`job-profile-ab.sh` captured a matched c1/q4 MTP3 off/on pair on one node.
+A 45-minute backfill copy started at the same time, so the result replicated on
+a second node. Both used the staged AutoRound checkpoint on `exa_fscratch`, the
+qualified `hybrid-p0.5` placement, one realistic prompt, and twelve profiled
+M=4 target steps per rank. Each arm produced four Perfetto-compatible
+`*.pt.trace.json.gz` files.
+
+| mean over four ranks and eleven bounded steps | 1092954 off | on | delta | 1092955 off | on | delta |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| engine-step wall | 25.194 ms | 24.281 | **-3.63%** | 25.741 | 24.333 | **-5.47%** |
+| GPU union busy | 23.314 ms | 22.373 | **-4.04%** | 23.801 | 22.306 | **-6.28%** |
+| GPU idle | 1.880 ms | 1.907 | +1.46% | 1.940 | 2.027 | +4.48% |
+| target-graph span | 23.944 ms | 23.126 | **-3.42%** | 24.679 | 22.925 | **-7.11%** |
+| routed-layer span, 75 layers | 8.286 ms | 7.577 | **-8.56%** | 9.075 | 7.703 | **-15.12%** |
+| Marlin cumulative duration | 12.779 ms | 9.819 | -23.2% | 13.987 | 9.974 | -28.7% |
+
+Across the two nodes, mean step wall falls **25.468 -> 24.307 ms (-4.56%,
+1.16 ms)**. The routed-layer critical spans save a mean 1.04 ms, accounting for
+about 90% of the engine-step improvement. GPU idle is flat to slightly higher:
+the gain is less device work on the critical path, not reduced host gaps.
+
+The cumulative Marlin reduction is larger than the routed-span reduction
+because a profiler kernel interval includes time resident or waiting while
+another kernel uses the SM. Tight shared memory removes that queueing and lets
+the tier epilogues (`act_and_mul`, `moe_sum_vec`) become resident sooner as
+well. Conversely, timeline-overlap percentage falls from about 35% to 23%
+because the individual intervals become shorter. As established by the `%smid`
+probe, timeline overlap is not CTA co-residency and must not be used as the
+physical overlap metric.
+
+### What dominates now
+
+Representative post-fix target graph, averaged across the two captures:
+
+| component | time/rank-step | interpretation |
+| --- | ---: | --- |
+| routed hot/cold layer span | **7.64 ms** | about 33% of target-graph span |
+| dense/shared GEMMs | **5.60 ms cumulative** | compile variants differ, but off/on totals agree within 1.5% |
+| TP custom all-reduce | **4.65 ms cumulative** | 157 calls; long synchronization tails |
+| FlashMLA | **1.77 ms cumulative** | unchanged by the fix |
+| target-graph idle | **0.985 ms** | 2,430 dependency gaps, mean 0.40 us |
+
+The cumulative rows overlap and therefore do not add to the graph span.
+
+The target is replayed as one CUDA graph, so its 0.985 ms of idle cannot be
+CPU-per-kernel launch latency. The trace contains seven graph launches and 140
+eager launches per engine step overall, but the shared-memory fix leaves those
+counts exactly unchanged while GPU busy time falls. Within the target graph,
+the 2,430 gaps are extremely small (p50 0.42 us, p90 0.51 us, maximum under
+1.8 us). Eliminating every one would cap the gain at roughly 1 ms; graph-node
+fusion is now a secondary lever, not the first one.
+
+The first remaining lever is **per-layer EP-rank balance**. On the cleaner
+1092955 post-fix capture, summing `max(rank span) - mean(rank span)` across the
+75 routed layers gives **1.485 ms/step**, or 19% of the routed span. The largest
+single-layer excesses are layers 61 and 34 at about 53 us each, followed by
+layers 24, 19, 71, 41 and 30 at 34-40 us. The slow ranks are mostly hot-chain
+heavy, so the actual-Claude routing capture should be used to rebalance expert
+ownership/placement per layer, with the current per-rank HBM constraint.
+
+Custom all-reduce reflects the same skew. It totals 4.7-5.0 ms/rank-step
+post-fix, with p50 6-7 us but p90 about 97 us and p99 189-192 us. Treating the
+p5 duration as a universal payload floor would overstate wait because payloads
+vary, so the next attribution should bucket reductions by position/payload
+before assigning an exact recoverable number.
+
+### Artifacts
+
+- Primary: `/e/project1/profound/alint77/traces/marlin-smem-profile-1092954/`
+- Replicate: `/e/project1/profound/alint77/traces/marlin-smem-profile-1092955/`
+- `profile-ab-{1092954,1092955}-analysis.{txt,json}`
+- `analyze_profile_ab.py`
+
+Open any rank file under `off/` or `on/` directly in Perfetto. The two jobs ran
+on separate nodes but shared the same per-arm compile-cache roots while starting
+concurrently, so they are a hardware replication, not a fully independent
+compile replication.
