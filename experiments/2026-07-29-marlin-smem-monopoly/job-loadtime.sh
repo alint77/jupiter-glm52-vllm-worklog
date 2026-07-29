@@ -32,7 +32,10 @@ cd "${repo_dir}"
 source agent_space/jupiter-env.sh
 echo "node $(hostname)"
 
-for fs in project1 fscratch; do
+# arms to run, e.g. `sbatch job-loadtime.sh fscratch`. project1's rate is known
+# from production runs (10.5-11.8 s/shard) and from this job's own first arm
+# (19.1 s/shard under contention), so it does not need re-measuring every time.
+for fs in ${1:-project1 fscratch}; do
   case "${fs}" in
     project1) model="/e/project1/profound/alint77/models/${name}" ;;
     fscratch) model="/e/fscratch/profound/naeimitabiei1/models/${name}" ;;

@@ -446,6 +446,49 @@ step. Prefix caching is disabled to match the existing gate methodology, so this
 is decode for *fresh* turns; a real multi-turn session re-prefixes heavily, which
 improves TTFT but not decode.
 
+## Checkpoint loading: exa_fscratch cuts it from 14 minutes to 2
+
+Checkpoint load is the slowest part of every job in this project. Measured
+end-to-end on the real c4 serving path (`claude-local-c4.sh` config: V2 runner,
+DCP4, `max_num_seqs 4`, MTP3), same model, same config, only
+`TIERED_MOE_MODEL_PATH` differing:
+
+| filesystem | full 86-shard load | s/shard |
+| --- | ---: | ---: |
+| `exa_project1` (current home) | **14 min 08 s** | 9.87 |
+| `exa_fscratch` (staged) | **2 min 11 s** | 1.52 |
+| | **-85%** | **6.5x** |
+
+The project1 figure is identical to the second across this morning's three
+independent runs on three different nodes (jobs 1090343/1090344/1090345, all
+14:08), so it is a solid uncongested baseline. A fourth sample under contention
+ran 19.1 s/shard and is deliberately excluded - using it would flatter fscratch.
+
+The mechanism is the one the microbenchmark predicted. Four ranks load
+concurrently, and that is precisely where the two filesystems diverge: parallel
+O_DIRECT scales 11 -> 21 GB/s on fscratch across 4 to 8 readers while project1
+manages 0.55 -> 0.95. The loader was never the bottleneck.
+
+Staging costs 86 s at 5.06 GB/s for 405 GB (`stage_model_fscratch.sh`, which
+verifies per-file sizes), against 12 minutes saved per server start - net
+positive on the first launch and free thereafter if the copy persists.
+
+**Open question before adopting it:** the baseline README records that
+ExaFlash/`exa_fscratch` was investigated and abandoned early in the project. On
+performance this is unambiguous, so the reason was probably retention or
+capacity. If fscratch purges, this becomes a stage-once-per-session step (still
+net positive); if it persists, `TIERED_MOE_MODEL_PATH` can simply point there.
+
+Two incidental findings from the same runs:
+
+- Server *startup* before weight loading is dominated by reading the venv's many
+  small files from project1, the access pattern project1 is worst at. Staging
+  the venv is a separate lever from staging the model.
+- One allocated node (`jpbo-059-16`) read at ~100 KB/s during imports and had to
+  be abandoned. It coincided with a cluster health event - 54 rising to 66 nodes
+  draining with `pshealthcheck ... Not responding` - which also explains why job
+  dispatch stretched from the usual 5-25 minutes to over 40.
+
 ## Operational note: the scratch inode quota
 
 Three server jobs died mid-startup with `OSError: [Errno 122] Disk quota
