@@ -12,3 +12,7 @@ core.*
 agent_space/experiments/2026-07-27-green-context-marlin/green_context_probe
 agent_space/experiments/2026-07-27-green-context-marlin/nsys/*.nsys-rep
 agent_space/experiments/2026-07-27-green-context-marlin/ncu/*.ncu-rep
+
+# Shared-memory monopoly experiment: compiled probes (rebuild with nvcc)
+agent_space/experiments/2026-07-29-marlin-smem-monopoly/analysis/smem_monopoly
+agent_space/experiments/2026-07-29-marlin-smem-monopoly/analysis/tier_union

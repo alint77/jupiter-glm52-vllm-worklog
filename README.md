@@ -459,6 +459,37 @@ minimum free HBM ranges from 7.35 GiB for W4+MTP3 to 12.76 GiB for target-only
 W4. See the [AutoRound bring-up](experiments/2026-07-26-autoround-w4g64/README.md)
 and [GSM8K comparison](experiments/2026-07-26-gsm8k-quant-mtp/README.md).
 
+Phase 26 finds the mechanism behind every failed hot/cold overlap experiment and
+removes it. Marlin's MoE launch passes `deviceSharedMemOptin / blocks_per_sm` as
+its dynamic shared memory rather than the `sh_cache_size` it computes one line
+earlier: at the production tile that is 76,458 bytes per CTA against 25,856
+actually indexed, so one wave claims 229,374 of 233,472 bytes and **no second
+Marlin CTA can be placed on any SM at any `blocks_per_sm`**. The two tiers were
+serialized by the block scheduler before any stream, priority, launch-order or
+occupancy knob applied, which is why the `blocks_per_sm` sweeps, the SM-budget
+split, the hot-first reorder and green contexts all returned nothing, and why
+`2026-07-25-tier-overlap`'s "81.5% co-resident" (a kernel time-range overlap,
+not CTA residency) read as no headroom. Booster reports the same shared-memory
+geometry as the login node, and a per-CTA `%smid` probe confirms the peak never
+exceeds the hot wave at the production request but reaches 4 once the request
+fits. Requesting only what the kernel uses and launching hot at 2 CTAs/SM and
+cold at 1 cuts the two-tier union to `max(hot, cold)`: on Booster under
+CUDA-graph replay the full w13+w2 chain improves by a **median 34% across 15
+activated-expert cells** (best 40.1%, worst 14.6%, every cell positive) and
+**31-45% at the production c1/q4 shape**, with a twelve-combination grid search
+confirming the shipped constants are optimal there. Two measurement traps were
+found and corrected along the way, both of which had produced a confident wrong
+answer first: timing the fork/join eagerly charges two stream barriers per
+iteration, a ~110 us floor on Booster that exceeds the whole kernel at low
+activated-expert counts and made an earlier sweep report ~0% exactly where the
+gain is largest; and the login node's preferred cold grid (66 CTAs) is not
+Booster's (132), so tuning the constant on the login node would have shipped a
+value wrong on the machine that matters. Correctness is bit-exact at a fixed
+grid; changing the grid moves the fp32 reduction order by at most one bfloat16
+ulp, deterministically, so the exact-400K golden SHA has to be re-established
+rather than treated as a regression. See the
+[shared-memory monopoly](experiments/2026-07-29-marlin-smem-monopoly/README.md).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout

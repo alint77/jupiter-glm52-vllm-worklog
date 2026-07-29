@@ -1,6 +1,6 @@
 # GLM-5.2 on JUPITER: agent handoff
 
-Last updated: 2026-07-19 (DCP A2A/NVLS optimization wrapped)
+Last updated: 2026-07-29 (Marlin shared-memory monopoly; qualification in flight)
 
 ## Start here
 
@@ -245,7 +245,63 @@ reduce-scatter/all-gather pair.
 - Do not re-enable target sequence parallelism or deeper fixed MTP without a
   new measured reason.
 
-## Current thread: DCP4 and concurrency 4 (supersedes DFlash)
+## Current thread: the Marlin shared-memory monopoly (2026-07-29)
+
+Marlin's MoE launch passed `deviceSharedMemOptin / blocks_per_sm` as its dynamic
+shared memory instead of the `sh_cache_size` it computes one line earlier, so a
+single wave claimed ~100% of every SM's shared memory and **no second Marlin CTA
+could be placed at any `blocks_per_sm`**. That is why every hot/cold overlap
+experiment returned nothing: the tiers were serialized by the block scheduler
+before any stream, priority, order or occupancy knob applied. Requesting only
+what the kernel uses, and launching hot at 2 CTAs/SM and cold at 1, cuts the
+measured two-tier union by 41-48% on the login node and lands it on
+`max(hot, cold)`.
+
+Source changes are in the working tree (not yet committed at the time of
+writing): `ops.cu`, `torch_bindings.cpp`, `_custom_ops.py`, `envs.py`,
+`marlin_moe.py`, `tiered_moe_execution.py`, plus
+`tests/kernels/moe/test_moe.py::test_fused_marlin_moe_launch_policy`. Defaults
+are unchanged for every non-tiered caller, and `VLLM_TIERED_MOE_TIGHT_SMEM=0`
+restores the old launch. `_moe_C_stable_libtorch.abi3.so` was rebuilt in place;
+the pre-change build is saved at
+`/e/scratch/profound/naeimitabiei1/_moe_C_stable_libtorch.abi3.so.bak-20260717`.
+
+Qualified on Booster: the mechanism reproduces exactly (same shared-memory
+geometry, per-CTA `%smid` peak of 3 at the production request vs 4 once it
+fits), the isolated two-tier union drops 40%, and the full 15-cell
+activated-expert sweep under CUDA-graph replay improves by a median 34% with
+every cell positive and 31-45% at the production c1/q4 shape. A twelve-way grid
+search confirms the shipped `{"hot": 2, "cold": 1}` is optimal on Booster - note
+it is *not* what the login node prefers, so do not retune that constant off
+Booster.
+
+Open items:
+
+- Server-level end-to-end is **not** qualified. The only completed A/B (+9.71%
+  output tok/s, jobs 1088069/1088070) ran its arms on **different nodes** and had
+  unmatched MTP acceptance (2.889 vs 2.959 tokens per target step); dividing that
+  out leaves about -7% step time. `job-samenode.sh` runs both arms in one
+  allocation, `job-nomtp.sh` removes the acceptance term entirely, and
+  `job-agentic.sh` measures realistic agentic decode. Reruns are 1090344,
+  1090345 and 1090343; the agentic `off` baseline is 93.50 output tok/s.
+- The exact-400K golden SHA is expected to change: the shipped grid moves work
+  between Marlin's data-parallel and split-K halves, so the fp32 reduction order
+  differs by at most one bf16 ulp, deterministically. Re-establish it; do not
+  treat a mismatch as a regression.
+- Nothing is committed. Source changes sit in the working tree.
+
+**Scratch is inode-limited, not space-limited.** Three jobs died in Inductor
+autotuning with `Errno 122` while 512 MB writes still succeeded: only five files
+could be created on `/e/scratch` against 4000/4000 on `/e/project1`. The shared
+`vllm-cache` root was the consumer and was cleared (symlink preserved). Per-job
+cache roots multiply the problem and were replaced by per-arm ones; the jobs in
+this experiment now cache under `/e/project1/profound/alint77/.marlin-caches/`.
+The many empty `vllm-cache-<JOBID>` leftovers are a red herring - they hold one
+inode each.
+
+See [the shared-memory monopoly](experiments/2026-07-29-marlin-smem-monopoly/README.md).
+
+## Earlier thread: DCP4 and concurrency 4 (supersedes DFlash)
 
 Read, in order: the [SOL re-analysis](experiments/2026-07-18-sol-reanalysis/README.md)
 (kernel-level roofline of the qualified config, TP2xPP2 rejection, DCP
