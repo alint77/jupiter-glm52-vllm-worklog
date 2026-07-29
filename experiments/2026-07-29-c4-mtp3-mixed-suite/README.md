@@ -78,8 +78,49 @@ at all.
 
 `prompts-interleaved.jsonl` reorders the same 18 prompts round-robin
 (python, pytorch, cuda-cpp, math, email, explanation, repeat), so each domain
-gets one early, one middle and one late slot and the drain penalty spreads
-evenly. The interleaved arm is the one to read for domain effects.
+gets one early, one middle and one late slot. Job `1095984` ran it on
+`jpbo-027-35` with three repetitions:
+
+| interleaved arm | submission indices | draining | mean TPOT |
+| --- | --- | ---: | ---: |
+| python | 0, 6, 12 | 0 of 9 | 20.374 ms |
+| pytorch | 1, 7, 13 | 0 of 9 | 20.287 ms |
+| cuda-cpp | 2, 8, 14 | 0 of 9 | 19.587 ms |
+| math | 3, 9, 15 | 3 of 9 | 16.971 ms |
+| email | 4, 10, 16 | 3 of 9 | 19.287 ms |
+| explanation | 5, 11, 17 | 3 of 9 | 19.389 ms |
+
+Interleaving worked. Among the three domains with **identical** drain exposure of
+zero, the spread collapses to **4%** (19.587-20.374 ms) from the 17% the
+grouped-order arm showed. The drain effect itself reproduced and got slightly
+larger: 16.426 ms mean TPOT for draining requests against 19.894 ms for steady,
+a **17.4%** advantage from batch position alone.
+
+Two things remain to be careful about:
+
+- **Round-robin equalises position within a wave, not drain exposure.** With 18
+  prompts, six domains and concurrency four, indices 15-17 still land on a fixed
+  three domains - here math, email and explanation. To equalise that too, rotate
+  the starting domain between repetitions.
+- **There is a residual real difference.** Among the three equally-exposed
+  domains, math is 16.971 ms against email 19.287 and explanation 19.389, a 14%
+  gap that batch position cannot explain. Math has the shortest prompts and is
+  plausibly the most predictable to draft, so the likely cause is per-request
+  draft acceptance. Confirming that needs per-request acceptance, which
+  `vllm bench serve` does not currently save.
+
+Do **not** compare the interleaved arm's absolute 19.316 ms mean TPOT against the
+grouped arm's 18.687 ms. They ran on different nodes, node-to-node variation on
+this metric has not been bounded here, and even the steady-only subsets differ
+(19.894 against 19.190). The interleaved arm's purpose is the per-domain
+comparison, not a new headline number.
+
+| interleaved, three repetitions | value | rep spread |
+| --- | ---: | ---: |
+| per-request TPOT | 19.316 ms | 1.9% |
+| aggregate output throughput | 179.84 tok/s | 0.8% |
+| MTP draft acceptance | 69.02% | 0.5 pt |
+| accepted tokens/target step | 3.071 | 0.5% |
 
 `analyze.py` also no longer averages `1/tpot` for the rate column. Averaging
 reciprocals biases a rate upward and made the rate and latency columns disagree
@@ -90,9 +131,10 @@ by about 0.5%; the rate is now derived from the mean TPOT.
 - `prompts.jsonl`: exact combined copy of the original six category files,
   grouped by domain (submission order equals domain)
 - `prompts-interleaved.jsonl`: same 18 prompts, round-robin order
-- `mixed-c4-r{1,2}.json`: grouped-order results
-- `summary-mixed-c4.json`: aggregate, per-domain and steady-versus-draining
-  analysis for the grouped-order arm
+- `mixed-c4-r{1,2}.json`: grouped-order results (job 1094280)
+- `mixed-c4-interleaved-r{1,2,3}.json`: round-robin results (job 1095984)
+- `summary-mixed-c4{,-interleaved}.json`: aggregate, per-domain and
+  steady-versus-draining analysis for each arm
 - `job.sbatch`, `analyze.py`: reproducible launcher and analysis. `PROMPT_FILE`
   and `RESULT_TAG` select the arm; the defaults are the interleaved one.
 

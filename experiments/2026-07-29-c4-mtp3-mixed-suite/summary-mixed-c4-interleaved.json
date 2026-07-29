@@ -1,0 +1,155 @@
+{
+  "configuration": {
+    "concurrency": 4,
+    "mtp_depth": 3,
+    "prompts": 18,
+    "prompt_file": "prompts-interleaved.jsonl",
+    "submission_order": [
+      "python",
+      "pytorch",
+      "cuda-cpp",
+      "math",
+      "email",
+      "explanation",
+      "python",
+      "pytorch",
+      "cuda-cpp",
+      "math",
+      "email",
+      "explanation",
+      "python",
+      "pytorch",
+      "cuda-cpp",
+      "math",
+      "email",
+      "explanation"
+    ],
+    "output_tokens_per_prompt": 256,
+    "repetitions": 3
+  },
+  "mean": {
+    "output_throughput_tps": 179.838615091576,
+    "decode_interval_throughput_tps": 180.98628464614728,
+    "mean_tpot_ms": 19.315995018490973,
+    "mean_ttft_ms": 432.3147989818137,
+    "mtp_acceptance_percent": 69.0206654391173,
+    "mtp_tokens_per_step": 3.070619963173519,
+    "duration_s": 25.623259637737647
+  },
+  "repetitions": [
+    {
+      "repeat": 1,
+      "output_throughput_tps": 180.67204990973505,
+      "decode_interval_throughput_tps": 181.8164889067271,
+      "mean_tpot_ms": 19.26279015766055,
+      "mean_ttft_ms": 432.44329369109533,
+      "mtp_acceptance_percent": 69.42774437764417,
+      "mtp_tokens_per_step": 3.082832331329325,
+      "duration_s": 25.504775101086125
+    },
+    {
+      "repeat": 2,
+      "output_throughput_tps": 179.27169838876353,
+      "decode_interval_throughput_tps": 180.421150746481,
+      "mean_tpot_ms": 19.52715209880052,
+      "mean_ttft_ms": 438.36076300229047,
+      "mtp_acceptance_percent": 68.29913964262077,
+      "mtp_tokens_per_step": 3.0489741892786233,
+      "duration_s": 25.704001476056874
+    },
+    {
+      "repeat": 3,
+      "output_throughput_tps": 179.57209697622937,
+      "decode_interval_throughput_tps": 180.7212142852337,
+      "mean_tpot_ms": 19.15804279901185,
+      "mean_ttft_ms": 426.14034025205507,
+      "mtp_acceptance_percent": 69.33511229708694,
+      "mtp_tokens_per_step": 3.0800533689126084,
+      "duration_s": 25.66100233606994
+    }
+  ],
+  "domains": {
+    "python": {
+      "requests": 9,
+      "mean_tpot_ms": 20.373730803789137,
+      "decode_tps_from_mean_tpot": 49.082812059832385,
+      "mean_ttft_ms": 433.8021196631922,
+      "submission_indices": [
+        0,
+        6,
+        12
+      ],
+      "draining_requests": 0
+    },
+    "pytorch": {
+      "requests": 9,
+      "mean_tpot_ms": 20.287449209502448,
+      "decode_tps_from_mean_tpot": 49.29155901628133,
+      "mean_ttft_ms": 384.5509023716052,
+      "submission_indices": [
+        1,
+        7,
+        13
+      ],
+      "draining_requests": 0
+    },
+    "cuda-cpp": {
+      "requests": 9,
+      "mean_tpot_ms": 19.58748610803862,
+      "decode_tps_from_mean_tpot": 51.053003661843285,
+      "mean_ttft_ms": 456.6286319556336,
+      "submission_indices": [
+        2,
+        8,
+        14
+      ],
+      "draining_requests": 0
+    },
+    "math": {
+      "requests": 9,
+      "mean_tpot_ms": 16.970759574303603,
+      "decode_tps_from_mean_tpot": 58.924881683796706,
+      "mean_ttft_ms": 464.21525314346786,
+      "submission_indices": [
+        3,
+        9,
+        15
+      ],
+      "draining_requests": 3
+    },
+    "email": {
+      "requests": 9,
+      "mean_tpot_ms": 19.287117267096487,
+      "decode_tps_from_mean_tpot": 51.84808005009561,
+      "mean_ttft_ms": 401.7563219854815,
+      "submission_indices": [
+        4,
+        10,
+        16
+      ],
+      "draining_requests": 3
+    },
+    "explanation": {
+      "requests": 9,
+      "mean_tpot_ms": 19.389430843171926,
+      "decode_tps_from_mean_tpot": 51.57448963243573,
+      "mean_ttft_ms": 452.93556477150156,
+      "submission_indices": [
+        5,
+        11,
+        17
+      ],
+      "draining_requests": 3
+    }
+  },
+  "steady_vs_draining": {
+    "steady": {
+      "requests": 45,
+      "mean_tpot_ms": 19.893961158157012
+    },
+    "draining": {
+      "requests": 9,
+      "mean_tpot_ms": 16.426168015117156
+    }
+  }
+}
