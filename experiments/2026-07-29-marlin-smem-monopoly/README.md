@@ -704,10 +704,112 @@ p5 duration as a universal payload floor would overstate wait because payloads
 vary, so the next attribution should bucket reductions by position/payload
 before assigning an exact recoverable number.
 
+### Communication-kernel dissection
+
+`analyze_comms.py` assigns GPU kernels to an engine step through their CUDA
+launch correlation rather than GPU timestamp boundaries. This removes the
+boundary errors in the earlier aggregate: every rank and every bounded MTP3
+decode step has exactly:
+
+- 166 `cross_device_reduce_1stage<bf16, 4>` custom all-reduces: 157 in the
+  target graph, then one preparation and two forward reductions for each of the
+  three MTP drafts;
+- four `ncclDevKernel_AllGather_RING_LL` calls: one target vocabulary gather
+  and one after each draft.
+
+There are no other NCCL, all-to-all, reduce-scatter, peer-copy, or fused
+communication kernels in these traces. In particular, CUDA kernels containing
+`splitKreduce` are local GEMM reductions, not communication.
+
+The duration of a custom all-reduce is not pure NVLink transfer time. Its
+kernel contains both an entry and exit cross-rank barrier, and an early rank
+spins inside the kernel until its peers arrive. For each collective ordinal,
+the analysis therefore reports:
+
+- **observed residency**: mean kernel duration over the four ranks;
+- **fast-rank floor**: the minimum duration over the four ranks;
+- **synchronization excess**: observed residency minus that floor.
+
+The fast-rank floor is a conservative proxy for payload plus protocol with the
+least arrival wait. It is still not exact wire time: it retains both barrier
+instructions and any residual wait on the fastest rank.
+
+One capture-start custom-AR outlier in 1092954 step 0 lasted 16.872 ms and is
+excluded from the steady mean. Across the remaining 21 steps:
+
+| communication in one decode step | calls | observed ms | fast-rank floor ms |
+| --- | ---: | ---: | ---: |
+| target custom all-reduce | 157 | **4.676** | **0.634** |
+| MTP1 prep + forward custom AR | 3 | 0.042 | 0.012 |
+| MTP2 prep + forward custom AR | 3 | 0.031 | 0.012 |
+| MTP3 prep + forward custom AR | 3 | 0.033 | 0.012 |
+| target vocabulary NCCL all-gather | 1 | 0.0179 | 0.0156 |
+| three draft vocabulary NCCL all-gathers | 3 | 0.0453 | 0.0321 |
+| **all communication kernels** | **170** | **4.846** | **0.718** |
+
+Thus **4.128 ms, or 85.2% of communication-kernel residency, is
+cross-rank synchronization excess**. Relative to the 24.307 ms mean engine
+step, the communication kernels are resident for 19.94% of the step, but the
+fast-rank payload/protocol proxy is only 2.95%. Nearly all of the long residency
+is in the target model, not MTP: the three MTP rounds contribute 0.153 ms
+observed and 0.068 ms at the fast-rank floor.
+
+The custom-AR duration distribution makes the barrier tail visible. Over
+steady rank-kernel instances it is 6.75 us at p50, 96.37 us at p90, and
+189.62 us at p99. The aligned fast-rank floor is much tighter: 3.97 us at p50,
+4.22 us at p90, and 4.45 us at p99. NCCL all-gathers are 14.51 us at p50 and
+23.65 us at p90; their aligned floors are 10.78 and 15.49 us.
+
+All custom-AR launches use grid 6, block 512. The packed BF16 kernel processes
+eight values per thread, matching `[4, 6144]`: 49,152 bytes of local input per
+rank per call. Its one-stage algorithm reads the same payload from three remote
+ranks, so 166 calls deliver **24,477,696 remote bytes (23.34 MiB) per rank per
+step**. The trace records the NCCL inputs directly as `[4, 38720]` BF16 for the
+target and `[1, 38720]` for each draft. Those gathers receive another
+1,626,240 remote bytes (1.55 MiB). Total one-direction remote payload delivered
+is therefore **26,103,936 bytes (24.89 MiB) per rank per step**.
+
+At the 0.718 ms fast-rank floor that is about 36.4 GB/s of delivered remote
+payload. This low effective rate is expected for 170 small, barrier-heavy
+collectives; the limiting factor is operation count and arrival skew, not bulk
+NVLink bandwidth. Optimizing only the transfer loop has less than 0.72 ms/step
+to work with in this trace. The larger lever is reducing rank skew before the
+157 target reductions, then reducing or fusing the collective count.
+
+Per-step totals, including the marked capture-start outlier:
+
+| capture/step | observed ms | fast-rank floor ms | synchronization excess ms |
+| --- | ---: | ---: | ---: |
+| 1092954/0 (excluded) | 9.349 | 0.851 | 8.498 |
+| 1092954/1 | 4.484 | 0.709 | 3.775 |
+| 1092954/2 | 4.476 | 0.707 | 3.769 |
+| 1092954/3 | 4.741 | 0.709 | 4.032 |
+| 1092954/4 | 4.211 | 0.709 | 3.501 |
+| 1092954/5 | 4.629 | 0.706 | 3.923 |
+| 1092954/6 | 4.405 | 0.708 | 3.697 |
+| 1092954/7 | 4.689 | 0.706 | 3.983 |
+| 1092954/8 | 5.083 | 0.707 | 4.376 |
+| 1092954/9 | 5.537 | 0.710 | 4.826 |
+| 1092954/10 | 5.720 | 0.706 | 5.013 |
+| 1092955/0 | 4.640 | 0.841 | 3.799 |
+| 1092955/1 | 4.422 | 0.713 | 3.709 |
+| 1092955/2 | 4.608 | 0.714 | 3.894 |
+| 1092955/3 | 4.548 | 0.711 | 3.837 |
+| 1092955/4 | 4.696 | 0.715 | 3.980 |
+| 1092955/5 | 4.447 | 0.715 | 3.732 |
+| 1092955/6 | 4.491 | 0.718 | 3.773 |
+| 1092955/7 | 4.806 | 0.719 | 4.087 |
+| 1092955/8 | 5.755 | 0.718 | 5.037 |
+| 1092955/9 | 5.853 | 0.714 | 5.139 |
+| 1092955/10 | 5.526 | 0.716 | 4.810 |
+
 ### Artifacts
 
 - Primary: `/e/project1/profound/alint77/traces/marlin-smem-profile-1092954/`
 - Replicate: `/e/project1/profound/alint77/traces/marlin-smem-profile-1092955/`
+- Reproducer: `analyze_comms.py`
+- Machine-readable summary: `comm-kernel-analysis.json`
+- Full per-step table: `comm-step-breakdown.csv`
 - `profile-ab-{1092954,1092955}-analysis.{txt,json}`
 - `analyze_profile_ab.py`
 

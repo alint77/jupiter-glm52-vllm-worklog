@@ -74,7 +74,7 @@ def family(name: str) -> str:
     families = (
         ("routed W4 Marlin", "marlin_moe_wna16"),
         ("TP custom all-reduce", "cross_device_reduce"),
-        ("DCP NCCL", "ncclDevKernel"),
+        ("TP vocabulary NCCL all-gather", "ncclDevKernel"),
         ("MoE activation", "act_and_mul"),
         ("MoE sum", "moe_sum_vec"),
         ("MoE routing/sort", "grouped_topk"),

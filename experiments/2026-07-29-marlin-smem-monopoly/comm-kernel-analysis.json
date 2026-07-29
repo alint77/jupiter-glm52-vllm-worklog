@@ -1,0 +1,96 @@
+{
+  "steady_steps": 21,
+  "excluded": "1092954 step 0 (capture-start 16.872 ms AR outlier)",
+  "means": {
+    "custom_observed_ms": 4.782841654761905,
+    "custom_floor_ms": 0.6699394285714286,
+    "nccl_observed_ms": 0.06314764285714286,
+    "nccl_floor_ms": 0.04775404761904762,
+    "total_observed_ms": 4.845989297619048,
+    "total_floor_ms": 0.7176934761904762,
+    "sync_excess_ms": 4.128295821428572
+  },
+  "phases": {
+    "custom:target": {
+      "calls_per_step": 157.0,
+      "observed_ms_per_step": 4.675557690476191,
+      "floor_ms_per_step": 0.6340892857142857
+    },
+    "custom:mtp1-prep": {
+      "calls_per_step": 1.0,
+      "observed_ms_per_step": 0.011890785714285715,
+      "floor_ms_per_step": 0.003929809523809524
+    },
+    "custom:mtp1-forward": {
+      "calls_per_step": 2.0,
+      "observed_ms_per_step": 0.03055617857142857,
+      "floor_ms_per_step": 0.008019809523809525
+    },
+    "custom:mtp2-prep": {
+      "calls_per_step": 1.0,
+      "observed_ms_per_step": 0.00820322619047619,
+      "floor_ms_per_step": 0.003951238095238095
+    },
+    "custom:mtp2-forward": {
+      "calls_per_step": 2.0,
+      "observed_ms_per_step": 0.023225571428571432,
+      "floor_ms_per_step": 0.007989238095238094
+    },
+    "custom:mtp3-prep": {
+      "calls_per_step": 1.0,
+      "observed_ms_per_step": 0.008325559523809523,
+      "floor_ms_per_step": 0.00394047619047619
+    },
+    "custom:mtp3-forward": {
+      "calls_per_step": 2.0,
+      "observed_ms_per_step": 0.02508264285714286,
+      "floor_ms_per_step": 0.008019571428571428
+    },
+    "nccl:target-vocab": {
+      "calls_per_step": 1.0,
+      "observed_ms_per_step": 0.017895809523809526,
+      "floor_ms_per_step": 0.015628142857142858
+    },
+    "nccl:mtp1-vocab": {
+      "calls_per_step": 1.0,
+      "observed_ms_per_step": 0.01565952380952381,
+      "floor_ms_per_step": 0.01076857142857143
+    },
+    "nccl:mtp2-vocab": {
+      "calls_per_step": 1.0,
+      "observed_ms_per_step": 0.014937309523809523,
+      "floor_ms_per_step": 0.010648190476190474
+    },
+    "nccl:mtp3-vocab": {
+      "calls_per_step": 1.0,
+      "observed_ms_per_step": 0.014655,
+      "floor_ms_per_step": 0.010709142857142856
+    }
+  },
+  "distributions": {
+    "custom": {
+      "rank_kernel_p50_us": 6.752,
+      "rank_kernel_p90_us": 96.37270000000002,
+      "rank_kernel_p99_us": 189.61971999999997,
+      "rank_kernel_max_us": 530.167,
+      "aligned_floor_p50_us": 3.968,
+      "aligned_floor_p90_us": 4.224,
+      "aligned_floor_p99_us": 4.448
+    },
+    "nccl": {
+      "rank_kernel_p50_us": 14.5115,
+      "rank_kernel_p90_us": 23.6475,
+      "rank_kernel_p99_us": 28.730849999999997,
+      "rank_kernel_max_us": 32.831,
+      "aligned_floor_p50_us": 10.784,
+      "aligned_floor_p90_us": 15.488,
+      "aligned_floor_p99_us": 16.5792
+    }
+  },
+  "traffic_per_rank_per_step": {
+    "custom_payload_bytes_per_call": 49152,
+    "custom_remote_read_bytes": 24477696,
+    "nccl_remote_receive_bytes": 1626240,
+    "total_remote_bytes": 26103936
+  }
+}
