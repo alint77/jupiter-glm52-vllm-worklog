@@ -622,8 +622,8 @@ M=4 target steps per rank. Each arm produced four Perfetto-compatible
 | mean over four ranks and eleven bounded steps | 1092954 off | on | delta | 1092955 off | on | delta |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | engine-step wall | 25.194 ms | 24.281 | **-3.63%** | 25.741 | 24.333 | **-5.47%** |
-| GPU union busy | 23.314 ms | 22.373 | **-4.04%** | 23.801 | 22.306 | **-6.28%** |
-| GPU idle | 1.880 ms | 1.907 | +1.46% | 1.940 | 2.027 | +4.48% |
+| GPU busy union, correlation-attributed | 24.800 ms | 23.926 | **-3.52%** | 25.504 | 23.756 | **-6.85%** |
+| GPU idle inside the attributed span | 1.925 ms | 1.953 | +1.45% | 1.989 | 2.066 | +3.87% |
 | target-graph span | 23.944 ms | 23.126 | **-3.42%** | 24.679 | 22.925 | **-7.11%** |
 | routed-layer span, 75 layers | 8.286 ms | 7.577 | **-8.56%** | 9.075 | 7.703 | **-15.12%** |
 | Marlin cumulative duration | 12.779 ms | 9.819 | -23.2% | 13.987 | 9.974 | -28.7% |
@@ -632,6 +632,33 @@ Across the two nodes, mean step wall falls **25.468 -> 24.307 ms (-4.56%,
 1.16 ms)**. The routed-layer critical spans save a mean 1.04 ms, accounting for
 about 90% of the engine-step improvement. GPU idle is flat to slightly higher:
 the gain is less device work on the critical path, not reduced host gaps.
+
+Read this trace as **mechanism attribution, not magnitude**. It is a single
+prompt at c1/M=4 under an active profiler over eleven steps, and the delta is
+smaller than the throughput measurements of the same fix (-5.3% to -6.7% step
+time without MTP, -8.1% with MTP3 on the same node; see the sections above).
+Those suites are the authority on how large the win is; this capture explains
+*where* it comes from. Note also that the no-MTP sweep has the win growing with
+concurrency, so a c1 capture understates the c4 production path.
+
+The two captures also do not replicate equally well on the two arms:
+
+| cross-node spread, on the same metric | off arm | on arm |
+| --- | ---: | ---: |
+| engine-step wall | +2.2% | **+0.2%** |
+| Marlin cumulative | +9.5% | **+1.6%** |
+| routed-layer span | +9.5% | **+1.6%** |
+| cold-tier cumulative | +5.4% | **+0.2%** |
+
+With n=2 this is a hypothesis, not a result, but the same pattern appears on
+four independent metrics: **under the monopoly the routed path is 5-10x more
+sensitive to whatever differs between nodes; with the fix both nodes agree to
+within 2%.** The mechanism is consistent with it - serialization makes the span
+depend on how fast each tier's queue drains, which tracks clocks and power, and
+removing it puts cold on a bandwidth-bound path that does not. If it holds at
+larger n, variance reduction is a second benefit of the fix and matters for tail
+latency independently of the mean. The reported -4.56% is a mean of -3.63% and
+-5.47%; it carries no usable interval at n=2.
 
 The cumulative Marlin reduction is larger than the routed-span reduction
 because a profiler kernel interval includes time resident or waiting while
@@ -649,7 +676,7 @@ Representative post-fix target graph, averaged across the two captures:
 | component | time/rank-step | interpretation |
 | --- | ---: | --- |
 | routed hot/cold layer span | **7.64 ms** | about 33% of target-graph span |
-| dense/shared GEMMs | **5.60 ms cumulative** | compile variants differ, but off/on totals agree within 1.5% |
+| dense/shared GEMMs | **5.68 ms cumulative** | compile variants differ, but off/on totals agree within 0.5% |
 | TP custom all-reduce | **4.65 ms cumulative** | 157 calls; long synchronization tails |
 | FlashMLA | **1.77 ms cumulative** | unchanged by the fix |
 | target-graph idle | **0.985 ms** | 2,430 dependency gaps, mean 0.40 us |
@@ -658,29 +685,129 @@ The cumulative rows overlap and therefore do not add to the graph span.
 
 ### Additive whole-step budget
 
-To make the overlapping trace sum to one engine step, partition every GPU
-timeline interval among the unique kernel families active in that interval
-(equal share when families overlap), then keep GPU-empty time as its own bucket.
-Across both post-fix captures (88 rank-steps), the mean step is **24.307 ms**:
+To make the overlapping trace sum, partition every GPU timeline interval among
+the unique kernel families active in that interval (equal share when families
+overlap), then keep GPU-empty time as its own bucket.
 
-| additive component | ms/step | share |
-| --- | ---: | ---: |
-| routed experts (W4 Marlin) | 6.290 | **25.88%** |
-| dense/shared-expert compiled GEMMs | 5.345 | **21.99%** |
-| TP/EP communication and synchronization | 4.641 | **19.09%** |
-| glue, elementwise and uncategorized kernels | 2.791 | **11.48%** |
-| GPU-empty host/graph gaps | 2.045 | **8.41%** |
-| attention (FlashMLA + DSA + KV) | 1.781 | **7.33%** |
-| MoE routing, activation and sum | 1.414 | **5.82%** |
-| **total** | **24.307** | **100%** |
+`analyze_step_budget.py` does this with **launch-correlation attribution**, not
+GPU-timestamp-versus-CPU-annotation boundaries. That distinction matters: the
+boundary method used by `analyze_profile_ab.py` silently drops the kernels of a
+step that execute after the CPU has moved on, and the loss is measurable against
+the census `analyze_comms.py` proves exact.
 
-The directly attributed routed-MoE path is 31.7% after adding Marlin to its
+| per rank-step | boundary-attributed | correlation-attributed | truth |
+| --- | ---: | ---: | ---: |
+| custom all-reduces | 156.7 | **166.0** | 166 |
+| Marlin GEMMs | 288.5 | **306.0** | 306 |
+| vocabulary all-gathers | 3.6 | **4.0** | 4 |
+
+The corrected census is exact in **every one of the 176 rank-steps across all
+four arms**, and the script fails closed if it is not. 306 = 2 GEMMs for each of
+the 75 routed target layers plus the three MTP draft layers.
+
+Across both post-fix captures (88 rank-steps):
+
+| additive component | ms/step | share | cross-node spread |
+| --- | ---: | ---: | --- |
+| routed experts (W4 Marlin) | 6.757 | **26.14%** | 6.694-6.820 |
+| dense/shared-expert compiled GEMMs | 5.684 | **21.99%** | 5.682-5.685 |
+| TP/EP communication and synchronization | 5.051 | **19.54%** | 4.890-5.211 |
+| glue, elementwise and uncategorized kernels | 2.963 | **11.46%** | 2.960-2.966 |
+| GPU-empty host/graph gaps | 2.010 | **7.77%** | 1.953-2.066 |
+| attention (FlashMLA + DSA + KV) | 1.886 | **7.30%** | 1.880-1.892 |
+| MoE routing, activation and sum | 1.500 | **5.80%** | 1.499-1.502 |
+| **total (attributed GPU span)** | **25.851** | **100%** | 25.822-25.880 |
+
+The correction **confirms the shares and revises the absolutes**. Every
+percentage moves by less than 0.5 points from the boundary-attributed version,
+because the dropped kernels were spread nearly uniformly across families, so
+numerator and denominator shrank together. The absolute milliseconds are about
+6% higher. GPU-empty is essentially unchanged (2.010 against 2.045), so the
+earlier suspicion that boundary loss inflated the idle bucket does not hold.
+
+The total is the step's **attributed GPU span**, 25.851 ms, not the 24.307 ms
+engine-step wall. The earlier version forced the budget to sum to the wall,
+which is wrong by construction: consecutive steps' GPU spans overlap by a mean
+1.54 ms, because the CPU has already launched step N+1 while step N's tail is
+still draining, and the aux cold stream lets the two coexist. Quote the
+percentages, or quote ms against the 25.851 ms span - do not read the ms column
+as a partition of the 24.307 ms wall.
+
+The directly attributed routed-MoE path is 31.9% after adding Marlin to its
 routing/activation/sum epilogue. The dense/shared bucket also contains shared
 expert work and compiled MTP/dense GEMMs that use the same nvjet/Triton kernel
 families, so the trace cannot split that 22% cleanly without additional graph
 annotations. Communication includes synchronization wait, not just bytes on
 NVLink. This budget is for c1/q4 at short realistic context; attention's share
 will grow with context length.
+
+### The machine is a quarter idle, not 8%
+
+The budget scores 7.77% as GPU-empty, which reads like a well-fed device. It is
+not. A rank that arrives early at a custom all-reduce spins **inside** the
+kernel until its peers arrive, and the profiler scores every microsecond of that
+spin as GPU-busy. Adding the measured synchronization excess to the empty
+bucket:
+
+| doing no useful work, per step | ms | share of the 24.307 ms wall |
+| --- | ---: | ---: |
+| GPU-empty host/graph gaps | 2.010 | 8.27% |
+| custom-AR synchronization excess | 4.128 | 16.98% |
+| **total** | **6.138** | **25.3%** |
+
+A quarter of every decode step is spent either with an empty device or with SMs
+burning cycles in a barrier. That, not any single kernel, is the headline number
+for what remains.
+
+### The cold tier is at the C2C roofline; there is no kernel work left in it
+
+Splitting the routed span by tier, averaged over both post-fix captures:
+
+| post-fix routed path | ms/step | cross-node spread |
+| --- | ---: | --- |
+| hot cumulative | 5.917 | 5.843-5.991 (**2.5%**) |
+| cold cumulative | 3.980 | 3.976-3.984 (**0.2%**) |
+| Marlin cumulative | 9.897 | 9.819-9.974 |
+| routed layer span | 7.640 | 7.577-7.703 |
+| span above `max(hot, cold)` | **1.723** | 1.712-1.734 |
+
+Cold carries about 20% of routed traffic under `hybrid-p0.5` but 40% of Marlin
+time, which reads as a 2.7x per-token defect in the cold path. It is not a
+defect. One W4G64 expert is 12.58 MB of `w13` plus 6.29 MB of `w2` plus about
+1.2 MB of group scales, so **20.1 MB**. Cold time per layer is
+3.980 ms / 75 = **53 us**. At roughly one distinct cold expert per rank per layer
+at M=4, that is **379 GB/s** - against the **373 GB/s** that
+[`2026-07-25-grace-bandwidth`](../2026-07-25-grace-bandwidth/README.md) measured
+as the achievable pinned-Grace read rate, 88-95% of the 421 GB/s C2C roof.
+
+Two independent checks support the roofline reading rather than a coincidence.
+First, cold is **node-invariant to 0.2%** while hot varies 2.5%: bandwidth-bound
+work does not track clocks, compute-bound work does. Second, the pre-fix cold
+figure is 5.957 ms, 50% higher, because under the monopoly a cold kernel's
+interval includes time resident but starved of SMs - the same artifact that
+inflates the pre-fix Marlin cumulative. Only the post-fix number is a
+bandwidth measurement.
+
+Three consequences, in decreasing order of how much work they save:
+
+1. **Do not tune the cold Marlin kernel.** It is running at the memory roof of
+   the path it reads from. Tile shapes, split-K, grid constants and occupancy
+   have nothing to win there, which retires a class of experiment this worklog
+   has already run several variants of.
+2. **The fix never made cold faster and was never supposed to.** It let hot
+   compute proceed *during* cold's transfer. That is why the win is largest at
+   low activated-expert counts, where cold's fixed C2C cost dominates a small
+   hot chain.
+3. **Remaining overlap headroom is 1.723 ms/step**, the span above
+   `max(hot, cold)`, including the `moe_sum`/`act_and_mul` epilogue (about
+   1.06 ms excluding it). That is a bounded and well-defined target, unlike
+   "improve overlap".
+
+Cold *volume* is not buyable either: 11,480 of 19,200 expert slots are already
+hot (59.8%, about 57 GB/rank), HBM is the binding constraint, and Grace-to-HBM
+staging was tested and refuted twice in this worklog
+([staging hurts +16-34%](../2026-07-27-green-context-marlin/README.md)). The
+lever on cold is placement quality, not kernels and not more HBM.
 
 The target is replayed as one CUDA graph, so its 0.985 ms of idle cannot be
 CPU-per-kernel launch latency. The trace contains seven graph launches and 140
@@ -690,13 +817,41 @@ the 2,430 gaps are extremely small (p50 0.42 us, p90 0.51 us, maximum under
 1.8 us). Eliminating every one would cap the gain at roughly 1 ms; graph-node
 fusion is now a secondary lever, not the first one.
 
-The first remaining lever is **per-layer EP-rank balance**. On the cleaner
-1092955 post-fix capture, summing `max(rank span) - mean(rank span)` across the
-75 routed layers gives **1.485 ms/step**, or 19% of the routed span. The largest
-single-layer excesses are layers 61 and 34 at about 53 us each, followed by
-layers 24, 19, 71, 41 and 30 at 34-40 us. The slow ranks are mostly hot-chain
-heavy, so the actual-Claude routing capture should be used to rebalance expert
-ownership/placement per layer, with the current per-rank HBM constraint.
+The first remaining lever is **per-layer EP-rank balance**. Aligning the 75
+routed layers across all four ranks in each step and summing
+`max(rank span) - mean(rank span)` gives **3.615 ms/step post-fix**
+(3.547 and 3.682 on the two captures, per-step range 3.095-4.751), or **47% of
+the 7.640 ms routed span**. Pre-fix it is 3.885 ms, so the shared-memory fix
+barely touched the skew - it is a placement property, not a launch property.
+
+This supersedes an earlier figure of 1.485 ms in this report, which came from a
+single capture and did not align layers across all four ranks. The corrected
+number matters because it **reconciles with the communication measurement**: the
+custom all-reduces show 4.128 ms/step of synchronization excess, and 3.615 ms of
+per-layer routed skew is the same phenomenon measured with a different estimator
+(`max - mean` over ranks per layer, against `mean - min` over ranks per
+collective). Agreement to within 12% is the strongest evidence in this report
+that **routed-layer rank skew is what the all-reduce tails are waiting on**. The
+old 1.485 ms figure invited the opposite reading, that skew and AR wait were
+separate and additive levers worth 5.6 ms together. They are one lever worth
+roughly 3.6-4.1 ms.
+
+Per-layer excess averages 48 us against a 102 us mean layer span, so the slowest
+rank routinely runs about 1.5x the mean. The worst offenders are stable across
+captures - layers 34, 69, 18, 20, 61, 67 at 68-82 us mean excess - which is what
+a static placement defect looks like rather than transient jitter. The
+actual-Claude routing capture should be used to rebalance expert
+ownership/placement per layer under the current per-rank HBM constraint, and
+these layer indices are where to start.
+
+Reproduce with:
+
+```bash
+.venv/bin/python agent_space/experiments/2026-07-29-marlin-smem-monopoly/analyze_step_budget.py \
+  /e/project1/profound/alint77/traces/marlin-smem-profile-1092954 \
+  /e/project1/profound/alint77/traces/marlin-smem-profile-1092955 \
+  --json step-budget.json
+```
 
 Custom all-reduce reflects the same skew. It totals 4.7-5.0 ms/rank-step
 post-fix, with p50 6-7 us but p90 about 97 us and p99 189-192 us. Treating the
@@ -747,12 +902,22 @@ excluded from the steady mean. Across the remaining 21 steps:
 | three draft vocabulary NCCL all-gathers | 3 | 0.0453 | 0.0321 |
 | **all communication kernels** | **170** | **4.846** | **0.718** |
 
-Thus **4.128 ms, or 85.2% of communication-kernel residency, is
-cross-rank synchronization excess**. Relative to the 24.307 ms mean engine
-step, the communication kernels are resident for 19.94% of the step, but the
-fast-rank payload/protocol proxy is only 2.95%. Nearly all of the long residency
-is in the target model, not MTP: the three MTP rounds contribute 0.153 ms
-observed and 0.068 ms at the fast-rank floor.
+Thus **4.128 ms, or 85.2% of communication-kernel residency, is not payload**.
+Relative to the 24.307 ms mean engine step, the communication kernels are
+resident for 19.94% of the step, but the fast-rank payload/protocol proxy is only
+2.95%. Nearly all of the long residency is in the target model, not MTP: the
+three MTP rounds contribute 0.153 ms observed and 0.068 ms at the fast-rank
+floor.
+
+**4.128 ms is an upper bound on the wait, not a recoverable budget.** The floor
+is a per-call minimum over four ranks, and the fastest rank differs from call to
+call, so no rank could actually achieve the 0.718 ms total - it would have to win
+all 170 races. Under perfect balance every rank would converge to something at or
+above the *slowest* rank's true payload time, not the per-call minimum. The
+independent estimator to trust is the routed-layer skew, **3.615 ms/step** of
+summed `max - mean`, which is the same phenomenon and is what a placement change
+can actually move. Treat 3.6 ms as the target and 4.1 ms as the ceiling, and do
+not add the two.
 
 The custom-AR duration distribution makes the barrier tail visible. Over
 steady rank-kernel instances it is 6.75 us at p50, 96.37 us at p90, and
@@ -803,15 +968,34 @@ Per-step totals, including the marked capture-start outlier:
 | 1092955/9 | 5.853 | 0.714 | 5.139 |
 | 1092955/10 | 5.526 | 0.716 | 4.810 |
 
+These per-step totals are **not a stationary sample**. Steps 8-10 are
+systematically higher than steps 1-7 in both captures (5.5-5.9 ms against
+4.2-4.7 ms), because the capture is twelve consecutive steps of a single prompt
+and the context is growing under it. Ratios between arms survive this; absolute
+per-step figures should not be quoted as steady-state values, and any future
+capture that wants stationary absolutes needs either a fixed context length or
+many more steps.
+
 ### Artifacts
 
 - Primary: `/e/project1/profound/alint77/traces/marlin-smem-profile-1092954/`
 - Replicate: `/e/project1/profound/alint77/traces/marlin-smem-profile-1092955/`
-- Reproducer: `analyze_comms.py`
-- Machine-readable summary: `comm-kernel-analysis.json`
-- Full per-step table: `comm-step-breakdown.csv`
-- `profile-ab-{1092954,1092955}-analysis.{txt,json}`
-- `analyze_profile_ab.py`
+- Reproducers: `analyze_step_budget.py` (correlation-attributed budget, tier
+  split and EP skew; supersedes the per-family aggregates in
+  `analyze_profile_ab.py`), `analyze_comms.py` (collective dissection)
+- Machine-readable: `step-budget.json`, `comm-kernel-analysis.json`
+- Full per-step collective table: `comm-step-breakdown.csv`
+- Superseded but kept for comparison:
+  `profile-ab-{1092954,1092955}-analysis.{txt,json}` and
+  `analyze_profile_ab.py`. Its step wall, target-graph span, routed-layer span
+  and tier split are correlation- or graph-derived and remain correct; its
+  `categories` per-family aggregates and `top_kernels` are boundary-attributed
+  and run 4-6% low.
+
+The traces are **22 MB per capture** (four gzipped rank files), small enough to
+keep indefinitely. They are the only input to both reproducers, so they must
+survive for any of the numbers in this section to be re-derivable: do not let a
+scratch cleanup take `/e/project1/profound/alint77/traces/`.
 
 Open any rank file under `off/` or `on/` directly in Perfetto. The two jobs ran
 on separate nodes but shared the same per-arm compile-cache roots while starting

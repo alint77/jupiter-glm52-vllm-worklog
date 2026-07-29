@@ -490,24 +490,57 @@ ulp, deterministically, so the exact-400K golden SHA has to be re-established
 rather than treated as a regression. See the
 [shared-memory monopoly](experiments/2026-07-29-marlin-smem-monopoly/README.md).
 
+End to end, the fix is worth **5.3-8.1% of decode step time**, and the gain grows
+with concurrency. The controlled server measurements, all same-node off/on pairs:
+
+| protocol | off | on | step time |
+| --- | ---: | ---: | ---: |
+| no-MTP c1, two runs each | 22.25 ms | 21.07 | **-5.3%** |
+| no-MTP c2 | 27.08 | 25.35 | **-6.4%** |
+| no-MTP c4, two runs each | 32.46 | 30.30 | **-6.7%** |
+| MTP3 c1 same-node, two runs each | 9.18 | 8.44 | **-8.1%** |
+
+The no-MTP protocol is the discriminating one: it removes acceptance-rate noise
+and reproduces to +-0.1 ms. Prefer these numbers when quoting the fix. The
+kernel-level 34% median is the isolated two-tier chain, not a step, and the
+profiler trace below is a smaller number again because it is c1/M=4 under an
+active profiler on a single prompt - it is there to explain *where* the win comes
+from, not how big it is.
+
 The post-fix production trace closes the mechanism at engine-step scale. Two
 same-configuration off/on captures on separate Booster nodes measure
 **25.47 -> 24.31 ms mean step wall (-4.56%)**; routed-layer critical spans save
 1.04 ms and account for about 90% of the step improvement, while GPU idle stays
-flat. The target graph has only 0.985 ms of internal idle across ~2,430
-sub-microsecond dependency gaps, so it is not CPU kernel-launch-bound. The next
-measured lever is per-layer EP-rank balance: the post-fix trace retains
-1.485 ms/step of summed max-minus-mean routed-layer skew, mostly in the hot
-chain, followed by custom all-reduce tails. Trace paths and full attribution are
-in the [Phase 26 report](experiments/2026-07-29-marlin-smem-monopoly/README.md#post-fix-production-trace-2026-07-29).
+flat. Attribution by CUDA launch correlation makes the per-step kernel census
+exact in all 176 rank-steps (166 all-reduces, 306 Marlin GEMMs, 4 all-gathers)
+and confirms the step budget's shares to within 0.5 points. Three results reframe
+what is left. First, **a quarter of every step does no useful work**: 2.01 ms of
+GPU-empty gaps plus 4.13 ms of all-reduce barrier spin that the profiler scores
+as busy. Second, **the cold tier is at the C2C roofline** - 53 us/layer for a
+20.1 MB W4G64 expert is 379 GB/s against the 373 GB/s this worklog measured as
+achievable, it is node-invariant to 0.2% where hot varies 2.5%, and so cold
+Marlin kernel tuning is retired as a lever; residual overlap headroom is a
+bounded 1.72 ms/step. Third, the next lever is **per-layer EP-rank balance at
+3.615 ms/step** of summed max-minus-mean routed-layer skew (correcting an earlier
+1.485 ms figure), which now reconciles to within 12% with the 4.13 ms of
+all-reduce synchronization excess - one lever, not two additive ones. Worst
+layers are 34, 69, 18, 20, 61 and 67. Full attribution and reproducers are in the
+[Phase 26 report](experiments/2026-07-29-marlin-smem-monopoly/README.md#post-fix-production-trace-2026-07-29).
 
 Phase 27 measures the current c4/DCP4/MTP3 path on the original 18-prompt
-mixed-domain suite. Two warmed repetitions complete all requests at **179.96
-and 183.23 aggregate output tok/s, or 181.60 tok/s mean**, with 18.687 ms
-mean per-request TPOT and 69.19% draft acceptance. The workload contains three
-prompts each for Python, PyTorch, CUDA C++, math, email, and technical
-explanation, with 256 forced output tokens per request at concurrency four.
-See the [mixed-domain c4 result](experiments/2026-07-29-c4-mtp3-mixed-suite/README.md).
+mixed-domain suite: three prompts each for Python, PyTorch, CUDA C++, math, email
+and technical explanation, 256 forced output tokens per request at concurrency
+four. Two warmed repetitions give **18.687 ms mean per-request TPOT** and
+**181.60 tok/s mean aggregate output throughput**, at 69.19% draft acceptance.
+Quote the TPOT: it reproduces to 0.16% where the aggregate reproduces to 1.8%,
+and that 1.8% is almost entirely the 1.9-point swing in draft acceptance between
+repetitions. The phase also retracts its own per-domain table - `--disable-shuffle`
+makes file order the submission order, the prompt file groups domains in blocks
+of three, so domain aliases wave position and all six `explanation` requests are
+draining requests. Drain position alone is worth **15.7%** (16.175 ms TPOT
+against 19.190 ms steady), which is the whole apparent domain spread. A
+round-robin `prompts-interleaved.jsonl` arm replaces it. See the
+[mixed-domain c4 result](experiments/2026-07-29-c4-mtp3-mixed-suite/README.md).
 
 ## Reproducing
 

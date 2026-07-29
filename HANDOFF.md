@@ -298,6 +298,41 @@ Open items:
   treat a mismatch as a regression.
 - Nothing is committed. Source changes sit in the working tree.
 
+### Where the decode step goes now, and what is retired
+
+A matched off/on profiler capture on two nodes (`job-profile-ab.sh`, jobs 1092954
+and 1092955) was re-analysed with launch-correlation attribution
+(`analyze_step_budget.py`), which makes the per-step kernel census exact in all
+176 rank-steps: 166 custom all-reduces, 306 Marlin GEMMs, 4 all-gathers. The
+earlier GPU-timestamp-versus-CPU-annotation method dropped 4-6% of kernels. Share
+percentages survived the correction to within 0.5 points; absolutes are ~6%
+higher and sum to the 25.851 ms attributed GPU span, not the 24.307 ms step wall
+(consecutive steps' GPU spans overlap by 1.54 ms).
+
+Three results should shape what gets tried next:
+
+- **A quarter of every step does no useful work.** 2.01 ms GPU-empty plus 4.13 ms
+  of all-reduce barrier spin that the profiler scores as busy = 6.14 ms of
+  24.307 ms. Utilisation is ~75%, not the 92% the busy union suggests.
+- **The cold tier is at the C2C roofline and is retired as a kernel target.**
+  53 us/layer for a 20.1 MB W4G64 expert is 379 GB/s against the 373 GB/s
+  measured achievable rate (`2026-07-25-grace-bandwidth`). It is node-invariant
+  to 0.2% where hot varies 2.5%. Do not tune cold tiles, split-K, grids or
+  occupancy - and do not re-try Grace-to-HBM staging, refuted twice already.
+  Residual overlap headroom is a bounded 1.72 ms/step (span above
+  `max(hot, cold)`).
+- **Per-layer EP-rank balance is the top lever, at 3.615 ms/step** of summed
+  `max - mean` routed-layer skew, 47% of the routed span. This corrects an
+  earlier 1.485 ms figure in the report and now agrees within 12% with the
+  4.13 ms of all-reduce synchronization excess: **they are one lever, not two
+  additive ones.** Worst layers are 34, 69, 18, 20, 61, 67. The 4.13 ms is a
+  ceiling (per-call min over four ranks, unachievable by any single rank); treat
+  3.6 ms as the target.
+
+Do not use the trace's -4.56% as the size of the shared-memory win; it is c1/M=4
+under an active profiler on one prompt. The no-MTP suite is the authority
+(-5.3% to -6.7%, growing with concurrency), and the trace explains where.
+
 **Scratch is inode-limited, not space-limited.** Three jobs died in Inductor
 autotuning with `Errno 122` while 512 MB writes still succeeded: only five files
 could be created on `/e/scratch` against 4000/4000 on `/e/project1`. The shared

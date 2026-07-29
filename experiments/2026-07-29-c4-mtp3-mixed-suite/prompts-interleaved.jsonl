@@ -1,0 +1,18 @@
+{"domain": "python", "prompt": "Write a robust Python 3.12 implementation of an LRU cache using collections.OrderedDict. Include type hints, a short usage example, and time-complexity analysis."}
+{"domain": "pytorch", "prompt": "Implement a numerically stable custom PyTorch autograd Function for log-sum-exp over the last dimension. Include forward, backward, and a gradcheck example."}
+{"domain": "cuda-cpp", "prompt": "Write a CUDA C++ kernel for an out-of-place tiled matrix transpose using shared memory. Avoid shared-memory bank conflicts and explain the indexing."}
+{"domain": "math", "prompt": "Prove by induction that 1^2 + 2^2 + ... + n^2 = n(n+1)(2n+1)/6. Keep every algebraic step explicit."}
+{"domain": "email", "prompt": "Draft a concise professional email asking to move tomorrow's project review from 10:00 to 14:00 because a customer incident needs attention. Offer an alternative day."}
+{"domain": "explanation", "prompt": "Explain snapshot isolation and serializable isolation to a backend engineer. Include one concrete anomaly that snapshot isolation permits."}
+{"domain": "python", "prompt": "The function `def flatten(xs): return sum(xs, [])` is slow for large lists of lists. Explain why and replace it with an efficient, readable Python implementation."}
+{"domain": "pytorch", "prompt": "Show a correct PyTorch DistributedDataParallel training loop using mixed precision and gradient accumulation. Explain where no_sync and optimizer.zero_grad belong."}
+{"domain": "cuda-cpp", "prompt": "Implement a CUDA C++ block reduction for float sums using warp shuffles and one shared value per warp. State the assumptions and launch configuration."}
+{"domain": "math", "prompt": "For positive real x and y with x + y = 20, find the maximum of x^2 y and justify that it is the global maximum."}
+{"domain": "email", "prompt": "Write a transparent status email explaining that a software milestone will slip by three days, what caused it, what is already fixed, and how recurrence will be prevented."}
+{"domain": "explanation", "prompt": "Compare TCP plus TLS with QUIC for a latency-sensitive service. Focus on handshake latency, head-of-line blocking, migration, and operational tradeoffs."}
+{"domain": "python", "prompt": "Implement an async Python retry helper with exponential backoff, jitter, a maximum attempt count, and correct cancellation handling. Show a concise example."}
+{"domain": "pytorch", "prompt": "A PyTorch model runs out of GPU memory during attention on long sequences. Provide a minimal diagnosis checklist and rewrite the attention call using scaled_dot_product_attention."}
+{"domain": "cuda-cpp", "prompt": "Debug this CUDA indexing pattern: `int i = blockIdx.x * blockDim.y + threadIdx.x;`. Explain the bug, give the corrected kernel guard, and show the launch code."}
+{"domain": "math", "prompt": "A fair coin is tossed until two consecutive heads appear. Derive the expected number of tosses using states rather than quoting a known result."}
+{"domain": "email", "prompt": "Politely decline a recruiter's interview invitation because I have accepted another role. Thank them and keep the relationship open for the future."}
+{"domain": "explanation", "prompt": "Explain to a nontechnical project manager what it means that speculative decoding doubled decode throughput while slightly increasing time to first token."}

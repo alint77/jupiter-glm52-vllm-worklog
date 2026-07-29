@@ -14,6 +14,11 @@ set -euo pipefail
 
 repo_dir=/e/project1/profound/alint77/vllm
 result_dir="${repo_dir}/agent_space/experiments/2026-07-29-c4-mtp3-mixed-suite"
+# Submission order is the whole point of the interleaved arm: `--disable-shuffle`
+# means file order is submission order, and a domain-grouped file makes the last
+# domain the draining one.
+prompt_file="${PROMPT_FILE:-prompts-interleaved.jsonl}"
+tag="${RESULT_TAG:-mixed-c4-interleaved}"
 model=/e/fscratch/profound/naeimitabiei1/models/GLM-5.2-AutoRound-W4G64-MTP-e1ba887
 profile="${repo_dir}/agent_space/experiments/2026-07-26-autoround-w4g64/hybrid-p0.5-profile.json"
 
@@ -23,8 +28,8 @@ source agent_space/jupiter-env.sh
 export CUDA_VISIBLE_DEVICES=0,1,2,3
 export VLLM_USE_V2_MODEL_RUNNER=1
 export VLLM_SERVER_DEV_MODE=1
-export VLLM_CACHE_ROOT=/e/scratch/profound/naeimitabiei1/vllm-cache-c4-mixed
-export TRTLLM_DG_CACHE_DIR=/e/scratch/profound/naeimitabiei1/trtllm-dg-c4-mixed
+export VLLM_CACHE_ROOT=/e/project1/profound/alint77/.marlin-caches/vllm-cache-c4-mixed
+export TRTLLM_DG_CACHE_DIR=/e/project1/profound/alint77/.marlin-caches/trtllm-dg-c4-mixed
 export TIERED_MOE_MODEL_PATH="${model}"
 export TIERED_MOE_PLACEMENT_PROFILE="${profile}"
 export VLLM_TIERED_MOE_PROFILE_CAP=0
@@ -39,8 +44,8 @@ agent_space/experiments/2026-07-17-end-to-end-tuning/run-server.sh \
   --max-num-seqs 4 \
   --gpu-memory-utilization 0.85 \
   --no-enable-prefix-caching \
-  >"${result_dir}/server.out" \
-  2>"${result_dir}/server.err" &
+  >"${result_dir}/${tag}-server.out" \
+  2>"${result_dir}/${tag}-server.err" &
 server_pid=$!
 cleanup() {
   kill "${server_pid}" 2>/dev/null || true
@@ -54,7 +59,7 @@ for _ in $(seq 1 360); do
     break
   fi
   if ! kill -0 "${server_pid}" 2>/dev/null; then
-    tail -80 "${result_dir}/server.err"
+    tail -80 "${result_dir}/${tag}-server.err"
     exit 1
   fi
   sleep 5
@@ -64,8 +69,8 @@ done
 curl -fsS http://127.0.0.1:8027/v1/completions \
   -H 'Content-Type: application/json' \
   -d '{"model":"glm52-w4a16-tiered","prompt":"The capital of France is","max_tokens":8,"temperature":0}' \
-  >"${result_dir}/semantic.json"
-jq -e '.choices[0].text | length > 0' "${result_dir}/semantic.json" >/dev/null
+  >"${result_dir}/${tag}-semantic.json"
+jq -e '.choices[0].text | length > 0' "${result_dir}/${tag}-semantic.json" >/dev/null
 
 bench_args=(
   --backend openai
@@ -75,7 +80,7 @@ bench_args=(
   --served-model-name glm52-w4a16-tiered
   --tokenizer "${model}"
   --dataset-name custom
-  --dataset-path "${result_dir}/prompts.jsonl"
+  --dataset-path "${result_dir}/${prompt_file}"
   --custom-output-len 256
   --disable-shuffle
   --num-prompts 18
@@ -87,13 +92,14 @@ bench_args=(
 )
 
 .venv/bin/vllm bench serve "${bench_args[@]}"
-for repeat in 1 2; do
+for repeat in 1 2 3; do
   curl -fsS -X POST http://127.0.0.1:8027/reset_prefix_cache >/dev/null
   .venv/bin/vllm bench serve "${bench_args[@]}" \
     --save-result \
     --save-detailed \
     --result-dir "${result_dir}" \
-    --result-filename "mixed-c4-r${repeat}.json"
+    --result-filename "${tag}-r${repeat}.json"
 done
 
-.venv/bin/python "${result_dir}/analyze.py" >"${result_dir}/summary.out"
+.venv/bin/python "${result_dir}/analyze.py" "${tag}" "${prompt_file}" \
+  >"${result_dir}/summary-${tag}.out"

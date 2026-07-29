@@ -1,0 +1,536 @@
+{
+  "1092954/off": {
+    "arm_dir": "/e/project1/profound/alint77/traces/marlin-smem-profile-1092954/off",
+    "rank_steps": {
+      "0": 11,
+      "1": 11,
+      "2": 11,
+      "3": 11
+    },
+    "rank_steps_total": 44,
+    "wall_ms_per_step": 25.194054465553975,
+    "gpu_span_ms_per_step": 26.724772607599427,
+    "gpu_busy_ms_per_step": 24.799558533913558,
+    "gpu_empty_ms_per_step": 1.9252140736858727,
+    "wall_minus_span_ms_per_step": -1.5307181420454534,
+    "kernel_census": {
+      "cross_device_reduce_1stage": 166,
+      "ncclDevKernel_AllGather": 4,
+      "marlin_moe_wna16": 306
+    },
+    "budget_ms_per_step": {
+      "routed experts (W4 Marlin)": 7.081414428947702,
+      "dense/shared compiled GEMMs": 5.650819003950563,
+      "TP/EP communication and synchronization": 5.325651260875362,
+      "glue, elementwise and uncategorized": 2.937311836588711,
+      "MoE routing, activation and sum": 1.9286200548650856,
+      "GPU-empty host/graph gaps": 1.925214073685873,
+      "attention (FlashMLA + DSA + KV)": 1.8757419486861353
+    },
+    "budget_total_ms_per_step": 26.72477260759943,
+    "target_graph_span_ms_per_step": 23.94397972940341,
+    "tiered": {
+      "hot_ms_per_step": 6.9785385,
+      "cold_ms_per_step": 5.800914522727273,
+      "marlin_cumulative_ms_per_step": 12.779453022727273,
+      "layer_span_ms_per_step": 8.28624589293324,
+      "overlap_headroom_ms_per_step": 1.3077073929332395
+    },
+    "ep_skew": {
+      "aligned_steps": 11,
+      "summed_max_minus_mean_ms_per_step": 3.73825202112921,
+      "spread_ms": [
+        3.2591340458984273,
+        4.2760011660156385
+      ],
+      "worst_layers_us": [
+        {
+          "layer": 48,
+          "mean_excess_us": 75.06499733664269
+        },
+        {
+          "layer": 73,
+          "mean_excess_us": 69.23512393465278
+        },
+        {
+          "layer": 68,
+          "mean_excess_us": 69.15597629616066
+        },
+        {
+          "layer": 74,
+          "mean_excess_us": 65.88330690695443
+        },
+        {
+          "layer": 55,
+          "mean_excess_us": 65.5995264559605
+        },
+        {
+          "layer": 40,
+          "mean_excess_us": 65.54885848720896
+        },
+        {
+          "layer": 45,
+          "mean_excess_us": 64.66149973366397
+        },
+        {
+          "layer": 60,
+          "mean_excess_us": 63.459430220176266
+        }
+      ]
+    }
+  },
+  "1092954/on": {
+    "arm_dir": "/e/project1/profound/alint77/traces/marlin-smem-profile-1092954/on",
+    "rank_steps": {
+      "0": 11,
+      "1": 11,
+      "2": 11,
+      "3": 11
+    },
+    "rank_steps_total": 44,
+    "wall_ms_per_step": 24.280500554865057,
+    "gpu_span_ms_per_step": 25.879571512340195,
+    "gpu_busy_ms_per_step": 23.926274794744668,
+    "gpu_empty_ms_per_step": 1.9532967175955258,
+    "wall_minus_span_ms_per_step": -1.5990709574751385,
+    "kernel_census": {
+      "cross_device_reduce_1stage": 166,
+      "ncclDevKernel_AllGather": 4,
+      "marlin_moe_wna16": 306
+    },
+    "budget_ms_per_step": {
+      "routed experts (W4 Marlin)": 6.694330031042818,
+      "dense/shared compiled GEMMs": 5.682406162316408,
+      "TP/EP communication and synchronization": 5.211155457830253,
+      "glue, elementwise and uncategorized": 2.95976608922271,
+      "GPU-empty host/graph gaps": 1.9532967175955258,
+      "attention (FlashMLA + DSA + KV)": 1.879638211470227,
+      "MoE routing, activation and sum": 1.4989788428622568
+    },
+    "budget_total_ms_per_step": 25.8795715123402,
+    "target_graph_span_ms_per_step": 23.125640799982243,
+    "tiered": {
+      "hot_ms_per_step": 5.842634727272727,
+      "cold_ms_per_step": 3.9760987272727273,
+      "marlin_cumulative_ms_per_step": 9.818733454545454,
+      "layer_span_ms_per_step": 7.577048831143433,
+      "overlap_headroom_ms_per_step": 1.734414103870706
+    },
+    "ep_skew": {
+      "aligned_steps": 11,
+      "summed_max_minus_mean_ms_per_step": 3.54675151686789,
+      "spread_ms": [
+        2.6310939023437516,
+        4.652091580078141
+      ],
+      "worst_layers_us": [
+        {
+          "layer": 69,
+          "mean_excess_us": 70.54400727982865
+        },
+        {
+          "layer": 57,
+          "mean_excess_us": 69.98652024147852
+        },
+        {
+          "layer": 18,
+          "mean_excess_us": 67.10087091619305
+        },
+        {
+          "layer": 11,
+          "mean_excess_us": 66.17269948508357
+        },
+        {
+          "layer": 71,
+          "mean_excess_us": 66.13946937144729
+        },
+        {
+          "layer": 39,
+          "mean_excess_us": 65.78578382457299
+        },
+        {
+          "layer": 67,
+          "mean_excess_us": 65.11399200994049
+        },
+        {
+          "layer": 54,
+          "mean_excess_us": 64.75382865767898
+        }
+      ]
+    }
+  },
+  "1092955/off": {
+    "arm_dir": "/e/project1/profound/alint77/traces/marlin-smem-profile-1092955/off",
+    "rank_steps": {
+      "0": 11,
+      "1": 11,
+      "2": 11,
+      "3": 11
+    },
+    "rank_steps_total": 44,
+    "wall_ms_per_step": 25.74107848011364,
+    "gpu_span_ms_per_step": 27.492873293146307,
+    "gpu_busy_ms_per_step": 25.504013161488015,
+    "gpu_empty_ms_per_step": 1.9888601316582943,
+    "wall_minus_span_ms_per_step": -1.751794813032671,
+    "kernel_census": {
+      "cross_device_reduce_1stage": 166,
+      "ncclDevKernel_AllGather": 4,
+      "marlin_moe_wna16": 306
+    },
+    "budget_ms_per_step": {
+      "routed experts (W4 Marlin)": 7.729706841145827,
+      "dense/shared compiled GEMMs": 5.665283742986452,
+      "TP/EP communication and synchronization": 5.235536697620725,
+      "glue, elementwise and uncategorized": 2.896649888183759,
+      "MoE routing, activation and sum": 2.092907156057657,
+      "GPU-empty host/graph gaps": 1.9888601316582943,
+      "attention (FlashMLA + DSA + KV)": 1.883928835493593
+    },
+    "budget_total_ms_per_step": 27.492873293146307,
+    "target_graph_span_ms_per_step": 24.679463377219463,
+    "tiered": {
+      "hot_ms_per_step": 7.874157772727273,
+      "cold_ms_per_step": 6.113141931818182,
+      "marlin_cumulative_ms_per_step": 13.987299704545455,
+      "layer_span_ms_per_step": 9.075158150390626,
+      "overlap_headroom_ms_per_step": 1.2010003776633535
+    },
+    "ep_skew": {
+      "aligned_steps": 11,
+      "summed_max_minus_mean_ms_per_step": 4.031073363103703,
+      "spread_ms": [
+        3.483482275390607,
+        4.70968134863307
+      ],
+      "worst_layers_us": [
+        {
+          "layer": 34,
+          "mean_excess_us": 81.61459463778523
+        },
+        {
+          "layer": 68,
+          "mean_excess_us": 80.69310573508052
+        },
+        {
+          "layer": 65,
+          "mean_excess_us": 73.87722753906702
+        },
+        {
+          "layer": 61,
+          "mean_excess_us": 72.39142942116179
+        },
+        {
+          "layer": 74,
+          "mean_excess_us": 71.88498916903251
+        },
+        {
+          "layer": 54,
+          "mean_excess_us": 68.83222851562287
+        },
+        {
+          "layer": 20,
+          "mean_excess_us": 68.6317306463127
+        },
+        {
+          "layer": 69,
+          "mean_excess_us": 68.52673233309831
+        }
+      ]
+    }
+  },
+  "1092955/on": {
+    "arm_dir": "/e/project1/profound/alint77/traces/marlin-smem-profile-1092955/on",
+    "rank_steps": {
+      "0": 11,
+      "1": 11,
+      "2": 11,
+      "3": 11
+    },
+    "rank_steps_total": 44,
+    "wall_ms_per_step": 24.333054609818895,
+    "gpu_span_ms_per_step": 25.82158418013139,
+    "gpu_busy_ms_per_step": 23.755613303178674,
+    "gpu_empty_ms_per_step": 2.0659708769527185,
+    "wall_minus_span_ms_per_step": -1.4885295703124972,
+    "kernel_census": {
+      "cross_device_reduce_1stage": 166,
+      "ncclDevKernel_AllGather": 4,
+      "marlin_moe_wna16": 306
+    },
+    "budget_ms_per_step": {
+      "routed experts (W4 Marlin)": 6.82045457631979,
+      "dense/shared compiled GEMMs": 5.6847261139914105,
+      "TP/EP communication and synchronization": 4.890163874023442,
+      "glue, elementwise and uncategorized": 2.966346946200699,
+      "GPU-empty host/graph gaps": 2.0659708769527185,
+      "attention (FlashMLA + DSA + KV)": 1.8921471950462867,
+      "MoE routing, activation and sum": 1.50177459759704
+    },
+    "budget_total_ms_per_step": 25.82158418013139,
+    "target_graph_span_ms_per_step": 22.92492437837358,
+    "tiered": {
+      "hot_ms_per_step": 5.990618318181817,
+      "cold_ms_per_step": 3.9837576136363637,
+      "marlin_cumulative_ms_per_step": 9.97437593181818,
+      "layer_span_ms_per_step": 7.702813318714511,
+      "overlap_headroom_ms_per_step": 1.7121950005326934
+    },
+    "ep_skew": {
+      "aligned_steps": 11,
+      "summed_max_minus_mean_ms_per_step": 3.6822967345525957,
+      "spread_ms": [
+        3.0948303408203257,
+        4.751147702148436
+      ],
+      "worst_layers_us": [
+        {
+          "layer": 69,
+          "mean_excess_us": 76.44744158380945
+        },
+        {
+          "layer": 34,
+          "mean_excess_us": 75.46702441405942
+        },
+        {
+          "layer": 18,
+          "mean_excess_us": 69.5958845880724
+        },
+        {
+          "layer": 20,
+          "mean_excess_us": 67.99824280895204
+        },
+        {
+          "layer": 67,
+          "mean_excess_us": 67.84171972655932
+        },
+        {
+          "layer": 68,
+          "mean_excess_us": 66.52102441405461
+        },
+        {
+          "layer": 60,
+          "mean_excess_us": 65.69276429332865
+        },
+        {
+          "layer": 65,
+          "mean_excess_us": 64.98596386718872
+        }
+      ]
+    }
+  },
+  "cross-capture/off": {
+    "captures": 2,
+    "wall_ms_per_step": 25.46756647283381,
+    "gpu_span_ms_per_step": 27.10882295037287,
+    "budget": {
+      "routed experts (W4 Marlin)": {
+        "ms_per_step": 7.405560635046765,
+        "percent": 27.31789811975184,
+        "spread_ms": [
+          7.081414428947702,
+          7.729706841145827
+        ]
+      },
+      "dense/shared compiled GEMMs": {
+        "ms_per_step": 5.658051373468508,
+        "percent": 20.87162317532744,
+        "spread_ms": [
+          5.650819003950563,
+          5.665283742986452
+        ]
+      },
+      "TP/EP communication and synchronization": {
+        "ms_per_step": 5.280593979248044,
+        "percent": 19.479244779144544,
+        "spread_ms": [
+          5.235536697620725,
+          5.325651260875362
+        ]
+      },
+      "glue, elementwise and uncategorized": {
+        "ms_per_step": 2.916980862386235,
+        "percent": 10.760263799450994,
+        "spread_ms": [
+          2.896649888183759,
+          2.937311836588711
+        ]
+      },
+      "MoE routing, activation and sum": {
+        "ms_per_step": 2.010763605461371,
+        "percent": 7.417377025710053,
+        "spread_ms": [
+          1.9286200548650856,
+          2.092907156057657
+        ]
+      },
+      "GPU-empty host/graph gaps": {
+        "ms_per_step": 1.9570371026720836,
+        "percent": 7.219188772064209,
+        "spread_ms": [
+          1.925214073685873,
+          1.9888601316582943
+        ]
+      },
+      "attention (FlashMLA + DSA + KV)": {
+        "ms_per_step": 1.879835392089864,
+        "percent": 6.934404328550929,
+        "spread_ms": [
+          1.8757419486861353,
+          1.883928835493593
+        ]
+      }
+    },
+    "tiered": {
+      "hot_ms_per_step": {
+        "mean": 7.426348136363636,
+        "spread": [
+          6.9785385,
+          7.874157772727273
+        ]
+      },
+      "cold_ms_per_step": {
+        "mean": 5.957028227272728,
+        "spread": [
+          5.800914522727273,
+          6.113141931818182
+        ]
+      },
+      "marlin_cumulative_ms_per_step": {
+        "mean": 13.383376363636364,
+        "spread": [
+          12.779453022727273,
+          13.987299704545455
+        ]
+      },
+      "layer_span_ms_per_step": {
+        "mean": 8.680702021661933,
+        "spread": [
+          8.28624589293324,
+          9.075158150390626
+        ]
+      },
+      "overlap_headroom_ms_per_step": {
+        "mean": 1.2543538852982965,
+        "spread": [
+          1.2010003776633535,
+          1.3077073929332395
+        ]
+      }
+    },
+    "ep_skew_ms_per_step": {
+      "mean": 3.884662692116456,
+      "spread": [
+        3.73825202112921,
+        4.031073363103703
+      ]
+    }
+  },
+  "cross-capture/on": {
+    "captures": 2,
+    "wall_ms_per_step": 24.306777582341976,
+    "gpu_span_ms_per_step": 25.850577846235794,
+    "budget": {
+      "routed experts (W4 Marlin)": {
+        "ms_per_step": 6.7573923036813035,
+        "percent": 26.140198272841605,
+        "spread_ms": [
+          6.694330031042818,
+          6.82045457631979
+        ]
+      },
+      "dense/shared compiled GEMMs": {
+        "ms_per_step": 5.683566138153909,
+        "percent": 21.986224725655468,
+        "spread_ms": [
+          5.682406162316408,
+          5.6847261139914105
+        ]
+      },
+      "TP/EP communication and synchronization": {
+        "ms_per_step": 5.0506596659268475,
+        "percent": 19.537898518049158,
+        "spread_ms": [
+          4.890163874023442,
+          5.211155457830253
+        ]
+      },
+      "glue, elementwise and uncategorized": {
+        "ms_per_step": 2.9630565177117045,
+        "percent": 11.462244810682895,
+        "spread_ms": [
+          2.95976608922271,
+          2.966346946200699
+        ]
+      },
+      "GPU-empty host/graph gaps": {
+        "ms_per_step": 2.0096337972741223,
+        "percent": 7.7740382022707974,
+        "spread_ms": [
+          1.9532967175955258,
+          2.0659708769527185
+        ]
+      },
+      "attention (FlashMLA + DSA + KV)": {
+        "ms_per_step": 1.8858927032582569,
+        "percent": 7.295359950852585,
+        "spread_ms": [
+          1.879638211470227,
+          1.8921471950462867
+        ]
+      },
+      "MoE routing, activation and sum": {
+        "ms_per_step": 1.5003767202296485,
+        "percent": 5.804035519647481,
+        "spread_ms": [
+          1.4989788428622568,
+          1.50177459759704
+        ]
+      }
+    },
+    "tiered": {
+      "hot_ms_per_step": {
+        "mean": 5.916626522727272,
+        "spread": [
+          5.842634727272727,
+          5.990618318181817
+        ]
+      },
+      "cold_ms_per_step": {
+        "mean": 3.9799281704545457,
+        "spread": [
+          3.9760987272727273,
+          3.9837576136363637
+        ]
+      },
+      "marlin_cumulative_ms_per_step": {
+        "mean": 9.896554693181816,
+        "spread": [
+          9.818733454545454,
+          9.97437593181818
+        ]
+      },
+      "layer_span_ms_per_step": {
+        "mean": 7.639931074928972,
+        "spread": [
+          7.577048831143433,
+          7.702813318714511
+        ]
+      },
+      "overlap_headroom_ms_per_step": {
+        "mean": 1.7233045522016996,
+        "spread": [
+          1.7121950005326934,
+          1.734414103870706
+        ]
+      }
+    },
+    "ep_skew_ms_per_step": {
+      "mean": 3.6145241257102425,
+      "spread": [
+        3.54675151686789,
+        3.6822967345525957
+      ]
+    }
+  }
+}

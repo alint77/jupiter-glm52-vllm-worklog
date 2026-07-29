@@ -3,6 +3,27 @@
     "concurrency": 4,
     "mtp_depth": 3,
     "prompts": 18,
+    "prompt_file": "prompts.jsonl",
+    "submission_order": [
+      "python",
+      "python",
+      "python",
+      "pytorch",
+      "pytorch",
+      "pytorch",
+      "cuda-cpp",
+      "cuda-cpp",
+      "cuda-cpp",
+      "math",
+      "math",
+      "math",
+      "email",
+      "email",
+      "email",
+      "explanation",
+      "explanation",
+      "explanation"
+    ],
     "output_tokens_per_prompt": 256,
     "repetitions": 2
   },
@@ -40,39 +61,85 @@
   "domains": {
     "python": {
       "requests": 6,
-      "mean_per_request_decode_tps": 56.67596677815305,
       "mean_tpot_ms": 17.730613135324877,
-      "mean_ttft_ms": 530.9127815222988
+      "decode_tps_from_mean_tpot": 56.3996288434995,
+      "mean_ttft_ms": 530.9127815222988,
+      "submission_indices": [
+        0,
+        1,
+        2
+      ],
+      "draining_requests": 0
     },
     "pytorch": {
       "requests": 6,
-      "mean_per_request_decode_tps": 51.05915786102532,
       "mean_tpot_ms": 19.66040154243363,
-      "mean_ttft_ms": 592.0067966217175
+      "decode_tps_from_mean_tpot": 50.86366104179868,
+      "mean_ttft_ms": 592.0067966217175,
+      "submission_indices": [
+        3,
+        4,
+        5
+      ],
+      "draining_requests": 0
     },
     "cuda-cpp": {
       "requests": 6,
-      "mean_per_request_decode_tps": 53.2273078469299,
       "mean_tpot_ms": 19.13288016407903,
-      "mean_ttft_ms": 489.8459202765177
+      "decode_tps_from_mean_tpot": 52.2660462734433,
+      "mean_ttft_ms": 489.8459202765177,
+      "submission_indices": [
+        6,
+        7,
+        8
+      ],
+      "draining_requests": 0
     },
     "math": {
       "requests": 6,
-      "mean_per_request_decode_tps": 53.90568454196042,
       "mean_tpot_ms": 18.74061681184114,
-      "mean_ttft_ms": 471.3807478547096
+      "decode_tps_from_mean_tpot": 53.360036654084745,
+      "mean_ttft_ms": 471.3807478547096,
+      "submission_indices": [
+        9,
+        10,
+        11
+      ],
+      "draining_requests": 0
     },
     "email": {
       "requests": 6,
-      "mean_per_request_decode_tps": 48.49015501541101,
       "mean_tpot_ms": 20.683441217075668,
-      "mean_ttft_ms": 525.2716106673082
+      "decode_tps_from_mean_tpot": 48.34785418465222,
+      "mean_ttft_ms": 525.2716106673082,
+      "submission_indices": [
+        12,
+        13,
+        14
+      ],
+      "draining_requests": 0
     },
     "explanation": {
       "requests": 6,
-      "mean_per_request_decode_tps": 62.75300139902499,
       "mean_tpot_ms": 16.174608330680606,
-      "mean_ttft_ms": 392.928278267694
+      "decode_tps_from_mean_tpot": 61.82529923170766,
+      "mean_ttft_ms": 392.928278267694,
+      "submission_indices": [
+        15,
+        16,
+        17
+      ],
+      "draining_requests": 6
+    }
+  },
+  "steady_vs_draining": {
+    "steady": {
+      "requests": 30,
+      "mean_tpot_ms": 19.18959057415087
+    },
+    "draining": {
+      "requests": 6,
+      "mean_tpot_ms": 16.174608330680606
     }
   }
 }
