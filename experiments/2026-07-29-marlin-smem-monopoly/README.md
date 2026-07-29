@@ -436,9 +436,27 @@ Two contributing factors, one of them self-inflicted:
 - The dominant consumer was the shared `vllm-cache` root itself. Clearing it
   restored the probe from 5/4000 to 2000/2000.
 
+Measured inode counts, before the purge:
+
+| directory | inodes | disposition |
+| --- | ---: | --- |
+| `vllm-cache` | **343,049** | deleted (regenerable) |
+| `cache` (uv/triton/pip) | 249,113 | kept |
+| `vllm-k3-venv` | 85,959 | kept - active K3 work |
+| `vscode-server` | 52,457 | kept |
+| `vscode-ext` | 14,575 | kept |
+| `claude-routing-profile-1047954-108` | 110 | kept - frozen dataset |
+| `glm52-fp8-mtp-layer78` | 7 | kept - model artifact |
+
+Clearing `vllm-cache` alone returned 343k inodes and restored the probe from
+5/4000 to 2000/2000. `cache` is the next-largest reserve if more headroom is
+ever needed, but it holds uv and triton state in daily use.
+
 The per-job leftovers that look like clutter are a red herring: the ~169
 `vllm-cache-<JOBID>` / `trtllm-dg-<JOBID>` directories are empty (512 B and 1
-inode respectively) and free nothing. All job scripts here now cache under
+inode respectively) and free nothing. `du --inodes` is also unusable as a survey
+tool here - it needs minutes per large directory on this filesystem, and the fact
+that only two directories failed to finish was itself the diagnosis. All job scripts here now cache under
 `/e/project1/profound/alint77/.marlin-caches/` so this experiment does not
 consume the scratch inode budget at all.
 
