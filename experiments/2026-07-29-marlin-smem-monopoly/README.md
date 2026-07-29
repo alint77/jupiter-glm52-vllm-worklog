@@ -656,6 +656,32 @@ Representative post-fix target graph, averaged across the two captures:
 
 The cumulative rows overlap and therefore do not add to the graph span.
 
+### Additive whole-step budget
+
+To make the overlapping trace sum to one engine step, partition every GPU
+timeline interval among the unique kernel families active in that interval
+(equal share when families overlap), then keep GPU-empty time as its own bucket.
+Across both post-fix captures (88 rank-steps), the mean step is **24.307 ms**:
+
+| additive component | ms/step | share |
+| --- | ---: | ---: |
+| routed experts (W4 Marlin) | 6.290 | **25.88%** |
+| dense/shared-expert compiled GEMMs | 5.345 | **21.99%** |
+| TP/EP communication and synchronization | 4.641 | **19.09%** |
+| glue, elementwise and uncategorized kernels | 2.791 | **11.48%** |
+| GPU-empty host/graph gaps | 2.045 | **8.41%** |
+| attention (FlashMLA + DSA + KV) | 1.781 | **7.33%** |
+| MoE routing, activation and sum | 1.414 | **5.82%** |
+| **total** | **24.307** | **100%** |
+
+The directly attributed routed-MoE path is 31.7% after adding Marlin to its
+routing/activation/sum epilogue. The dense/shared bucket also contains shared
+expert work and compiled MTP/dense GEMMs that use the same nvjet/Triton kernel
+families, so the trace cannot split that 22% cleanly without additional graph
+annotations. Communication includes synchronization wait, not just bytes on
+NVLink. This budget is for c1/q4 at short realistic context; attention's share
+will grow with context length.
+
 The target is replayed as one CUDA graph, so its 0.985 ms of idle cannot be
 CPU-per-kernel launch latency. The trace contains seven graph launches and 140
 eager launches per engine step overall, but the shared-memory fix leaves those
