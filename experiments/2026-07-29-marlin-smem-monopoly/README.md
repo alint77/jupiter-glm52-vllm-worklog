@@ -6,10 +6,13 @@ negative: the `blocks_per_sm` sweeps (0.0-0.4%), the SM-budget split
 worse), and Grace->HBM staging (+9.5% to +44% worse at q4). This experiment
 finds the single mechanism that explains all of them, and removes it.
 
-**Result, measured on Booster under CUDA-graph replay: the two-tier routed-MoE
-union drops by a median of 34% across 15 realistic activated-expert cells (best
-40.1%, worst 14.6%, every cell positive), and 31-45% at the production c1/q4
-shape. The fixed union lands on `max(hot, cold)` - the overlap becomes free.**
+**Result, all measured on Booster. At the kernel, under CUDA-graph replay, the
+two-tier routed-MoE union drops by a median of 34% across 15 realistic
+activated-expert cells (best 40.1%, worst 14.6%, every cell positive) and 31-45%
+at the production c1/q4 shape, landing on `max(hot, cold)` - the overlap becomes
+free. End to end on the production server, with both arms in one allocation and
+draft acceptance divided out, step time falls 7.66% and output throughput rises
+7.05% on the gate suite and 6.01% on a realistic agentic coding suite.**
 
 ## The mechanism
 
@@ -245,31 +248,55 @@ balanced here, not less.
 
 ### Server end-to-end, matched c1/q4
 
-Jobs 1088069 (`off`) and 1088070 (`on`), 24-prompt suite, one excluded warmup
-and two measured repetitions each. Both arms reproduced the semantic gate with
-byte-identical output.
+The first attempt (jobs 1088069/1088070) measured +9.71% output tok/s, but ran
+its arms on **different nodes** and with **unmatched draft acceptance**, so it
+could not attribute the gain. `job-samenode.sh` reruns both arms sequentially in
+one allocation. Job 1090344, 24-prompt suite, one excluded warmup and two
+measured repetitions per arm:
 
-| metric | off (control) | on (tight smem) | delta |
+| | off | on | delta |
 | --- | ---: | ---: | ---: |
-| output tok/s | 96.53 [96.37, 96.70] | 105.90 [104.85, 106.96] | **+9.71%** |
-| TPOT (ms) | 9.304 [9.287, 9.322] | 8.427 [8.357, 8.496] | **-9.43%** |
-| ITL (ms) | 26.746 [26.696, 26.797] | 24.658 [24.614, 24.702] | -7.81% |
-| TTFT (ms) | 279.3 [270.3, 288.3] | 268.6 [262.3, 274.9] | within spread, not a result |
+| output tok/s | 98.35 [98.24, 98.46] | **105.28** [104.60, 105.95] | **+7.05%** |
+| TPOT (ms) | 9.183 | 8.436 | -8.13% |
+| tokens per target step | 2.9212 | 2.9360 | +0.51% |
+| **step time = TPOT x tokens/step** | **26.82 ms** | **24.77 ms** | **-7.66%** |
 
-**Acceptance is not matched between the arms**, so the +9.71% is not all kernel
-speed. The `on` arm accepts 84.31/65.11/46.49 per draft position against
-82.81/62.61/43.45, i.e. 2.959 versus 2.889 tokens per target step. Dividing it
-out:
+With both arms on one node the acceptance difference collapses from 2.4% to
+0.51%, so the throughput gain is now almost entirely step time. The
+acceptance-adjusted **-7.66%** agrees with the -7.2% derived from the confounded
+run, which means the original +9.71% was inflated by roughly 2.5 points of node
+and acceptance luck. **The honest server-level figure is about +7%.**
 
-| | off | on |
-| --- | ---: | ---: |
-| tokens per target step | 2.889 | 2.959 (+2.4%) |
-| **step time = TPOT x tokens/step** | **26.88 ms** | **24.94 ms (-7.2%)** |
+Both arms reproduced the semantic gate with byte-identical output.
 
-So the defensible kernel claim is **about -7% step time**; the remaining ~2.4%
-is an acceptance tailwind caused by the reduction-order change shifting which
-drafts are accepted, which is not something to bank - it could fall the other
-way on a different prompt set.
+### Realistic agentic decode
+
+The suite this project gates on is 24 prompts of roughly 40 input tokens. A real
+agentic coding turn carries the file under edit, profiler tables and stack
+traces, so `make_agentic_prompts.py` builds 16 prompts that embed **real source
+from this checkout** plus authentic profiler tables, build errors and stack
+traces, and ask for a diagnosis or a patch: 131-2277 input tokens (median ~800),
+512 output tokens. The tasks come from this session's own work - occupancy
+analysis, split-K cost, reading a critical-path budget, a shared-workspace
+illegal access, CUDA-graph capture with a forked stream, reduction-order
+numerics against a golden SHA, and a review of the patch this experiment ships.
+
+Job 1090343, production c1/q4, both arms in one allocation:
+
+| | off | on | delta |
+| --- | ---: | ---: | ---: |
+| **output tok/s** | 94.13 | **99.79** | **+6.01%** |
+| TPOT (ms) | 10.098 | 9.509 | -5.83% |
+
+Agentic prompts gain slightly less than the short-prompt suite (+6.0% vs +7.1%),
+as expected: longer inputs add attention and KV work per step, diluting the
+routed-MoE share this fix targets. The `off` arm measured 94.13 here against
+93.50 on a different node earlier - 0.7% apart, a useful check that the suite is
+stable across nodes.
+
+Prefix caching is disabled to match the existing gate methodology, so this is
+decode for *fresh* turns; a real multi-turn session re-prefixes heavily, which
+improves TTFT but not decode.
 
 ### The activated-expert sweep, and a harness error that inverted its conclusion
 

@@ -277,13 +277,14 @@ Booster.
 
 Open items:
 
-- Server-level end-to-end is **not** qualified. The only completed A/B (+9.71%
-  output tok/s, jobs 1088069/1088070) ran its arms on **different nodes** and had
-  unmatched MTP acceptance (2.889 vs 2.959 tokens per target step); dividing that
-  out leaves about -7% step time. `job-samenode.sh` runs both arms in one
-  allocation, `job-nomtp.sh` removes the acceptance term entirely, and
-  `job-agentic.sh` measures realistic agentic decode. Reruns are 1090344,
-  1090345 and 1090343; the agentic `off` baseline is 93.50 output tok/s.
+- Server-level end-to-end is now qualified on one node. Job 1090344 runs both
+  arms in a single allocation: 98.35 -> 105.28 output tok/s (**+7.05%**), TPOT
+  9.183 -> 8.436 ms, with acceptance matched to 0.51% (2.9212 vs 2.9360 tokens
+  per target step), so **step time falls 7.66%**. A realistic agentic coding
+  suite (job 1090343, 16 prompts of 131-2277 input tokens, 512 out) gives
+  94.13 -> 99.79 tok/s (**+6.01%**). The earlier cross-node +9.71% was inflated
+  by roughly 2.5 points of node and acceptance luck; ~+7% is the honest figure.
+  A no-MTP run (1090345) is still in flight as a third, acceptance-free check.
 - The exact-400K golden SHA is expected to change: the shipped grid moves work
   between Marlin's data-parallel and split-K halves, so the fp32 reduction order
   differs by at most one bf16 ulp, deterministically. Re-establish it; do not
