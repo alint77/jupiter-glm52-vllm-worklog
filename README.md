@@ -524,7 +524,20 @@ bounded 1.72 ms/step. Third, the next lever is **per-layer EP-rank balance at
 3.615 ms/step** of summed max-minus-mean routed-layer skew (correcting an earlier
 1.485 ms figure), which now reconciles to within 12% with the 4.13 ms of
 all-reduce synchronization excess - one lever, not two additive ones. Worst
-layers are 34, 69, 18, 20, 61 and 67. Full attribution and reproducers are in the
+layers are 34, 69, 18, 20, 61 and 67.
+
+Splitting the GPU-empty bucket by CUDA graph position settles two more questions.
+The step replays **seven** graphs, not one - the target at 3,466 kernels plus a
+16- and a 20-kernel graph per draft round - and the six draft graphs hold
+0.003-0.008 ms of internal idle each, so **the MTP drafts are already graphed and
+capturing them is not a lever**. Two thirds of the between-graph idle is one
+boundary: the sampling and logits region after the target graph, at 0.745 ms of
+device idle plus 1.071 ms of un-graphed GPU work (0.561 ms of it the
+`[4, 6144] x [6144, 38720]` vocabulary projection), about 1.8 ms of the step. For
+0.703 ms of that idle the host is inside no CUDA call, so it is Python sampler
+work and graph capture alone would not recover it. The gap structure is identical
+off and on, the right invariance for a device-schedule fix. Full attribution and
+reproducers are in the
 [Phase 26 report](experiments/2026-07-29-marlin-smem-monopoly/README.md#post-fix-production-trace-2026-07-29).
 
 Phase 27 measures the current c4/DCP4/MTP3 path on the original 18-prompt

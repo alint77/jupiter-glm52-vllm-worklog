@@ -329,6 +329,22 @@ Three results should shape what gets tried next:
   ceiling (per-call min over four ranks, unachievable by any single rank); treat
   3.6 ms as the target.
 
+And on the GPU-empty half, from `analyze_graph_gaps.py`:
+
+- **The MTP drafts are already CUDA-graphed.** Seven graphs replay per step: the
+  target at 3,466 kernels plus a 16- and a 20-kernel graph per draft round. The
+  six draft graphs hold 0.003-0.008 ms of internal idle each. Do not propose
+  capturing the draft path.
+- **The sampling/logits boundary after the target graph is 0.745 ms of device
+  idle** plus 1.071 ms of un-graphed GPU work, 0.561 ms of which is the
+  `[4, 6144] x [6144, 38720]` vocabulary projection. That is two thirds of all
+  between-graph idle in one of seven boundaries. For 0.703 ms of it the host is
+  inside no CUDA call, so it is Python sampler work: **graph capture alone will
+  not recover it**, and the fix has to reduce or overlap host work.
+- In-graph idle is 1.019 ms across ~2,430 sub-microsecond dependency gaps
+  (p50 0.42 us, max under 1.8 us). Graph-node fusion caps out around 1 ms and is
+  a secondary lever.
+
 Do not use the trace's -4.56% as the size of the shared-memory win; it is c1/M=4
 under an active profiler on one prompt. The no-MTP suite is the authority
 (-5.3% to -6.7%, growing with concurrency), and the trace explains where.
