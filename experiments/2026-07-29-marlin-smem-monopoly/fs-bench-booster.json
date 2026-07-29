@@ -1,0 +1,20 @@
+{
+  "project1": {
+    "odirect_qd1_GBps": 0.13559381151659147,
+    "buffered_GBps": 2.7930902370919797,
+    "odirect_x4_GBps": 0.5543730922564052,
+    "odirect_x8_GBps": 0.9517579797626042,
+    "mmap_fault_GBps": 3.1339125759354864,
+    "safetensors_GBps": 0.09805605660275715,
+    "safetensors_shard_s": 54.72106721298769
+  },
+  "fscratch": {
+    "odirect_qd1_GBps": 0.34048066010020556,
+    "buffered_GBps": 7.9424495535874335,
+    "odirect_x4_GBps": 10.996657061504312,
+    "odirect_x8_GBps": 21.37288227060605,
+    "mmap_fault_GBps": 5.124920656937238,
+    "safetensors_GBps": 5.618358745365859,
+    "safetensors_shard_s": 0.9550355018582195
+  }
+}

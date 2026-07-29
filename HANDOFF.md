@@ -277,14 +277,21 @@ Booster.
 
 Open items:
 
-- Server-level end-to-end is now qualified on one node. Job 1090344 runs both
-  arms in a single allocation: 98.35 -> 105.28 output tok/s (**+7.05%**), TPOT
-  9.183 -> 8.436 ms, with acceptance matched to 0.51% (2.9212 vs 2.9360 tokens
-  per target step), so **step time falls 7.66%**. A realistic agentic coding
-  suite (job 1090343, 16 prompts of 131-2277 input tokens, 512 out) gives
-  94.13 -> 99.79 tok/s (**+6.01%**). The earlier cross-node +9.71% was inflated
-  by roughly 2.5 points of node and acceptance luck; ~+7% is the honest figure.
-  A no-MTP run (1090345) is still in flight as a third, acceptance-free check.
+- Server-level end-to-end is **qualified**, by three independent methods that
+  agree in the -5% to -8% band:
+  - Same-node c1/q4 MTP3 (1090344): 98.35 -> 105.28 output tok/s (**+7.05%**),
+    TPOT 9.183 -> 8.436 ms, acceptance matched to 0.51% (2.9212 vs 2.9360 tokens
+    per target step), so **step time falls 7.66%**.
+  - Realistic agentic coding suite (1090343, 16 prompts of 131-2277 input
+    tokens, 512 out): 94.13 -> **99.79 tok/s (+6.01%)**. Lower than the gate
+    suite because longer inputs dilute the routed-MoE share.
+  - No-MTP, acceptance-free (1090345), where TPOT *is* step time: **-5.28% at
+    M=1, -5.80% at M=2, -6.66% at M=4**, spreads +-0.1 ms. The gain rising with
+    M is what the mechanism predicts.
+
+  The earlier cross-node +9.71% was inflated by about 2.5 points of node and
+  acceptance luck; **~+7% is the honest figure**.
+
 - The exact-400K golden SHA is expected to change: the shipped grid moves work
   between Marlin's data-parallel and split-K halves, so the fp32 reduction order
   differs by at most one bf16 ulp, deterministically. Re-establish it; do not
@@ -301,6 +308,40 @@ The many empty `vllm-cache-<JOBID>` leftovers are a red herring - they hold one
 inode each.
 
 See [the shared-memory monopoly](experiments/2026-07-29-marlin-smem-monopoly/README.md).
+
+## Checkpoint loading: exa_fscratch is 20x faster under concurrency
+
+Checkpoint load is the slowest part of every job here (86 shards of 5.37 GB,
+~10.5-11.8 s each, ~15 minutes). Measured on Booster (job 1091250,
+`analysis/fs_bench.py`), `exa_fscratch` against `exa_project1` where the models
+currently live:
+
+| access pattern | project1 | fscratch | ratio |
+| --- | ---: | ---: | ---: |
+| O_DIRECT QD1 | 0.14 GB/s | 0.34 | 2.5x |
+| buffered sequential | 2.79 | 7.94 | 2.8x |
+| **O_DIRECT x4** | **0.55** | **11.00** | **20x** |
+| **O_DIRECT x8** | **0.95** | **21.37** | **22x** |
+| mmap page-fault | 3.13 | 5.12 | 1.6x |
+
+The load-bearing row is parallel O_DIRECT: fscratch scales with concurrency
+(11 -> 21 GB/s) while project1 barely does (0.55 -> 0.95). That is exactly the
+production pattern - four ranks reading at once. project1 is latency-bound at
+shallow queue depth and only reaches bandwidth through readahead, which is why a
+streaming `cp` runs 4x faster than the loader.
+
+**Do not quote the `safetensors` row from that job.** It read 0.10 GB/s on
+project1 against a real loader that achieves ~0.5 GB/s, because the benchmark
+calls `get_tensor` per key and serialises small reads. Its 57x ratio and the
+"78 min -> 1.4 min" extrapolation the script printed are both artifacts of a
+pessimal access pattern; only the end-to-end load test settles the real number.
+
+`exa_fscratch` is 15 PB at 2% used and writable at over 2 GB/s. Note the
+baseline README records that ExaFlash/`exa_fscratch` was investigated and
+abandoned early in the project - check whether that was a retention or capacity
+policy rather than a performance result before relying on it, since a filesystem
+that purges would make this a per-job staging step rather than a new home for
+the checkpoints.
 
 ## Earlier thread: DCP4 and concurrency 4 (supersedes DFlash)
 
