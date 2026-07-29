@@ -1,0 +1,78 @@
+{
+  "configuration": {
+    "concurrency": 4,
+    "mtp_depth": 3,
+    "prompts": 18,
+    "output_tokens_per_prompt": 256,
+    "repetitions": 2
+  },
+  "mean": {
+    "output_throughput_tps": 181.59710957159615,
+    "decode_interval_throughput_tps": 182.72615761055314,
+    "mean_tpot_ms": 18.687092996920683,
+    "mean_ttft_ms": 500.39102253504103,
+    "mtp_acceptance_percent": 69.18894940074287,
+    "mtp_tokens_per_step": 3.075668482022286,
+    "duration_s": 25.37691400956828
+  },
+  "repetitions": [
+    {
+      "repeat": 1,
+      "output_throughput_tps": 179.96064475094803,
+      "decode_interval_throughput_tps": 181.05469325394895,
+      "mean_tpot_ms": 18.70240154184101,
+      "mean_ttft_ms": 537.3937918209575,
+      "mtp_acceptance_percent": 70.1281186783547,
+      "mtp_tokens_per_step": 3.1038435603506405,
+      "duration_s": 25.605598415015265
+    },
+    {
+      "repeat": 2,
+      "output_throughput_tps": 183.2335743922443,
+      "decode_interval_throughput_tps": 184.39762196715733,
+      "mean_tpot_ms": 18.67178445200036,
+      "mean_ttft_ms": 463.38825324912455,
+      "mtp_acceptance_percent": 68.24978012313105,
+      "mtp_tokens_per_step": 3.0474934036939314,
+      "duration_s": 25.148229604121298
+    }
+  ],
+  "domains": {
+    "python": {
+      "requests": 6,
+      "mean_per_request_decode_tps": 56.67596677815305,
+      "mean_tpot_ms": 17.730613135324877,
+      "mean_ttft_ms": 530.9127815222988
+    },
+    "pytorch": {
+      "requests": 6,
+      "mean_per_request_decode_tps": 51.05915786102532,
+      "mean_tpot_ms": 19.66040154243363,
+      "mean_ttft_ms": 592.0067966217175
+    },
+    "cuda-cpp": {
+      "requests": 6,
+      "mean_per_request_decode_tps": 53.2273078469299,
+      "mean_tpot_ms": 19.13288016407903,
+      "mean_ttft_ms": 489.8459202765177
+    },
+    "math": {
+      "requests": 6,
+      "mean_per_request_decode_tps": 53.90568454196042,
+      "mean_tpot_ms": 18.74061681184114,
+      "mean_ttft_ms": 471.3807478547096
+    },
+    "email": {
+      "requests": 6,
+      "mean_per_request_decode_tps": 48.49015501541101,
+      "mean_tpot_ms": 20.683441217075668,
+      "mean_ttft_ms": 525.2716106673082
+    },
+    "explanation": {
+      "requests": 6,
+      "mean_per_request_decode_tps": 62.75300139902499,
+      "mean_tpot_ms": 16.174608330680606,
+      "mean_ttft_ms": 392.928278267694
+    }
+  }
+}

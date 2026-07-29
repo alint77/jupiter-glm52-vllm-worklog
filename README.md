@@ -501,6 +501,14 @@ measured lever is per-layer EP-rank balance: the post-fix trace retains
 chain, followed by custom all-reduce tails. Trace paths and full attribution are
 in the [Phase 26 report](experiments/2026-07-29-marlin-smem-monopoly/README.md#post-fix-production-trace-2026-07-29).
 
+Phase 27 measures the current c4/DCP4/MTP3 path on the original 18-prompt
+mixed-domain suite. Two warmed repetitions complete all requests at **179.96
+and 183.23 aggregate output tok/s, or 181.60 tok/s mean**, with 18.687 ms
+mean per-request TPOT and 69.19% draft acceptance. The workload contains three
+prompts each for Python, PyTorch, CUDA C++, math, email, and technical
+explanation, with 256 forced output tokens per request at concurrency four.
+See the [mixed-domain c4 result](experiments/2026-07-29-c4-mtp3-mixed-suite/README.md).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout
