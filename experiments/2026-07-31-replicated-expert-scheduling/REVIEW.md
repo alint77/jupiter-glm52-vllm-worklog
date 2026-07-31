@@ -386,3 +386,184 @@ Reproduce the table:
    [`2026-07-31-replica-align-fusion`](../2026-07-31-replica-align-fusion/README.md).
    It is correctly scoped and honest about its 1-2% bound, but it optimises the
    0.699 ms scheduler while the 3.972 ms counter-cost sits untouched.
+
+---
+
+# Round 2 — review of the response (worklog `ad498a9`, vLLM `dc4dcff58`)
+
+All five items were addressed, one of them by correctly refuting me. The
+hardening is good. The measurement work is much better than round 1 and now
+supports a **different and cleaner headline than the one written**. One new
+reproducibility problem was introduced that undermines the cost-policy decision.
+
+## 2.0 Closed correctly
+
+- **2.1 fail-closed guard** — `validate_replica_routing_layout` in
+  `vllm/config/tiered_moe.py` rejects disabled custom all-reduce, `TP != EP`,
+  `DP != 1`, `PP != 1`, and disabled expert parallelism, with the reason named in
+  the error. Good coverage. (Minor: `ep_size = tp * dp` makes the `tp != ep_size`
+  and `dp != 1` checks redundant with each other.)
+- **2.1 runtime check** — `validate_replicated_routes` hashes routes, all-reduces
+  the hash, and raises on divergence. See 2.9 for its limits.
+- **3.1 Triton specialisation** — `NUM_ROUTES` is now a runtime argument.
+  (`num_warps` still switches at 32, which is two bounded variants — fine.)
+- **3.3 scratch reuse** — documented at the point of use.
+- **2.4 trace narrative** — rewritten, `execute_` annotation cycle at -4.7% now
+  in the table, "decisive on mechanism and underpowered on step time" stated.
+- **3.4 deployed-profile caveat** — added at the Phase 1 table.
+- **HBM preflight — my item was wrong.** `tiered_moe_physical.py:97-126` already
+  reads physical free HBM after warmup and fails closed below the reserve with a
+  5 GB floor. The pushback is correct; disregard that part of round 1.
+
+## 2.6 The status line takes the best metric from each regime
+
+> "-6.75% corrected target-step time at c1 and +6.31% aggregate throughput at c4"
+
+Those are the two favourable cells. The other two are **c1 throughput -1.94%**
+and **c4 corrected step -3.42%**. Since the report itself argues corrected step
+should be primary for scheduler changes, mixing metrics between regimes in the
+status line undercuts that argument.
+
+## 2.7 The statistics support a better headline than the one written
+
+Welch's t on the three same-node repeats of the retained policy
+(`same-node-legacy-summary.json`, jobs `1133046`/`1133047`):
+
+| metric | off | greedy | Δ | t | df | reading |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| c1 throughput | 94.357 | 92.526 | -1.94% | -1.28 | 2.79 | not significant |
+| **c1 corrected step** | 27.921 | 26.035 | **-6.75%** | **-9.73** | 2.74 | **strong** |
+| c1 accept length | 2.930 | 2.683 | -8.45% | -8.69 | 2.90 | strong, adverse |
+| **c4 throughput** | 150.222 | 159.706 | **+6.31%** | **11.87** | 2.74 | **strong** |
+| c4 corrected step | 62.127 | 60.003 | -3.42% | -2.84 | 3.23 | marginal |
+| c4 accept length | 2.718 | 2.804 | +3.19% | 1.87 | 3.07 | marginal |
+
+Read consistently, on the metric the report itself nominates:
+
+> **Corrected target-step time falls 6.75% at c1 (t=9.7) and 3.42% at c4
+> (t=2.8). Aggregate throughput moves ±3% around that depending on acceptance
+> luck — unlucky at c1 (-8.45% accepted/step), lucky at c4 (+3.19%).**
+
+That is a stronger and more defensible claim than the current status line,
+because it holds in both regimes and does not depend on which metric is chosen.
+Note the reversal from round 1: cross-node made c4 look like the strong arm; the
+same-node data makes **c1** the strong arm on step time and c4 marginal.
+
+**Action:** replace the status line with the corrected-step figures for both
+regimes and report throughput as a secondary, acceptance-confounded number.
+
+## 2.8 The acceptance shift needs explaining, not just noting
+
+Paired greedy-minus-off acceptance-length deltas across the three same-node
+experiments:
+
+| policy | Δ accepted/step |
+| --- | ---: |
+| original 2.709 | **-8.45%** |
+| chain | -2.75% |
+| interim scalar | **+2.63%** |
+
+Within each pair the repeat SDs are 0.02-0.09, so each delta is individually
+"significant". Across pairs the **sign flips**. That is the signature of chaotic
+sensitivity, not a systematic effect: replica assignment changes which rank
+reduces which expert, so the fp32 accumulation order changes, greedy text
+diverges within a few tokens, and acceptance lands wherever it lands.
+
+This matters in two directions and the README states neither:
+
+- **Reassurance.** A -8.45% acceptance drop looks like a model-quality
+  regression. It is not — the sign is not reproducible. Say so explicitly, or a
+  future reader will treat it as evidence the scheduler harms drafting.
+- **Consequence.** Acceptance deltas between arms carry no information, so
+  aggregate throughput cannot be compared between arms at n=3 in either
+  direction. This is the concrete justification for the corrected-step metric,
+  and it is stronger than the current "acceptance varies substantially".
+
+## 2.9 The route check cannot run in the configuration that ships
+
+Two limits, both worth recording next to the feature:
+
+- **It requires `--enforce-eager`** (`vllm/config/vllm.py`), while production runs
+  full CUDA graphs. Kernel selection and reduction order differ between eager and
+  graph replay, so "the check passed" validates a different execution path than
+  the one deployed. It is still worth having; it is not proof about production.
+- **It covers only the first routed layer** — `tiered_moe_physical.py:168` sets
+  `tiered_replica_route_check = layer_offset == 0`. Divergence originating at a
+  deeper layer is caught only indirectly, on a later token, once it has
+  propagated back to layer 0's input.
+
+Minor: `_replica_route_hash` returns float32 and the check compares
+`reduced_hash` against `local_hash * ep_size`. Values reach `modulus - 1 =
+1,000,002`, so the product is exact in fp32 only while `ep_size <= 16`
+(2^24 = 16,777,216). At larger EP the comparison can fail spuriously. That fails
+loud rather than silent, so it is acceptable, but add an assert or a comment.
+
+## 2.10 Two of the three compared cost policies are unreproducible — this is new
+
+`_HBM_COST = 1280` / `_GRACE_COST = 3467` are **unchanged in both commits**:
+
+```bash
+git log --oneline -S "_GRACE_COST" -- vllm/model_executor/model_loader/tiered_moe_scheduler.py
+# -> only 1a94ed458
+```
+
+There is no config field or env knob for the cost model. So the "interim M4/M16
+scalar" (2.015/3.658, jobs `1128623`/`1128624`) and the "HBM-wave/Grace-chain"
+policy (jobs `1130752`/`1130753`) were **uncommitted working-tree edits**. They
+exist nowhere in the repository.
+
+Three consequences:
+
+1. The decision to keep the original scalar rests on a three-way comparison in
+   which two arms cannot be inspected, re-run, or audited.
+2. The README states the shape-dependent **replay** "keeps the original M=4
+   scalar and uses the measured wave/chain costs at M=16". If the deployed chain
+   runtime did the same, then **chain-c1 and original-c1 measured the same policy**
+   — and their corrected-step results are -1.55% and -6.75%, a 5.2-point gap that
+   would be pure between-job noise and would invalidate the ranking that rejected
+   the chain model. Nothing in the repo can resolve this.
+3. Anyone reproducing this experiment will silently run only the retained policy.
+
+**Action, highest priority of this round:** make the cost model a
+`TieredMoEConfig` field (or env) with the three variants as named options, commit
+it, and re-state which variant each job used. Then either re-run the comparison
+or mark its conclusion provisional.
+
+## 2.11 The calibration is the best work in this round and its conclusion is premature
+
+Jobs `1129855` and `1130891` produced a genuinely good physical model, replicated
+across two nodes:
+
+- HBM is **one ~167 us occupancy wave**, flat across 2-16 active experts
+  (0.47% SD) — adding experts is free until the wave fills.
+- Grace fits `max(167, 24 + 46 x active_experts)` us, reproducing within 0.4% on
+  the second node (209/394/579/763 at 4/8/12/16) even though the HBM floor moved
+  to 183-186 us.
+- Varying routes-per-expert from 1 to 16 moved both tiers together, so token
+  count is immaterial in this decode range — **this settles round 1's item 2.5
+  sub-point about token-count sensitivity, negatively and with evidence.** Good.
+
+The structural finding is a **breakpoint, not a ratio**: up to three Grace tasks
+fit under one HBM wave; the fourth makes the Grace chain critical. A flat 2.709
+scalar cannot express a breakpoint at all, so it cannot be the right model — it
+can only be accidentally well-tuned for one operating point.
+
+The conclusion "the isolated kernel physics does not justify a universal policy
+replacement" is therefore stated too strongly, for two reasons: the end-to-end
+comparison that rejected the chain model is unreproducible (2.10), and one of its
+arms may have been identical to the baseline. Recommend restating as: *the chain
+model is physically correct; the end-to-end comparison that rejected it is not
+currently reproducible, and the deployed scalar is retained pending a
+reproducible re-test.*
+
+## Round 2 order of work
+
+1. **Make the cost model configurable and commit the variants** (2.10). Without
+   this, the central decision of this round is unauditable.
+2. **Restate the status line on one metric** (2.6, 2.7) and add the
+   acceptance-chaos explanation (2.8).
+3. **Re-test the chain model** once (2.10, 2.11) with the variant selectable by
+   config, three repeats, same node, corrected step as the metric. If chain and
+   original really are identical at M=4, the c1 arms must agree — that is a free
+   internal consistency check on the whole protocol.
+4. Record the route-check limitations next to the feature (2.9).
