@@ -10,8 +10,11 @@ import numpy as np
 EP = 4
 ROUTED_START = 3
 VERIFY_TOKENS = 4
-HOT_US = 1280.0 / 75
-COLD_US = 3467.0 / 75
+LEGACY_HBM_TASK_US = 1280.0 / 75
+LEGACY_GRACE_TASK_US = 3467.0 / 75
+HBM_CHAIN_US = 167.0
+GRACE_CHAIN_BASE_US = 24.0
+GRACE_TASK_US = 46.0
 EXPERT_BYTES = 20_054_024
 
 
@@ -129,11 +132,26 @@ def add_task(
     sign: int = 1,
 ) -> None:
     chain = hbm if use_hbm else grace
-    chain[rank] += sign * (HOT_US if use_hbm else COLD_US)
+    chain[rank] += sign
 
 
-def rank_times(hbm: np.ndarray, grace: np.ndarray) -> np.ndarray:
-    return np.maximum(hbm, grace)
+def rank_times(
+    hbm: np.ndarray,
+    grace: np.ndarray,
+    use_chain_model: bool,
+) -> np.ndarray:
+    if not use_chain_model:
+        return np.maximum(
+            LEGACY_HBM_TASK_US * hbm,
+            LEGACY_GRACE_TASK_US * grace,
+        )
+    hbm_time = np.where(hbm > 0, HBM_CHAIN_US, 0)
+    grace_time = np.where(
+        grace > 0,
+        np.maximum(HBM_CHAIN_US, GRACE_CHAIN_BASE_US + GRACE_TASK_US * grace),
+        0,
+    )
+    return np.maximum(hbm_time, grace_time)
 
 
 def assign_layer(
@@ -152,11 +170,13 @@ def assign_layer(
     secondary_uses = 0
     hbm_uses = 0
     grace_uses = 0
+    use_chain_model = counts.sum() > 32
 
     if policy in ("greedy", "runtime_greedy"):
-        task_cost = np.where(hot[layer, active], HOT_US, COLD_US)
         token_counts = counts[active].astype(np.int16)
-        ordered = active[np.lexsort((active, -token_counts, -task_cost))]
+        ordered = active[
+            np.lexsort((active, -token_counts, hot[layer, active].astype(np.int8)))
+        ]
         if policy == "runtime_greedy":
             fixed = ordered[secondary[layer, ordered] < 0]
             flexible = ordered[secondary[layer, ordered] >= 0]
@@ -188,7 +208,7 @@ def assign_layer(
             for rank in candidates:
                 use_hbm = rank == primary and hot[layer, expert]
                 add_task(hbm, grace, rank, use_hbm)
-                times = rank_times(hbm, grace)
+                times = rank_times(hbm, grace, use_chain_model)
                 choices.append((times.max(), times.sum(), rank))
                 add_task(hbm, grace, rank, use_hbm, -1)
             chosen = min(choices)[2]
@@ -202,7 +222,7 @@ def assign_layer(
         hbm_uses += use_hbm
         grace_uses += not use_hbm
 
-    times = rank_times(hbm, grace)
+    times = rank_times(hbm, grace, use_chain_model)
     return (
         float(times.max()),
         float(times.max() - times.mean()),
@@ -252,23 +272,31 @@ def score_replicas(
     activations = np.zeros((75, 256), dtype=np.int32)
     for step in range(counts.shape[0]):
         for layer in range(75):
-            active = np.flatnonzero(counts[step, layer])
+            layer_counts = counts[step, layer]
+            active = np.flatnonzero(layer_counts)
+            use_chain_model = layer_counts.sum() > 32
             activations[layer, active] += 1
             hbm = np.zeros(EP)
             grace = np.zeros(EP)
             for expert in active:
                 rank = int(owners[layer, expert])
                 add_task(hbm, grace, rank, hot[layer, expert])
-            before = rank_times(hbm, grace)
+            before = rank_times(hbm, grace, use_chain_model)
             for expert in active:
                 source = int(owners[layer, expert])
                 source_hbm = bool(hot[layer, expert])
                 for destination in range(EP):
                     if destination == source:
                         continue
-                    add_task(hbm, grace, source, source_hbm, -1)
+                    add_task(
+                        hbm,
+                        grace,
+                        source,
+                        source_hbm,
+                        -1,
+                    )
                     add_task(hbm, grace, destination, False)
-                    after = rank_times(hbm, grace)
+                    after = rank_times(hbm, grace, use_chain_model)
                     span_gain[layer, expert, destination] += max(
                         0.0, before.max() - after.max()
                     )
@@ -276,7 +304,13 @@ def score_replicas(
                         0.0,
                         (before.max() - before.mean()) - (after.max() - after.mean()),
                     )
-                    add_task(hbm, grace, destination, False, -1)
+                    add_task(
+                        hbm,
+                        grace,
+                        destination,
+                        False,
+                        -1,
+                    )
                     add_task(hbm, grace, source, source_hbm)
     return span_gain, skew_gain, activations
 
@@ -331,37 +365,28 @@ def exact_layer_span(
     flexible = [expert for expert in active if secondary[layer, expert] >= 0]
     hbm = np.zeros(EP)
     grace = np.zeros(EP)
+    use_chain_model = counts.sum() > 32
     for expert in fixed:
         rank = int(owners[layer, expert])
         add_task(hbm, grace, rank, hot[layer, expert])
 
     flexible.sort(
         key=lambda expert: (
-            -(HOT_US if hot[layer, expert] else COLD_US),
+            hot[layer, expert],
             -int(counts[expert]),
             int(expert),
         )
     )
     incumbent = assign_layer(counts, layer, owners, hot, secondary, "greedy", 0)[0]
     nodes = 0
-    remaining_min = np.cumsum(
-        [
-            min(HOT_US if hot[layer, expert] else COLD_US, COLD_US)
-            for expert in reversed(flexible)
-        ]
-    )[::-1]
 
     def search(index: int) -> None:
         nonlocal incumbent, nodes
         nodes += 1
         if nodes > node_limit:
             return
-        current = rank_times(hbm, grace)
-        remaining = 0 if index == len(flexible) else remaining_min[index]
-        lower_bound = max(
-            float(current.max()),
-            (hbm.sum() + grace.sum() + remaining) / 8,
-        )
+        current = rank_times(hbm, grace, use_chain_model)
+        lower_bound = float(current.max())
         if lower_bound >= incumbent:
             return
         if index == len(flexible):
@@ -374,7 +399,13 @@ def exact_layer_span(
         for rank in candidates:
             use_hbm = rank == primary and hot[layer, expert]
             add_task(hbm, grace, rank, use_hbm)
-            ranked.append((rank_times(hbm, grace).max(), rank, use_hbm))
+            ranked.append(
+                (
+                    rank_times(hbm, grace, use_chain_model).max(),
+                    rank,
+                    use_hbm,
+                )
+            )
             add_task(hbm, grace, rank, use_hbm, -1)
         for _, rank, use_hbm in sorted(ranked):
             add_task(hbm, grace, rank, use_hbm)
@@ -504,7 +535,17 @@ def main() -> None:
         "trace_dir": str(args.trace_dir),
         "profile": str(args.profile),
         "hot_slots_per_rank": args.hot_slots_per_rank,
-        "cost_model_us": {"hbm": HOT_US, "grace": COLD_US},
+        "cost_model_us": {
+            "m4": {
+                "hbm_per_task": LEGACY_HBM_TASK_US,
+                "grace_per_task": LEGACY_GRACE_TASK_US,
+            },
+            "m16": {
+                "hbm_chain": HBM_CHAIN_US,
+                "grace_chain_base": GRACE_CHAIN_BASE_US,
+                "grace_per_task": GRACE_TASK_US,
+            },
+        },
         "samples": {
             "train_c4": args.train_steps,
             "heldout_c1": args.eval_steps,

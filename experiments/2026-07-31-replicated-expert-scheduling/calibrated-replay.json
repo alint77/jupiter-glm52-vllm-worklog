@@ -1,0 +1,39 @@
+{
+  "trace_dir": "/e/scratch/profound/naeimitabiei1/claude-routing-profile-1047954-108",
+  "profile": "agent_space/experiments/2026-07-31-replicated-expert-scheduling/runtime-placements/replicas-985.json",
+  "cost_model": "legacy-m4-chain-m16",
+  "workloads": {
+    "c1": {
+      "off": {
+        "span_ms": 13.574229955555555,
+        "rank_skew_ms": 4.453786466666666,
+        "secondary_task_percent": 0.0,
+        "hbm_task_percent": 63.44268196365473,
+        "grace_task_percent": 36.55731803634527
+      },
+      "runtime_greedy": {
+        "span_ms": 11.531122888888888,
+        "rank_skew_ms": 2.7461097666666663,
+        "secondary_task_percent": 8.287201786638537,
+        "hbm_task_percent": 63.349015969783316,
+        "grace_task_percent": 36.650984030216684
+      }
+    },
+    "c4": {
+      "off": {
+        "span_ms": 37.20102,
+        "rank_skew_ms": 8.441785,
+        "secondary_task_percent": 0.0,
+        "hbm_task_percent": 61.87933737992349,
+        "grace_task_percent": 38.12066262007651
+      },
+      "runtime_greedy": {
+        "span_ms": 32.52356666666667,
+        "rank_skew_ms": 3.816578333333333,
+        "secondary_task_percent": 7.131843300834474,
+        "hbm_task_percent": 61.876075170015504,
+        "grace_task_percent": 38.123924829984496
+      }
+    }
+  }
+}

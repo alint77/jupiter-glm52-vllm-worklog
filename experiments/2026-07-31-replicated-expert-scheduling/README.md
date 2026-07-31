@@ -1,7 +1,9 @@
 # Replicated Grace experts with per-step makespan scheduling
 
-Status: **the graph-captured greedy scheduler improves c4 throughput by 6.7%
-and cuts the trace's rank-skew/all-reduce residency proxies by about 44%**.
+Status: **the graph-captured greedy scheduler cuts the trace's
+rank-skew/all-reduce residency proxies by about 44%.** Three-repeat same-node
+validation of the deployed cost policy measures -6.75% corrected target-step
+time at c1 and +6.31% aggregate throughput at c4.
 
 ## Goal
 
@@ -363,6 +365,8 @@ AutoRound 400K/MTP3 plan:
 At 1,697 copies/rank, modelled rank skew falls from 4.637 to 2.823 ms
 at c1 and from 7.792 to 4.238 ms at c4. The 24 completed small-instance
 branch-and-bound checks put greedy 15.50 us/layer above exact on average.
+This is the oracle-selected footprint, not the deployed one. The real server
+lost a worker at 1,697 copies, so all runtime results below use 985 copies/rank.
 
 Replicas must not be enabled with a naïve selector. At the selected budget,
 hash selection predicts 16.032/45.338 ms c1/c4, and token-count least-loaded
@@ -511,19 +515,20 @@ PyTorch, CUDA, machine-learning, profiling, numerics, and review tasks. Each
 request generated 256 tokens under AutoRound W4G64 and MTP3. Both repeats
 completed 16/16 requests in every arm.
 
-| Regime | Assignment | Output tok/s | Mean TPOT | MTP acceptance |
-| --- | --- | ---: | ---: | ---: |
-| c1 | primary/off | 92.49 ± 0.84 | 9.723 ms | 60.99% |
-| c1 | greedy | 95.74 ± 0.14 | 9.366 ms | 60.16% |
-| c4/DCP4 | primary/off | 148.14 ± 1.81 | 23.446 ms | 56.85% |
-| c4/DCP4 | greedy | 158.12 ± 3.65 | 21.413 ms | 57.50% |
+| Regime | Assignment | Output tok/s | Mean TPOT | Accepted/step | Corrected step |
+| --- | --- | ---: | ---: | ---: | ---: |
+| c1 | primary/off | 92.49 ± 0.84 | 9.723 ms | 2.830 | 27.515 ms |
+| c1 | greedy | 95.74 ± 0.14 | 9.366 ms | 2.805 | 26.270 ms |
+| c4/DCP4 | primary/off | 148.14 ± 1.81 | 23.446 ms | 2.705 | 63.430 ms |
+| c4/DCP4 | greedy | 158.12 ± 3.65 | 21.413 ms | 2.725 | 58.351 ms |
 
 Greedy improves c1 throughput by **3.51%** and lowers TPOT by 3.67%. That is
-real but below the 5% success threshold. At c4, it improves aggregate
-throughput by **6.74%** and lowers TPOT by **8.67%**, clearing the gate.
-Acceptance changes by -0.84 percentage points at c1 and +0.66 at c4, within
-the cross-run variation seen in the two c4 repeats. Both arms produced the
-same eight-token smoke continuation.
+below the raw-throughput threshold, but acceptance-corrected target step time
+falls **4.52% despite slightly worse acceptance**. At c4, aggregate throughput
+improves **6.74%**, while corrected step time falls **8.01%**. The corrected
+step metric is primary for scheduler changes because it analytically removes
+MTP acceptance variation. These cross-node results are provisional pending the
+same-node three-repeat controls.
 
 Peak HBM use leaves 5,941 MiB free at c1 and only 3,874 MiB free at c4 in the
 greedy arms. Greedy itself costs only 36-66 MiB more than control, but the c4
@@ -546,6 +551,7 @@ the primary/off and greedy configurations. The analysis selects only steady
 | Routed Marlin cumulative time | 29.616 ms | 33.587 ms | +13.4% |
 | Full graph span | 49.329 ms | 48.932 ms | -0.8% |
 | Graph-start cycle | 51.993 ms | 51.463 ms | -1.0% |
+| `execute_` annotation-start cycle | 47.196 ms | 44.998 ms | **-4.7%** |
 
 The device census is unchanged at 300 routed Marlin launches and 157 custom
 all-reduces per graph. The greedy arm adds exactly 75 scheduler launches,
@@ -558,12 +564,12 @@ communication payload or collective count. The counter-cost is 3.972 ms more
 cumulative Marlin residency because some work moves from an HBM primary to a
 Grace secondary.
 
-The short profiler capture is a mechanism check, not a replacement for the
-two-repeat throughput benchmark. Profiling records only six decode graphs per
-rank, adds tracing overhead to every scheduler launch, and the two servers can
-form different prefill/decode batches even with identical prompt order.
-Accordingly, its graph cycle is nearly flat while the longer unprofiled
-benchmark measures the reproducible c4 throughput gain.
+The trace is decisive on mechanism and underpowered on step time. It contains
+only six decode graphs per rank, and its three cycle definitions disagree by
+up to about 10% within one arm: graph span and graph-start are nearly flat,
+while the established `execute_` annotation cycle falls 4.66%, directionally
+matching the benchmark. A trace-level end-to-end verdict requires a longer
+capture.
 
 Raw traces remain on scratch:
 
@@ -573,6 +579,99 @@ Raw traces remain on scratch:
 `analyze_runtime_trace.py` reproduces the filtered census and
 `phase4-trace-analysis.json` stores its complete summary.
 
+## Review follow-up
+
+The correctness precondition is now enforced rather than assumed. Replica
+assignment fails closed unless custom all-reduce is enabled and TP4 is the
+complete, non-sharded EP4 group. An opt-in
+`VLLM_TIERED_MOE_ROUTE_CHECK_INTERVAL=N` check hashes the first routed layer's
+logical routes every N forwards, all-reduces that hash, and raises on
+cross-rank divergence. Because that diagnostic is intentionally outside graph
+capture, configuration requires `--enforce-eager` when it is enabled.
+
+The scheduler's route-count loop is now runtime-bounded rather than
+`tl.constexpr`, preventing one Triton specialization per prefill length. The
+CUDA assignment test executes both 32- and 128-route shapes without
+route-count specialization. The `selected_ranks` reuse as ordering scratch and
+its CTA barrier are also documented at the point of use.
+
+The requested HBM preflight was already present in the deployed path: after
+cache allocation and warmup, each worker reads physical free HBM and fails
+closed below the configured reserve, with a 5 GB absolute floor. The 61-test
+tiered-MoE suite covers both accepted and rejected margins; final Booster job
+`1135755` passes all 61 tests, including CUDA assignment at 32/128 routes.
+
+Job `1129855` recalibrated a complete W13 + SiLU + W2 Marlin invocation on a
+NUMA-bound GH200, alternating HBM and paired-Grace measurements and taking the
+median of five rounds:
+
+| Shape | Active experts | HBM chain | Grace chain |
+| --- | ---: | ---: | ---: |
+| M=4 | 2 | 168.33 us | 169.13 us |
+| M=4 | 4 | 166.96 us | 208.60 us |
+| M=4 | 6 | 166.56 us | 301.77 us |
+| M=16 | 4 | 166.72 us | 209.18 us |
+| M=16 | 8 | 166.65 us | 393.77 us |
+| M=16 | 12 | 167.05 us | 580.33 us |
+| M=16 | 16 | 168.62 us | 764.01 us |
+
+This shows why a flat per-expert ratio is not a physical model. HBM is one
+approximately 167 us occupancy wave over the measured range (0.47% standard
+deviation), while Grace is well fit by
+`max(167, 24 + 46 × active_experts)` us. Varying the number of routes to one
+expert from 1 through 16 changed both tiers together, not the Grace/HBM ratio;
+Marlin's M=16 block padding makes token count immaterial in this decode range.
+
+Job `1130891` repeated the calibration on another node. Its HBM floor was
+183-186 us, while the Grace chain above the floor reproduced within 0.4%
+(209/394/579/763 us at 4/8/12/16 experts). The absolute floor is
+clock/node-sensitive, but the scheduling breakpoint is unchanged: up to three
+Grace tasks fit under one wave and the fourth makes the Grace chain critical.
+
+The evaluated shape-dependent replay keeps the original M=4 scalar and uses
+the measured wave/chain costs at M=16. Replaying the deployed 985-copy profile
+predicts:
+
+| Regime | Primary/off span | Calibrated greedy | Delta |
+| --- | ---: | ---: | ---: |
+| c1/MTP3 | 13.574 ms | 11.531 ms | -15.05% |
+| c4/MTP3 | 37.201 ms | 32.524 ms | -12.57% |
+
+Three-repeat, same-node end-to-end results are more modest:
+
+| Policy | c1 output TPS | c1 corrected step | c4 output TPS | c4 corrected step |
+| --- | ---: | ---: | ---: | ---: |
+| Interim M4/M16 scalar (`1128623`/`1128624`) | +4.36% | -2.91% | +3.25% | -3.69% |
+| HBM-wave/Grace-chain (`1130752`/`1130753`) | -1.45% | -1.55% | +2.35% | -4.75% |
+| Original 2.709 scalar (`1133046`/`1133047`) | -1.94% | **-6.75%** | **+6.31%** | -3.42% |
+
+The chain model improves corrected c4 step time over the interim scalar, but
+regresses c1 and aggregate throughput. The isolated kernel physics therefore
+does not justify a universal policy replacement, and the deployed default
+stays at the original 2.709 scalar. The earlier same-node jobs must not be
+called the original policy because their workers loaded temporary
+2.015/3.658 M4/M16 ratios.
+
+MTP acceptance length varies substantially even among off controls: the c1
+off means are 2.758, 2.783, and 2.930 across the three node pairs. That is why
+corrected target-step time remains the primary kernel-policy metric. Raw
+aggregate throughput is still reported; the original policy gives the best c4
+aggregate result, while its c1 raw result is acceptance-limited despite the
+largest target-step reduction.
+
+Absolute results for the retained policy are:
+
+| Regime | Assignment | Output tok/s | Accepted/step | Corrected step |
+| --- | --- | ---: | ---: | ---: |
+| c1 | primary/off | 94.36 | 2.930 | 27.921 ms |
+| c1 | greedy | 92.53 | 2.683 | 26.035 ms |
+| c4/DCP4 | primary/off | 150.22 | 2.718 | 62.127 ms |
+| c4/DCP4 | greedy | 159.71 | 2.804 | 60.003 ms |
+
+Minimum monitored free HBM is 5,955/5,962 MiB for c1 off/greedy and
+3,865/4,935 MiB for c4 off/greedy. The retained greedy c4 server passed the
+post-warmup hard preflight with 6.96-7.00 GiB physically free per rank.
+
 ## Conclusion and next optimization
 
 The experiment clears the c4 throughput and rank-skew gates while preserving
@@ -580,13 +679,11 @@ the exactly-once invariant, collective census, MTP acceptance, and safe memory
 headroom. It is less compelling at c1, where the 0.297 ms scheduler overhead
 consumes more of the available gain.
 
-The next narrow optimization is to fuse replica assignment with the shared
-dual-tier Marlin alignment, removing the standalone scheduler and redundant
-route scans without changing the policy. Its design and gates are in
+The original cost policy remains the default after the three-way same-node
+comparison. The next narrow optimization is to fuse replica assignment with
+the shared dual-tier Marlin alignment, removing the standalone scheduler and
+redundant route scans without changing policy. Its design and gates are in
 [`2026-07-31-replica-align-fusion`](../2026-07-31-replica-align-fusion/README.md).
-After that, recalibrate the primary-HBM versus secondary-Grace decision with
-the observed Marlin counter-cost; do not add a more elaborate scheduler until
-those two simpler levers are measured.
 
 ## Test design
 
