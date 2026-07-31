@@ -1,0 +1,382 @@
+{
+  "jobs": [
+    "1123052",
+    "1123054",
+    "1123095",
+    "1123096"
+  ],
+  "arms": {
+    "greedy-c1": {
+      "completed_per_repeat": [
+        16,
+        16
+      ],
+      "metrics": {
+        "output_throughput": {
+          "mean": 95.73541623970424,
+          "sample_stddev": 0.13990643309365963,
+          "values": [
+            95.63648745213209,
+            95.83434502727638
+          ]
+        },
+        "total_token_throughput": {
+          "mean": 368.49721006718187,
+          "sample_stddev": 0.538516802772151,
+          "values": [
+            368.1164211841588,
+            368.877998950205
+          ]
+        },
+        "request_throughput": {
+          "mean": 0.37396646968634467,
+          "sample_stddev": 0.0005465095042721079,
+          "values": [
+            0.37358002910989097,
+            0.3743529102627984
+          ]
+        },
+        "mean_ttft_ms": {
+          "mean": 285.5475099568139,
+          "sample_stddev": 5.314979111421712,
+          "values": [
+            289.305767728365,
+            281.78925218526274
+          ]
+        },
+        "mean_tpot_ms": {
+          "mean": 9.366404510778832,
+          "sample_stddev": 0.0055182095449745755,
+          "values": [
+            9.362502547389573,
+            9.370306474168093
+          ]
+        },
+        "mean_itl_ms": {
+          "mean": 26.13880520085479,
+          "sample_stddev": 0.015399669971712436,
+          "values": [
+            26.12791598978976,
+            26.149694411919825
+          ]
+        },
+        "spec_decode_acceptance_rate": {
+          "mean": 60.15731874145007,
+          "sample_stddev": 0.08060952817904186,
+          "values": [
+            60.10031919744642,
+            60.214318285453714
+          ]
+        },
+        "spec_decode_acceptance_length": {
+          "mean": 2.804719562243502,
+          "sample_stddev": 0.0024182858453710675,
+          "values": [
+            2.803009575923393,
+            2.8064295485636115
+          ]
+        }
+      },
+      "vram": {
+        "0": {
+          "maximum_used_mib": 91336,
+          "minimum_free_mib": 5945
+        },
+        "1": {
+          "maximum_used_mib": 91340,
+          "minimum_free_mib": 5941
+        },
+        "2": {
+          "maximum_used_mib": 91313,
+          "minimum_free_mib": 5968
+        },
+        "3": {
+          "maximum_used_mib": 91329,
+          "minimum_free_mib": 5952
+        }
+      }
+    },
+    "off-c1": {
+      "completed_per_repeat": [
+        16,
+        16
+      ],
+      "metrics": {
+        "output_throughput": {
+          "mean": 92.48630208409148,
+          "sample_stddev": 0.8446778153539671,
+          "values": [
+            91.88902467293684,
+            93.0835794952461
+          ]
+        },
+        "total_token_throughput": {
+          "mean": 355.9909762348111,
+          "sample_stddev": 3.251267196501629,
+          "values": [
+            353.6919831527154,
+            358.28996931690676
+          ]
+        },
+        "request_throughput": {
+          "mean": 0.36127461751598233,
+          "sample_stddev": 0.003299522716226434,
+          "values": [
+            0.35894150262865954,
+            0.3636077324033051
+          ]
+        },
+        "mean_ttft_ms": {
+          "mean": 288.60730306769256,
+          "sample_stddev": 3.8112337732875843,
+          "values": [
+            285.9123538219137,
+            291.3022523134714
+          ]
+        },
+        "mean_tpot_ms": {
+          "mean": 9.723245510209452,
+          "sample_stddev": 0.11405493471362012,
+          "values": [
+            9.803894527973242,
+            9.642596492445662
+          ]
+        },
+        "mean_itl_ms": {
+          "mean": 27.396638902449602,
+          "sample_stddev": 0.241098140119531,
+          "values": [
+            27.567121032259585,
+            27.226156772639616
+          ]
+        },
+        "spec_decode_acceptance_rate": {
+          "mean": 60.99236337823733,
+          "sample_stddev": 0.12987431239876737,
+          "values": [
+            60.900528371238224,
+            61.08419838523644
+          ]
+        },
+        "spec_decode_acceptance_length": {
+          "mean": 2.8297709013471204,
+          "sample_stddev": 0.0038962293719631592,
+          "values": [
+            2.827015851137147,
+            2.8325259515570935
+          ]
+        }
+      },
+      "vram": {
+        "0": {
+          "maximum_used_mib": 91300,
+          "minimum_free_mib": 5981
+        },
+        "1": {
+          "maximum_used_mib": 91305,
+          "minimum_free_mib": 5976
+        },
+        "2": {
+          "maximum_used_mib": 91304,
+          "minimum_free_mib": 5977
+        },
+        "3": {
+          "maximum_used_mib": 91304,
+          "minimum_free_mib": 5977
+        }
+      }
+    },
+    "greedy-c4": {
+      "completed_per_repeat": [
+        16,
+        16
+      ],
+      "metrics": {
+        "output_throughput": {
+          "mean": 158.1196646889167,
+          "sample_stddev": 3.6517727848587778,
+          "values": [
+            160.70185798844284,
+            155.5374713893906
+          ]
+        },
+        "total_token_throughput": {
+          "mean": 608.6217366907864,
+          "sample_stddev": 14.056115655782142,
+          "values": [
+            618.5609113881324,
+            598.6825619934405
+          ]
+        },
+        "request_throughput": {
+          "mean": 0.6176549401910809,
+          "sample_stddev": 0.0142647374408546,
+          "values": [
+            0.6277416327673548,
+            0.607568247614807
+          ]
+        },
+        "mean_ttft_ms": {
+          "mean": 678.5157935591997,
+          "sample_stddev": 79.14467561271246,
+          "values": [
+            622.5520567386411,
+            734.4795303797582
+          ]
+        },
+        "mean_tpot_ms": {
+          "mean": 21.41288408214071,
+          "sample_stddev": 0.4308110257952241,
+          "values": [
+            21.108254684390975,
+            21.717513479890446
+          ]
+        },
+        "mean_itl_ms": {
+          "mean": 58.068893143946525,
+          "sample_stddev": 0.0052574228496433196,
+          "values": [
+            58.07261070329508,
+            58.06517558459798
+          ]
+        },
+        "spec_decode_acceptance_rate": {
+          "mean": 57.501339632774176,
+          "sample_stddev": 1.8044144343186206,
+          "values": [
+            58.777253315351764,
+            56.225425950196595
+          ]
+        },
+        "spec_decode_acceptance_length": {
+          "mean": 2.7250401889832254,
+          "sample_stddev": 0.05413243302955867,
+          "values": [
+            2.763317599460553,
+            2.686762778505898
+          ]
+        }
+      },
+      "vram": {
+        "0": {
+          "maximum_used_mib": 93402,
+          "minimum_free_mib": 3879
+        },
+        "1": {
+          "maximum_used_mib": 93407,
+          "minimum_free_mib": 3874
+        },
+        "2": {
+          "maximum_used_mib": 93407,
+          "minimum_free_mib": 3874
+        },
+        "3": {
+          "maximum_used_mib": 93405,
+          "minimum_free_mib": 3876
+        }
+      }
+    },
+    "off-c4": {
+      "completed_per_repeat": [
+        16,
+        16
+      ],
+      "metrics": {
+        "output_throughput": {
+          "mean": 148.13892890833296,
+          "sample_stddev": 1.8083879574157387,
+          "values": [
+            149.41765229603772,
+            146.8602055206282
+          ]
+        },
+        "total_token_throughput": {
+          "mean": 570.204676066596,
+          "sample_stddev": 6.960704232572329,
+          "values": [
+            575.1266372312818,
+            565.2827149019103
+          ]
+        },
+        "request_throughput": {
+          "mean": 0.5786676910481756,
+          "sample_stddev": 0.007064015458655229,
+          "values": [
+            0.5836627042813973,
+            0.5736726778149539
+          ]
+        },
+        "mean_ttft_ms": {
+          "mean": 699.0144363298896,
+          "sample_stddev": 43.77779871778042,
+          "values": [
+            668.0588579911273,
+            729.9700146686519
+          ]
+        },
+        "mean_tpot_ms": {
+          "mean": 23.445907607817265,
+          "sample_stddev": 0.16665427436950864,
+          "values": [
+            23.328065240296862,
+            23.563749975337668
+          ]
+        },
+        "mean_itl_ms": {
+          "mean": 63.16835380028155,
+          "sample_stddev": 1.1272928355093184,
+          "values": [
+            62.3712373919099,
+            63.9654702086532
+          ]
+        },
+        "spec_decode_acceptance_rate": {
+          "mean": 56.84530894523753,
+          "sample_stddev": 1.0928875445387942,
+          "values": [
+            56.07252075141983,
+            57.61809713905522
+          ]
+        },
+        "spec_decode_acceptance_length": {
+          "mean": 2.705359268357126,
+          "sample_stddev": 0.03278662633616355,
+          "values": [
+            2.6821756225425952,
+            2.7285429141716566
+          ]
+        }
+      },
+      "vram": {
+        "0": {
+          "maximum_used_mib": 93336,
+          "minimum_free_mib": 3945
+        },
+        "1": {
+          "maximum_used_mib": 93336,
+          "minimum_free_mib": 3945
+        },
+        "2": {
+          "maximum_used_mib": 93343,
+          "minimum_free_mib": 3938
+        },
+        "3": {
+          "maximum_used_mib": 93342,
+          "minimum_free_mib": 3938
+        }
+      }
+    }
+  },
+  "deltas": {
+    "c1": {
+      "output_throughput_percent": 3.5130760798053773,
+      "mean_tpot_percent": -3.669978291260212,
+      "acceptance_rate_points": -0.8350446367872593
+    },
+    "c4": {
+      "output_throughput_percent": 6.73741592040249,
+      "mean_tpot_percent": -8.671123164362848,
+      "acceptance_rate_points": 0.6560306875366493
+    }
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "off": {
+    "trace_dir": "/e/scratch/profound/naeimitabiei1/replica-profile-1123358-off-c4",
+    "rank_steps": {
+      "0": 6,
+      "1": 6,
+      "2": 6,
+      "3": 6
+    },
+    "rank_steps_total": 24,
+    "graph_span_ms_per_rank_step": 49.32904012044271,
+    "graph_start_cycle_ms": 51.99279431152344,
+    "annotation_start_cycle_ms": 47.19634760742188,
+    "gpu_busy_ms_per_rank_step": 47.068094930013025,
+    "summed_layer_max_minus_mean_ms": 7.550838073730469,
+    "kernel_families": {
+      "NCCL all-gather": {
+        "cumulative_ms_per_rank_step": 2.092497875,
+        "calls_per_rank_step": 177.0
+      },
+      "TP custom all-reduce": {
+        "cumulative_ms_per_rank_step": 9.773037791666667,
+        "calls_per_rank_step": 157.0
+      },
+      "routed W4 Marlin": {
+        "cumulative_ms_per_rank_step": 29.615875666666664,
+        "calls_per_rank_step": 300.0
+      }
+    }
+  },
+  "greedy": {
+    "trace_dir": "/e/scratch/profound/naeimitabiei1/replica-profile-1123364-greedy-c4",
+    "rank_steps": {
+      "0": 6,
+      "1": 6,
+      "2": 6,
+      "3": 6
+    },
+    "rank_steps_total": 24,
+    "graph_span_ms_per_rank_step": 48.93192106119791,
+    "graph_start_cycle_ms": 51.46271708984375,
+    "annotation_start_cycle_ms": 44.99803132324219,
+    "gpu_busy_ms_per_rank_step": 46.595325968424476,
+    "summed_layer_max_minus_mean_ms": 4.214292907714844,
+    "kernel_families": {
+      "NCCL all-gather": {
+        "cumulative_ms_per_rank_step": 1.9244475416666667,
+        "calls_per_rank_step": 177.0
+      },
+      "TP custom all-reduce": {
+        "cumulative_ms_per_rank_step": 5.385183333333333,
+        "calls_per_rank_step": 157.0
+      },
+      "replica scheduler": {
+        "cumulative_ms_per_rank_step": 0.6985220833333333,
+        "calls_per_rank_step": 75.0
+      },
+      "routed W4 Marlin": {
+        "cumulative_ms_per_rank_step": 33.587479249999994,
+        "calls_per_rank_step": 300.0
+      }
+    }
+  }
+}

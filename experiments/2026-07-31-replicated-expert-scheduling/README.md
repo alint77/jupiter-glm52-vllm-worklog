@@ -1,7 +1,7 @@
 # Replicated Grace experts with per-step makespan scheduling
 
-Status: **static exactly-once replica assignment is implemented and exercised
-on four ranks; the dynamic makespan scheduler is next**.
+Status: **the graph-captured greedy scheduler improves c4 throughput by 6.7%
+and cuts the trace's rank-skew/all-reduce residency proxies by about 44%**.
 
 ## Goal
 
@@ -453,6 +453,138 @@ that same-arm restart noise. All four detailed runs completed 8/8 requests
 without errors. Structural exactly-once tests remain the Phase 3 correctness
 gate; model-level validation for the dynamic scheduler must use repeat-aware
 logit or downstream-evaluation tolerances rather than exact greedy text.
+
+## Phase 4 implementation and isolated result
+
+The opt-in `greedy` assignment runs one Triton program per routed layer. It
+counts the current logical routes, accounts all active experts without a
+replica at their primary rank, orders the remaining replica-backed tasks by
+residence cost, route count, and expert ID, then chooses the primary or
+secondary minimizing `(maximum rank time, total rank time, rank ID)`.
+
+The operation mutates fixed 256-entry hot/cold maps in place. It does not
+allocate, synchronize with the CPU, or add a collective. Prefill restores the
+primary maps without running the greedy loop. The operation is registered as a
+mutating custom op so `torch.compile` preserves the map dependency and CUDA
+graphs capture it.
+
+Focused validation on GH200:
+
+- 56 tiered-MoE tests passed, including the CUDA assignment test;
+- 40 randomized EP4 cases with 256 experts and 32/128 routes matched the CPU
+  reference selected-rank table exactly;
+- every active expert appeared in exactly one rank's output maps in all 40
+  cases;
+- a full-graph `torch.compile` invocation succeeded;
+- Ruff, formatting, and diff checks passed.
+
+The first 256-iteration proof of concept cost 213 us/layer and was discarded.
+Accounting fixed tasks in parallel and sorting replica-backed tasks once
+reduced graph-captured cost to:
+
+| Shape | 75 scheduler nodes | Per layer |
+| --- | ---: | ---: |
+| c1/MTP3, 32 routes | 0.297 ms | 3.96 us |
+| c4/MTP3, 128 routes | 0.64-0.70 ms | 8.6-9.4 us |
+| primary-map restore | 0.079 ms | 1.05 us |
+
+The separate-kernel implementation narrowly misses the original 0.25 ms c1
+gate and misses it at c4. Replaying the exact runtime policy with the saved
+985-copy profile predicts 13.574 -> 11.534 ms at c1 and
+36.033 -> 31.440 ms at c4. After charging the captured scheduler, the
+predicted net savings are still about 1.74/3.95 ms. The end-to-end measurement
+is therefore the next gate. If it improves skew but not step wall, selection
+should be fused into the existing route-map/count work rather than adding
+scheduler features.
+
+Jobs `1123052`, `1123054`, `1123095`, and `1123096` run primary-only and greedy
+independently at c1 and c4 using the same 985-copy profile, mixed agentic
+prompts, MTP3, two measured repeats, detailed outputs, MTP metrics, and VRAM
+monitoring. The first c4 submissions (`1123053`/`1123055`) failed at
+configuration validation before loading because c4 requires DCP4; the
+resubmissions include the established DCP4 setting.
+
+## Phase 5 runtime result: c4 gate passes
+
+The benchmark used 16 realistic mixed agentic prompts per repeat with Python,
+PyTorch, CUDA, machine-learning, profiling, numerics, and review tasks. Each
+request generated 256 tokens under AutoRound W4G64 and MTP3. Both repeats
+completed 16/16 requests in every arm.
+
+| Regime | Assignment | Output tok/s | Mean TPOT | MTP acceptance |
+| --- | --- | ---: | ---: | ---: |
+| c1 | primary/off | 92.49 ± 0.84 | 9.723 ms | 60.99% |
+| c1 | greedy | 95.74 ± 0.14 | 9.366 ms | 60.16% |
+| c4/DCP4 | primary/off | 148.14 ± 1.81 | 23.446 ms | 56.85% |
+| c4/DCP4 | greedy | 158.12 ± 3.65 | 21.413 ms | 57.50% |
+
+Greedy improves c1 throughput by **3.51%** and lowers TPOT by 3.67%. That is
+real but below the 5% success threshold. At c4, it improves aggregate
+throughput by **6.74%** and lowers TPOT by **8.67%**, clearing the gate.
+Acceptance changes by -0.84 percentage points at c1 and +0.66 at c4, within
+the cross-run variation seen in the two c4 repeats. Both arms produced the
+same eight-token smoke continuation.
+
+Peak HBM use leaves 5,941 MiB free at c1 and only 3,874 MiB free at c4 in the
+greedy arms. Greedy itself costs only 36-66 MiB more than control, but the c4
+runtime peak shows that no additional HBM expert placement is safe. The
+985-copy profile remains the conservative Grace replication point.
+
+`phase4-runtime-summary.json` contains both raw repeat values, sample standard
+deviations, TPOT/acceptance deltas, and per-GPU VRAM extrema.
+
+### Paired c4 trace result
+
+Jobs `1123358` and `1123364` completed normally and captured all four ranks for
+the primary/off and greedy configurations. The analysis selects only steady
+`generation_4(16)` graphs: six graphs/rank and 24 rank-steps/arm.
+
+| Device metric per rank-step | Primary/off | Greedy | Delta |
+| --- | ---: | ---: | ---: |
+| Summed layer max-minus-mean | 7.551 ms | 4.214 ms | **-44.2%** |
+| TP custom all-reduce residency | 9.773 ms | 5.385 ms | **-44.9%** |
+| Routed Marlin cumulative time | 29.616 ms | 33.587 ms | +13.4% |
+| Full graph span | 49.329 ms | 48.932 ms | -0.8% |
+| Graph-start cycle | 51.993 ms | 51.463 ms | -1.0% |
+
+The device census is unchanged at 300 routed Marlin launches and 157 custom
+all-reduces per graph. The greedy arm adds exactly 75 scheduler launches,
+totalling 0.699 ms or 9.31 us/layer. NCCL all-gather count also remains
+unchanged at 177 launches/rank-step on average.
+
+This is the intended mechanism: assignment changes which existing copy
+executes a task, substantially reducing rank-skew wait without changing
+communication payload or collective count. The counter-cost is 3.972 ms more
+cumulative Marlin residency because some work moves from an HBM primary to a
+Grace secondary.
+
+The short profiler capture is a mechanism check, not a replacement for the
+two-repeat throughput benchmark. Profiling records only six decode graphs per
+rank, adds tracing overhead to every scheduler launch, and the two servers can
+form different prefill/decode batches even with identical prompt order.
+Accordingly, its graph cycle is nearly flat while the longer unprofiled
+benchmark measures the reproducible c4 throughput gain.
+
+Raw traces remain on scratch:
+
+- `/e/scratch/profound/naeimitabiei1/replica-profile-1123358-off-c4`
+- `/e/scratch/profound/naeimitabiei1/replica-profile-1123364-greedy-c4`
+
+`analyze_runtime_trace.py` reproduces the filtered census and
+`phase4-trace-analysis.json` stores its complete summary.
+
+## Conclusion and next optimization
+
+The experiment clears the c4 throughput and rank-skew gates while preserving
+the exactly-once invariant, collective census, MTP acceptance, and safe memory
+headroom. It is less compelling at c1, where the 0.297 ms scheduler overhead
+consumes more of the available gain.
+
+The next narrow optimization is to fuse replica assignment with an existing
+routing/map kernel. The target is to remove most of the 0.699 ms c4 scheduler
+cost without changing the policy. After that, recalibrate the primary-HBM
+versus secondary-Grace decision with the observed Marlin counter-cost; do not
+add a more elaborate scheduler until those two simpler levers are measured.
 
 ## Test design
 

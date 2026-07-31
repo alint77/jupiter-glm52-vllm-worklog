@@ -1,0 +1,106 @@
+{
+  "trace_dir": "/e/scratch/profound/naeimitabiei1/claude-routing-profile-1047954-108",
+  "profile": "agent_space/experiments/2026-07-26-autoround-w4g64/hybrid-p0.5-profile.json",
+  "hot_slots_per_rank": 2614,
+  "cost_model_us": {
+    "hbm": 17.066666666666666,
+    "grace": 46.22666666666667
+  },
+  "samples": {
+    "train_c4": 300,
+    "heldout_c1": 300,
+    "heldout_c4": 150
+  },
+  "control": {
+    "c1": {
+      "span_ms": 13.574229955555555,
+      "rank_skew_ms": 4.453786466666666,
+      "secondary_task_percent": 0.0,
+      "hbm_task_percent": 63.44268196365473,
+      "grace_task_percent": 36.55731803634527
+    },
+    "c4": {
+      "span_ms": 36.033067288888894,
+      "rank_skew_ms": 7.90340206666667,
+      "secondary_task_percent": 0.0,
+      "hbm_task_percent": 61.87933737992349,
+      "grace_task_percent": 38.12066262007651
+    }
+  },
+  "budgets": [
+    {
+      "copies_per_rank": 985,
+      "grace_gb_per_rank": 19.75321364,
+      "copy_factor": 1.2052083333333332,
+      "placement": null,
+      "workloads": {
+        "c1": {
+          "hash": {
+            "span_ms": 14.675510266666665,
+            "rank_skew_ms": 5.4169411,
+            "secondary_task_percent": 11.155924329338948,
+            "hbm_task_percent": 63.2741548121576,
+            "grace_task_percent": 36.7258451878424
+          },
+          "least_loaded": {
+            "span_ms": 13.704214088888886,
+            "rank_skew_ms": 4.348950177777778,
+            "secondary_task_percent": 9.631478937687936,
+            "hbm_task_percent": 63.32519651053877,
+            "grace_task_percent": 36.67480348946123
+          },
+          "greedy": {
+            "span_ms": 12.194032355555553,
+            "rank_skew_ms": 3.208093811111111,
+            "secondary_task_percent": 9.067871131352677,
+            "hbm_task_percent": 63.39343120205886,
+            "grace_task_percent": 36.60656879794114
+          },
+          "runtime_greedy": {
+            "span_ms": 11.51410253333333,
+            "rank_skew_ms": 2.7335832666666664,
+            "secondary_task_percent": 8.225235373867008,
+            "hbm_task_percent": 63.36137343360191,
+            "grace_task_percent": 36.63862656639809
+          }
+        },
+        "c4": {
+          "hash": {
+            "span_ms": 42.16868453333334,
+            "rank_skew_ms": 13.53347735555556,
+            "secondary_task_percent": 11.014743013977482,
+            "hbm_task_percent": 61.72753587887197,
+            "grace_task_percent": 38.27246412112803
+          },
+          "least_loaded": {
+            "span_ms": 38.265792977777785,
+            "rank_skew_ms": 9.559094333333338,
+            "secondary_task_percent": 8.473916456979063,
+            "hbm_task_percent": 61.78712557985781,
+            "grace_task_percent": 38.21287442014219
+          },
+          "greedy": {
+            "span_ms": 33.53400675555556,
+            "rank_skew_ms": 5.499003688888892,
+            "secondary_task_percent": 8.18510213979222,
+            "hbm_task_percent": 61.83388392187225,
+            "grace_task_percent": 38.16611607812775
+          },
+          "runtime_greedy": {
+            "span_ms": 31.380717599999997,
+            "rank_skew_ms": 3.5770963777777793,
+            "secondary_task_percent": 7.302565619352299,
+            "hbm_task_percent": 61.793976220664575,
+            "grace_task_percent": 38.206023779335425
+          }
+        }
+      },
+      "oracle": {
+        "completed_cases": 1,
+        "mean_greedy_gap_us": 14.919999999999987,
+        "max_greedy_gap_us": 14.919999999999987,
+        "mean_search_nodes": 119.0
+      }
+    }
+  ]
+}

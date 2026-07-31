@@ -153,10 +153,16 @@ def assign_layer(
     hbm_uses = 0
     grace_uses = 0
 
-    if policy == "greedy":
+    if policy in ("greedy", "runtime_greedy"):
         task_cost = np.where(hot[layer, active], HOT_US, COLD_US)
         token_counts = counts[active].astype(np.int16)
-        order = active[np.lexsort((active, -token_counts, -task_cost))]
+        ordered = active[np.lexsort((active, -token_counts, -task_cost))]
+        if policy == "runtime_greedy":
+            fixed = ordered[secondary[layer, ordered] < 0]
+            flexible = ordered[secondary[layer, ordered] >= 0]
+            order = np.concatenate((fixed, flexible))
+        else:
+            order = ordered
     elif policy == "least_loaded":
         token_counts = counts[active].astype(np.int16)
         order = active[np.lexsort((active, -token_counts))]
@@ -177,7 +183,7 @@ def assign_layer(
             chosen = candidates[value & 1]
         elif policy == "least_loaded":
             chosen = min(candidates, key=lambda rank: (token_load[rank], rank))
-        elif policy == "greedy":
+        elif policy in ("greedy", "runtime_greedy"):
             choices = []
             for rank in candidates:
                 use_hbm = rank == primary and hot[layer, expert]
@@ -475,7 +481,12 @@ def main() -> None:
         for name, workload in (("c1", c1), ("c4", c4)):
             row["workloads"][name] = {
                 policy: evaluate(workload, owners, hot, secondary, policy)
-                for policy in ("hash", "least_loaded", "greedy")
+                for policy in (
+                    "hash",
+                    "least_loaded",
+                    "greedy",
+                    "runtime_greedy",
+                )
             }
         row["oracle"] = oracle_check(c1, owners, hot, secondary, args.oracle_cases)
         results.append(row)
