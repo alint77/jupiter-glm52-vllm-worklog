@@ -580,11 +580,13 @@ the exactly-once invariant, collective census, MTP acceptance, and safe memory
 headroom. It is less compelling at c1, where the 0.297 ms scheduler overhead
 consumes more of the available gain.
 
-The next narrow optimization is to fuse replica assignment with an existing
-routing/map kernel. The target is to remove most of the 0.699 ms c4 scheduler
-cost without changing the policy. After that, recalibrate the primary-HBM
-versus secondary-Grace decision with the observed Marlin counter-cost; do not
-add a more elaborate scheduler until those two simpler levers are measured.
+The next narrow optimization is to fuse replica assignment with the shared
+dual-tier Marlin alignment, removing the standalone scheduler and redundant
+route scans without changing the policy. Its design and gates are in
+[`2026-07-31-replica-align-fusion`](../2026-07-31-replica-align-fusion/README.md).
+After that, recalibrate the primary-HBM versus secondary-Grace decision with
+the observed Marlin counter-cost; do not add a more elaborate scheduler until
+those two simpler levers are measured.
 
 ## Test design
 
