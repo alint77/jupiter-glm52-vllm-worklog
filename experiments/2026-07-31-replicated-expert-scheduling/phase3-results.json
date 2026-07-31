@@ -1,0 +1,40 @@
+{
+  "profile": "runtime-placements/replicas-985.json",
+  "prompts": 8,
+  "output_tokens_per_prompt": 128,
+  "paired_runs": [
+    {
+      "job_id": 1122321,
+      "control_output_tps": 79.15689451158727,
+      "secondary_output_tps": 70.01639498783544,
+      "detailed_outputs": false
+    },
+    {
+      "job_id": 1122515,
+      "control_output_tps": 77.95465464487332,
+      "secondary_output_tps": 67.46167587458451,
+      "detailed_outputs": true
+    }
+  ],
+  "repeat_runs": {
+    "control_job_id": 1122689,
+    "control_output_tps": 76.57707945036945,
+    "secondary_job_id": 1122690,
+    "secondary_output_tps": 71.57094438434792
+  },
+  "exact_text_analysis": {
+    "control_repeat_matches": 0,
+    "secondary_repeat_matches": 0,
+    "cross_arm_matches": 0,
+    "prompt_count": 8,
+    "control_repeat_median_first_divergence_token": 3.5,
+    "secondary_repeat_median_first_divergence_token": 3.5,
+    "cross_arm_median_first_divergence_token": 3.0,
+    "conclusion": "Exact greedy text is not reproducible across same-arm restarts."
+  },
+  "large_profile_startup": {
+    "job_id": 1122219,
+    "profile": "runtime-placements/replicas-1697.json",
+    "result": "worker lost during construction before checkpoint streaming"
+  }
+}

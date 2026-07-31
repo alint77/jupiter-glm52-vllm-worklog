@@ -1,7 +1,7 @@
 # Replicated Grace experts with per-step makespan scheduling
 
-Status: **offline and physical gates passed; replica planning/loading is in
-progress, while runtime assignment remains disabled**.
+Status: **static exactly-once replica assignment is implemented and exercised
+on four ranks; the dynamic makespan scheduler is next**.
 
 ## Goal
 
@@ -405,18 +405,54 @@ The exact four-rank footprint retry, job `1121596`, retained at least 31.65 GB,
 100% local pages, and at least 418.6 GB/s. Launch scripts still need a
 real-node preflight and must fail closed below the requested reserve.
 
-## Implementation started
+## Phase 3 result: static exactly-once assignment works
 
 The placement profile has a version-2 secondary-rank table. The planner
 validates that a secondary differs from its primary, accounts every replica as
 Grace storage, and supports variable per-layer local counts. Storage and the
-streaming loader can now allocate and load the secondary copies.
+streaming loader allocate and load secondary copies directly into Grace.
 
-Execution deliberately exposes only primary maps. Thus loading a v2 profile
-cannot duplicate output before the exactly-once selector exists. Focused
-profile/planner tests cover schema validation, cold placement, loader maps, and
-the Grace capacity failure. The next code step is the deterministic assignment
-mask and summed-output correctness test.
+The new opt-in `secondary` assignment deterministically selects the secondary
+copy when present and otherwise retains the primary. Every rank derives the
+same selected-rank table. Its local hot/cold maps expose only experts selected
+for that rank; `off` retains the original primary maps exactly. This is a
+correctness path, not the final makespan scheduler.
+
+Focused results:
+
+- `tests/model_executor/model_loader/test_tiered_moe_manifest.py`: 51 passed;
+- `tests/engine/test_arg_utils.py -k tiered_moe`: 2 passed;
+- Ruff and formatting checks passed;
+- unit coverage proves one selected rank per valid route, rejects missing
+  local replicas, and matches a unique-owner summed-output baseline.
+
+The first full-runtime attempt used the selected 1,697-copy profile. Job
+`1122219` lost a worker during construction before checkpoint streaming. The
+same 77.87 GB pinned footprint passed the isolated probe, so that probe did not
+account for enough real-server process headroom on every node. Runtime
+correctness therefore uses the 985-copy profile: 5,785 physical routed experts
+per rank, including 985 secondaries. Jobs `1122321`, `1122515`, `1122689`, and
+`1122690` all loaded this profile and served all requests.
+
+Two same-node paired measurements show the expected penalty from forcing every
+replica onto its slower Grace secondary:
+
+| Job | Primary/off | Static secondary | Delta |
+| ---: | ---: | ---: | ---: |
+| 1122321 | 79.16 tok/s | 70.02 tok/s | -11.5% |
+| 1122515 | 77.95 tok/s | 67.46 tok/s | -13.5% |
+
+No performance conclusion is drawn from this static policy. Its purpose is to
+exercise replicated execution before adding cost-aware choices.
+
+Exact generated text is not a valid semantic gate for this configuration.
+Across independent restarts, off-vs-off and secondary-vs-secondary both
+matched 0/8 completions exactly. Their median first token divergence was 3.5
+tokens in both cases. The paired off-vs-secondary median was 3 tokens, within
+that same-arm restart noise. All four detailed runs completed 8/8 requests
+without errors. Structural exactly-once tests remain the Phase 3 correctness
+gate; model-level validation for the dynamic scheduler must use repeat-aware
+logit or downstream-evaluation tolerances rather than exact greedy text.
 
 ## Test design
 
