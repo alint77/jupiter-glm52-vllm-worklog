@@ -1,6 +1,6 @@
 # Replica-aware tiered MoE scheduling, v2
 
-Status: **plan only**. Supersedes
+Status: **Phase 0b passed, Phase 1 in progress**. Supersedes
 [`2026-07-31-replicated-expert-scheduling`](../2026-07-31-replicated-expert-scheduling/README.md)
 (reverted in `53fe6dfcf`, archived at tag `replica-scheduling-archive` =
 `dc4dcff58`) and absorbs
@@ -8,10 +8,11 @@ Status: **plan only**. Supersedes
 which is no longer a separate follow-up: fusion is the only shape in which this
 idea pays, so it belongs in the first implementation, not a later one.
 
-The idea is sound. v1 measured flat because it optimised the wrong objective
-with an uncalibrated cost model, paid for the privilege with 375 extra graph
-nodes per rank-step, and was measured across nodes at n=2. All three are
-fixable, and the fix makes the implementation *simpler*, not more complex.
+The idea is sound. v1 measured flat because it optimised a harder objective
+than it needed to, paid 375 extra graph nodes per rank-step for the privilege,
+and was measured across nodes at n=2 — including, it turns out, its trace arms
+(§2.1). All three are fixable, and the fix makes the implementation *simpler*,
+not more complex: the corrected objective needs no cost constants at all.
 
 ---
 
@@ -90,7 +91,7 @@ step), worth ~0.3 ms, not 4 ms.
 What does explain a uniform ~10% is the node. `sacct` confirms **off ran on
 `jpbo-032-37` and greedy on `jpbo-027-29`** — the trace arms were cross-node,
 just as the throughput arms were. The cost calibration measured exactly this
-spread: node A's Marlin floor is 166.6–186.4 µs against node B's 183.2–186.4 µs,
+spread: node A's Marlin floor is 166.6–168.6 µs against node B's 183.2–186.4 µs,
 **+10.2% on the fixed part of a Marlin call**, while the Grace slope was
 node-invariant (46.29 vs 46.29 µs/expert).
 
