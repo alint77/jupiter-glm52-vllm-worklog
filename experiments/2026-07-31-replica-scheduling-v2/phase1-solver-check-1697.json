@@ -1,0 +1,58 @@
+{
+ "placement": "../2026-07-31-replicated-expert-scheduling/runtime-placements/replicas-1697.json",
+ "workloads": {
+  "c1": {
+   "layers_solved": 22171,
+   "optimal": 22171,
+   "optimal_percent": 100.0,
+   "worst_gap": 0,
+   "max_reversals": 7,
+   "mean_reversals": 1.4162193856840015,
+   "reversal_histogram": {
+    "0": 4755,
+    "1": 8450,
+    "2": 5408,
+    "3": 2475,
+    "4": 797,
+    "5": 214,
+    "6": 54,
+    "7": 18
+   },
+   "path_length_histogram": {
+    "1": 27092,
+    "2": 3896,
+    "3": 411
+   }
+  },
+  "c4": {
+   "layers_solved": 11100,
+   "optimal": 11100,
+   "optimal_percent": 100.0,
+   "worst_gap": 0,
+   "max_reversals": 17,
+   "mean_reversals": 3.0646846846846847,
+   "reversal_histogram": {
+    "0": 575,
+    "1": 1657,
+    "2": 2375,
+    "3": 2443,
+    "4": 1824,
+    "5": 1147,
+    "6": 600,
+    "7": 290,
+    "8": 119,
+    "9": 49,
+    "10": 14,
+    "11": 2,
+    "12": 3,
+    "13": 1,
+    "17": 1
+   },
+   "path_length_histogram": {
+    "1": 30326,
+    "2": 3455,
+    "3": 237
+   }
+  }
+ }
+}

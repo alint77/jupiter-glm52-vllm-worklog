@@ -1,0 +1,13 @@
+{
+ "placement": "../2026-07-31-replicated-expert-scheduling/runtime-placements/replicas-985.json",
+ "workloads": {
+  "c1": {
+   "layers_checked": 2250,
+   "mismatched_layers": 0
+  },
+  "c4": {
+   "layers_checked": 2250,
+   "mismatched_layers": 0
+  }
+ }
+}

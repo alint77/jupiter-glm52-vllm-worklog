@@ -416,7 +416,48 @@ separately, and **on a single node** so the node effect of §2.1 cannot
 contaminate it. Reconcile against in-model per-layer costs (hot 79 µs/layer,
 cold 53 µs/layer, Marlin 395 µs/layer).
 
-### Phase 1 — offline kernel prototype
+### Phase 1 — offline kernel prototype — **in progress**
+
+Done so far:
+
+- **`solver_prototype.py`** implements the kernel-shaped solver — six pair-class
+  counters, path reversal, bounded loops — and checks it against the max-flow
+  ground truth. It is **exactly optimal on every one of 100,062 real layer
+  problems** across all three placements and both regimes, worst gap 0. Mean
+  1.2–3.1 reversals, worst case 17.
+- Two simplifications were measured rather than assumed. Searching only from the
+  **lowest-id maximum-loaded rank** (instead of every rank in descending load
+  order) stays exactly optimal and needs marginally fewer reversals. Multi-hop
+  paths, however, **are** needed: 12.6% of reversals are two-hop and 1.4% are
+  three-hop, so the kernel cannot be simplified to direct moves only.
+- **`fused_assign_align.py`** is the Triton kernel for the assignment stage. It
+  **matches the host reference exactly on 9,000 real layer problems** — c1 and
+  c4, both the 985- and 1,697-copy placements, zero mismatches — and compiles
+  and runs in 0.3 s.
+
+Two implementation notes worth carrying into the vLLM port:
+
+- **No early `return`, and no data-dependent `while`.** The first draft used both
+  and each kernel launch hung for over ten minutes; a trivial Triton kernel
+  compiles in 0.6 s in the same environment, so this was the kernel, not the
+  toolchain. Restructuring to a `SCHEDULE` constexpr guard and a fixed-trip
+  `tl.range` loop brought it to 0.3 s. A fixed trip count is also what CUDA
+  graph capture wants: past convergence every further iteration finds no
+  improving path and contributes a zero delta, so the loop is idempotent.
+  `REVERSAL_LIMIT` must stay above the measured worst case of 17.
+- **The reversal paths live in a host-built table, not unrolled code.** Triton
+  cannot call a Python helper from a kernel body or read a non-constexpr global,
+  and unrolling 60 candidate paths inline fought the compiler at every step. A
+  `[60, 8]` delta table indexed by path, ordered exactly as the reference
+  enumerates, turns the whole search into four vectorised reductions: the
+  lowest usable path index is the reference's choice. A simple path in K4 visits
+  distinct ranks, so each hop uses a distinct pair class and the per-path deltas
+  never interact — which is what makes the table valid.
+
+Remaining: fold both tiers' `moe_align_block_size` into the same kernel, then
+measure on Booster.
+
+### Phase 1 gates
 
 Fixed-shape prototype outside the model path. Verify against a NumPy reference
 solver on: c1/32 routes, c4/128 routes, the chosen placement, real captured
