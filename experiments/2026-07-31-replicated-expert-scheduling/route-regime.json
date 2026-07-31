@@ -1,0 +1,32 @@
+{
+  "regimes": {
+    "MTP3 c1 (4 consecutive, 1 seq)": {
+      "m": 4,
+      "distinct_experts_per_layer": 25.265,
+      "stdev": 1.709294038809915,
+      "per_rank": 6.31625
+    },
+    "no-MTP c4 (4 independent tokens)": {
+      "m": 4,
+      "distinct_experts_per_layer": 29.714100000000002,
+      "stdev": 0.6590878132355017,
+      "per_rank": 7.4285250000000005
+    },
+    "MTP3 c4 (4 seq x 4 consecutive)": {
+      "m": 16,
+      "distinct_experts_per_layer": 81.70686666666667,
+      "stdev": 3.967563927091226,
+      "per_rank": 20.426716666666668
+    },
+    "no-MTP c16 (16 independent tokens)": {
+      "m": 16,
+      "distinct_experts_per_layer": 93.02756666666666,
+      "stdev": 2.0968447383310633,
+      "per_rank": 23.256891666666665
+    }
+  },
+  "inflation": {
+    "m4_percent": 17.609736790025732,
+    "m16_percent": 13.855261450893952
+  }
+}
