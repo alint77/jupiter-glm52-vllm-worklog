@@ -1,0 +1,24 @@
+{
+  "model": "GLM-5.2-AutoRound-W4G64-MTP-e1ba887",
+  "profile": "runtime-placements/replicas-1697.json",
+  "configuration": {
+    "ep_size": 4,
+    "tp_size": 4,
+    "decode_context_parallel_size": 4,
+    "max_num_seqs": 4,
+    "max_model_len": 400000,
+    "num_mtp_layers": 1,
+    "mla_cache_tier": "hbm",
+    "hbm_reserve_bytes": 7000000000,
+    "host_reserve_bytes": 16000000000
+  },
+  "rank_plan": {
+    "hot_expert_slots": 2614,
+    "primary_cold_expert_slots": 2186,
+    "replica_expert_slots": 1697,
+    "cold_expert_slots": 3883,
+    "cold_expert_bytes": 77869775192,
+    "planned_host_bytes": 93869775192
+  },
+  "ranks_validated": 4
+}

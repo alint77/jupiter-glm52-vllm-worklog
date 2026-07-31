@@ -1,6 +1,7 @@
 # Replicated Grace experts with per-step makespan scheduling
 
-Status: **implementation plan; no runtime changes or performance claims yet**.
+Status: **offline and physical gates passed; replica planning/loading is in
+progress, while runtime assignment remains disabled**.
 
 ## Goal
 
@@ -35,16 +36,15 @@ The current physical plan reports:
 | Quantity | Per rank |
 | --- | ---: |
 | Grace capacity | 127,587,581,952 B |
-| Current Grace expert allocation | 31,609,860,800 B |
+| Current Grace expert allocation | 43,838,096,464 B |
 | Current configured host reserve | 8,000,000,000 B |
-| One runtime layer-expert copy | 19,464,200 B |
+| One AutoRound W4G64 runtime layer-expert copy | 20,054,024 B |
 | Existing ownership | 64 experts/layer × 75 layers |
 
-With only the current 8 GB reserve, the arithmetic permits 4,519 extra
-layer-expert copies per rank: 60.25 per layer. A rank would hold about 124 of
-256 experts per layer on average, and the system would have 1.94 physical
-copies per logical layer-expert. If no expert receives more than one secondary
-copy, approximately 94% could have a second home.
+With only the current 8 GB reserve, the arithmetic permits 3,777 extra
+layer-expert copies per rank: 50.36 per layer. A rank would hold about 114 of
+256 experts per layer on average, and the system would have 1.79 physical
+copies per logical layer-expert.
 
 That is a capacity ceiling, not the initial operating point. The experiment
 will default to a **16 GB hard Grace reserve**, derived from the complete
@@ -52,8 +52,8 @@ physical plan rather than hard-coded. With the current numbers this permits:
 
 | Grace reserve | Extra copies/rank | Extra/layer/rank | System copy factor |
 | ---: | ---: | ---: | ---: |
-| 16 GB | 4,108 | 54.77 | 1.856× |
-| 24 GB | 3,697 | 49.29 | 1.770× |
+| 16 GB | 3,378 | 45.04 | 1.704× |
+| 24 GB | 2,979 | 39.72 | 1.621× |
 
 The planner must include any host KV cache and other fixed allocations before
 computing this budget. Large pinned-UVA allocations can fail below the simple
@@ -234,10 +234,10 @@ currently free Grace capacity. The current-plan examples are:
 
 | Fraction of theoretical extra space | Extra copies/rank | Extra GB/rank | Copy factor |
 | ---: | ---: | ---: | ---: |
-| 25% | 1,129 | 21.98 | 1.235× |
-| 50% | 2,259 | 43.97 | 1.471× |
-| 75% | 3,389 | 65.96 | 1.706× |
-| 90% | 4,067 | 79.16 | 1.847× |
+| 25% | 845 | 16.95 | 1.176× |
+| 50% | 1,689 | 33.87 | 1.352× |
+| 75% | 2,534 | 50.81 | 1.528× |
+| 90% | 3,040 | 60.97 | 1.633× |
 
 For every budget, jointly choose secondary placement and replay assignments.
 Report:
@@ -344,6 +344,79 @@ Capture a four-rank trace for control and the best candidate. Compare:
 The desired signature is lower custom-all-reduce residency with an unchanged
 payload floor. A lower reported barrier duration without lower step wall is not
 a success.
+
+## Phase 1 result: offline gate passes
+
+`oracle.py` replays exact per-step routes from the 108-request natural Claude
+Code capture. Placement uses 300 sampled c4 training steps. Evaluation is
+chronologically held out: 300 c1 and 150 independently assembled c4 steps.
+The deployment replay uses the 2,614 HBM slots/rank produced by the complete
+AutoRound 400K/MTP3 plan:
+
+| Extra copies/rank | Copy factor | Greedy c1 span | c1 delta | Greedy c4 span | c4 delta |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 0 | 1.000× | 14.144 ms | — | 36.125 ms | — |
+| 985 | 1.205× | 12.804 ms | -1.340 ms | 33.944 ms | -2.181 ms |
+| **1,697** | **1.354×** | **12.138 ms** | **-2.007 ms** | **32.386 ms** | **-3.739 ms** |
+| 1,970 | 1.410× | 11.905 ms | -2.239 ms | 31.824 ms | -4.301 ms |
+
+At 1,697 copies/rank, modelled rank skew falls from 4.637 to 2.823 ms
+at c1 and from 7.792 to 4.238 ms at c4. The 24 completed small-instance
+branch-and-bound checks put greedy 15.50 us/layer above exact on average.
+
+Replicas must not be enabled with a naïve selector. At the selected budget,
+hash selection predicts 16.032/45.338 ms c1/c4, and token-count least-loaded
+predicts 14.736/40.383 ms. Both move too many hot-primary tasks to slower Grace
+copies. Only the residence-aware makespan policy passes.
+
+The runtime-corrected results are in `oracle-runtime-results.json`; its v2
+profiles are under `runtime-placements/`. `oracle-results.json` and
+`placements/` retain the earlier 3,176-hot-slot upper-bound sweep for
+comparison, but are not deployment profiles.
+
+## Phase 2 result: physical gate selects 1,697 copies/rank
+
+Jobs `1121514`, `1121564`, and `1121596` concurrently allocated,
+first-touched, NUMA-audited, and read candidate total pinned footprints on all
+four paired Grace nodes:
+
+| Total pinned/rank | Minimum physical free | Minimum C2C read | NUMA local |
+| ---: | ---: | ---: | ---: |
+| 55.21 GB | 59.07 GB | 419.0 GB/s | 100% |
+| **77.87 GB** | **31.65 GB** | **418.6 GB/s** | **100%** |
+| 91.83 GB | 9.30 GB | 416.8 GB/s | 100% |
+| 98.75 GB | 15.44 GB | 421.1 GB/s | 100% |
+| 100.53 GB | 13.21 GB | 354.1 GB/s | 100% |
+| 111.58 GB | 7.03 GB | 416.9 GB/s | 100% |
+
+The arithmetic maximum allocates, but violates the 16 GB physical-free
+reserve. More importantly, the 91.83 GB point left 9.30 GB free on job
+`1121564`, despite a larger footprint leaving more free on another node. Static
+machine capacity does not capture node-to-node baseline use.
+
+The initial 2,259-copy calculation assumed a 3,176-hot-slot primary plan. The
+complete 400K HBM-cache plan has 2,614 hot slots and therefore 43.84 GB of
+primary cold experts. The first implementation is fixed at 1,697 secondary
+copies/rank: 34.03 GB of replicas plus that 43.84 GB primary footprint. Plan
+validation reports exactly 3,883 Grace expert slots, 77,869,775,192 bytes, and
+93,869,775,192 bytes including the 16 GB reserve on every rank.
+
+The exact four-rank footprint retry, job `1121596`, retained at least 31.65 GB,
+100% local pages, and at least 418.6 GB/s. Launch scripts still need a
+real-node preflight and must fail closed below the requested reserve.
+
+## Implementation started
+
+The placement profile has a version-2 secondary-rank table. The planner
+validates that a secondary differs from its primary, accounts every replica as
+Grace storage, and supports variable per-layer local counts. Storage and the
+streaming loader can now allocate and load the secondary copies.
+
+Execution deliberately exposes only primary maps. Thus loading a v2 profile
+cannot duplicate output before the exactly-once selector exists. Focused
+profile/planner tests cover schema validation, cold placement, loader maps, and
+the Grace capacity failure. The next code step is the deterministic assignment
+mask and summed-output correctness test.
 
 ## Test design
 

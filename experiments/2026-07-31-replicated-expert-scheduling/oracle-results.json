@@ -1,0 +1,452 @@
+{
+  "trace_dir": "/e/scratch/profound/naeimitabiei1/claude-routing-profile-1047954-108",
+  "profile": "agent_space/experiments/2026-07-26-autoround-w4g64/hybrid-p0.5-profile.json",
+  "hot_slots_per_rank": 3176,
+  "cost_model_us": {
+    "hbm": 17.066666666666666,
+    "grace": 46.22666666666667
+  },
+  "samples": {
+    "train_c4": 300,
+    "heldout_c1": 300,
+    "heldout_c4": 150
+  },
+  "control": {
+    "c1": {
+      "span_ms": 11.606431511111108,
+      "rank_skew_ms": 3.5842238,
+      "secondary_task_percent": 0.0,
+      "hbm_task_percent": 74.54004266011422,
+      "grace_task_percent": 25.459957339885776
+    },
+    "c4": {
+      "span_ms": 29.520423288888882,
+      "rank_skew_ms": 5.82804017777778,
+      "secondary_task_percent": 0.0,
+      "hbm_task_percent": 73.15744947380554,
+      "grace_task_percent": 26.842550526194458
+    }
+  },
+  "budgets": [
+    {
+      "copies_per_rank": 985,
+      "grace_gb_per_rank": 19.75321364,
+      "copy_factor": 1.2052083333333332,
+      "placement": "agent_space/experiments/2026-07-31-replicated-expert-scheduling/placements/replicas-985.json",
+      "workloads": {
+        "c1": {
+          "hash": {
+            "span_ms": 13.589898444444442,
+            "rank_skew_ms": 5.037440244444446,
+            "secondary_task_percent": 12.388447024985359,
+            "hbm_task_percent": 68.6860075899901,
+            "grace_task_percent": 31.313992410009902
+          },
+          "least_loaded": {
+            "span_ms": 12.261233999999996,
+            "rank_skew_ms": 3.787053211111111,
+            "secondary_task_percent": 10.004172882709758,
+            "hbm_task_percent": 70.28638870133801,
+            "grace_task_percent": 29.71361129866199
+          },
+          "greedy": {
+            "span_ms": 10.620389244444441,
+            "rank_skew_ms": 2.803386644444444,
+            "secondary_task_percent": 7.3055893346132565,
+            "hbm_task_percent": 72.51914959157686,
+            "grace_task_percent": 27.480850408423134
+          }
+        },
+        "c4": {
+          "hash": {
+            "span_ms": 37.90589555555556,
+            "rank_skew_ms": 12.342719466666672,
+            "secondary_task_percent": 11.941428108505452,
+            "hbm_task_percent": 67.72956714824134,
+            "grace_task_percent": 32.270432851758656
+          },
+          "least_loaded": {
+            "span_ms": 32.34317688888888,
+            "rank_skew_ms": 7.5478147777777815,
+            "secondary_task_percent": 8.449449882669184,
+            "hbm_task_percent": 69.82705937874475,
+            "grace_task_percent": 30.172940621255254
+          },
+          "greedy": {
+            "span_ms": 27.514123999999995,
+            "rank_skew_ms": 4.383801933333334,
+            "secondary_task_percent": 6.673937770083795,
+            "hbm_task_percent": 71.21382481062871,
+            "grace_task_percent": 28.786175189371285
+          }
+        }
+      },
+      "oracle": {
+        "completed_cases": 24,
+        "mean_greedy_gap_us": 7.911666666666665,
+        "max_greedy_gap_us": 46.22666666666666,
+        "mean_search_nodes": 850.0
+      }
+    },
+    {
+      "copies_per_rank": 1970,
+      "grace_gb_per_rank": 39.50642728,
+      "copy_factor": 1.4104166666666667,
+      "placement": "agent_space/experiments/2026-07-31-replicated-expert-scheduling/placements/replicas-1970.json",
+      "workloads": {
+        "c1": {
+          "hash": {
+            "span_ms": 16.643009199999998,
+            "rank_skew_ms": 6.8897634777777785,
+            "secondary_task_percent": 23.151260729950014,
+            "hbm_task_percent": 60.53455881167763,
+            "grace_task_percent": 39.46544118832237
+          },
+          "least_loaded": {
+            "span_ms": 13.939195999999992,
+            "rank_skew_ms": 4.504563444444444,
+            "secondary_task_percent": 19.25865962709114,
+            "hbm_task_percent": 63.325017416860234,
+            "grace_task_percent": 36.674982583139766
+          },
+          "greedy": {
+            "span_ms": 10.10150862222222,
+            "rank_skew_ms": 2.3631226666666665,
+            "secondary_task_percent": 11.057422806147212,
+            "hbm_task_percent": 71.27964224246777,
+            "grace_task_percent": 28.72035775753223
+          }
+        },
+        "c4": {
+          "hash": {
+            "span_ms": 48.42328035555558,
+            "rank_skew_ms": 18.284400777777787,
+            "secondary_task_percent": 22.63984550173876,
+            "hbm_task_percent": 59.8617692921657,
+            "grace_task_percent": 40.1382307078343
+          },
+          "least_loaded": {
+            "span_ms": 37.95308560000001,
+            "rank_skew_ms": 9.684207111111116,
+            "secondary_task_percent": 17.477615803014718,
+            "hbm_task_percent": 63.25598996109271,
+            "grace_task_percent": 36.74401003890729
+          },
+          "greedy": {
+            "span_ms": 26.27905413333333,
+            "rank_skew_ms": 3.327076022222223,
+            "secondary_task_percent": 10.195167144761651,
+            "hbm_task_percent": 70.438832476822,
+            "grace_task_percent": 29.561167523178
+          }
+        }
+      },
+      "oracle": {
+        "completed_cases": 24,
+        "mean_greedy_gap_us": 8.505,
+        "max_greedy_gap_us": 46.22666666666666,
+        "mean_search_nodes": 72.66666666666667
+      }
+    },
+    {
+      "copies_per_rank": 2259,
+      "grace_gb_per_rank": 45.302040216,
+      "copy_factor": 1.470625,
+      "placement": "agent_space/experiments/2026-07-31-replicated-expert-scheduling/placements/replicas-2259.json",
+      "workloads": {
+        "c1": {
+          "hash": {
+            "span_ms": 17.538549377777773,
+            "rank_skew_ms": 7.402282466666668,
+            "secondary_task_percent": 26.17633205400749,
+            "hbm_task_percent": 58.10121300148469,
+            "grace_task_percent": 41.89878699851531
+          },
+          "least_loaded": {
+            "span_ms": 14.358765244444438,
+            "rank_skew_ms": 4.635974755555556,
+            "secondary_task_percent": 21.76740387594539,
+            "hbm_task_percent": 61.38364194159039,
+            "grace_task_percent": 38.61635805840961
+          },
+          "greedy": {
+            "span_ms": 9.978471599999995,
+            "rank_skew_ms": 2.257515233333333,
+            "secondary_task_percent": 11.93390726887513,
+            "hbm_task_percent": 71.01727000342069,
+            "grace_task_percent": 28.982729996579312
+          }
+        },
+        "c4": {
+          "hash": {
+            "span_ms": 51.54547920000002,
+            "rank_skew_ms": 19.94015373333334,
+            "secondary_task_percent": 25.72111150015985,
+            "hbm_task_percent": 57.453823418752485,
+            "grace_task_percent": 42.546176581247515
+          },
+          "least_loaded": {
+            "span_ms": 39.39670728888889,
+            "rank_skew_ms": 10.022476688888895,
+            "secondary_task_percent": 19.9582002170457,
+            "hbm_task_percent": 61.459490964765955,
+            "grace_task_percent": 38.540509035234045
+          },
+          "greedy": {
+            "span_ms": 26.00560791111111,
+            "rank_skew_ms": 3.087728355555556,
+            "secondary_task_percent": 11.018657665867062,
+            "hbm_task_percent": 70.33498546141784,
+            "grace_task_percent": 29.665014538582156
+          }
+        }
+      },
+      "oracle": {
+        "completed_cases": 24,
+        "mean_greedy_gap_us": 11.052777777777777,
+        "max_greedy_gap_us": 46.22666666666666,
+        "mean_search_nodes": 119.08333333333333
+      }
+    },
+    {
+      "copies_per_rank": 2955,
+      "grace_gb_per_rank": 59.25964092,
+      "copy_factor": 1.615625,
+      "placement": "agent_space/experiments/2026-07-31-replicated-expert-scheduling/placements/replicas-2955.json",
+      "workloads": {
+        "c1": {
+          "hash": {
+            "span_ms": 19.47658568888889,
+            "rank_skew_ms": 8.369993844444446,
+            "secondary_task_percent": 33.32718445037045,
+            "hbm_task_percent": 52.046772105085005,
+            "grace_task_percent": 47.953227894914995
+          },
+          "least_loaded": {
+            "span_ms": 15.476636177777772,
+            "rank_skew_ms": 4.936433633333334,
+            "secondary_task_percent": 28.47302938748171,
+            "hbm_task_percent": 55.841767153144794,
+            "grace_task_percent": 44.158232846855206
+          },
+          "greedy": {
+            "span_ms": 9.727064399999996,
+            "rank_skew_ms": 2.0330431888888887,
+            "secondary_task_percent": 13.761020977242566,
+            "hbm_task_percent": 70.42894726944823,
+            "grace_task_percent": 29.57105273055177
+          }
+        },
+        "c4": {
+          "hash": {
+            "span_ms": 57.66492728888889,
+            "rank_skew_ms": 22.4852398888889,
+            "secondary_task_percent": 32.85306354132459,
+            "hbm_task_percent": 51.57260265630879,
+            "grace_task_percent": 48.42739734369121
+          },
+          "least_loaded": {
+            "span_ms": 43.07966737777779,
+            "rank_skew_ms": 10.57857344444445,
+            "secondary_task_percent": 26.7592554332106,
+            "hbm_task_percent": 56.184280062895404,
+            "grace_task_percent": 43.815719937104596
+          },
+          "greedy": {
+            "span_ms": 25.477971644444445,
+            "rank_skew_ms": 2.6212157777777785,
+            "secondary_task_percent": 12.672380608554384,
+            "hbm_task_percent": 70.11228526503281,
+            "grace_task_percent": 29.887714734967194
+          }
+        }
+      },
+      "oracle": {
+        "completed_cases": 24,
+        "mean_greedy_gap_us": 8.443888888888885,
+        "max_greedy_gap_us": 46.22666666666666,
+        "mean_search_nodes": 486.1666666666667
+      }
+    },
+    {
+      "copies_per_rank": 3300,
+      "grace_gb_per_rank": 66.1782792,
+      "copy_factor": 1.6875,
+      "placement": "agent_space/experiments/2026-07-31-replicated-expert-scheduling/placements/replicas-3300.json",
+      "workloads": {
+        "c1": {
+          "hash": {
+            "span_ms": 20.530068444444446,
+            "rank_skew_ms": 8.90966178888889,
+            "secondary_task_percent": 36.74805280398018,
+            "hbm_task_percent": 49.047669364414446,
+            "grace_task_percent": 50.952330635585554
+          },
+          "least_loaded": {
+            "span_ms": 16.082173911111106,
+            "rank_skew_ms": 5.109286111111111,
+            "secondary_task_percent": 31.665016019929546,
+            "hbm_task_percent": 53.036443772644155,
+            "grace_task_percent": 46.963556227355845
+          },
+          "greedy": {
+            "span_ms": 9.629518088888883,
+            "rank_skew_ms": 1.9444839888888885,
+            "secondary_task_percent": 14.465217321224213,
+            "hbm_task_percent": 70.19666276839426,
+            "grace_task_percent": 29.803337231605735
+          }
+        },
+        "c4": {
+          "hash": {
+            "span_ms": 60.99407591111111,
+            "rank_skew_ms": 23.919597533333345,
+            "secondary_task_percent": 36.343736883197664,
+            "hbm_task_percent": 48.58931169545748,
+            "grace_task_percent": 51.41068830454252
+          },
+          "least_loaded": {
+            "span_ms": 45.023482933333355,
+            "rank_skew_ms": 10.78523355555556,
+            "secondary_task_percent": 30.224918499122467,
+            "hbm_task_percent": 53.282870570734495,
+            "grace_task_percent": 46.717129429265505
+          },
+          "greedy": {
+            "span_ms": 25.27945884444444,
+            "rank_skew_ms": 2.4521651555555564,
+            "secondary_task_percent": 13.310142645565243,
+            "hbm_task_percent": 70.04725854753366,
+            "grace_task_percent": 29.952741452466338
+          }
+        }
+      },
+      "oracle": {
+        "completed_cases": 24,
+        "mean_greedy_gap_us": 7.139444444444439,
+        "max_greedy_gap_us": 46.22666666666666,
+        "mean_search_nodes": 245.91666666666666
+      }
+    },
+    {
+      "copies_per_rank": 3546,
+      "grace_gb_per_rank": 71.111569104,
+      "copy_factor": 1.73875,
+      "placement": "agent_space/experiments/2026-07-31-replicated-expert-scheduling/placements/replicas-3546.json",
+      "workloads": {
+        "c1": {
+          "hash": {
+            "span_ms": 21.244686266666672,
+            "rank_skew_ms": 9.232357066666669,
+            "secondary_task_percent": 39.202352574561175,
+            "hbm_task_percent": 46.78499982986101,
+            "grace_task_percent": 53.21500017013899
+          },
+          "least_loaded": {
+            "span_ms": 16.50626177777777,
+            "rank_skew_ms": 5.185278255555556,
+            "secondary_task_percent": 34.057707565096074,
+            "hbm_task_percent": 50.86869388771184,
+            "grace_task_percent": 49.13130611228816
+          },
+          "greedy": {
+            "span_ms": 9.592644888888882,
+            "rank_skew_ms": 1.9101243888888884,
+            "secondary_task_percent": 14.80245071789701,
+            "hbm_task_percent": 70.04926867096373,
+            "grace_task_percent": 29.95073132903628
+          }
+        },
+        "c4": {
+          "hash": {
+            "span_ms": 63.35006088888889,
+            "rank_skew_ms": 24.783077644444457,
+            "secondary_task_percent": 38.8331292639802,
+            "hbm_task_percent": 46.31000563274911,
+            "grace_task_percent": 53.68999436725089
+          },
+          "least_loaded": {
+            "span_ms": 46.40681973333335,
+            "rank_skew_ms": 10.80336953333334,
+            "secondary_task_percent": 32.638410129379245,
+            "hbm_task_percent": 51.11121743498959,
+            "grace_task_percent": 48.88878256501041
+          },
+          "greedy": {
+            "span_ms": 25.237552266666665,
+            "rank_skew_ms": 2.4117729333333338,
+            "secondary_task_percent": 13.585581902129354,
+            "hbm_task_percent": 69.99908658122577,
+            "grace_task_percent": 30.000913418774235
+          }
+        }
+      },
+      "oracle": {
+        "completed_cases": 24,
+        "mean_greedy_gap_us": 6.932222222222218,
+        "max_greedy_gap_us": 46.22666666666666,
+        "mean_search_nodes": 478.5833333333333
+      }
+    },
+    {
+      "copies_per_rank": 3940,
+      "grace_gb_per_rank": 79.01285456,
+      "copy_factor": 1.8208333333333333,
+      "placement": "agent_space/experiments/2026-07-31-replicated-expert-scheduling/placements/replicas-3940.json",
+      "workloads": {
+        "c1": {
+          "hash": {
+            "span_ms": 22.356588044444447,
+            "rank_skew_ms": 9.760706611111113,
+            "secondary_task_percent": 42.809657447521076,
+            "hbm_task_percent": 43.51045101161064,
+            "grace_task_percent": 56.48954898838936
+          },
+          "least_loaded": {
+            "span_ms": 17.03169111111111,
+            "rank_skew_ms": 5.242124166666667,
+            "secondary_task_percent": 37.26043981825573,
+            "hbm_task_percent": 47.9550188317003,
+            "grace_task_percent": 52.0449811682997
+          },
+          "greedy": {
+            "span_ms": 9.517253511111106,
+            "rank_skew_ms": 1.841019266666666,
+            "secondary_task_percent": 15.383967892085312,
+            "hbm_task_percent": 69.84474369008197,
+            "grace_task_percent": 30.15525630991803
+          }
+        },
+        "c4": {
+          "hash": {
+            "span_ms": 66.89697004444444,
+            "rank_skew_ms": 26.132509511111127,
+            "secondary_task_percent": 42.56335755342956,
+            "hbm_task_percent": 42.99897131647568,
+            "grace_task_percent": 57.00102868352432
+          },
+          "least_loaded": {
+            "span_ms": 48.15093324444445,
+            "rank_skew_ms": 10.73200693333334,
+            "secondary_task_percent": 35.971953694017756,
+            "hbm_task_percent": 48.17468481615273,
+            "grace_task_percent": 51.82531518384727
+          },
+          "greedy": {
+            "span_ms": 25.12869271111111,
+            "rank_skew_ms": 2.3118086222222227,
+            "secondary_task_percent": 14.097857598013096,
+            "hbm_task_percent": 69.93775703495567,
+            "grace_task_percent": 30.062242965044334
+          }
+        }
+      },
+      "oracle": {
+        "completed_cases": 24,
+        "mean_greedy_gap_us": 7.228888888888885,
+        "max_greedy_gap_us": 46.22666666666666,
+        "mean_search_nodes": 726.1666666666666
+      }
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "device": 0,
+  "numa_node": 3,
+  "chunk_mb": 1024,
+  "results": [
+    {
+      "target_gb": 91.827376,
+      "allocated_gb": 91.827376,
+      "allocation_seconds": 3.845765538047999,
+      "node_free_gb": 13.297123328,
+      "local_fractions": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "c2c_read_gb_s": 421.6317823862204,
+      "error": null
+    }
+  ]
+}

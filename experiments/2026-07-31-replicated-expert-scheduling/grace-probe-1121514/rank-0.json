@@ -1,0 +1,72 @@
+{
+  "device": 0,
+  "numa_node": 0,
+  "chunk_mb": 1024,
+  "results": [
+    {
+      "target_gb": 55.209,
+      "allocated_gb": 55.209,
+      "allocation_seconds": 2.3150878639426082,
+      "node_free_gb": 60.449816576,
+      "local_fractions": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "c2c_read_gb_s": 420.84968452655556,
+      "error": null
+    },
+    {
+      "target_gb": 77.87,
+      "allocated_gb": 77.87,
+      "allocation_seconds": 1.040842121001333,
+      "node_free_gb": 37.79821568,
+      "local_fractions": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "c2c_read_gb_s": 421.74013135631907,
+      "error": null
+    },
+    {
+      "target_gb": 98.746,
+      "allocated_gb": 98.746,
+      "allocation_seconds": 1.0436470310669392,
+      "node_free_gb": 23.079288832,
+      "local_fractions": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "c2c_read_gb_s": 422.0372857523457,
+      "error": null
+    },
+    {
+      "target_gb": 100.531,
+      "allocated_gb": 100.531,
+      "allocation_seconds": 0.3791495019104332,
+      "node_free_gb": 20.70577152,
+      "local_fractions": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "c2c_read_gb_s": 354.0580455586605,
+      "error": null
+    },
+    {
+      "target_gb": 111.581,
+      "allocated_gb": 111.581,
+      "allocation_seconds": 0.7379179950803518,
+      "node_free_gb": 9.43456256,
+      "local_fractions": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "c2c_read_gb_s": 422.00532849625034,
+      "error": null
+    }
+  ]
+}
