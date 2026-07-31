@@ -1,0 +1,18 @@
+node: jpbo-093-06.jupiter.internal  job: 1157392
+NVIDIA GH200 120GB, 1980 MHz
+NVIDIA GH200 120GB, 1980 MHz
+NVIDIA GH200 120GB, 1980 MHz
+NVIDIA GH200 120GB, 1980 MHz
+GPU0 paired NUMA node: 0
+=== correctness, 985 copies/rank ===
+c1: 12000 rank-layers checked, 0 failures ALL PASS
+c4: 12000 rank-layers checked, 0 failures ALL PASS
+=== correctness, 1697 copies/rank ===
+c1: 12000 rank-layers checked, 0 failures ALL PASS
+c4: 12000 rank-layers checked, 0 failures ALL PASS
+=== timing, 985 copies/rank ===
+c1: 32 routes/layer | baseline 0.704 ms (300 nodes) | fused 0.740 ms (75 nodes) | +5.2% vs baseline, -51.6% vs v1 greedy | warps 8 of {2: 0.878, 4: 0.79, 8: 0.74, 16: 0.834}
+c4: 128 routes/layer | baseline 0.706 ms (300 nodes) | fused 0.971 ms (75 nodes) | +37.6% vs baseline, -36.5% vs v1 greedy | warps 8 of {2: 1.486, 4: 1.22, 8: 0.971, 16: 1.092}
+=== timing, 1697 copies/rank ===
+c1: 32 routes/layer | baseline 0.704 ms (300 nodes) | fused 0.760 ms (75 nodes) | +7.9% vs baseline, -50.3% vs v1 greedy | warps 8 of {2: 0.891, 4: 0.806, 8: 0.76, 16: 0.856}
+c4: 128 routes/layer | baseline 0.707 ms (300 nodes) | fused 0.993 ms (75 nodes) | +40.5% vs baseline, -35.1% vs v1 greedy | warps 8 of {2: 1.501, 4: 1.238, 8: 0.993, 16: 1.115}

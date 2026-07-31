@@ -21,7 +21,9 @@ cd "${repo}"
 source agent_space/jupiter-env.sh
 
 echo "node: $(hostname)  job: ${SLURM_JOB_ID}"
-nvidia-smi --query-gpu=name,clocks.max.sm --format=csv,noheader | head -1
+# No `| head`: SIGPIPE under `set -o pipefail` would abort the job, and it
+# does so *after* the line is printed, which looks like a pass.
+nvidia-smi --query-gpu=name,clocks.max.sm --format=csv,noheader
 
 numa_node="$(
   .venv/bin/python \

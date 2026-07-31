@@ -1,0 +1,31 @@
+{
+ "placement": "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-31-replicated-expert-scheduling/runtime-placements/replicas-985.json",
+ "workloads": {
+  "c1": {
+   "rank_layers_checked": 12000,
+   "failures": {
+    "assignment": 0,
+    "hot_sorted": 0,
+    "hot_expert_ids": 0,
+    "hot_num_post": 0,
+    "cold_sorted": 0,
+    "cold_expert_ids": 0,
+    "cold_num_post": 0,
+    "exactly_once": 0
+   }
+  },
+  "c4": {
+   "rank_layers_checked": 12000,
+   "failures": {
+    "assignment": 0,
+    "hot_sorted": 0,
+    "hot_expert_ids": 0,
+    "hot_num_post": 0,
+    "cold_sorted": 0,
+    "cold_expert_ids": 0,
+    "cold_num_post": 0,
+    "exactly_once": 0
+   }
+  }
+ }
+}

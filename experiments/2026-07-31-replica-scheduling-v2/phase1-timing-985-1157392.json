@@ -1,0 +1,49 @@
+{
+ "placement": "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-31-replicated-expert-scheduling/runtime-placements/replicas-985.json",
+ "device": "NVIDIA GH200 120GB",
+ "replays": 4000,
+ "workloads": {
+  "c1": {
+   "routes_per_layer": 32,
+   "sorted_buffer": 512,
+   "block_buffer": 32,
+   "baseline_ms_per_rank_step": 0.7037783203125,
+   "fused_ms_per_rank_step": 0.7401946411132813,
+   "baseline_us_per_layer": 9.3837109375,
+   "fused_us_per_layer": 9.869261881510417,
+   "baseline_nodes": 300,
+   "fused_nodes": 75,
+   "delta_percent": 5.174402187411978,
+   "v1_greedy_ms_per_rank_step": 1.53,
+   "v1_greedy_nodes": 375,
+   "best_num_warps": 8,
+   "ms_by_num_warps": {
+    "2": 0.877644287109375,
+    "4": 0.7896988525390625,
+    "8": 0.7401946411132813,
+    "16": 0.8335972290039062
+   }
+  },
+  "c4": {
+   "routes_per_layer": 128,
+   "sorted_buffer": 2048,
+   "block_buffer": 128,
+   "baseline_ms_per_rank_step": 0.7059494018554687,
+   "fused_ms_per_rank_step": 0.971270751953125,
+   "baseline_us_per_layer": 9.41265869140625,
+   "fused_us_per_layer": 12.950276692708334,
+   "baseline_nodes": 300,
+   "fused_nodes": 75,
+   "delta_percent": 37.58362134740874,
+   "v1_greedy_ms_per_rank_step": 1.53,
+   "v1_greedy_nodes": 375,
+   "best_num_warps": 8,
+   "ms_by_num_warps": {
+    "2": 1.4855499267578125,
+    "4": 1.2200572509765626,
+    "8": 0.971270751953125,
+    "16": 1.0921710205078126
+   }
+  }
+ }
+}

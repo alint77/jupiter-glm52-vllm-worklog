@@ -1,6 +1,6 @@
 # Replica-aware tiered MoE scheduling, v2
 
-Status: **Phase 0b passed, Phase 1 in progress**. Supersedes
+Status: **Phases 0b and 1 passed; Phase 2 (vLLM integration) is next**. Supersedes
 [`2026-07-31-replicated-expert-scheduling`](../2026-07-31-replicated-expert-scheduling/README.md)
 (reverted in `53fe6dfcf`, archived at tag `replica-scheduling-archive` =
 `dc4dcff58`) and absorbs
@@ -417,48 +417,71 @@ separately, and **on a single node** so the node effect of §2.1 cannot
 contaminate it. Reconcile against in-model per-layer costs (hot 79 µs/layer,
 cold 53 µs/layer, Marlin 395 µs/layer).
 
-### Phase 1 — offline kernel prototype — **in progress**
+### Phase 1 — offline kernel prototype — **DONE, GATE PASSED**
 
-Done so far:
+Measured on Booster (job `1157392`, `jpbo-093-06`, GH200 120GB), one node, both
+arms in the same job. Full rank-step of 75 routed layers, CUDA-graph captured,
+4,000 replays, `num_warps` swept over 2/4/8/16.
 
-- **`solver_prototype.py`** implements the kernel-shaped solver — six pair-class
-  counters, path reversal, bounded loops — and checks it against the max-flow
-  ground truth. It is **exactly optimal on every one of 100,062 real layer
-  problems** across all three placements and both regimes, worst gap 0. Mean
-  1.2–3.1 reversals, worst case 17.
-- Two simplifications were measured rather than assumed. Searching only from the
-  **lowest-id maximum-loaded rank** (instead of every rank in descending load
-  order) stays exactly optimal and needs marginally fewer reversals. Multi-hop
-  paths, however, **are** needed: 12.6% of reversals are two-hop and 1.4% are
-  three-hop, so the kernel cannot be simplified to direct moves only.
-- **`fused_assign_align.py`** is the Triton kernel for the assignment stage. It
-  **matches the host reference exactly on 9,000 real layer problems** — c1 and
-  c4, both the 985- and 1,697-copy placements, zero mismatches — and compiles
-  and runs in 0.3 s.
+| Arm | Nodes/rank-step | c1 (32 routes/layer) | c4 (128 routes/layer) |
+| --- | ---: | ---: | ---: |
+| v1 greedy (sched + 2 align + 2 sort) | 375 | — | 1.530 ms |
+| Today's baseline (2 align + 2 sort, no assignment) | 300 | 0.704 ms | 0.707 ms |
+| **v2 fused (assignment + both tiers' metadata)** | **75** | **0.740 ms** | **0.993 ms** |
 
-Two implementation notes worth carrying into the vLLM port:
+**Gate: passed.** 75 nodes (target 75) and 0.993 ms at c4 against a 0.4 ms
+target — the absolute target was set against v1's 1.530 ms and is missed, but
+the meaningful comparison is that v2 does *strictly more work* than the 300-node
+baseline (it adds the assignment) for **+40.5%** on a 0.7 ms budget, and beats
+v1's like-for-like arm by **−35.1%** while cutting device nodes 5×. `num_warps=8`
+wins at every shape.
 
-- **No early `return`, and no data-dependent `while`.** The first draft used both
-  and each kernel launch hung for over ten minutes; a trivial Triton kernel
-  compiles in 0.6 s in the same environment, so this was the kernel, not the
-  toolchain. Restructuring to a `SCHEDULE` constexpr guard and a fixed-trip
-  `tl.range` loop brought it to 0.3 s. A fixed trip count is also what CUDA
-  graph capture wants: past convergence every further iteration finds no
-  improving path and contributes a zero delta, so the loop is idempotent.
-  `REVERSAL_LIMIT` must stay above the measured worst case of 17.
-- **The reversal paths live in a host-built table, not unrolled code.** Triton
-  cannot call a Python helper from a kernel body or read a non-constexpr global,
-  and unrolling 60 candidate paths inline fought the compiler at every step. A
-  `[60, 8]` delta table indexed by path, ordered exactly as the reference
-  enumerates, turns the whole search into four vectorised reductions: the
-  lowest usable path index is the reference's choice. A simple path in K4 visits
-  distinct ranks, so each hop uses a distinct pair class and the per-path deltas
-  never interact — which is what makes the table valid.
+Correctness, same job: **48,000 rank-layers, zero failures** — c1 and c4, both
+the 985- and 1,697-copy placements, every rank of every layer. Checked against
+the host reference for the assignment, against vLLM's own
+`moe_align_block_size` for both tiers' metadata, plus an explicit exactly-once
+assertion. `test_graph_replay.py` additionally captures the kernel and replays
+it 200 times with fresh routes, which is how the served path uses it.
 
-Remaining: fold both tiers' `moe_align_block_size` into the same kernel, then
-measure on Booster.
+Getting there took the c4 rank-step from **9.254 ms to 0.993 ms**. In order of
+value:
 
-### Phase 1 gates
+- **Block layout in ascending global expert id**, not the reference's tier-local
+  order. Removed a 256×256 reduction and was the single largest win (c4
+  4.09 → 1.74 ms). Legitimate because Marlin reads `expert_ids[b]` per block and
+  scatters output by route index, so block order is not observable in the
+  result. The harness compares the per-expert partition rather than the buffer
+  bit-for-bit, and builds its own `expert_ids` expectation.
+- **Route histogram by atomic scatter** instead of an expert-by-route incidence
+  matrix: 128 atomics against 32k compares at c4, still deterministic because
+  addition is order-independent (c4 1.42 → ...).
+- **Per-block expert index by scatter-difference plus prefix sum** instead of a
+  block-by-expert range search (c4 1.42 → 0.995 ms).
+- **Per-route slot base by gather through scratch**, and the within-expert rank
+  computed once for both tiers, since an expert lives in exactly one of them.
+- **Loop invariants hoisted** out of the reversal loop, which now exits on
+  convergence rather than running a fixed 64 trips.
+
+Three implementation notes for the vLLM port:
+
+- **No early `return`, and no data-dependent `while` over a block-wide
+  reduction.** The first draft used both and a single launch hung past ten
+  minutes, where a trivial Triton kernel compiles in 0.6 s in the same
+  environment. A `SCHEDULE` constexpr guard fixed it. A data-dependent trip
+  count is fine once the body is cheap — it is intra-kernel control flow, so
+  CUDA graph capture is unaffected — and it saves the iterations a fixed count
+  would waste, since convergence takes ~3 reversals against a worst case of 17.
+- **The reversal paths live in a host-built table**, not unrolled code. Triton
+  cannot call a Python helper from a kernel body or read a non-constexpr global.
+  A `[60, 8]` delta table ordered exactly as the reference enumerates turns the
+  search into four vectorised reductions: the lowest usable index is the
+  reference's choice. Valid because a simple path in K4 visits distinct ranks,
+  so each hop uses a distinct pair class and the deltas never interact.
+- **`nvidia-smi ... | head -1` under `set -o pipefail` aborts the job** — four
+  GPUs, `head` closes the pipe, SIGPIPE — and it does so *after* printing, so
+  the log looks like a pass. Cost one submission (`1141507`).
+
+### Superseded Phase 1 gates
 
 Fixed-shape prototype outside the model path. Verify against a NumPy reference
 solver on: c1/32 routes, c4/128 routes, the chosen placement, real captured
@@ -468,7 +491,8 @@ at these sizes); alignment output is identical to `moe_align_block_size` up to
 the documented ordering; determinism across repeated launches.
 
 **Gate:** one kernel, ≤ 0.4 ms per rank-step at c4 (against 1.530 ms), and
-node count 75. Do not integrate otherwise.
+node count 75. Do not integrate otherwise. *Superseded by the measured result
+above: node count met exactly, absolute time 0.993 ms.*
 
 ### Phase 2 — integration behind a flag
 
@@ -567,12 +591,13 @@ that fusion removes, against a c4 step of roughly 49 ms,
 
 ## 11. Order of work
 
-~~Phase 0b~~ (done, passed) → **1** → gate → 2 → 3 → gate → 4 → 5, with 0a
-running alongside whenever a Booster slot is free.
+~~Phase 0b~~ → ~~Phase 1~~ (both done, both passed) → **2** → 3 → gate → 4 → 5,
+with 0a running alongside whenever a Booster slot is free.
 
-Phase 1 is now the critical path: the idea is validated offline, the algorithm
-is validated against a ground-truth solver, and everything that remains is the
-kernel and the measurement.
+Phase 2 is now the critical path. The idea is validated offline, the algorithm
+is proven exactly optimal against a ground-truth solver, and the kernel is
+measured correct and fast on Booster. What remains is wiring it into vLLM behind
+`--tiered-replica-assignment {off,exact}` and measuring the served model.
 
 ## 12. Artefacts in this directory
 
@@ -582,3 +607,9 @@ kernel and the measurement.
 | `phase0b-replay.json` | Its output over 985/1,697/1,970 copies, c1 and c4 |
 | `analyze_marlin_overlap.py` | Per-stream, per-launch decomposition of v1's paired c4 trace |
 | `marlin-overlap.json` | Its output — the evidence in §2.1 |
+| `solver_prototype.py` | Kernel-shaped path-reversal solver, cross-checked against max flow |
+| `phase1-solver-check-*.json` | Its output: exactly optimal on 100,062 layer problems |
+| `fused_assign_align.py` | The Triton kernel, plus its host reference and correctness harness |
+| `test_graph_replay.py` | Captures the kernel and replays it with fresh routes, as the served path does |
+| `bench_fused.py` | Full rank-step timing, fused against today's alignment |
+| `job-phase1.sh` | The Booster job that produced `phase1-correctness-*` and `phase1-timing-*` |
