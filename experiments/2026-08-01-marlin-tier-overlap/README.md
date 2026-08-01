@@ -1,8 +1,9 @@
 # Hot/cold Marlin tier balance
 
-Status: **Phase 0 done — the cause is identified and it is not what it looked
-like.** The lever is worth ~6.5 ms per rank-step, larger than the replica
-scheduling in [`2026-07-31-replica-scheduling-v2`](../2026-07-31-replica-scheduling-v2/README.md).
+Status: **Stopped at the Phase 1 gate.** Rebalancing HBM slots across layers
+gains nothing, because every layer is already cold-bound. The real finding is
+that the cold tier runs at the C2C bandwidth limit and is 2.3x the hot tier,
+so the only lever is more HBM residency, not a smarter split.
 
 ## The question
 
@@ -108,3 +109,84 @@ irreducible.
 | --- | --- |
 | `analyze_tier_balance.py` | Separates overlap efficiency from tier imbalance |
 | `tier-balance-1167724.json` | Its output on the Phase 5 trace pair |
+
+
+---
+
+## Phase 1 result: the redistribution idea fails, for an instructive reason
+
+**Gate: not met. Modelled gain from redistributing HBM slots across layers is
+0.0%.** Per the plan's own stop criterion, this stops here.
+
+### First, a correction to Phase 0
+
+Phase 0 identified the hot and cold tiers by CUDA stream, reasoning that the
+hot tier shares the main stream with the all-reduce. **That is wrong**: under
+CUDA graph replay the stream ids rotate from layer to layer, so the labels were
+close to random. The Phase 0 direction claim — "cold longer in 56.6% of layers,
+hot in 43.4%" — is exactly what random labelling produces and should be
+discarded.
+
+The tiers are distinguishable by *grid*, which the trace records: the launch
+policy gives the hot tier 2 CTAs per SM and the cold tier 1, so the hot tier
+always launches 264 blocks and the cold tier 132. With correct labels a
+regression of per-layer time against per-layer active expert count fits well
+for the hot tier (R²=0.82) where the stream-labelled version fit nothing
+(R²=0.006).
+
+Phase 0's *quantitative* findings do not depend on the labels — union against
+overlap floor, and the 38.6% imbalance — and stand unchanged.
+
+### The corrected picture
+
+| Per layer, per rank | hot tier | cold tier |
+| --- | ---: | ---: |
+| Active experts | 13.85 | 6.77 |
+| Cost per expert | 9.75 µs | 45.32 µs |
+| Chain time | 135.0 µs | **306.9 µs** |
+
+The cold per-expert cost of 45.3 µs independently reproduces the 46 µs the
+`2026-07-31-replicated-expert-scheduling` benchmark measured, from completely
+different data. A cold expert costs **4.6x** a hot one.
+
+So the cold tier is not occasionally the long pole — **it is 2.3x the hot tier
+in essentially every layer**, with only modest spread (cold experts per layer:
+mean 6.77, sd 1.25, range 3.36 to 9.04).
+
+### Why redistribution cannot help
+
+Moving an HBM slot from layer A to layer B makes A more cold-bound and B less.
+That is only profitable when A has slack, meaning A is hot-bound. **No layer
+is.** A greedy search over the fixed budget found zero profitable moves.
+
+| Modelled Σ max(hot, cold) per rank-step | |
+| --- | ---: |
+| Today | 23.136 ms |
+| HBM slots redistributed across layers | 23.136 ms (**+0.0%**) |
+| Perfectly balanced tiers | 12.408 ms (−46.4%) |
+
+The 46.4% is real but unreachable by reallocation: balance needs cold active
+experts down from 6.77 to about 3.65 per layer, which means roughly 3.1 more
+resident experts per layer per rank — about 4.7 GB more HBM against a measured
+peak free of 3,874 MiB.
+
+### The cold tier is at the hardware limit
+
+6.77 experts x 20.05 MB in 306.9 µs is ~442 GB/s per rank, at or just past the
+421 GB/s C2C roof measured in `2026-07-25-grace-bandwidth`. The cold tier is
+not inefficient and cannot be tuned faster — it is moving weights as fast as
+the link allows. The only way to shorten it is to move fewer weights, i.e. keep
+more experts resident.
+
+### What this means for the next lever
+
+Not "balance the tiers" but "buy HBM residency". Candidates, none yet costed:
+
+- **Reclaim HBM**: `gpu_memory_utilization` is 0.85 and the tiered reserve is
+  7 GB. If ~5 GB can be freed safely, the modelled gain is large. This is the
+  cheapest thing to test and should be next.
+- **Shrink the resident copy**: the cold tier moves 20.05 MB per expert. Any
+  reduction converts directly into cold-tier time at 4.6x the leverage of hot
+  work.
+- **Do not** pursue kernel or occupancy work on the overlap: Phase 0 bounded it
+  at 0.15 ms/rank-step.
