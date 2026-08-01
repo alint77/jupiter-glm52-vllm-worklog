@@ -1,0 +1,110 @@
+(EngineCore pid=931229) /e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py:139: UserWarning: Failed to get the IP address, using 0.0.0.0 by default. The value can be set by the environment variable VLLM_HOST_IP or HOST_IP.
+(EngineCore pid=931229)   mq_connect_ip = get_ip()
+[W801 05:45:59.182803756 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:49991 (errno: 97 - Address family not supported by protocol).
+[W801 05:46:01.241309136 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:49991 (errno: 97 - Address family not supported by protocol).
+[W801 05:46:01.241415854 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:49991 (errno: 97 - Address family not supported by protocol).
+[W801 05:46:01.241505580 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:49991 (errno: 97 - Address family not supported by protocol).
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:   0% Completed | 0/86 [00:00<?, ?it/s]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:   1% Completed | 1/86 [00:01<02:02,  1.44s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:   2% Completed | 2/86 [00:02<02:01,  1.45s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:   3% Completed | 3/86 [00:04<01:59,  1.44s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:   5% Completed | 4/86 [00:05<01:56,  1.42s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:   6% Completed | 5/86 [00:07<01:55,  1.42s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:   7% Completed | 6/86 [00:08<01:55,  1.44s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:   8% Completed | 7/86 [00:10<01:53,  1.43s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:   9% Completed | 8/86 [00:12<02:13,  1.71s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  10% Completed | 9/86 [00:13<02:03,  1.60s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  12% Completed | 10/86 [00:14<01:51,  1.46s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  13% Completed | 11/86 [00:15<01:41,  1.35s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  14% Completed | 12/86 [00:17<01:42,  1.39s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  15% Completed | 13/86 [00:18<01:41,  1.39s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  16% Completed | 14/86 [00:19<01:35,  1.33s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  17% Completed | 15/86 [00:21<01:36,  1.36s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  19% Completed | 16/86 [00:22<01:36,  1.38s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  20% Completed | 17/86 [00:24<01:38,  1.42s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  21% Completed | 18/86 [00:25<01:38,  1.46s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  22% Completed | 19/86 [00:27<01:37,  1.46s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  23% Completed | 20/86 [00:28<01:36,  1.46s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  24% Completed | 21/86 [00:30<01:36,  1.48s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  26% Completed | 22/86 [00:31<01:34,  1.48s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  27% Completed | 23/86 [00:33<01:33,  1.48s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  28% Completed | 24/86 [00:34<01:31,  1.48s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  29% Completed | 25/86 [00:36<01:30,  1.48s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  30% Completed | 26/86 [00:37<01:25,  1.43s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  31% Completed | 27/86 [00:39<01:27,  1.48s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  33% Completed | 28/86 [00:40<01:27,  1.51s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  34% Completed | 29/86 [00:42<01:24,  1.48s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  35% Completed | 30/86 [00:43<01:22,  1.47s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  36% Completed | 31/86 [00:45<01:20,  1.46s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  37% Completed | 32/86 [00:46<01:20,  1.49s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  38% Completed | 33/86 [00:48<01:19,  1.50s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  40% Completed | 34/86 [00:49<01:17,  1.50s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  41% Completed | 35/86 [00:51<01:16,  1.49s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  42% Completed | 36/86 [00:52<01:14,  1.48s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  43% Completed | 37/86 [00:54<01:12,  1.48s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  44% Completed | 38/86 [00:55<01:11,  1.50s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  45% Completed | 39/86 [00:57<01:10,  1.50s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  47% Completed | 40/86 [00:58<01:08,  1.50s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  48% Completed | 41/86 [01:00<01:07,  1.49s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  49% Completed | 42/86 [01:01<01:06,  1.51s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  50% Completed | 43/86 [01:03<01:04,  1.50s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  51% Completed | 44/86 [01:04<01:03,  1.51s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  52% Completed | 45/86 [01:06<01:01,  1.50s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  53% Completed | 46/86 [01:07<01:00,  1.51s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  55% Completed | 47/86 [01:09<00:58,  1.49s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  56% Completed | 48/86 [01:10<00:57,  1.51s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  57% Completed | 49/86 [01:12<00:55,  1.51s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  58% Completed | 50/86 [01:13<00:53,  1.50s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  59% Completed | 51/86 [01:15<00:51,  1.47s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  60% Completed | 52/86 [01:16<00:50,  1.48s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  62% Completed | 53/86 [01:18<00:49,  1.49s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  63% Completed | 54/86 [01:19<00:47,  1.48s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  64% Completed | 55/86 [01:21<00:46,  1.49s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  65% Completed | 56/86 [01:22<00:43,  1.45s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  66% Completed | 57/86 [01:23<00:42,  1.48s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  67% Completed | 58/86 [01:25<00:41,  1.49s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  69% Completed | 59/86 [01:26<00:40,  1.51s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  70% Completed | 60/86 [01:28<00:39,  1.51s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  71% Completed | 61/86 [01:29<00:36,  1.47s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  72% Completed | 62/86 [01:31<00:35,  1.46s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  73% Completed | 63/86 [01:32<00:34,  1.48s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  74% Completed | 64/86 [01:34<00:32,  1.50s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  76% Completed | 65/86 [01:35<00:31,  1.49s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  77% Completed | 66/86 [01:37<00:29,  1.49s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  78% Completed | 67/86 [01:38<00:28,  1.51s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  79% Completed | 68/86 [01:40<00:27,  1.50s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  80% Completed | 69/86 [01:41<00:25,  1.49s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  81% Completed | 70/86 [01:43<00:24,  1.51s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  83% Completed | 71/86 [01:44<00:22,  1.50s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  84% Completed | 72/86 [01:46<00:21,  1.51s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  85% Completed | 73/86 [01:47<00:19,  1.51s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  86% Completed | 74/86 [01:49<00:18,  1.50s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  87% Completed | 75/86 [01:50<00:16,  1.51s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  88% Completed | 76/86 [01:52<00:15,  1.51s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  90% Completed | 77/86 [01:53<00:13,  1.50s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  91% Completed | 78/86 [01:55<00:11,  1.49s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  92% Completed | 79/86 [01:56<00:09,  1.40s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  93% Completed | 80/86 [01:58<00:08,  1.45s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards:  94% Completed | 81/86 [01:58<00:05,  1.19s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Loading safetensors checkpoint shards: 100% Completed | 86/86 [01:58<00:00,  1.38s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) 
+(Worker_TP3_DCP3_EP3 pid=931508) 2026-08-01 05:49:05,871 - INFO - autotuner.py:651 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(Worker_TP0_DCP0_EP0 pid=931502) 2026-08-01 05:49:05,871 - INFO - autotuner.py:651 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(Worker_TP2_DCP2_EP2 pid=931506) 2026-08-01 05:49:05,935 - INFO - autotuner.py:651 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(Worker_TP1_DCP1_EP1 pid=931504) 2026-08-01 05:49:05,955 - INFO - autotuner.py:651 - flashinfer.jit: [Autotuner]: Autotuning process starts ...
+(Worker_TP0_DCP0_EP0 pid=931502) 2026-08-01 05:49:06,867 - INFO - autotuner.py:674 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(Worker_TP1_DCP1_EP1 pid=931504) 2026-08-01 05:49:06,867 - INFO - autotuner.py:674 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(Worker_TP3_DCP3_EP3 pid=931508) 2026-08-01 05:49:06,867 - INFO - autotuner.py:674 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(Worker_TP2_DCP2_EP2 pid=931506) 2026-08-01 05:49:06,867 - INFO - autotuner.py:674 - flashinfer.jit: [Autotuner]: Autotuning process ends
+(Worker_TP0_DCP0_EP0 pid=931502) Capturing CUDA graphs (mixed prefill-decode, PIECEWISE):   0%|          | 0/1 [00:00<?, ?it/s]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE): 100%|██████████| 1/1 [00:01<00:00,  1.15s/it]Capturing CUDA graphs (mixed prefill-decode, PIECEWISE): 100%|██████████| 1/1 [00:01<00:00,  1.15s/it]
+(Worker_TP0_DCP0_EP0 pid=931502) Capturing CUDA graphs (decode, FULL):   0%|          | 0/1 [00:00<?, ?it/s]Capturing CUDA graphs (decode, FULL): 100%|██████████| 1/1 [00:01<00:00,  1.81s/it]Capturing CUDA graphs (decode, FULL): 100%|██████████| 1/1 [00:01<00:00,  1.81s/it]
+(APIServer pid=930361) INFO:     Started server process [930361]
+(APIServer pid=930361) INFO:     Waiting for application startup.
+(APIServer pid=930361) INFO:     Application startup complete.
+(APIServer pid=930361) INFO:     Shutting down
+(APIServer pid=930361) INFO:     Waiting for application shutdown.
+(APIServer pid=930361) INFO:     Application shutdown complete.
+/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 4 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 7 leaked shared_memory objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '

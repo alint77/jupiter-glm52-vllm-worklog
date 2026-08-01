@@ -1,0 +1,85 @@
+
+The following have been reloaded with a version change:
+  1) GCCcore/.14.3.0 => GCCcore/14.3.0
+
+server for phase3-1160997-s1-off-off-r1 died before readiness
+(EngineCore pid=1381506)   File "/e/project1/profound/alint77/vllm/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore pid=1381506)     return func(*args, **kwargs)
+(EngineCore pid=1381506)            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=1381506)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/abstract.py", line 109, in __init__
+(EngineCore pid=1381506)     self._init_executor()
+(EngineCore pid=1381506)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 201, in _init_executor
+(EngineCore pid=1381506)     self.workers = WorkerProc.wait_for_ready(unready_workers)
+(EngineCore pid=1381506)                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=1381506)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 765, in wait_for_ready
+(EngineCore pid=1381506)     raise e from None
+(EngineCore pid=1381506) Exception: WorkerProc initialization failed due to an exception in a background process. See stack trace for root cause.
+(APIServer pid=1380625) Traceback (most recent call last):
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/.venv/bin/vllm", line 10, in <module>
+(APIServer pid=1380625)     sys.exit(main())
+(APIServer pid=1380625)              ^^^^^^
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/cli/main.py", line 95, in main
+(APIServer pid=1380625)     args.dispatch_function(args)
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/cli/serve.py", line 162, in cmd
+(APIServer pid=1380625)     uvloop.run(run_server(args))
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/uvloop/__init__.py", line 96, in run
+(APIServer pid=1380625)     return __asyncio.run(
+(APIServer pid=1380625)            ^^^^^^^^^^^^^^
+(APIServer pid=1380625)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/asyncio/runners.py", line 195, in run
+(APIServer pid=1380625)     return runner.run(main)
+(APIServer pid=1380625)            ^^^^^^^^^^^^^^^^
+(APIServer pid=1380625)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/asyncio/runners.py", line 118, in run
+(APIServer pid=1380625)     return self._loop.run_until_complete(task)
+(APIServer pid=1380625)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1380625)   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/uvloop/__init__.py", line 48, in wrapper
+(APIServer pid=1380625)     return await main
+(APIServer pid=1380625)            ^^^^^^^^^^
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/openai/api_server.py", line 759, in run_server
+(APIServer pid=1380625)     await run_server_worker(listen_address, sock, args, **uvicorn_kwargs)
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/openai/api_server.py", line 773, in run_server_worker
+(APIServer pid=1380625)     async with build_async_engine_client(
+(APIServer pid=1380625)                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1380625)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/contextlib.py", line 210, in __aenter__
+(APIServer pid=1380625)     return await anext(self.gen)
+(APIServer pid=1380625)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/openai/api_server.py", line 139, in build_async_engine_client
+(APIServer pid=1380625)     async with build_async_engine_client_from_engine_args(
+(APIServer pid=1380625)                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1380625)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/contextlib.py", line 210, in __aenter__
+(APIServer pid=1380625)     return await anext(self.gen)
+(APIServer pid=1380625)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/openai/api_server.py", line 175, in build_async_engine_client_from_engine_args
+(APIServer pid=1380625)     async_llm = AsyncLLM.from_vllm_config(
+(APIServer pid=1380625)                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/async_llm.py", line 217, in from_vllm_config
+(APIServer pid=1380625)     return cls(
+(APIServer pid=1380625)            ^^^^
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/async_llm.py", line 146, in __init__
+(APIServer pid=1380625)     self.engine_core = EngineCoreClient.make_async_mp_client(
+(APIServer pid=1380625)                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/tracing/otel.py", line 178, in sync_wrapper
+(APIServer pid=1380625)     return func(*args, **kwargs)
+(APIServer pid=1380625)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/core_client.py", line 132, in make_async_mp_client
+(APIServer pid=1380625)     return AsyncMPClient(*client_args)
+(APIServer pid=1380625)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/tracing/otel.py", line 178, in sync_wrapper
+(APIServer pid=1380625)     return func(*args, **kwargs)
+(APIServer pid=1380625)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/core_client.py", line 963, in __init__
+(APIServer pid=1380625)     super().__init__(
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/core_client.py", line 573, in __init__
+(APIServer pid=1380625)     with launch_core_engines(
+(APIServer pid=1380625)          ^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1380625)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/contextlib.py", line 144, in __exit__
+(APIServer pid=1380625)     next(self.gen)
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/utils.py", line 1213, in launch_core_engines
+(APIServer pid=1380625)     wait_for_engine_startup(
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/utils.py", line 1272, in wait_for_engine_startup
+(APIServer pid=1380625)     raise RuntimeError(
+(APIServer pid=1380625) RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked shared_memory objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '

@@ -1,0 +1,449 @@
+node: jpbo-021-32.jupiter.internal  job: 1167166  seqs: 4  spec: mtp3
+decode batch: 16  repeats: 5
+=== round 1, arm off ===
+Namespace(subparser='bench', bench_type='serve', dispatch_function=<function BenchmarkServingSubcommand.cmd at 0x40033911a340>, trust_remote_code=False, seed=0, num_prompts=16, dataset_name='custom', no_stream=False, dataset_path='/e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-29-marlin-smem-monopoly/agentic-prompts.jsonl', no_oversample=False, skip_chat_template=True, enable_multimodal_chat=False, disable_shuffle=True, custom_output_len=256, custom_ensure_client_side_data=False, spec_bench_output_len=256, spec_bench_category=None, sonnet_input_len=550, sonnet_output_len=150, sonnet_prefix_len=200, sharegpt_output_len=None, timed_trace_chunk_hash_size=16, timed_trace_sec_multiplier=1, timed_trace_label_timestamp='timestamp', timed_trace_label_input_length='input_length', timed_trace_label_output_length='output_length', timed_trace_label_hash_ids='hash_ids', blazedit_min_distance=0.0, blazedit_max_distance=1.0, asr_max_audio_len_sec=inf, asr_min_audio_len_sec=0.0, random_input_len=1024, random_output_len=128, random_range_ratio='0.0', random_prefix_len=0, random_batch_size=1, no_reranker=False, random_mm_base_items_per_request=1, random_mm_num_mm_items_range_ratio=0.0, random_mm_limit_mm_per_prompt={'image': 255, 'video': 1}, random_mm_bucket_config={(256, 256, 1): 0.5, (720, 1280, 1): 0.5, (720, 1280, 16): 0.0}, hf_subset=None, hf_split=None, hf_name=None, hf_output_len=None, bfcl_categories=None, prefix_repetition_prefix_len=256, prefix_repetition_suffix_len=256, prefix_repetition_num_prefixes=10, prefix_repetition_output_len=128, speed_bench_dataset_subset='qualitative', speed_bench_output_len=4096, speed_bench_category=None, label=None, backend='openai', base_url='http://127.0.0.1:8027', host='127.0.0.1', port=8000, endpoint='/v1/completions', header=None, max_concurrency=4, model='glm52-w4a16-tiered', input_len=None, output_len=None, tokenizer='/e/fscratch/profound/naeimitabiei1/models/GLM-5.2-AutoRound-W4G64-MTP-e1ba887', tokenizer_mode='auto', use_beam_search=False, logprobs=None, request_rate=inf, burstiness=1.0, disable_tqdm=True, num_warmups=0, profile=False, save_result=True, save_detailed=False, append_result=False, metadata=None, result_dir='/e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-31-replica-scheduling-v2', result_filename='phase3-1167166-s4-mtp3-off-r1.json', ignore_eos=True, self_timed=None, percentile_metrics=None, metric_percentiles='99', goodput=None, request_id_prefix='bench-2de70a8d-', top_p=None, top_k=None, min_p=None, temperature=0.0, frequency_penalty=None, presence_penalty=None, repetition_penalty=None, served_model_name='glm52-w4a16-tiered', lora_modules=None, lora_assignment='random', ramp_up_strategy=None, ramp_up_start_rps=None, ramp_up_end_rps=None, ready_check_timeout_sec=0, chat_template_kwargs=None, extra_body=None, skip_tokenizer_init=False, insecure=False, plot_timeline=False, timeline_itl_thresholds='25,50', plot_dataset_stats=False)
+Starting initial single prompt test run...
+Skipping endpoint ready check.
+Starting main benchmark run...
+Traffic request rate: inf
+Burstiness factor: 1.0 (Poisson process)
+Maximum request concurrency: 4
+tip: install termplotlib and gnuplot to plot the metrics
+============ Serving Benchmark Result ============
+Successful requests:                     16        
+Failed requests:                         0         
+Maximum request concurrency:             4         
+Benchmark duration (s):                  27.88     
+Total input tokens:                      11670     
+Total generated tokens:                  4096      
+Request throughput (req/s):              0.57      
+Output token throughput (tok/s):         146.91    
+Peak output token throughput (tok/s):    76.00     
+Peak concurrent requests:                6.00      
+Total token throughput (tok/s):          565.49    
+---------------Time to First Token----------------
+Mean TTFT (ms):                          690.21    
+Median TTFT (ms):                        464.21    
+P99 TTFT (ms):                           1637.79   
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          23.15     
+Median TPOT (ms):                        22.18     
+P99 TPOT (ms):                           36.28     
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           63.13     
+Median ITL (ms):                         56.83     
+P99 ITL (ms):                            360.81    
+---------------Speculative Decoding---------------
+Acceptance rate (%):                     58.02     
+Acceptance length:                       2.74      
+Drafts:                                  1496      
+Draft tokens:                            4488      
+Accepted tokens:                         2604      
+Per-position acceptance (%):
+  Position 0:                            78.21     
+  Position 1:                            56.02     
+  Position 2:                            39.84     
+==================================================
+=== round 1, arm exact ===
+Namespace(subparser='bench', bench_type='serve', dispatch_function=<function BenchmarkServingSubcommand.cmd at 0x40033684a340>, trust_remote_code=False, seed=0, num_prompts=16, dataset_name='custom', no_stream=False, dataset_path='/e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-29-marlin-smem-monopoly/agentic-prompts.jsonl', no_oversample=False, skip_chat_template=True, enable_multimodal_chat=False, disable_shuffle=True, custom_output_len=256, custom_ensure_client_side_data=False, spec_bench_output_len=256, spec_bench_category=None, sonnet_input_len=550, sonnet_output_len=150, sonnet_prefix_len=200, sharegpt_output_len=None, timed_trace_chunk_hash_size=16, timed_trace_sec_multiplier=1, timed_trace_label_timestamp='timestamp', timed_trace_label_input_length='input_length', timed_trace_label_output_length='output_length', timed_trace_label_hash_ids='hash_ids', blazedit_min_distance=0.0, blazedit_max_distance=1.0, asr_max_audio_len_sec=inf, asr_min_audio_len_sec=0.0, random_input_len=1024, random_output_len=128, random_range_ratio='0.0', random_prefix_len=0, random_batch_size=1, no_reranker=False, random_mm_base_items_per_request=1, random_mm_num_mm_items_range_ratio=0.0, random_mm_limit_mm_per_prompt={'image': 255, 'video': 1}, random_mm_bucket_config={(256, 256, 1): 0.5, (720, 1280, 1): 0.5, (720, 1280, 16): 0.0}, hf_subset=None, hf_split=None, hf_name=None, hf_output_len=None, bfcl_categories=None, prefix_repetition_prefix_len=256, prefix_repetition_suffix_len=256, prefix_repetition_num_prefixes=10, prefix_repetition_output_len=128, speed_bench_dataset_subset='qualitative', speed_bench_output_len=4096, speed_bench_category=None, label=None, backend='openai', base_url='http://127.0.0.1:8027', host='127.0.0.1', port=8000, endpoint='/v1/completions', header=None, max_concurrency=4, model='glm52-w4a16-tiered', input_len=None, output_len=None, tokenizer='/e/fscratch/profound/naeimitabiei1/models/GLM-5.2-AutoRound-W4G64-MTP-e1ba887', tokenizer_mode='auto', use_beam_search=False, logprobs=None, request_rate=inf, burstiness=1.0, disable_tqdm=True, num_warmups=0, profile=False, save_result=True, save_detailed=False, append_result=False, metadata=None, result_dir='/e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-31-replica-scheduling-v2', result_filename='phase3-1167166-s4-mtp3-exact-r1.json', ignore_eos=True, self_timed=None, percentile_metrics=None, metric_percentiles='99', goodput=None, request_id_prefix='bench-876b47c6-', top_p=None, top_k=None, min_p=None, temperature=0.0, frequency_penalty=None, presence_penalty=None, repetition_penalty=None, served_model_name='glm52-w4a16-tiered', lora_modules=None, lora_assignment='random', ramp_up_strategy=None, ramp_up_start_rps=None, ramp_up_end_rps=None, ready_check_timeout_sec=0, chat_template_kwargs=None, extra_body=None, skip_tokenizer_init=False, insecure=False, plot_timeline=False, timeline_itl_thresholds='25,50', plot_dataset_stats=False)
+Starting initial single prompt test run...
+Skipping endpoint ready check.
+Starting main benchmark run...
+Traffic request rate: inf
+Burstiness factor: 1.0 (Poisson process)
+Maximum request concurrency: 4
+tip: install termplotlib and gnuplot to plot the metrics
+============ Serving Benchmark Result ============
+Successful requests:                     16        
+Failed requests:                         0         
+Maximum request concurrency:             4         
+Benchmark duration (s):                  25.73     
+Total input tokens:                      11670     
+Total generated tokens:                  4096      
+Request throughput (req/s):              0.62      
+Output token throughput (tok/s):         159.18    
+Peak output token throughput (tok/s):    84.00     
+Peak concurrent requests:                6.00      
+Total token throughput (tok/s):          612.72    
+---------------Time to First Token----------------
+Mean TTFT (ms):                          779.08    
+Median TTFT (ms):                        517.87    
+P99 TTFT (ms):                           1675.52   
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          21.54     
+Median TPOT (ms):                        20.37     
+P99 TPOT (ms):                           29.14     
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           60.08     
+Median ITL (ms):                         52.43     
+P99 ITL (ms):                            400.35    
+---------------Speculative Decoding---------------
+Acceptance rate (%):                     59.97     
+Acceptance length:                       2.80      
+Drafts:                                  1463      
+Draft tokens:                            4389      
+Accepted tokens:                         2632      
+Per-position acceptance (%):
+  Position 0:                            78.61     
+  Position 1:                            57.55     
+  Position 2:                            43.75     
+==================================================
+=== round 2, arm off ===
+Namespace(subparser='bench', bench_type='serve', dispatch_function=<function BenchmarkServingSubcommand.cmd at 0x4003577da340>, trust_remote_code=False, seed=0, num_prompts=16, dataset_name='custom', no_stream=False, dataset_path='/e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-29-marlin-smem-monopoly/agentic-prompts.jsonl', no_oversample=False, skip_chat_template=True, enable_multimodal_chat=False, disable_shuffle=True, custom_output_len=256, custom_ensure_client_side_data=False, spec_bench_output_len=256, spec_bench_category=None, sonnet_input_len=550, sonnet_output_len=150, sonnet_prefix_len=200, sharegpt_output_len=None, timed_trace_chunk_hash_size=16, timed_trace_sec_multiplier=1, timed_trace_label_timestamp='timestamp', timed_trace_label_input_length='input_length', timed_trace_label_output_length='output_length', timed_trace_label_hash_ids='hash_ids', blazedit_min_distance=0.0, blazedit_max_distance=1.0, asr_max_audio_len_sec=inf, asr_min_audio_len_sec=0.0, random_input_len=1024, random_output_len=128, random_range_ratio='0.0', random_prefix_len=0, random_batch_size=1, no_reranker=False, random_mm_base_items_per_request=1, random_mm_num_mm_items_range_ratio=0.0, random_mm_limit_mm_per_prompt={'image': 255, 'video': 1}, random_mm_bucket_config={(256, 256, 1): 0.5, (720, 1280, 1): 0.5, (720, 1280, 16): 0.0}, hf_subset=None, hf_split=None, hf_name=None, hf_output_len=None, bfcl_categories=None, prefix_repetition_prefix_len=256, prefix_repetition_suffix_len=256, prefix_repetition_num_prefixes=10, prefix_repetition_output_len=128, speed_bench_dataset_subset='qualitative', speed_bench_output_len=4096, speed_bench_category=None, label=None, backend='openai', base_url='http://127.0.0.1:8027', host='127.0.0.1', port=8000, endpoint='/v1/completions', header=None, max_concurrency=4, model='glm52-w4a16-tiered', input_len=None, output_len=None, tokenizer='/e/fscratch/profound/naeimitabiei1/models/GLM-5.2-AutoRound-W4G64-MTP-e1ba887', tokenizer_mode='auto', use_beam_search=False, logprobs=None, request_rate=inf, burstiness=1.0, disable_tqdm=True, num_warmups=0, profile=False, save_result=True, save_detailed=False, append_result=False, metadata=None, result_dir='/e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-31-replica-scheduling-v2', result_filename='phase3-1167166-s4-mtp3-off-r2.json', ignore_eos=True, self_timed=None, percentile_metrics=None, metric_percentiles='99', goodput=None, request_id_prefix='bench-5e03d215-', top_p=None, top_k=None, min_p=None, temperature=0.0, frequency_penalty=None, presence_penalty=None, repetition_penalty=None, served_model_name='glm52-w4a16-tiered', lora_modules=None, lora_assignment='random', ramp_up_strategy=None, ramp_up_start_rps=None, ramp_up_end_rps=None, ready_check_timeout_sec=0, chat_template_kwargs=None, extra_body=None, skip_tokenizer_init=False, insecure=False, plot_timeline=False, timeline_itl_thresholds='25,50', plot_dataset_stats=False)
+Starting initial single prompt test run...
+Skipping endpoint ready check.
+Starting main benchmark run...
+Traffic request rate: inf
+Burstiness factor: 1.0 (Poisson process)
+Maximum request concurrency: 4
+tip: install termplotlib and gnuplot to plot the metrics
+============ Serving Benchmark Result ============
+Successful requests:                     16        
+Failed requests:                         0         
+Maximum request concurrency:             4         
+Benchmark duration (s):                  26.63     
+Total input tokens:                      11670     
+Total generated tokens:                  4096      
+Request throughput (req/s):              0.60      
+Output token throughput (tok/s):         153.82    
+Peak output token throughput (tok/s):    76.00     
+Peak concurrent requests:                6.00      
+Total token throughput (tok/s):          592.08    
+---------------Time to First Token----------------
+Mean TTFT (ms):                          655.92    
+Median TTFT (ms):                        447.66    
+P99 TTFT (ms):                           1623.69   
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          22.51     
+Median TPOT (ms):                        21.71     
+P99 TPOT (ms):                           30.76     
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           63.60     
+Median ITL (ms):                         57.63     
+P99 ITL (ms):                            331.39    
+---------------Speculative Decoding---------------
+Acceptance rate (%):                     61.33     
+Acceptance length:                       2.84      
+Drafts:                                  1444      
+Draft tokens:                            4332      
+Accepted tokens:                         2657      
+Per-position acceptance (%):
+  Position 0:                            80.19     
+  Position 1:                            59.97     
+  Position 2:                            43.84     
+==================================================
+=== round 2, arm exact ===
+Namespace(subparser='bench', bench_type='serve', dispatch_function=<function BenchmarkServingSubcommand.cmd at 0x40033ef9a340>, trust_remote_code=False, seed=0, num_prompts=16, dataset_name='custom', no_stream=False, dataset_path='/e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-29-marlin-smem-monopoly/agentic-prompts.jsonl', no_oversample=False, skip_chat_template=True, enable_multimodal_chat=False, disable_shuffle=True, custom_output_len=256, custom_ensure_client_side_data=False, spec_bench_output_len=256, spec_bench_category=None, sonnet_input_len=550, sonnet_output_len=150, sonnet_prefix_len=200, sharegpt_output_len=None, timed_trace_chunk_hash_size=16, timed_trace_sec_multiplier=1, timed_trace_label_timestamp='timestamp', timed_trace_label_input_length='input_length', timed_trace_label_output_length='output_length', timed_trace_label_hash_ids='hash_ids', blazedit_min_distance=0.0, blazedit_max_distance=1.0, asr_max_audio_len_sec=inf, asr_min_audio_len_sec=0.0, random_input_len=1024, random_output_len=128, random_range_ratio='0.0', random_prefix_len=0, random_batch_size=1, no_reranker=False, random_mm_base_items_per_request=1, random_mm_num_mm_items_range_ratio=0.0, random_mm_limit_mm_per_prompt={'image': 255, 'video': 1}, random_mm_bucket_config={(256, 256, 1): 0.5, (720, 1280, 1): 0.5, (720, 1280, 16): 0.0}, hf_subset=None, hf_split=None, hf_name=None, hf_output_len=None, bfcl_categories=None, prefix_repetition_prefix_len=256, prefix_repetition_suffix_len=256, prefix_repetition_num_prefixes=10, prefix_repetition_output_len=128, speed_bench_dataset_subset='qualitative', speed_bench_output_len=4096, speed_bench_category=None, label=None, backend='openai', base_url='http://127.0.0.1:8027', host='127.0.0.1', port=8000, endpoint='/v1/completions', header=None, max_concurrency=4, model='glm52-w4a16-tiered', input_len=None, output_len=None, tokenizer='/e/fscratch/profound/naeimitabiei1/models/GLM-5.2-AutoRound-W4G64-MTP-e1ba887', tokenizer_mode='auto', use_beam_search=False, logprobs=None, request_rate=inf, burstiness=1.0, disable_tqdm=True, num_warmups=0, profile=False, save_result=True, save_detailed=False, append_result=False, metadata=None, result_dir='/e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-31-replica-scheduling-v2', result_filename='phase3-1167166-s4-mtp3-exact-r2.json', ignore_eos=True, self_timed=None, percentile_metrics=None, metric_percentiles='99', goodput=None, request_id_prefix='bench-0a45ef6c-', top_p=None, top_k=None, min_p=None, temperature=0.0, frequency_penalty=None, presence_penalty=None, repetition_penalty=None, served_model_name='glm52-w4a16-tiered', lora_modules=None, lora_assignment='random', ramp_up_strategy=None, ramp_up_start_rps=None, ramp_up_end_rps=None, ready_check_timeout_sec=0, chat_template_kwargs=None, extra_body=None, skip_tokenizer_init=False, insecure=False, plot_timeline=False, timeline_itl_thresholds='25,50', plot_dataset_stats=False)
+Starting initial single prompt test run...
+Skipping endpoint ready check.
+Starting main benchmark run...
+Traffic request rate: inf
+Burstiness factor: 1.0 (Poisson process)
+Maximum request concurrency: 4
+tip: install termplotlib and gnuplot to plot the metrics
+============ Serving Benchmark Result ============
+Successful requests:                     16        
+Failed requests:                         0         
+Maximum request concurrency:             4         
+Benchmark duration (s):                  26.11     
+Total input tokens:                      11670     
+Total generated tokens:                  4096      
+Request throughput (req/s):              0.61      
+Output token throughput (tok/s):         156.86    
+Peak output token throughput (tok/s):    80.00     
+Peak concurrent requests:                6.00      
+Total token throughput (tok/s):          603.77    
+---------------Time to First Token----------------
+Mean TTFT (ms):                          782.64    
+Median TTFT (ms):                        506.80    
+P99 TTFT (ms):                           2032.36   
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          20.98     
+Median TPOT (ms):                        20.62     
+P99 TPOT (ms):                           31.64     
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           60.07     
+Median ITL (ms):                         53.09     
+P99 ITL (ms):                            368.28    
+---------------Speculative Decoding---------------
+Acceptance rate (%):                     62.53     
+Acceptance length:                       2.88      
+Drafts:                                  1425      
+Draft tokens:                            4275      
+Accepted tokens:                         2673      
+Per-position acceptance (%):
+  Position 0:                            81.89     
+  Position 1:                            60.42     
+  Position 2:                            45.26     
+==================================================
+=== round 3, arm off ===
+Namespace(subparser='bench', bench_type='serve', dispatch_function=<function BenchmarkServingSubcommand.cmd at 0x400347bca340>, trust_remote_code=False, seed=0, num_prompts=16, dataset_name='custom', no_stream=False, dataset_path='/e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-29-marlin-smem-monopoly/agentic-prompts.jsonl', no_oversample=False, skip_chat_template=True, enable_multimodal_chat=False, disable_shuffle=True, custom_output_len=256, custom_ensure_client_side_data=False, spec_bench_output_len=256, spec_bench_category=None, sonnet_input_len=550, sonnet_output_len=150, sonnet_prefix_len=200, sharegpt_output_len=None, timed_trace_chunk_hash_size=16, timed_trace_sec_multiplier=1, timed_trace_label_timestamp='timestamp', timed_trace_label_input_length='input_length', timed_trace_label_output_length='output_length', timed_trace_label_hash_ids='hash_ids', blazedit_min_distance=0.0, blazedit_max_distance=1.0, asr_max_audio_len_sec=inf, asr_min_audio_len_sec=0.0, random_input_len=1024, random_output_len=128, random_range_ratio='0.0', random_prefix_len=0, random_batch_size=1, no_reranker=False, random_mm_base_items_per_request=1, random_mm_num_mm_items_range_ratio=0.0, random_mm_limit_mm_per_prompt={'image': 255, 'video': 1}, random_mm_bucket_config={(256, 256, 1): 0.5, (720, 1280, 1): 0.5, (720, 1280, 16): 0.0}, hf_subset=None, hf_split=None, hf_name=None, hf_output_len=None, bfcl_categories=None, prefix_repetition_prefix_len=256, prefix_repetition_suffix_len=256, prefix_repetition_num_prefixes=10, prefix_repetition_output_len=128, speed_bench_dataset_subset='qualitative', speed_bench_output_len=4096, speed_bench_category=None, label=None, backend='openai', base_url='http://127.0.0.1:8027', host='127.0.0.1', port=8000, endpoint='/v1/completions', header=None, max_concurrency=4, model='glm52-w4a16-tiered', input_len=None, output_len=None, tokenizer='/e/fscratch/profound/naeimitabiei1/models/GLM-5.2-AutoRound-W4G64-MTP-e1ba887', tokenizer_mode='auto', use_beam_search=False, logprobs=None, request_rate=inf, burstiness=1.0, disable_tqdm=True, num_warmups=0, profile=False, save_result=True, save_detailed=False, append_result=False, metadata=None, result_dir='/e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-31-replica-scheduling-v2', result_filename='phase3-1167166-s4-mtp3-off-r3.json', ignore_eos=True, self_timed=None, percentile_metrics=None, metric_percentiles='99', goodput=None, request_id_prefix='bench-e3e38ec8-', top_p=None, top_k=None, min_p=None, temperature=0.0, frequency_penalty=None, presence_penalty=None, repetition_penalty=None, served_model_name='glm52-w4a16-tiered', lora_modules=None, lora_assignment='random', ramp_up_strategy=None, ramp_up_start_rps=None, ramp_up_end_rps=None, ready_check_timeout_sec=0, chat_template_kwargs=None, extra_body=None, skip_tokenizer_init=False, insecure=False, plot_timeline=False, timeline_itl_thresholds='25,50', plot_dataset_stats=False)
+Starting initial single prompt test run...
+Skipping endpoint ready check.
+Starting main benchmark run...
+Traffic request rate: inf
+Burstiness factor: 1.0 (Poisson process)
+Maximum request concurrency: 4
+tip: install termplotlib and gnuplot to plot the metrics
+============ Serving Benchmark Result ============
+Successful requests:                     16        
+Failed requests:                         0         
+Maximum request concurrency:             4         
+Benchmark duration (s):                  26.50     
+Total input tokens:                      11670     
+Total generated tokens:                  4096      
+Request throughput (req/s):              0.60      
+Output token throughput (tok/s):         154.57    
+Peak output token throughput (tok/s):    80.00     
+Peak concurrent requests:                6.00      
+Total token throughput (tok/s):          594.95    
+---------------Time to First Token----------------
+Mean TTFT (ms):                          663.55    
+Median TTFT (ms):                        472.09    
+P99 TTFT (ms):                           1594.04   
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          21.86     
+Median TPOT (ms):                        20.59     
+P99 TPOT (ms):                           32.88     
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           63.49     
+Median ITL (ms):                         57.91     
+P99 ITL (ms):                            331.13    
+---------------Speculative Decoding---------------
+Acceptance rate (%):                     63.84     
+Acceptance length:                       2.92      
+Drafts:                                  1405      
+Draft tokens:                            4215      
+Accepted tokens:                         2691      
+Per-position acceptance (%):
+  Position 0:                            80.78     
+  Position 1:                            62.28     
+  Position 2:                            48.47     
+==================================================
+=== round 3, arm exact ===
+Namespace(subparser='bench', bench_type='serve', dispatch_function=<function BenchmarkServingSubcommand.cmd at 0x40033768a340>, trust_remote_code=False, seed=0, num_prompts=16, dataset_name='custom', no_stream=False, dataset_path='/e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-29-marlin-smem-monopoly/agentic-prompts.jsonl', no_oversample=False, skip_chat_template=True, enable_multimodal_chat=False, disable_shuffle=True, custom_output_len=256, custom_ensure_client_side_data=False, spec_bench_output_len=256, spec_bench_category=None, sonnet_input_len=550, sonnet_output_len=150, sonnet_prefix_len=200, sharegpt_output_len=None, timed_trace_chunk_hash_size=16, timed_trace_sec_multiplier=1, timed_trace_label_timestamp='timestamp', timed_trace_label_input_length='input_length', timed_trace_label_output_length='output_length', timed_trace_label_hash_ids='hash_ids', blazedit_min_distance=0.0, blazedit_max_distance=1.0, asr_max_audio_len_sec=inf, asr_min_audio_len_sec=0.0, random_input_len=1024, random_output_len=128, random_range_ratio='0.0', random_prefix_len=0, random_batch_size=1, no_reranker=False, random_mm_base_items_per_request=1, random_mm_num_mm_items_range_ratio=0.0, random_mm_limit_mm_per_prompt={'image': 255, 'video': 1}, random_mm_bucket_config={(256, 256, 1): 0.5, (720, 1280, 1): 0.5, (720, 1280, 16): 0.0}, hf_subset=None, hf_split=None, hf_name=None, hf_output_len=None, bfcl_categories=None, prefix_repetition_prefix_len=256, prefix_repetition_suffix_len=256, prefix_repetition_num_prefixes=10, prefix_repetition_output_len=128, speed_bench_dataset_subset='qualitative', speed_bench_output_len=4096, speed_bench_category=None, label=None, backend='openai', base_url='http://127.0.0.1:8027', host='127.0.0.1', port=8000, endpoint='/v1/completions', header=None, max_concurrency=4, model='glm52-w4a16-tiered', input_len=None, output_len=None, tokenizer='/e/fscratch/profound/naeimitabiei1/models/GLM-5.2-AutoRound-W4G64-MTP-e1ba887', tokenizer_mode='auto', use_beam_search=False, logprobs=None, request_rate=inf, burstiness=1.0, disable_tqdm=True, num_warmups=0, profile=False, save_result=True, save_detailed=False, append_result=False, metadata=None, result_dir='/e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-31-replica-scheduling-v2', result_filename='phase3-1167166-s4-mtp3-exact-r3.json', ignore_eos=True, self_timed=None, percentile_metrics=None, metric_percentiles='99', goodput=None, request_id_prefix='bench-135ea784-', top_p=None, top_k=None, min_p=None, temperature=0.0, frequency_penalty=None, presence_penalty=None, repetition_penalty=None, served_model_name='glm52-w4a16-tiered', lora_modules=None, lora_assignment='random', ramp_up_strategy=None, ramp_up_start_rps=None, ramp_up_end_rps=None, ready_check_timeout_sec=0, chat_template_kwargs=None, extra_body=None, skip_tokenizer_init=False, insecure=False, plot_timeline=False, timeline_itl_thresholds='25,50', plot_dataset_stats=False)
+Starting initial single prompt test run...
+Skipping endpoint ready check.
+Starting main benchmark run...
+Traffic request rate: inf
+Burstiness factor: 1.0 (Poisson process)
+Maximum request concurrency: 4
+tip: install termplotlib and gnuplot to plot the metrics
+============ Serving Benchmark Result ============
+Successful requests:                     16        
+Failed requests:                         0         
+Maximum request concurrency:             4         
+Benchmark duration (s):                  26.26     
+Total input tokens:                      11670     
+Total generated tokens:                  4096      
+Request throughput (req/s):              0.61      
+Output token throughput (tok/s):         155.95    
+Peak output token throughput (tok/s):    80.00     
+Peak concurrent requests:                6.00      
+Total token throughput (tok/s):          600.28    
+---------------Time to First Token----------------
+Mean TTFT (ms):                          784.20    
+Median TTFT (ms):                        501.88    
+P99 TTFT (ms):                           1752.80   
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          21.56     
+Median TPOT (ms):                        21.71     
+P99 TPOT (ms):                           30.05     
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           59.52     
+Median ITL (ms):                         52.57     
+P99 ITL (ms):                            393.13    
+---------------Speculative Decoding---------------
+Acceptance rate (%):                     59.04     
+Acceptance length:                       2.77      
+Drafts:                                  1478      
+Draft tokens:                            4434      
+Accepted tokens:                         2618      
+Per-position acceptance (%):
+  Position 0:                            78.82     
+  Position 1:                            57.31     
+  Position 2:                            41.00     
+==================================================
+=== round 4, arm off ===
+Namespace(subparser='bench', bench_type='serve', dispatch_function=<function BenchmarkServingSubcommand.cmd at 0x40034df6a5c0>, trust_remote_code=False, seed=0, num_prompts=16, dataset_name='custom', no_stream=False, dataset_path='/e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-29-marlin-smem-monopoly/agentic-prompts.jsonl', no_oversample=False, skip_chat_template=True, enable_multimodal_chat=False, disable_shuffle=True, custom_output_len=256, custom_ensure_client_side_data=False, spec_bench_output_len=256, spec_bench_category=None, sonnet_input_len=550, sonnet_output_len=150, sonnet_prefix_len=200, sharegpt_output_len=None, timed_trace_chunk_hash_size=16, timed_trace_sec_multiplier=1, timed_trace_label_timestamp='timestamp', timed_trace_label_input_length='input_length', timed_trace_label_output_length='output_length', timed_trace_label_hash_ids='hash_ids', blazedit_min_distance=0.0, blazedit_max_distance=1.0, asr_max_audio_len_sec=inf, asr_min_audio_len_sec=0.0, random_input_len=1024, random_output_len=128, random_range_ratio='0.0', random_prefix_len=0, random_batch_size=1, no_reranker=False, random_mm_base_items_per_request=1, random_mm_num_mm_items_range_ratio=0.0, random_mm_limit_mm_per_prompt={'image': 255, 'video': 1}, random_mm_bucket_config={(256, 256, 1): 0.5, (720, 1280, 1): 0.5, (720, 1280, 16): 0.0}, hf_subset=None, hf_split=None, hf_name=None, hf_output_len=None, bfcl_categories=None, prefix_repetition_prefix_len=256, prefix_repetition_suffix_len=256, prefix_repetition_num_prefixes=10, prefix_repetition_output_len=128, speed_bench_dataset_subset='qualitative', speed_bench_output_len=4096, speed_bench_category=None, label=None, backend='openai', base_url='http://127.0.0.1:8027', host='127.0.0.1', port=8000, endpoint='/v1/completions', header=None, max_concurrency=4, model='glm52-w4a16-tiered', input_len=None, output_len=None, tokenizer='/e/fscratch/profound/naeimitabiei1/models/GLM-5.2-AutoRound-W4G64-MTP-e1ba887', tokenizer_mode='auto', use_beam_search=False, logprobs=None, request_rate=inf, burstiness=1.0, disable_tqdm=True, num_warmups=0, profile=False, save_result=True, save_detailed=False, append_result=False, metadata=None, result_dir='/e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-31-replica-scheduling-v2', result_filename='phase3-1167166-s4-mtp3-off-r4.json', ignore_eos=True, self_timed=None, percentile_metrics=None, metric_percentiles='99', goodput=None, request_id_prefix='bench-45ec13c6-', top_p=None, top_k=None, min_p=None, temperature=0.0, frequency_penalty=None, presence_penalty=None, repetition_penalty=None, served_model_name='glm52-w4a16-tiered', lora_modules=None, lora_assignment='random', ramp_up_strategy=None, ramp_up_start_rps=None, ramp_up_end_rps=None, ready_check_timeout_sec=0, chat_template_kwargs=None, extra_body=None, skip_tokenizer_init=False, insecure=False, plot_timeline=False, timeline_itl_thresholds='25,50', plot_dataset_stats=False)
+Starting initial single prompt test run...
+Skipping endpoint ready check.
+Starting main benchmark run...
+Traffic request rate: inf
+Burstiness factor: 1.0 (Poisson process)
+Maximum request concurrency: 4
+tip: install termplotlib and gnuplot to plot the metrics
+============ Serving Benchmark Result ============
+Successful requests:                     16        
+Failed requests:                         0         
+Maximum request concurrency:             4         
+Benchmark duration (s):                  27.69     
+Total input tokens:                      11670     
+Total generated tokens:                  4096      
+Request throughput (req/s):              0.58      
+Output token throughput (tok/s):         147.93    
+Peak output token throughput (tok/s):    72.00     
+Peak concurrent requests:                6.00      
+Total token throughput (tok/s):          569.39    
+---------------Time to First Token----------------
+Mean TTFT (ms):                          689.92    
+Median TTFT (ms):                        453.13    
+P99 TTFT (ms):                           1650.91   
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          23.01     
+Median TPOT (ms):                        23.66     
+P99 TPOT (ms):                           30.93     
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           62.92     
+Median ITL (ms):                         56.62     
+P99 ITL (ms):                            347.83    
+---------------Speculative Decoding---------------
+Acceptance rate (%):                     58.20     
+Acceptance length:                       2.75      
+Drafts:                                  1492      
+Draft tokens:                            4476      
+Accepted tokens:                         2605      
+Per-position acceptance (%):
+  Position 0:                            78.82     
+  Position 1:                            55.03     
+  Position 2:                            40.75     
+==================================================
+=== round 4, arm exact ===
+Namespace(subparser='bench', bench_type='serve', dispatch_function=<function BenchmarkServingSubcommand.cmd at 0x400337dba340>, trust_remote_code=False, seed=0, num_prompts=16, dataset_name='custom', no_stream=False, dataset_path='/e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-29-marlin-smem-monopoly/agentic-prompts.jsonl', no_oversample=False, skip_chat_template=True, enable_multimodal_chat=False, disable_shuffle=True, custom_output_len=256, custom_ensure_client_side_data=False, spec_bench_output_len=256, spec_bench_category=None, sonnet_input_len=550, sonnet_output_len=150, sonnet_prefix_len=200, sharegpt_output_len=None, timed_trace_chunk_hash_size=16, timed_trace_sec_multiplier=1, timed_trace_label_timestamp='timestamp', timed_trace_label_input_length='input_length', timed_trace_label_output_length='output_length', timed_trace_label_hash_ids='hash_ids', blazedit_min_distance=0.0, blazedit_max_distance=1.0, asr_max_audio_len_sec=inf, asr_min_audio_len_sec=0.0, random_input_len=1024, random_output_len=128, random_range_ratio='0.0', random_prefix_len=0, random_batch_size=1, no_reranker=False, random_mm_base_items_per_request=1, random_mm_num_mm_items_range_ratio=0.0, random_mm_limit_mm_per_prompt={'image': 255, 'video': 1}, random_mm_bucket_config={(256, 256, 1): 0.5, (720, 1280, 1): 0.5, (720, 1280, 16): 0.0}, hf_subset=None, hf_split=None, hf_name=None, hf_output_len=None, bfcl_categories=None, prefix_repetition_prefix_len=256, prefix_repetition_suffix_len=256, prefix_repetition_num_prefixes=10, prefix_repetition_output_len=128, speed_bench_dataset_subset='qualitative', speed_bench_output_len=4096, speed_bench_category=None, label=None, backend='openai', base_url='http://127.0.0.1:8027', host='127.0.0.1', port=8000, endpoint='/v1/completions', header=None, max_concurrency=4, model='glm52-w4a16-tiered', input_len=None, output_len=None, tokenizer='/e/fscratch/profound/naeimitabiei1/models/GLM-5.2-AutoRound-W4G64-MTP-e1ba887', tokenizer_mode='auto', use_beam_search=False, logprobs=None, request_rate=inf, burstiness=1.0, disable_tqdm=True, num_warmups=0, profile=False, save_result=True, save_detailed=False, append_result=False, metadata=None, result_dir='/e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-31-replica-scheduling-v2', result_filename='phase3-1167166-s4-mtp3-exact-r4.json', ignore_eos=True, self_timed=None, percentile_metrics=None, metric_percentiles='99', goodput=None, request_id_prefix='bench-b4d8b431-', top_p=None, top_k=None, min_p=None, temperature=0.0, frequency_penalty=None, presence_penalty=None, repetition_penalty=None, served_model_name='glm52-w4a16-tiered', lora_modules=None, lora_assignment='random', ramp_up_strategy=None, ramp_up_start_rps=None, ramp_up_end_rps=None, ready_check_timeout_sec=0, chat_template_kwargs=None, extra_body=None, skip_tokenizer_init=False, insecure=False, plot_timeline=False, timeline_itl_thresholds='25,50', plot_dataset_stats=False)
+Starting initial single prompt test run...
+Skipping endpoint ready check.
+Starting main benchmark run...
+Traffic request rate: inf
+Burstiness factor: 1.0 (Poisson process)
+Maximum request concurrency: 4
+tip: install termplotlib and gnuplot to plot the metrics
+============ Serving Benchmark Result ============
+Successful requests:                     16        
+Failed requests:                         0         
+Maximum request concurrency:             4         
+Benchmark duration (s):                  26.08     
+Total input tokens:                      11670     
+Total generated tokens:                  4096      
+Request throughput (req/s):              0.61      
+Output token throughput (tok/s):         157.07    
+Peak output token throughput (tok/s):    76.00     
+Peak concurrent requests:                6.00      
+Total token throughput (tok/s):          604.57    
+---------------Time to First Token----------------
+Mean TTFT (ms):                          774.57    
+Median TTFT (ms):                        504.13    
+P99 TTFT (ms):                           1819.37   
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          20.81     
+Median TPOT (ms):                        20.00     
+P99 TPOT (ms):                           31.58     
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           60.25     
+Median ITL (ms):                         52.87     
+P99 ITL (ms):                            397.85    
+---------------Speculative Decoding---------------
+Acceptance rate (%):                     63.59     
+Acceptance length:                       2.91      
+Drafts:                                  1409      
+Draft tokens:                            4227      
+Accepted tokens:                         2688      
+Per-position acceptance (%):
+  Position 0:                            81.41     
+  Position 1:                            63.73     
+  Position 2:                            45.64     
+==================================================
+=== round 5, arm off ===
+Namespace(subparser='bench', bench_type='serve', dispatch_function=<function BenchmarkServingSubcommand.cmd at 0x400355b0a340>, trust_remote_code=False, seed=0, num_prompts=16, dataset_name='custom', no_stream=False, dataset_path='/e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-29-marlin-smem-monopoly/agentic-prompts.jsonl', no_oversample=False, skip_chat_template=True, enable_multimodal_chat=False, disable_shuffle=True, custom_output_len=256, custom_ensure_client_side_data=False, spec_bench_output_len=256, spec_bench_category=None, sonnet_input_len=550, sonnet_output_len=150, sonnet_prefix_len=200, sharegpt_output_len=None, timed_trace_chunk_hash_size=16, timed_trace_sec_multiplier=1, timed_trace_label_timestamp='timestamp', timed_trace_label_input_length='input_length', timed_trace_label_output_length='output_length', timed_trace_label_hash_ids='hash_ids', blazedit_min_distance=0.0, blazedit_max_distance=1.0, asr_max_audio_len_sec=inf, asr_min_audio_len_sec=0.0, random_input_len=1024, random_output_len=128, random_range_ratio='0.0', random_prefix_len=0, random_batch_size=1, no_reranker=False, random_mm_base_items_per_request=1, random_mm_num_mm_items_range_ratio=0.0, random_mm_limit_mm_per_prompt={'image': 255, 'video': 1}, random_mm_bucket_config={(256, 256, 1): 0.5, (720, 1280, 1): 0.5, (720, 1280, 16): 0.0}, hf_subset=None, hf_split=None, hf_name=None, hf_output_len=None, bfcl_categories=None, prefix_repetition_prefix_len=256, prefix_repetition_suffix_len=256, prefix_repetition_num_prefixes=10, prefix_repetition_output_len=128, speed_bench_dataset_subset='qualitative', speed_bench_output_len=4096, speed_bench_category=None, label=None, backend='openai', base_url='http://127.0.0.1:8027', host='127.0.0.1', port=8000, endpoint='/v1/completions', header=None, max_concurrency=4, model='glm52-w4a16-tiered', input_len=None, output_len=None, tokenizer='/e/fscratch/profound/naeimitabiei1/models/GLM-5.2-AutoRound-W4G64-MTP-e1ba887', tokenizer_mode='auto', use_beam_search=False, logprobs=None, request_rate=inf, burstiness=1.0, disable_tqdm=True, num_warmups=0, profile=False, save_result=True, save_detailed=False, append_result=False, metadata=None, result_dir='/e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-31-replica-scheduling-v2', result_filename='phase3-1167166-s4-mtp3-off-r5.json', ignore_eos=True, self_timed=None, percentile_metrics=None, metric_percentiles='99', goodput=None, request_id_prefix='bench-f152ffe6-', top_p=None, top_k=None, min_p=None, temperature=0.0, frequency_penalty=None, presence_penalty=None, repetition_penalty=None, served_model_name='glm52-w4a16-tiered', lora_modules=None, lora_assignment='random', ramp_up_strategy=None, ramp_up_start_rps=None, ramp_up_end_rps=None, ready_check_timeout_sec=0, chat_template_kwargs=None, extra_body=None, skip_tokenizer_init=False, insecure=False, plot_timeline=False, timeline_itl_thresholds='25,50', plot_dataset_stats=False)
+Starting initial single prompt test run...
+Skipping endpoint ready check.
+Starting main benchmark run...
+Traffic request rate: inf
+Burstiness factor: 1.0 (Poisson process)
+Maximum request concurrency: 4
+tip: install termplotlib and gnuplot to plot the metrics
+============ Serving Benchmark Result ============
+Successful requests:                     16        
+Failed requests:                         0         
+Maximum request concurrency:             4         
+Benchmark duration (s):                  27.64     
+Total input tokens:                      11670     
+Total generated tokens:                  4096      
+Request throughput (req/s):              0.58      
+Output token throughput (tok/s):         148.20    
+Peak output token throughput (tok/s):    76.00     
+Peak concurrent requests:                6.00      
+Total token throughput (tok/s):          570.43    
+---------------Time to First Token----------------
+Mean TTFT (ms):                          701.56    
+Median TTFT (ms):                        471.17    
+P99 TTFT (ms):                           1673.09   
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          23.17     
+Median TPOT (ms):                        22.51     
+P99 TPOT (ms):                           30.00     
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           62.95     
+Median ITL (ms):                         56.53     
+P99 ITL (ms):                            355.10    
+---------------Speculative Decoding---------------
+Acceptance rate (%):                     57.70     
+Acceptance length:                       2.73      
+Drafts:                                  1502      
+Draft tokens:                            4506      
+Accepted tokens:                         2600      
+Per-position acceptance (%):
+  Position 0:                            80.76     
+  Position 1:                            55.79     
+  Position 2:                            36.55     
+==================================================
+=== round 5, arm exact ===
+Namespace(subparser='bench', bench_type='serve', dispatch_function=<function BenchmarkServingSubcommand.cmd at 0x40033511a340>, trust_remote_code=False, seed=0, num_prompts=16, dataset_name='custom', no_stream=False, dataset_path='/e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-29-marlin-smem-monopoly/agentic-prompts.jsonl', no_oversample=False, skip_chat_template=True, enable_multimodal_chat=False, disable_shuffle=True, custom_output_len=256, custom_ensure_client_side_data=False, spec_bench_output_len=256, spec_bench_category=None, sonnet_input_len=550, sonnet_output_len=150, sonnet_prefix_len=200, sharegpt_output_len=None, timed_trace_chunk_hash_size=16, timed_trace_sec_multiplier=1, timed_trace_label_timestamp='timestamp', timed_trace_label_input_length='input_length', timed_trace_label_output_length='output_length', timed_trace_label_hash_ids='hash_ids', blazedit_min_distance=0.0, blazedit_max_distance=1.0, asr_max_audio_len_sec=inf, asr_min_audio_len_sec=0.0, random_input_len=1024, random_output_len=128, random_range_ratio='0.0', random_prefix_len=0, random_batch_size=1, no_reranker=False, random_mm_base_items_per_request=1, random_mm_num_mm_items_range_ratio=0.0, random_mm_limit_mm_per_prompt={'image': 255, 'video': 1}, random_mm_bucket_config={(256, 256, 1): 0.5, (720, 1280, 1): 0.5, (720, 1280, 16): 0.0}, hf_subset=None, hf_split=None, hf_name=None, hf_output_len=None, bfcl_categories=None, prefix_repetition_prefix_len=256, prefix_repetition_suffix_len=256, prefix_repetition_num_prefixes=10, prefix_repetition_output_len=128, speed_bench_dataset_subset='qualitative', speed_bench_output_len=4096, speed_bench_category=None, label=None, backend='openai', base_url='http://127.0.0.1:8027', host='127.0.0.1', port=8000, endpoint='/v1/completions', header=None, max_concurrency=4, model='glm52-w4a16-tiered', input_len=None, output_len=None, tokenizer='/e/fscratch/profound/naeimitabiei1/models/GLM-5.2-AutoRound-W4G64-MTP-e1ba887', tokenizer_mode='auto', use_beam_search=False, logprobs=None, request_rate=inf, burstiness=1.0, disable_tqdm=True, num_warmups=0, profile=False, save_result=True, save_detailed=False, append_result=False, metadata=None, result_dir='/e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-31-replica-scheduling-v2', result_filename='phase3-1167166-s4-mtp3-exact-r5.json', ignore_eos=True, self_timed=None, percentile_metrics=None, metric_percentiles='99', goodput=None, request_id_prefix='bench-d7307115-', top_p=None, top_k=None, min_p=None, temperature=0.0, frequency_penalty=None, presence_penalty=None, repetition_penalty=None, served_model_name='glm52-w4a16-tiered', lora_modules=None, lora_assignment='random', ramp_up_strategy=None, ramp_up_start_rps=None, ramp_up_end_rps=None, ready_check_timeout_sec=0, chat_template_kwargs=None, extra_body=None, skip_tokenizer_init=False, insecure=False, plot_timeline=False, timeline_itl_thresholds='25,50', plot_dataset_stats=False)
+Starting initial single prompt test run...
+Skipping endpoint ready check.
+Starting main benchmark run...
+Traffic request rate: inf
+Burstiness factor: 1.0 (Poisson process)
+Maximum request concurrency: 4
+tip: install termplotlib and gnuplot to plot the metrics
+============ Serving Benchmark Result ============
+Successful requests:                     16        
+Failed requests:                         0         
+Maximum request concurrency:             4         
+Benchmark duration (s):                  25.63     
+Total input tokens:                      11670     
+Total generated tokens:                  4096      
+Request throughput (req/s):              0.62      
+Output token throughput (tok/s):         159.82    
+Peak output token throughput (tok/s):    84.00     
+Peak concurrent requests:                7.00      
+Total token throughput (tok/s):          615.18    
+---------------Time to First Token----------------
+Mean TTFT (ms):                          746.46    
+Median TTFT (ms):                        506.34    
+P99 TTFT (ms):                           1684.09   
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          21.35     
+Median TPOT (ms):                        19.73     
+P99 TPOT (ms):                           30.09     
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           60.17     
+Median ITL (ms):                         52.14     
+P99 ITL (ms):                            381.56    
+---------------Speculative Decoding---------------
+Acceptance rate (%):                     61.03     
+Acceptance length:                       2.83      
+Drafts:                                  1448      
+Draft tokens:                            4344      
+Accepted tokens:                         2651      
+Per-position acceptance (%):
+  Position 0:                            79.21     
+  Position 1:                            60.15     
+  Position 2:                            43.72     
+==================================================
+=== summary ===
+job 1167166, 4 seqs, spec mtp3, 5 matched rounds
+
+mean_tpot_ms           off    22.740  exact    21.249  paired   -6.50% (sd  3.07, t  -4.73)   step time (lower is better)
+output_throughput      off   150.286  exact   157.778  paired   +5.05% (sd  3.42, t  +3.30)   output tok/s (higher is better)
+mean_itl_ms            off    63.215  exact    60.018  paired   -5.06% (sd  0.83, t -13.54)   inter-token latency
+median_tpot_ms         off    22.132  exact    20.487  paired   -7.12% (sd  8.05, t  -1.98)   median step time

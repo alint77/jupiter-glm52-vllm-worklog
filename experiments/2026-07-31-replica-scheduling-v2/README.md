@@ -1,6 +1,6 @@
 # Replica-aware tiered MoE scheduling, v2
 
-Status: **Phases 0b and 1 passed; Phase 2 (vLLM integration) is next**. Supersedes
+Status: **Phases 0b, 1, 2 and 3 passed. It works: ~5-6% faster decode at c4.** Supersedes
 [`2026-07-31-replicated-expert-scheduling`](../2026-07-31-replicated-expert-scheduling/README.md)
 (reverted in `53fe6dfcf`, archived at tag `replica-scheduling-archive` =
 `dc4dcff58`) and absorbs
@@ -512,6 +512,43 @@ over ≥ 1,000 graph replays, same job, arms alternating.
 **Gate:** ≥ 3% c4 step-time reduction, and Marlin cumulative residency
 **unchanged within 1%** — this is the direct test of §2.1 and the single most
 important number in the plan.
+
+### Phase 3 — acceptance-free measurement — **DONE, GATE PASSED**
+
+Jobs `1167166` (MTP3, decode batch 16) and `1167167` (no speculation, decode
+batch 4), each one node, arms alternating, five matched rounds, paired
+statistics. `phase3-summary-*.json` holds both.
+
+| Regime | Metric | off | exact | paired delta | t |
+| --- | --- | ---: | ---: | ---: | ---: |
+| **No spec, batch 4** | step time | 33.680 ms | 31.666 ms | **−5.96%** | −9.00 |
+| | output tok/s | 109.508 | 114.199 | **+4.31%** | +5.41 |
+| **MTP3, batch 16** | step time | 22.740 ms | 21.249 ms | **−6.50%** | −4.73 |
+| | output tok/s | 150.286 | 157.778 | **+5.05%** | +3.30 |
+| | **acceptance-corrected step** | | | **−5.11%** | **−13.85** |
+| | acceptance length | 2.795 | 2.837 | +1.60% | +0.88 |
+
+**Gate: passed.** The bar was ≥3% c4 step-time reduction; every measurement
+lands at 5–6%, and the plan's predicted 4–8% range holds.
+
+Three things make this stronger than v1's evidence:
+
+- **The no-speculation arm cannot be an acceptance artefact.** There is no
+  draft model, so mean TPOT *is* the step time. It agrees with the MTP arm to
+  within a point.
+- **Acceptance did not move**: +1.60% at t=0.88, i.e. indistinguishable from
+  zero, and the acceptance-corrected step time (−5.11%, t=−13.85, sd 0.82) is
+  the tightest statistic in the set. v1's acceptance deltas swung −8.45%,
+  −2.75%, +2.63% between experiments; removing that confound is what makes the
+  number trustworthy rather than merely favourable.
+- **Same node, arms alternating, five matched pairs.** Every v1 comparison,
+  including its traces, was cross-node between arms that differ by ~10% on the
+  fixed part of a Marlin call.
+
+The plan warned that skew reduction would not translate one-for-one into step
+time, since removing idle from non-critical ranks does not shorten the critical
+path, and predicted 4–8% rather than the 15–18% the modelled span suggested.
+That is what happened.
 
 ### Phase 4 — serving A/B
 

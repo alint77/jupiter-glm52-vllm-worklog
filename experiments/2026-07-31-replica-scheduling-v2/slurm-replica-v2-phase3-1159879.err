@@ -1,0 +1,51 @@
+
+The following have been reloaded with a version change:
+  1) GCCcore/.14.3.0 => GCCcore/14.3.0
+
+server for phase3-1159879-off-b4-r1 died before readiness
+(APIServer pid=1691795) Traceback (most recent call last):
+(APIServer pid=1691795)   File "/e/project1/profound/alint77/vllm/.venv/bin/vllm", line 10, in <module>
+(APIServer pid=1691795)     sys.exit(main())
+(APIServer pid=1691795)              ^^^^^^
+(APIServer pid=1691795)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/cli/main.py", line 95, in main
+(APIServer pid=1691795)     args.dispatch_function(args)
+(APIServer pid=1691795)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/cli/serve.py", line 162, in cmd
+(APIServer pid=1691795)     uvloop.run(run_server(args))
+(APIServer pid=1691795)   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/uvloop/__init__.py", line 96, in run
+(APIServer pid=1691795)     return __asyncio.run(
+(APIServer pid=1691795)            ^^^^^^^^^^^^^^
+(APIServer pid=1691795)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/asyncio/runners.py", line 195, in run
+(APIServer pid=1691795)     return runner.run(main)
+(APIServer pid=1691795)            ^^^^^^^^^^^^^^^^
+(APIServer pid=1691795)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/asyncio/runners.py", line 118, in run
+(APIServer pid=1691795)     return self._loop.run_until_complete(task)
+(APIServer pid=1691795)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1691795)   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+(APIServer pid=1691795)   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/uvloop/__init__.py", line 48, in wrapper
+(APIServer pid=1691795)     return await main
+(APIServer pid=1691795)            ^^^^^^^^^^
+(APIServer pid=1691795)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/openai/api_server.py", line 759, in run_server
+(APIServer pid=1691795)     await run_server_worker(listen_address, sock, args, **uvicorn_kwargs)
+(APIServer pid=1691795)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/openai/api_server.py", line 773, in run_server_worker
+(APIServer pid=1691795)     async with build_async_engine_client(
+(APIServer pid=1691795)                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1691795)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/contextlib.py", line 210, in __aenter__
+(APIServer pid=1691795)     return await anext(self.gen)
+(APIServer pid=1691795)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1691795)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/openai/api_server.py", line 139, in build_async_engine_client
+(APIServer pid=1691795)     async with build_async_engine_client_from_engine_args(
+(APIServer pid=1691795)                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1691795)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/contextlib.py", line 210, in __aenter__
+(APIServer pid=1691795)     return await anext(self.gen)
+(APIServer pid=1691795)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1691795)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/openai/api_server.py", line 163, in build_async_engine_client_from_engine_args
+(APIServer pid=1691795)     vllm_config = engine_args.create_engine_config(usage_context=usage_context)
+(APIServer pid=1691795)                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1691795)   File "/e/project1/profound/alint77/vllm/vllm/engine/arg_utils.py", line 2436, in create_engine_config
+(APIServer pid=1691795)     config = VllmConfig(
+(APIServer pid=1691795)              ^^^^^^^^^^^
+(APIServer pid=1691795)   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/pydantic/_internal/_dataclasses.py", line 121, in __init__
+(APIServer pid=1691795)     s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)
+(APIServer pid=1691795) pydantic_core._pydantic_core.ValidationError: 1 validation error for VllmConfig
+(APIServer pid=1691795)   Value error, Tiered MoE max_num_seqs > 1 requires DCP (the replicated 400K MLA cache does not fit more than one sequence per rank) [type=value_error, input_value=ArgsKwargs((), {'model_co... 'shutdown_timeout': 0}), input_type=ArgsKwargs]
+(APIServer pid=1691795)     For further information visit https://errors.pydantic.dev/2.13/v/value_error

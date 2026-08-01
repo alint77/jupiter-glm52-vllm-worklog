@@ -1,0 +1,218 @@
+(EngineCore pid=1381506) /e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py:139: UserWarning: Failed to get the IP address, using 0.0.0.0 by default. The value can be set by the environment variable VLLM_HOST_IP or HOST_IP.
+(EngineCore pid=1381506)   mq_connect_ip = get_ip()
+[W801 01:30:07.443321731 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:39545 (errno: 97 - Address family not supported by protocol).
+[W801 01:30:09.763158293 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:39545 (errno: 97 - Address family not supported by protocol).
+[W801 01:30:09.813854764 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:39545 (errno: 97 - Address family not supported by protocol).
+[W801 01:30:09.908076387 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:39545 (errno: 97 - Address family not supported by protocol).
+(Worker_TP0_EP0 pid=1381777) Loading safetensors checkpoint shards:   0% Completed | 0/86 [00:00<?, ?it/s]
+[rank2]:[W801 01:30:29.845668849 TCPStore.cpp:125] [c10d] recvValue failed on SocketImpl(fd=74, addr=localhost:52822, remote=localhost:39545): Connection reset by peer
+Exception raised from recvBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:679 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0x4000e64f66e8 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x66f5cd0 (0x4000cbfd5cd0 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x1c4 (0x4000cbfde2b4 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x380 (0x4000d130db30 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xe027c (0x400037e2027c in /e/software/default/stages/2026/software/GCCcore/14.3.0/lib64/libstdc++.so.6)
+frame #5: <unknown function> + 0x810e8 (0x400036ae10e8 in /lib64/libc.so.6)
+frame #6: <unknown function> + 0xeb89c (0x400036b4b89c in /lib64/libc.so.6)
+
+[rank3]:[W801 01:30:29.845687473 TCPStore.cpp:125] [c10d] recvValue failed on SocketImpl(fd=74, addr=localhost:52814, remote=localhost:39545): Failed to recv, got 0 bytes. Connection was likely closed. Did the remote server shutdown or crash?
+Exception raised from recvBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:682 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0x4000ca7166e8 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x66f5c14 (0x4000b01f5c14 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x1c4 (0x4000b01fe2b4 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x380 (0x4000b552db30 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xe027c (0x40001c04027c in /e/software/default/stages/2026/software/GCCcore/14.3.0/lib64/libstdc++.so.6)
+frame #5: <unknown function> + 0x810e8 (0x40001ad010e8 in /lib64/libc.so.6)
+frame #6: <unknown function> + 0xeb89c (0x40001ad6b89c in /lib64/libc.so.6)
+
+[rank2]:[W801 01:30:29.852259379 ProcessGroupNCCL.cpp:1826] [PG ID 0 PG GUID 0 Rank 2] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Connection reset by peer
+[rank3]:[W801 01:30:29.894150322 ProcessGroupNCCL.cpp:1826] [PG ID 0 PG GUID 0 Rank 3] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Failed to recv, got 0 bytes. Connection was likely closed. Did the remote server shutdown or crash?
+[rank2]:[W801 01:30:30.898037915 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=74, addr=localhost:52822, remote=localhost:39545): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0x4000e64f66e8 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x66f513c (0x4000cbfd513c in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x1a4 (0x4000cbfde294 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x380 (0x4000d130db30 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xe027c (0x400037e2027c in /e/software/default/stages/2026/software/GCCcore/14.3.0/lib64/libstdc++.so.6)
+frame #5: <unknown function> + 0x810e8 (0x400036ae10e8 in /lib64/libc.so.6)
+frame #6: <unknown function> + 0xeb89c (0x400036b4b89c in /lib64/libc.so.6)
+
+[rank3]:[W801 01:30:30.898050875 TCPStore.cpp:125] [c10d] recvValue failed on SocketImpl(fd=74, addr=localhost:52814, remote=localhost:39545): Failed to recv, got 0 bytes. Connection was likely closed. Did the remote server shutdown or crash?
+Exception raised from recvBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:682 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0x4000ca7166e8 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x66f5c14 (0x4000b01f5c14 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x1c4 (0x4000b01fe2b4 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x380 (0x4000b552db30 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xe027c (0x40001c04027c in /e/software/default/stages/2026/software/GCCcore/14.3.0/lib64/libstdc++.so.6)
+frame #5: <unknown function> + 0x810e8 (0x40001ad010e8 in /lib64/libc.so.6)
+frame #6: <unknown function> + 0xeb89c (0x40001ad6b89c in /lib64/libc.so.6)
+
+[rank2]:[W801 01:30:30.902490726 ProcessGroupNCCL.cpp:1826] [PG ID 0 PG GUID 0 Rank 2] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank3]:[W801 01:30:30.902528645 ProcessGroupNCCL.cpp:1826] [PG ID 0 PG GUID 0 Rank 3] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Failed to recv, got 0 bytes. Connection was likely closed. Did the remote server shutdown or crash?
+[rank2]:[W801 01:30:31.908851392 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=74, addr=localhost:52822, remote=localhost:39545): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0x4000e64f66e8 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x66f513c (0x4000cbfd513c in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x1a4 (0x4000cbfde294 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x380 (0x4000d130db30 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xe027c (0x400037e2027c in /e/software/default/stages/2026/software/GCCcore/14.3.0/lib64/libstdc++.so.6)
+frame #5: <unknown function> + 0x810e8 (0x400036ae10e8 in /lib64/libc.so.6)
+frame #6: <unknown function> + 0xeb89c (0x400036b4b89c in /lib64/libc.so.6)
+
+[rank3]:[W801 01:30:31.908857088 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=74, addr=localhost:52814, remote=localhost:39545): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0x4000ca7166e8 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x66f513c (0x4000b01f513c in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x1a4 (0x4000b01fe294 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x380 (0x4000b552db30 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xe027c (0x40001c04027c in /e/software/default/stages/2026/software/GCCcore/14.3.0/lib64/libstdc++.so.6)
+frame #5: <unknown function> + 0x810e8 (0x40001ad010e8 in /lib64/libc.so.6)
+frame #6: <unknown function> + 0xeb89c (0x40001ad6b89c in /lib64/libc.so.6)
+
+[rank2]:[W801 01:30:31.916236179 ProcessGroupNCCL.cpp:1826] [PG ID 0 PG GUID 0 Rank 2] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank3]:[W801 01:30:31.916247411 ProcessGroupNCCL.cpp:1826] [PG ID 0 PG GUID 0 Rank 3] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank3]:[W801 01:30:32.920355192 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=74, addr=localhost:52814, remote=localhost:39545): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0x4000ca7166e8 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x66f513c (0x4000b01f513c in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x1a4 (0x4000b01fe294 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x380 (0x4000b552db30 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xe027c (0x40001c04027c in /e/software/default/stages/2026/software/GCCcore/14.3.0/lib64/libstdc++.so.6)
+frame #5: <unknown function> + 0x810e8 (0x40001ad010e8 in /lib64/libc.so.6)
+frame #6: <unknown function> + 0xeb89c (0x40001ad6b89c in /lib64/libc.so.6)
+
+[rank2]:[W801 01:30:32.920365624 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=74, addr=localhost:52822, remote=localhost:39545): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0x4000e64f66e8 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x66f513c (0x4000cbfd513c in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x1a4 (0x4000cbfde294 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x380 (0x4000d130db30 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xe027c (0x400037e2027c in /e/software/default/stages/2026/software/GCCcore/14.3.0/lib64/libstdc++.so.6)
+frame #5: <unknown function> + 0x810e8 (0x400036ae10e8 in /lib64/libc.so.6)
+frame #6: <unknown function> + 0xeb89c (0x400036b4b89c in /lib64/libc.so.6)
+
+[rank3]:[W801 01:30:32.927443409 ProcessGroupNCCL.cpp:1826] [PG ID 0 PG GUID 0 Rank 3] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank2]:[W801 01:30:32.927475056 ProcessGroupNCCL.cpp:1826] [PG ID 0 PG GUID 0 Rank 2] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank3]:[W801 01:30:33.927582049 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=74, addr=localhost:52814, remote=localhost:39545): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0x4000ca7166e8 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x66f513c (0x4000b01f513c in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x1a4 (0x4000b01fe294 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x380 (0x4000b552db30 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xe027c (0x40001c04027c in /e/software/default/stages/2026/software/GCCcore/14.3.0/lib64/libstdc++.so.6)
+frame #5: <unknown function> + 0x810e8 (0x40001ad010e8 in /lib64/libc.so.6)
+frame #6: <unknown function> + 0xeb89c (0x40001ad6b89c in /lib64/libc.so.6)
+
+[rank3]:[W801 01:30:33.928574702 ProcessGroupNCCL.cpp:1826] [PG ID 0 PG GUID 0 Rank 3] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+[rank2]:[W801 01:30:33.927609921 TCPStore.cpp:106] [c10d] sendBytes failed on SocketImpl(fd=74, addr=localhost:52822, remote=localhost:39545): Broken pipe
+Exception raised from sendBytes at /pytorch/torch/csrc/distributed/c10d/Utils.hpp:653 (most recent call first):
+frame #0: c10::Error::Error(c10::SourceLocation, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) + 0xc8 (0x4000e64f66e8 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libc10.so)
+frame #1: <unknown function> + 0x66f513c (0x4000cbfd513c in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #2: c10d::TCPStore::check(std::vector<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::allocator<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > const&) + 0x1a4 (0x4000cbfde294 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cpu.so)
+frame #3: c10d::ProcessGroupNCCL::HeartbeatMonitor::runLoop() + 0x380 (0x4000d130db30 in /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/lib/libtorch_cuda.so)
+frame #4: <unknown function> + 0xe027c (0x400037e2027c in /e/software/default/stages/2026/software/GCCcore/14.3.0/lib64/libstdc++.so.6)
+frame #5: <unknown function> + 0x810e8 (0x400036ae10e8 in /lib64/libc.so.6)
+frame #6: <unknown function> + 0xeb89c (0x400036b4b89c in /lib64/libc.so.6)
+
+[rank2]:[W801 01:30:33.928642701 ProcessGroupNCCL.cpp:1826] [PG ID 0 PG GUID 0 Rank 2] Failed to check the "should dump" flag on TCPStore, (maybe TCPStore server has shut down too early), with error: Broken pipe
+(EngineCore pid=1381506) Process EngineCore:
+(EngineCore pid=1381506) Traceback (most recent call last):
+(EngineCore pid=1381506)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+(EngineCore pid=1381506)     self.run()
+(EngineCore pid=1381506)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/multiprocessing/process.py", line 108, in run
+(EngineCore pid=1381506)     self._target(*self._args, **self._kwargs)
+(EngineCore pid=1381506)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/core.py", line 1334, in run_engine_core
+(EngineCore pid=1381506)     raise e
+(EngineCore pid=1381506)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/core.py", line 1299, in run_engine_core
+(EngineCore pid=1381506)     engine_core = EngineCoreProc(*args, engine_index=dp_rank, **kwargs)
+(EngineCore pid=1381506)                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=1381506)   File "/e/project1/profound/alint77/vllm/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore pid=1381506)     return func(*args, **kwargs)
+(EngineCore pid=1381506)            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=1381506)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/core.py", line 1065, in __init__
+(EngineCore pid=1381506)     super().__init__(
+(EngineCore pid=1381506)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/core.py", line 125, in __init__
+(EngineCore pid=1381506)     self.model_executor = executor_class(vllm_config)
+(EngineCore pid=1381506)                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=1381506)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 108, in __init__
+(EngineCore pid=1381506)     super().__init__(vllm_config)
+(EngineCore pid=1381506)   File "/e/project1/profound/alint77/vllm/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore pid=1381506)     return func(*args, **kwargs)
+(EngineCore pid=1381506)            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=1381506)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/abstract.py", line 109, in __init__
+(EngineCore pid=1381506)     self._init_executor()
+(EngineCore pid=1381506)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 201, in _init_executor
+(EngineCore pid=1381506)     self.workers = WorkerProc.wait_for_ready(unready_workers)
+(EngineCore pid=1381506)                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=1381506)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 765, in wait_for_ready
+(EngineCore pid=1381506)     raise e from None
+(EngineCore pid=1381506) Exception: WorkerProc initialization failed due to an exception in a background process. See stack trace for root cause.
+(APIServer pid=1380625) Traceback (most recent call last):
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/.venv/bin/vllm", line 10, in <module>
+(APIServer pid=1380625)     sys.exit(main())
+(APIServer pid=1380625)              ^^^^^^
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/cli/main.py", line 95, in main
+(APIServer pid=1380625)     args.dispatch_function(args)
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/cli/serve.py", line 162, in cmd
+(APIServer pid=1380625)     uvloop.run(run_server(args))
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/uvloop/__init__.py", line 96, in run
+(APIServer pid=1380625)     return __asyncio.run(
+(APIServer pid=1380625)            ^^^^^^^^^^^^^^
+(APIServer pid=1380625)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/asyncio/runners.py", line 195, in run
+(APIServer pid=1380625)     return runner.run(main)
+(APIServer pid=1380625)            ^^^^^^^^^^^^^^^^
+(APIServer pid=1380625)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/asyncio/runners.py", line 118, in run
+(APIServer pid=1380625)     return self._loop.run_until_complete(task)
+(APIServer pid=1380625)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1380625)   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/uvloop/__init__.py", line 48, in wrapper
+(APIServer pid=1380625)     return await main
+(APIServer pid=1380625)            ^^^^^^^^^^
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/openai/api_server.py", line 759, in run_server
+(APIServer pid=1380625)     await run_server_worker(listen_address, sock, args, **uvicorn_kwargs)
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/openai/api_server.py", line 773, in run_server_worker
+(APIServer pid=1380625)     async with build_async_engine_client(
+(APIServer pid=1380625)                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1380625)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/contextlib.py", line 210, in __aenter__
+(APIServer pid=1380625)     return await anext(self.gen)
+(APIServer pid=1380625)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/openai/api_server.py", line 139, in build_async_engine_client
+(APIServer pid=1380625)     async with build_async_engine_client_from_engine_args(
+(APIServer pid=1380625)                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1380625)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/contextlib.py", line 210, in __aenter__
+(APIServer pid=1380625)     return await anext(self.gen)
+(APIServer pid=1380625)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/openai/api_server.py", line 175, in build_async_engine_client_from_engine_args
+(APIServer pid=1380625)     async_llm = AsyncLLM.from_vllm_config(
+(APIServer pid=1380625)                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/async_llm.py", line 217, in from_vllm_config
+(APIServer pid=1380625)     return cls(
+(APIServer pid=1380625)            ^^^^
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/async_llm.py", line 146, in __init__
+(APIServer pid=1380625)     self.engine_core = EngineCoreClient.make_async_mp_client(
+(APIServer pid=1380625)                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/tracing/otel.py", line 178, in sync_wrapper
+(APIServer pid=1380625)     return func(*args, **kwargs)
+(APIServer pid=1380625)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/core_client.py", line 132, in make_async_mp_client
+(APIServer pid=1380625)     return AsyncMPClient(*client_args)
+(APIServer pid=1380625)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/tracing/otel.py", line 178, in sync_wrapper
+(APIServer pid=1380625)     return func(*args, **kwargs)
+(APIServer pid=1380625)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/core_client.py", line 963, in __init__
+(APIServer pid=1380625)     super().__init__(
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/core_client.py", line 573, in __init__
+(APIServer pid=1380625)     with launch_core_engines(
+(APIServer pid=1380625)          ^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1380625)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/contextlib.py", line 144, in __exit__
+(APIServer pid=1380625)     next(self.gen)
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/utils.py", line 1213, in launch_core_engines
+(APIServer pid=1380625)     wait_for_engine_startup(
+(APIServer pid=1380625)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/utils.py", line 1272, in wait_for_engine_startup
+(APIServer pid=1380625)     raise RuntimeError(
+(APIServer pid=1380625) RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked shared_memory objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '

@@ -1,0 +1,746 @@
+(EngineCore pid=1754769) /e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py:139: UserWarning: Failed to get the IP address, using 0.0.0.0 by default. The value can be set by the environment variable VLLM_HOST_IP or HOST_IP.
+(EngineCore pid=1754769)   mq_connect_ip = get_ip()
+[W801 01:40:58.409761444 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:36925 (errno: 97 - Address family not supported by protocol).
+[W801 01:41:00.291367523 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:36925 (errno: 97 - Address family not supported by protocol).
+[W801 01:41:00.379505545 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:36925 (errno: 97 - Address family not supported by protocol).
+[W801 01:41:00.383861170 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:36925 (errno: 97 - Address family not supported by protocol).
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:   0% Completed | 0/86 [00:00<?, ?it/s]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:   1% Completed | 1/86 [00:01<01:38,  1.16s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:   2% Completed | 2/86 [00:02<01:53,  1.36s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:   3% Completed | 3/86 [00:04<01:57,  1.41s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:   5% Completed | 4/86 [00:05<02:05,  1.54s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:   6% Completed | 5/86 [00:07<02:11,  1.63s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:   7% Completed | 6/86 [00:09<02:17,  1.72s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:   8% Completed | 7/86 [00:11<02:19,  1.76s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:   9% Completed | 8/86 [00:13<02:19,  1.79s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  10% Completed | 9/86 [00:15<02:21,  1.83s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  12% Completed | 10/86 [00:17<02:22,  1.88s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  13% Completed | 11/86 [00:19<02:21,  1.89s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  14% Completed | 12/86 [00:20<02:19,  1.89s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  15% Completed | 13/86 [00:22<02:17,  1.88s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  16% Completed | 14/86 [00:24<02:15,  1.89s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  17% Completed | 15/86 [00:26<02:14,  1.90s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  19% Completed | 16/86 [00:28<02:11,  1.87s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  20% Completed | 17/86 [00:30<02:10,  1.90s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  21% Completed | 18/86 [00:32<02:11,  1.93s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  22% Completed | 19/86 [00:34<02:09,  1.94s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  23% Completed | 20/86 [00:36<02:08,  1.94s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  24% Completed | 21/86 [00:38<02:03,  1.90s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  26% Completed | 22/86 [00:40<02:01,  1.90s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  27% Completed | 23/86 [00:41<02:00,  1.91s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  28% Completed | 24/86 [00:43<01:57,  1.89s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  29% Completed | 25/86 [00:45<01:55,  1.89s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  30% Completed | 26/86 [00:47<01:55,  1.92s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  31% Completed | 27/86 [00:49<01:51,  1.90s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  33% Completed | 28/86 [00:51<01:48,  1.88s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  34% Completed | 29/86 [00:53<01:47,  1.88s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  35% Completed | 30/86 [00:55<01:46,  1.90s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  36% Completed | 31/86 [00:57<01:43,  1.89s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  37% Completed | 32/86 [00:59<01:44,  1.93s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  38% Completed | 33/86 [01:01<01:44,  1.97s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  40% Completed | 34/86 [01:03<01:41,  1.96s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  41% Completed | 35/86 [01:05<01:39,  1.95s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  42% Completed | 36/86 [01:06<01:36,  1.93s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  43% Completed | 37/86 [01:08<01:34,  1.93s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  44% Completed | 38/86 [01:10<01:32,  1.93s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  45% Completed | 39/86 [01:12<01:30,  1.92s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  47% Completed | 40/86 [01:14<01:29,  1.94s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  48% Completed | 41/86 [01:16<01:24,  1.88s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  49% Completed | 42/86 [01:18<01:23,  1.90s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  50% Completed | 43/86 [01:20<01:22,  1.92s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  51% Completed | 44/86 [01:22<01:18,  1.87s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  52% Completed | 45/86 [01:23<01:17,  1.89s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  53% Completed | 46/86 [01:25<01:16,  1.91s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  55% Completed | 47/86 [01:27<01:14,  1.90s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  56% Completed | 48/86 [01:29<01:12,  1.91s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  57% Completed | 49/86 [01:31<01:10,  1.90s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  58% Completed | 50/86 [01:33<01:08,  1.91s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  59% Completed | 51/86 [01:35<01:05,  1.89s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  60% Completed | 52/86 [01:37<01:04,  1.90s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  62% Completed | 53/86 [01:39<01:03,  1.91s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  63% Completed | 54/86 [01:41<01:01,  1.91s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  64% Completed | 55/86 [01:43<00:59,  1.91s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  65% Completed | 56/86 [01:44<00:55,  1.86s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  66% Completed | 57/86 [01:46<00:54,  1.86s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  67% Completed | 58/86 [01:48<00:52,  1.88s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  69% Completed | 59/86 [01:50<00:50,  1.88s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  70% Completed | 60/86 [01:52<00:49,  1.89s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  71% Completed | 61/86 [01:54<00:46,  1.88s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  72% Completed | 62/86 [01:56<00:44,  1.84s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  73% Completed | 63/86 [01:57<00:43,  1.87s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  74% Completed | 64/86 [01:59<00:41,  1.87s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  76% Completed | 65/86 [02:01<00:39,  1.89s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  77% Completed | 66/86 [02:03<00:38,  1.90s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  78% Completed | 67/86 [02:05<00:36,  1.92s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  79% Completed | 68/86 [02:07<00:34,  1.90s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  80% Completed | 69/86 [02:09<00:32,  1.89s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  81% Completed | 70/86 [02:11<00:30,  1.91s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  83% Completed | 71/86 [02:13<00:28,  1.90s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  84% Completed | 72/86 [02:15<00:26,  1.90s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  85% Completed | 73/86 [02:16<00:24,  1.87s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  86% Completed | 74/86 [02:18<00:22,  1.87s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  87% Completed | 75/86 [02:20<00:20,  1.87s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  88% Completed | 76/86 [02:22<00:18,  1.89s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  90% Completed | 77/86 [02:24<00:17,  1.90s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  91% Completed | 78/86 [02:26<00:15,  1.90s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  92% Completed | 79/86 [02:27<00:12,  1.80s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  93% Completed | 80/86 [02:29<00:10,  1.71s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards:  94% Completed | 81/86 [02:30<00:06,  1.37s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) Loading safetensors checkpoint shards: 100% Completed | 86/86 [02:30<00:00,  1.75s/it]
+(Worker_TP0_DCP0_EP0 pid=1755041) 
+(Worker_TP2_DCP2_EP2 pid=1755045) /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:3686: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+(Worker_TP2_DCP2_EP2 pid=1755045)   current_out_size = out_base.storage().size()
+(Worker_TP0_DCP0_EP0 pid=1755041) /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:3686: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+(Worker_TP0_DCP0_EP0 pid=1755041)   current_out_size = out_base.storage().size()
+(Worker_TP2_DCP2_EP2 pid=1755045) Autotune Choices Stats:
+(Worker_TP2_DCP2_EP2 pid=1755045) {"num_choices": 19, "num_triton_choices": 18, "best_kernel": "mm", "best_time": 0.018400000408291817, "best_triton_pos": 1, "best_triton_time": 0.021856000646948814, "best_triton_kernel": "triton_mm_4", "best_triton_kernel_desc": "ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=2"}
+(Worker_TP2_DCP2_EP2 pid=1755045) AUTOTUNE mm(4x6144, 6144x2624)
+(Worker_TP2_DCP2_EP2 pid=1755045) strides: [6144, 1], [1, 6144]
+(Worker_TP2_DCP2_EP2 pid=1755045) dtypes: torch.bfloat16, torch.bfloat16
+(Worker_TP2_DCP2_EP2 pid=1755045)   mm 0.0184 ms 100.0% 
+(Worker_TP2_DCP2_EP2 pid=1755045)   triton_mm_4 0.0219 ms 84.2% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=2
+(Worker_TP2_DCP2_EP2 pid=1755045)   triton_mm_8 0.0230 ms 80.0% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=4
+(Worker_TP2_DCP2_EP2 pid=1755045)   triton_mm_12 0.0270 ms 68.2% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=4
+(Worker_TP2_DCP2_EP2 pid=1755045)   triton_mm_17 0.0296 ms 62.2% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+(Worker_TP2_DCP2_EP2 pid=1755045)   triton_mm_16 0.0332 ms 55.4% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=64, BLOCK_M=16, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=8
+(Worker_TP2_DCP2_EP2 pid=1755045)   triton_mm_3 0.0438 ms 42.0% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=32, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=2
+(Worker_TP2_DCP2_EP2 pid=1755045)   triton_mm_7 0.0465 ms 39.6% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=64, BLOCK_M=16, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+(Worker_TP2_DCP2_EP2 pid=1755045)   triton_mm_1 0.0470 ms 39.1% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=2, num_warps=2
+(Worker_TP2_DCP2_EP2 pid=1755045)   triton_mm_2 0.0472 ms 39.0% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=32, BLOCK_M=16, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=4
+(Worker_TP2_DCP2_EP2 pid=1755045) SingleProcess AUTOTUNE benchmarking takes 0.2883 seconds and 1.6644 seconds precompiling for 19 choices
+(Worker_TP0_DCP0_EP0 pid=1755041) Autotune Choices Stats:
+(Worker_TP0_DCP0_EP0 pid=1755041) {"num_choices": 19, "num_triton_choices": 18, "best_kernel": "mm", "best_time": 0.018688000738620758, "best_triton_pos": 1, "best_triton_time": 0.021663999184966087, "best_triton_kernel": "triton_mm_4", "best_triton_kernel_desc": "ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=2"}
+(Worker_TP0_DCP0_EP0 pid=1755041) AUTOTUNE mm(4x6144, 6144x2624)
+(Worker_TP0_DCP0_EP0 pid=1755041) strides: [6144, 1], [1, 6144]
+(Worker_TP0_DCP0_EP0 pid=1755041) dtypes: torch.bfloat16, torch.bfloat16
+(Worker_TP0_DCP0_EP0 pid=1755041)   mm 0.0187 ms 100.0% 
+(Worker_TP0_DCP0_EP0 pid=1755041)   triton_mm_4 0.0217 ms 86.3% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=2
+(Worker_TP0_DCP0_EP0 pid=1755041)   triton_mm_8 0.0227 ms 82.3% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=4
+(Worker_TP0_DCP0_EP0 pid=1755041)   triton_mm_12 0.0265 ms 70.4% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=4
+(Worker_TP0_DCP0_EP0 pid=1755041)   triton_mm_17 0.0300 ms 62.4% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+(Worker_TP0_DCP0_EP0 pid=1755041)   triton_mm_16 0.0332 ms 56.3% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=64, BLOCK_M=16, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=8
+(Worker_TP0_DCP0_EP0 pid=1755041)   triton_mm_3 0.0441 ms 42.4% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=32, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=2
+(Worker_TP0_DCP0_EP0 pid=1755041)   triton_mm_7 0.0468 ms 39.9% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=64, BLOCK_M=16, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+(Worker_TP0_DCP0_EP0 pid=1755041)   triton_mm_2 0.0470 ms 39.8% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=32, BLOCK_M=16, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=4
+(Worker_TP0_DCP0_EP0 pid=1755041)   triton_mm_1 0.0475 ms 39.4% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=2, num_warps=2
+(Worker_TP0_DCP0_EP0 pid=1755041) SingleProcess AUTOTUNE benchmarking takes 0.2513 seconds and 1.7958 seconds precompiling for 19 choices
+(Worker_TP1_DCP1_EP1 pid=1755043) /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:3686: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+(Worker_TP1_DCP1_EP1 pid=1755043)   current_out_size = out_base.storage().size()
+(Worker_TP3_DCP3_EP3 pid=1755047) /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/_inductor/select_algorithm.py:3686: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+(Worker_TP3_DCP3_EP3 pid=1755047)   current_out_size = out_base.storage().size()
+(Worker_TP1_DCP1_EP1 pid=1755043) Autotune Choices Stats:
+(Worker_TP1_DCP1_EP1 pid=1755043) {"num_choices": 19, "num_triton_choices": 18, "best_kernel": "mm", "best_time": 0.01865600049495697, "best_triton_pos": 1, "best_triton_time": 0.021695999428629875, "best_triton_kernel": "triton_mm_4", "best_triton_kernel_desc": "ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=2"}
+(Worker_TP1_DCP1_EP1 pid=1755043) AUTOTUNE mm(4x6144, 6144x2624)
+(Worker_TP1_DCP1_EP1 pid=1755043) strides: [6144, 1], [1, 6144]
+(Worker_TP1_DCP1_EP1 pid=1755043) dtypes: torch.bfloat16, torch.bfloat16
+(Worker_TP1_DCP1_EP1 pid=1755043)   mm 0.0187 ms 100.0% 
+(Worker_TP1_DCP1_EP1 pid=1755043)   triton_mm_4 0.0217 ms 86.0% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=2
+(Worker_TP1_DCP1_EP1 pid=1755043)   triton_mm_8 0.0228 ms 81.7% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=4
+(Worker_TP1_DCP1_EP1 pid=1755043)   triton_mm_12 0.0269 ms 69.3% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=4
+(Worker_TP1_DCP1_EP1 pid=1755043)   triton_mm_17 0.0295 ms 63.3% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+(Worker_TP1_DCP1_EP1 pid=1755043)   triton_mm_16 0.0332 ms 56.3% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=64, BLOCK_M=16, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=8
+(Worker_TP1_DCP1_EP1 pid=1755043)   triton_mm_3 0.0443 ms 42.1% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=32, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=2
+(Worker_TP1_DCP1_EP1 pid=1755043)   triton_mm_7 0.0466 ms 40.1% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=64, BLOCK_M=16, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+(Worker_TP1_DCP1_EP1 pid=1755043)   triton_mm_2 0.0473 ms 39.5% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=32, BLOCK_M=16, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=4
+(Worker_TP1_DCP1_EP1 pid=1755043)   triton_mm_1 0.0475 ms 39.3% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=2, num_warps=2
+(Worker_TP1_DCP1_EP1 pid=1755043) SingleProcess AUTOTUNE benchmarking takes 0.2523 seconds and 2.1704 seconds precompiling for 19 choices
+(Worker_TP3_DCP3_EP3 pid=1755047) Autotune Choices Stats:
+(Worker_TP3_DCP3_EP3 pid=1755047) {"num_choices": 19, "num_triton_choices": 18, "best_kernel": "mm", "best_time": 0.018783999606966972, "best_triton_pos": 1, "best_triton_time": 0.02179200015962124, "best_triton_kernel": "triton_mm_4", "best_triton_kernel_desc": "ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=2"}
+(Worker_TP3_DCP3_EP3 pid=1755047) AUTOTUNE mm(4x6144, 6144x2624)
+(Worker_TP3_DCP3_EP3 pid=1755047) strides: [6144, 1], [1, 6144]
+(Worker_TP3_DCP3_EP3 pid=1755047) dtypes: torch.bfloat16, torch.bfloat16
+(Worker_TP3_DCP3_EP3 pid=1755047)   mm 0.0188 ms 100.0% 
+(Worker_TP3_DCP3_EP3 pid=1755047)   triton_mm_4 0.0218 ms 86.2% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=2
+(Worker_TP3_DCP3_EP3 pid=1755047)   triton_mm_8 0.0231 ms 81.4% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=4
+(Worker_TP3_DCP3_EP3 pid=1755047)   triton_mm_12 0.0272 ms 69.1% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=4
+(Worker_TP3_DCP3_EP3 pid=1755047)   triton_mm_17 0.0299 ms 62.8% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+(Worker_TP3_DCP3_EP3 pid=1755047)   triton_mm_16 0.0336 ms 55.9% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=64, BLOCK_M=16, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=8
+(Worker_TP3_DCP3_EP3 pid=1755047)   triton_mm_3 0.0446 ms 42.1% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=32, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=2
+(Worker_TP3_DCP3_EP3 pid=1755047)   triton_mm_7 0.0466 ms 40.3% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=64, BLOCK_M=16, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+(Worker_TP3_DCP3_EP3 pid=1755047)   triton_mm_1 0.0475 ms 39.5% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=2, num_warps=2
+(Worker_TP3_DCP3_EP3 pid=1755047)   triton_mm_2 0.0476 ms 39.4% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=32, BLOCK_M=16, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=4
+(Worker_TP3_DCP3_EP3 pid=1755047) SingleProcess AUTOTUNE benchmarking takes 0.2549 seconds and 2.2380 seconds precompiling for 19 choices
+(Worker_TP2_DCP2_EP2 pid=1755045) Autotune Choices Stats:
+(Worker_TP2_DCP2_EP2 pid=1755045) {"num_choices": 28, "num_triton_choices": 18, "best_kernel": "decompose_k_mm_24_split_3", "best_kernel_desc": "k_split=24", "best_time": 0.007807999849319458, "best_triton_pos": 10, "best_triton_time": 0.01679999940097332, "best_triton_kernel": "triton_mm_26", "best_triton_kernel_desc": "ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=4"}
+(Worker_TP2_DCP2_EP2 pid=1755045) AUTOTUNE mm(4x6144, 6144x160)
+(Worker_TP2_DCP2_EP2 pid=1755045) strides: [6144, 1], [1, 6144]
+(Worker_TP2_DCP2_EP2 pid=1755045) dtypes: torch.bfloat16, torch.bfloat16
+(Worker_TP2_DCP2_EP2 pid=1755045)   decompose_k_mm_24_split_3 0.0078 ms 100.0% k_split=24
+(Worker_TP2_DCP2_EP2 pid=1755045)   decompose_k_mm_32_split_8 0.0079 ms 98.4% k_split=32
+(Worker_TP2_DCP2_EP2 pid=1755045)   decompose_k_mm_16_split_7 0.0080 ms 97.2% k_split=16
+(Worker_TP2_DCP2_EP2 pid=1755045)   decompose_k_mm_12_split_2 0.0083 ms 94.6% k_split=12
+(Worker_TP2_DCP2_EP2 pid=1755045)   mm 0.0084 ms 93.5% 
+(Worker_TP2_DCP2_EP2 pid=1755045)   decompose_k_mm_8_split_6 0.0084 ms 92.4% k_split=8
+(Worker_TP2_DCP2_EP2 pid=1755045)   decompose_k_mm_6_split_1 0.0087 ms 89.7% k_split=6
+(Worker_TP2_DCP2_EP2 pid=1755045)   decompose_k_mm_4_split_5 0.0090 ms 86.5% k_split=4
+(Worker_TP2_DCP2_EP2 pid=1755045)   decompose_k_mm_3_split_0 0.0095 ms 82.2% k_split=3
+(Worker_TP2_DCP2_EP2 pid=1755045)   decompose_k_mm_2_split_4 0.0108 ms 72.4% k_split=2
+(Worker_TP2_DCP2_EP2 pid=1755045) SingleProcess AUTOTUNE benchmarking takes 5.4358 seconds and 0.0003 seconds precompiling for 28 choices
+(Worker_TP0_DCP0_EP0 pid=1755041) Autotune Choices Stats:
+(Worker_TP0_DCP0_EP0 pid=1755041) {"num_choices": 28, "num_triton_choices": 18, "best_kernel": "decompose_k_mm_32_split_8", "best_kernel_desc": "k_split=32", "best_time": 0.007968000136315823, "best_triton_pos": 10, "best_triton_time": 0.01664000004529953, "best_triton_kernel": "triton_mm_26", "best_triton_kernel_desc": "ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=4"}
+(Worker_TP0_DCP0_EP0 pid=1755041) AUTOTUNE mm(4x6144, 6144x160)
+(Worker_TP0_DCP0_EP0 pid=1755041) strides: [6144, 1], [1, 6144]
+(Worker_TP0_DCP0_EP0 pid=1755041) dtypes: torch.bfloat16, torch.bfloat16
+(Worker_TP0_DCP0_EP0 pid=1755041)   decompose_k_mm_32_split_8 0.0080 ms 100.0% k_split=32
+(Worker_TP0_DCP0_EP0 pid=1755041)   decompose_k_mm_24_split_3 0.0081 ms 98.4% k_split=24
+(Worker_TP0_DCP0_EP0 pid=1755041)   decompose_k_mm_12_split_2 0.0082 ms 97.6% k_split=12
+(Worker_TP0_DCP0_EP0 pid=1755041)   mm 0.0083 ms 96.5% 
+(Worker_TP0_DCP0_EP0 pid=1755041)   decompose_k_mm_16_split_7 0.0083 ms 96.5% k_split=16
+(Worker_TP0_DCP0_EP0 pid=1755041)   decompose_k_mm_6_split_1 0.0085 ms 94.0% k_split=6
+(Worker_TP0_DCP0_EP0 pid=1755041)   decompose_k_mm_8_split_6 0.0085 ms 93.6% k_split=8
+(Worker_TP0_DCP0_EP0 pid=1755041)   decompose_k_mm_4_split_5 0.0092 ms 86.2% k_split=4
+(Worker_TP0_DCP0_EP0 pid=1755041)   decompose_k_mm_3_split_0 0.0098 ms 81.4% k_split=3
+(Worker_TP0_DCP0_EP0 pid=1755041)   decompose_k_mm_2_split_4 0.0107 ms 74.6% k_split=2
+(Worker_TP0_DCP0_EP0 pid=1755041) SingleProcess AUTOTUNE benchmarking takes 5.3770 seconds and 0.0003 seconds precompiling for 28 choices
+(Worker_TP2_DCP2_EP2 pid=1755045) Autotune Choices Stats:
+(Worker_TP2_DCP2_EP2 pid=1755045) {"num_choices": 19, "num_triton_choices": 18, "best_kernel": "mm", "best_time": 0.011103999800980091, "best_triton_pos": 1, "best_triton_time": 0.011168000288307667, "best_triton_kernel": "triton_mm_40", "best_triton_kernel_desc": "ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=2"}
+(Worker_TP2_DCP2_EP2 pid=1755045) AUTOTUNE mm(4x2048, 2048x4096)
+(Worker_TP2_DCP2_EP2 pid=1755045) strides: [2048, 1], [1, 2048]
+(Worker_TP2_DCP2_EP2 pid=1755045) dtypes: torch.bfloat16, torch.bfloat16
+(Worker_TP2_DCP2_EP2 pid=1755045)   mm 0.0111 ms 100.0% 
+(Worker_TP2_DCP2_EP2 pid=1755045)   triton_mm_40 0.0112 ms 99.4% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=2
+(Worker_TP2_DCP2_EP2 pid=1755045)   triton_mm_44 0.0115 ms 96.4% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=4
+(Worker_TP2_DCP2_EP2 pid=1755045)   triton_mm_53 0.0136 ms 81.6% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+(Worker_TP2_DCP2_EP2 pid=1755045)   triton_mm_48 0.0138 ms 80.5% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=4
+(Worker_TP2_DCP2_EP2 pid=1755045)   triton_mm_52 0.0147 ms 75.6% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=64, BLOCK_M=16, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=8
+(Worker_TP2_DCP2_EP2 pid=1755045)   triton_mm_39 0.0181 ms 61.4% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=32, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=2
+(Worker_TP2_DCP2_EP2 pid=1755045)   triton_mm_43 0.0183 ms 60.6% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=64, BLOCK_M=16, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+(Worker_TP2_DCP2_EP2 pid=1755045)   triton_mm_37 0.0184 ms 60.3% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=2, num_warps=2
+(Worker_TP2_DCP2_EP2 pid=1755045)   triton_mm_38 0.0188 ms 58.9% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=32, BLOCK_M=16, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=4
+(Worker_TP2_DCP2_EP2 pid=1755045) SingleProcess AUTOTUNE benchmarking takes 0.1464 seconds and 0.0003 seconds precompiling for 19 choices
+(Worker_TP0_DCP0_EP0 pid=1755041) Autotune Choices Stats:
+(Worker_TP0_DCP0_EP0 pid=1755041) {"num_choices": 19, "num_triton_choices": 18, "best_kernel": "triton_mm_40", "best_kernel_desc": "ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=2", "best_time": 0.01104000024497509, "best_triton_pos": 0}
+(Worker_TP0_DCP0_EP0 pid=1755041) AUTOTUNE mm(4x2048, 2048x4096)
+(Worker_TP0_DCP0_EP0 pid=1755041) strides: [2048, 1], [1, 2048]
+(Worker_TP0_DCP0_EP0 pid=1755041) dtypes: torch.bfloat16, torch.bfloat16
+(Worker_TP0_DCP0_EP0 pid=1755041)   triton_mm_40 0.0110 ms 100.0% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=2
+(Worker_TP0_DCP0_EP0 pid=1755041)   mm 0.0113 ms 98.0% 
+(Worker_TP0_DCP0_EP0 pid=1755041)   triton_mm_44 0.0116 ms 94.8% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=4
+(Worker_TP0_DCP0_EP0 pid=1755041)   triton_mm_48 0.0136 ms 81.2% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=4
+(Worker_TP0_DCP0_EP0 pid=1755041)   triton_mm_53 0.0138 ms 80.2% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+(Worker_TP0_DCP0_EP0 pid=1755041)   triton_mm_52 0.0146 ms 75.5% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=64, BLOCK_M=16, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=8
+(Worker_TP0_DCP0_EP0 pid=1755041)   triton_mm_39 0.0181 ms 61.1% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=32, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=2
+(Worker_TP0_DCP0_EP0 pid=1755041)   triton_mm_43 0.0186 ms 59.4% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=64, BLOCK_M=16, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+(Worker_TP0_DCP0_EP0 pid=1755041)   triton_mm_37 0.0189 ms 58.5% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=2, num_warps=2
+(Worker_TP0_DCP0_EP0 pid=1755041)   triton_mm_38 0.0189 ms 58.4% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=32, BLOCK_M=16, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=4
+(Worker_TP0_DCP0_EP0 pid=1755041) SingleProcess AUTOTUNE benchmarking takes 0.1524 seconds and 0.0003 seconds precompiling for 19 choices
+(Worker_TP3_DCP3_EP3 pid=1755047) Autotune Choices Stats:
+(Worker_TP3_DCP3_EP3 pid=1755047) {"num_choices": 28, "num_triton_choices": 18, "best_kernel": "decompose_k_mm_32_split_8", "best_kernel_desc": "k_split=32", "best_time": 0.00825599953532219, "best_triton_pos": 10, "best_triton_time": 0.01692800037562847, "best_triton_kernel": "triton_mm_26", "best_triton_kernel_desc": "ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=4"}
+(Worker_TP3_DCP3_EP3 pid=1755047) AUTOTUNE mm(4x6144, 6144x160)
+(Worker_TP3_DCP3_EP3 pid=1755047) strides: [6144, 1], [1, 6144]
+(Worker_TP3_DCP3_EP3 pid=1755047) dtypes: torch.bfloat16, torch.bfloat16
+(Worker_TP3_DCP3_EP3 pid=1755047)   decompose_k_mm_32_split_8 0.0083 ms 100.0% k_split=32
+(Worker_TP3_DCP3_EP3 pid=1755047)   decompose_k_mm_24_split_3 0.0083 ms 99.6% k_split=24
+(Worker_TP3_DCP3_EP3 pid=1755047)   mm 0.0084 ms 98.1% 
+(Worker_TP3_DCP3_EP3 pid=1755047)   decompose_k_mm_12_split_2 0.0085 ms 97.4% k_split=12
+(Worker_TP3_DCP3_EP3 pid=1755047)   decompose_k_mm_16_split_7 0.0085 ms 97.4% k_split=16
+(Worker_TP3_DCP3_EP3 pid=1755047)   decompose_k_mm_6_split_1 0.0089 ms 92.8% k_split=6
+(Worker_TP3_DCP3_EP3 pid=1755047)   decompose_k_mm_8_split_6 0.0089 ms 92.8% k_split=8
+(Worker_TP3_DCP3_EP3 pid=1755047)   decompose_k_mm_4_split_5 0.0092 ms 89.3% k_split=4
+(Worker_TP3_DCP3_EP3 pid=1755047)   decompose_k_mm_3_split_0 0.0098 ms 84.6% k_split=3
+(Worker_TP3_DCP3_EP3 pid=1755047)   decompose_k_mm_2_split_4 0.0110 ms 75.0% k_split=2
+(Worker_TP3_DCP3_EP3 pid=1755047) SingleProcess AUTOTUNE benchmarking takes 5.6137 seconds and 0.0003 seconds precompiling for 28 choices
+(Worker_TP1_DCP1_EP1 pid=1755043) Autotune Choices Stats:
+(Worker_TP1_DCP1_EP1 pid=1755043) {"num_choices": 28, "num_triton_choices": 18, "best_kernel": "decompose_k_mm_16_split_7", "best_kernel_desc": "k_split=16", "best_time": 0.007872000336647034, "best_triton_pos": 10, "best_triton_time": 0.016575999557971954, "best_triton_kernel": "triton_mm_26", "best_triton_kernel_desc": "ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=4"}
+(Worker_TP3_DCP3_EP3 pid=1755047) Autotune Choices Stats:
+(Worker_TP3_DCP3_EP3 pid=1755047) {"num_choices": 19, "num_triton_choices": 18, "best_kernel": "triton_mm_40", "best_kernel_desc": "ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=2", "best_time": 0.011136000044643879, "best_triton_pos": 0}
+(Worker_TP1_DCP1_EP1 pid=1755043) AUTOTUNE mm(4x6144, 6144x160)
+(Worker_TP1_DCP1_EP1 pid=1755043) strides: [6144, 1], [1, 6144]
+(Worker_TP1_DCP1_EP1 pid=1755043) dtypes: torch.bfloat16, torch.bfloat16
+(Worker_TP1_DCP1_EP1 pid=1755043)   decompose_k_mm_16_split_7 0.0079 ms 100.0% k_split=16
+(Worker_TP1_DCP1_EP1 pid=1755043)   decompose_k_mm_32_split_8 0.0079 ms 99.2% k_split=32
+(Worker_TP1_DCP1_EP1 pid=1755043)   mm 0.0082 ms 96.1% 
+(Worker_TP1_DCP1_EP1 pid=1755043)   decompose_k_mm_12_split_2 0.0082 ms 96.1% k_split=12
+(Worker_TP1_DCP1_EP1 pid=1755043)   decompose_k_mm_24_split_3 0.0082 ms 96.1% k_split=24
+(Worker_TP1_DCP1_EP1 pid=1755043)   decompose_k_mm_8_split_6 0.0084 ms 93.2% k_split=8
+(Worker_TP1_DCP1_EP1 pid=1755043)   decompose_k_mm_6_split_1 0.0085 ms 92.5% k_split=6
+(Worker_TP1_DCP1_EP1 pid=1755043)   decompose_k_mm_4_split_5 0.0090 ms 87.2% k_split=4
+(Worker_TP1_DCP1_EP1 pid=1755043)   decompose_k_mm_3_split_0 0.0092 ms 85.7% k_split=3
+(Worker_TP1_DCP1_EP1 pid=1755043)   decompose_k_mm_2_split_4 0.0105 ms 75.0% k_split=2
+(Worker_TP1_DCP1_EP1 pid=1755043) SingleProcess AUTOTUNE benchmarking takes 5.8436 seconds and 0.0003 seconds precompiling for 28 choices
+(Worker_TP3_DCP3_EP3 pid=1755047) AUTOTUNE mm(4x2048, 2048x4096)
+(Worker_TP3_DCP3_EP3 pid=1755047) strides: [2048, 1], [1, 2048]
+(Worker_TP3_DCP3_EP3 pid=1755047) dtypes: torch.bfloat16, torch.bfloat16
+(Worker_TP3_DCP3_EP3 pid=1755047)   triton_mm_40 0.0111 ms 100.0% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=2
+(Worker_TP3_DCP3_EP3 pid=1755047)   mm 0.0112 ms 99.1% 
+(Worker_TP3_DCP3_EP3 pid=1755047)   triton_mm_44 0.0116 ms 95.9% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=4
+(Worker_TP3_DCP3_EP3 pid=1755047)   triton_mm_53 0.0136 ms 82.1% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+(Worker_TP3_DCP3_EP3 pid=1755047)   triton_mm_48 0.0137 ms 81.1% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=4
+(Worker_TP3_DCP3_EP3 pid=1755047)   triton_mm_52 0.0148 ms 75.3% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=64, BLOCK_M=16, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=8
+(Worker_TP3_DCP3_EP3 pid=1755047)   triton_mm_39 0.0181 ms 61.5% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=32, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=2
+(Worker_TP3_DCP3_EP3 pid=1755047)   triton_mm_43 0.0185 ms 60.2% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=64, BLOCK_M=16, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+(Worker_TP3_DCP3_EP3 pid=1755047)   triton_mm_37 0.0186 ms 60.0% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=2, num_warps=2
+(Worker_TP3_DCP3_EP3 pid=1755047)   triton_mm_38 0.0191 ms 58.4% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=32, BLOCK_M=16, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=4
+(Worker_TP3_DCP3_EP3 pid=1755047) SingleProcess AUTOTUNE benchmarking takes 0.1499 seconds and 0.0003 seconds precompiling for 19 choices
+(Worker_TP1_DCP1_EP1 pid=1755043) Autotune Choices Stats:
+(Worker_TP1_DCP1_EP1 pid=1755043) {"num_choices": 19, "num_triton_choices": 18, "best_kernel": "mm", "best_time": 0.010975999757647514, "best_triton_pos": 1, "best_triton_time": 0.01119999960064888, "best_triton_kernel": "triton_mm_40", "best_triton_kernel_desc": "ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=2"}
+(Worker_TP1_DCP1_EP1 pid=1755043) AUTOTUNE mm(4x2048, 2048x4096)
+(Worker_TP1_DCP1_EP1 pid=1755043) strides: [2048, 1], [1, 2048]
+(Worker_TP1_DCP1_EP1 pid=1755043) dtypes: torch.bfloat16, torch.bfloat16
+(Worker_TP1_DCP1_EP1 pid=1755043)   mm 0.0110 ms 100.0% 
+(Worker_TP1_DCP1_EP1 pid=1755043)   triton_mm_40 0.0112 ms 98.0% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=2
+(Worker_TP1_DCP1_EP1 pid=1755043)   triton_mm_44 0.0116 ms 95.0% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=4
+(Worker_TP1_DCP1_EP1 pid=1755043)   triton_mm_53 0.0134 ms 82.1% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=8
+(Worker_TP1_DCP1_EP1 pid=1755043)   triton_mm_48 0.0137 ms 80.3% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=4, num_warps=4
+(Worker_TP1_DCP1_EP1 pid=1755043)   triton_mm_52 0.0145 ms 75.7% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=64, BLOCK_M=16, BLOCK_N=128, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=8
+(Worker_TP1_DCP1_EP1 pid=1755043)   triton_mm_39 0.0180 ms 60.8% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=32, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=2
+(Worker_TP1_DCP1_EP1 pid=1755043)   triton_mm_43 0.0183 ms 60.1% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=64, BLOCK_M=16, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=3, num_warps=4
+(Worker_TP1_DCP1_EP1 pid=1755043)   triton_mm_37 0.0184 ms 59.8% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=128, BLOCK_M=16, BLOCK_N=32, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=2, num_warps=2
+(Worker_TP1_DCP1_EP1 pid=1755043)   triton_mm_38 0.0188 ms 58.3% ACC_TYPE='tl.float32', ALLOW_TF32=False, BLOCK_K=32, BLOCK_M=16, BLOCK_N=64, EVEN_K=True, GROUP_M=8, USE_FAST_ACCUM=False, num_stages=5, num_warps=4
+(Worker_TP1_DCP1_EP1 pid=1755043) SingleProcess AUTOTUNE benchmarking takes 0.1470 seconds and 0.0003 seconds precompiling for 19 choices
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874] Triton compilation failed: triton_red_fused_3
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874] def triton_red_fused_3(in_ptr0, in_ptr1, in_ptr2, in_ptr3, in_ptr4, in_ptr5, out_ptr2, out_ptr4, out_ptr6, XBLOCK : tl.constexpr, R0_BLOCK : tl.constexpr):
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]     pid = tl.program_id(0)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]     if pid % 3 == 0:
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         pid_offset = pid // 3
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         xnumel = 4
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         r0_numel = 128
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         R0_BLOCK_0: tl.constexpr = 128
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         rnumel = r0_numel
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         RBLOCK: tl.constexpr = R0_BLOCK_0
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         xoffset = pid_offset * XBLOCK
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         xindex = xoffset + tl.arange(0, XBLOCK)[:, None]
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         xmask = xindex < xnumel
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         r0_index = tl.arange(0, R0_BLOCK_0)[None, :]
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         r0_offset = 0
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         r0_mask = r0_index < r0_numel
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         roffset = r0_offset
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         rindex = r0_index
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         r0_1 = r0_index
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         x0 = xindex
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp0 = tl.load(in_ptr0 + (r0_1 + 160*x0), r0_mask & xmask, other=0.0).to(tl.float32)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp25 = tl.load(in_ptr1 + (r0_1), r0_mask, eviction_policy='evict_last', other=0.0)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp27 = tl.load(in_ptr2 + (r0_1), r0_mask, eviction_policy='evict_last', other=0.0)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp1 = tmp0.to(tl.float32)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp2 = tl.broadcast_to(tmp1, [XBLOCK, R0_BLOCK_0])
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp4 = tl.where(r0_mask & xmask, tmp2, 0)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp5 = tl.broadcast_to(tmp2, [XBLOCK, R0_BLOCK_0])
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp7 = tl.where(r0_mask & xmask, tmp5, 0)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp8 = tl.sum(tmp7, 1)[:, None].to(tl.float32)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp9 = tl.full([1, 1], 128, tl.int32)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp10 = tmp9.to(tl.float32)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp11 = (tmp8 / tmp10)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp12 = tmp2 - tmp11
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp13 = tmp12 * tmp12
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp14 = tl.broadcast_to(tmp13, [XBLOCK, R0_BLOCK_0])
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp16 = tl.where(r0_mask & xmask, tmp14, 0)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp17 = tl.sum(tmp16, 1)[:, None].to(tl.float32)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp18 = tmp1 - tmp11
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp19 = tl.full([1, 1], 128.0, tl.float32)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp20 = (tmp17 / tmp19)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp21 = tl.full([1, 1], 1e-06, tl.float32)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp22 = tmp20 + tmp21
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp23 = libdevice.rsqrt(tmp22)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp24 = tmp18 * tmp23
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp26 = tmp24 * tmp25
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp28 = tmp26 + tmp27
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp29 = tmp28.to(tl.float32)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tl.store(out_ptr2 + (r0_1 + 128*x0), tmp29, r0_mask & xmask)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]     elif pid % 3 == 1:
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         pid_offset = pid // 3
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         xnumel = 4
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         r0_numel = 2048
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         rnumel = r0_numel
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         RBLOCK: tl.constexpr = R0_BLOCK
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         xoffset = pid_offset * XBLOCK
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         xindex = xoffset + tl.arange(0, XBLOCK)[:, None]
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         xmask = xindex < xnumel
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         r0_base = tl.arange(0, R0_BLOCK)[None, :]
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         rbase = r0_base
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         x2 = xindex
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         _tmp34 = tl.full([XBLOCK, R0_BLOCK], 0, tl.float32)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         for r0_offset in tl.range(0, r0_numel, R0_BLOCK):
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]             r0_index = r0_offset + r0_base
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]             r0_mask = r0_index < r0_numel
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]             roffset = r0_offset
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]             rindex = r0_index
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]             r0_3 = r0_index
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]             tmp30 = tl.load(in_ptr3 + (r0_3 + 2624*x2), r0_mask & xmask, eviction_policy='evict_last', other=0.0).to(tl.float32)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]             tmp31 = tmp30.to(tl.float32)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]             tmp32 = tmp31 * tmp31
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]             tmp33 = tl.broadcast_to(tmp32, [XBLOCK, R0_BLOCK])
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]             tmp35 = _tmp34 + tmp33
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]             _tmp34 = tl.where(r0_mask & xmask, tmp35, _tmp34)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp34 = tl.sum(_tmp34, 1)[:, None]
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         for r0_offset in tl.range(0, r0_numel, R0_BLOCK):
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]             r0_index = r0_offset + r0_base
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]             r0_mask = r0_index < r0_numel
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]             roffset = r0_offset
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]             rindex = r0_index
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]             r0_3 = r0_index
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]             tmp36 = tl.load(in_ptr3 + (r0_3 + 2624*x2), r0_mask & xmask, eviction_policy='evict_first', other=0.0).to(tl.float32)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]             tmp45 = tl.load(in_ptr4 + (r0_3), r0_mask, eviction_policy='evict_last', other=0.0).to(tl.float32)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]             tmp37 = tmp36.to(tl.float32)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]             tmp38 = tl.full([1, 1], 2048.0, tl.float32)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]             tmp39 = (tmp34 / tmp38)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]             tmp40 = tl.full([1, 1], 1e-05, tl.float32)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]             tmp41 = tmp39 + tmp40
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]             tmp42 = libdevice.rsqrt(tmp41)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]             tmp43 = tmp37 * tmp42
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]             tmp44 = tmp43.to(tl.float32)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]             tmp46 = tmp44 * tmp45
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]             tl.store(out_ptr4 + (r0_3 + 2048*x2), tmp46, r0_mask & xmask)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]     elif pid % 3 == 2:
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         pid_offset = pid // 3
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         xnumel = 4
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         r0_numel = 512
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         R0_BLOCK_2: tl.constexpr = 512
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         rnumel = r0_numel
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         RBLOCK: tl.constexpr = R0_BLOCK_2
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         xoffset = pid_offset * XBLOCK
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         xindex = xoffset + tl.arange(0, XBLOCK)[:, None]
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         xmask = xindex < xnumel
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         r0_index = tl.arange(0, R0_BLOCK_2)[None, :]
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         r0_offset = 0
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         r0_mask = r0_index < r0_numel
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         roffset = r0_offset
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         rindex = r0_index
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         r0_5 = r0_index
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         x4 = xindex
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp47 = tl.load(in_ptr3 + (2048 + r0_5 + 2624*x4), r0_mask & xmask, other=0.0).to(tl.float32)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp61 = tl.load(in_ptr5 + (r0_5), r0_mask, eviction_policy='evict_last', other=0.0).to(tl.float32)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp48 = tmp47.to(tl.float32)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp49 = tmp48 * tmp48
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp50 = tl.broadcast_to(tmp49, [XBLOCK, R0_BLOCK_2])
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp52 = tl.where(r0_mask & xmask, tmp50, 0)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp53 = tl.sum(tmp52, 1)[:, None].to(tl.float32)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp54 = tl.full([1, 1], 512.0, tl.float32)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp55 = (tmp53 / tmp54)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp56 = tl.full([1, 1], 1e-05, tl.float32)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp57 = tmp55 + tmp56
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp58 = libdevice.rsqrt(tmp57)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp59 = tmp48 * tmp58
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp60 = tmp59.to(tl.float32)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tmp62 = tmp60 * tmp61
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         tl.store(out_ptr6 + (r0_5 + 512*x4), tmp62, r0_mask & xmask)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]     else:
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]         pass
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874] 
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874] metadata: {'signature': {'in_ptr0': '*bf16', 'in_ptr1': '*fp32', 'in_ptr2': '*fp32', 'in_ptr3': '*bf16', 'in_ptr4': '*bf16', 'in_ptr5': '*bf16', 'out_ptr2': '*bf16', 'out_ptr4': '*bf16', 'out_ptr6': '*bf16', 'XBLOCK': 'constexpr', 'R0_BLOCK': 'constexpr'}, 'device': 2, 'constants': {'XBLOCK': 4, 'R0_BLOCK': 4}, 'enable_fp_fusion': True, 'configs': [{(0,): [['tt.divisibility', 16]], (1,): [['tt.divisibility', 16]], (2,): [['tt.divisibility', 16]], (3,): [['tt.divisibility', 16]], (4,): [['tt.divisibility', 16]], (5,): [['tt.divisibility', 16]], (6,): [['tt.divisibility', 16]], (7,): [['tt.divisibility', 16]], (8,): [['tt.divisibility', 16]]}], 'device_type': 'cuda', 'num_warps': 8, 'num_stages': 1, 'debug': True, 'cc': 90}
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874] Traceback (most recent call last):
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/_inductor/runtime/triton_heuristics.py", line 872, in _precompile_config
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]     binary = triton.compile(*compile_args, **compile_kwargs)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/triton/compiler/compiler.py", line 248, in compile
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]     fn_cache_manager = get_cache_manager(hash)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]                        ^^^^^^^^^^^^^^^^^^^^^^^
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/triton/runtime/cache.py", line 248, in get_cache_manager
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]     return cls(_base32(key))
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]            ^^^^^^^^^^^^^^^^^
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/triton/runtime/cache.py", line 55, in __init__
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]     os.makedirs(self.cache_dir, exist_ok=True)
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874]   File "<frozen os>", line 225, in makedirs
+(Worker_TP2_DCP2_EP2 pid=1755045) [rank2]:E0801 01:44:44.075000 1755045 torch/_inductor/runtime/triton_heuristics.py:874] OSError: [Errno 122] Disk quota exceeded: '/e/project1/profound/alint77/.replica-caches/v2-off-s4-off/torch_compile_cache/torch_aot_compile/4700a9a87d8e3170c52069ab2ada8fd7818178a1673116c0f50aec38b7197140/inductor_cache/triton/2/BEEUVYVNBXL4WOLVGAEMIKTF477L5OUWORBEZWSBYFP6K6NK4DOA'
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874] Triton compilation failed: triton_red_fused_rms_norm_1
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874] def triton_red_fused_rms_norm_1(in_ptr0, in_ptr1, out_ptr1, xnumel, r0_numel, XBLOCK : tl.constexpr, R0_BLOCK : tl.constexpr):
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]     xnumel = 4
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]     r0_numel = 6144
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]     rnumel = r0_numel
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]     RBLOCK: tl.constexpr = R0_BLOCK
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]     xoffset = tl.program_id(0) * XBLOCK
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]     xindex = xoffset + tl.arange(0, XBLOCK)[:, None]
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]     xmask = xindex < xnumel
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]     r0_base = tl.arange(0, R0_BLOCK)[None, :]
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]     rbase = r0_base
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]     x0 = xindex
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]     _tmp4 = tl.full([XBLOCK, R0_BLOCK], 0, tl.float32)
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]     for r0_offset in tl.range(0, r0_numel, R0_BLOCK):
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]         r0_index = r0_offset + r0_base
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]         r0_mask = r0_index < r0_numel
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]         roffset = r0_offset
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]         rindex = r0_index
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]         r0_1 = r0_index
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]         tmp0 = tl.load(in_ptr0 + (r0_1 + 6144*x0), r0_mask & xmask, eviction_policy='evict_last', other=0.0).to(tl.float32)
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]         tmp1 = tmp0.to(tl.float32)
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]         tmp2 = tmp1 * tmp1
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]         tmp3 = tl.broadcast_to(tmp2, [XBLOCK, R0_BLOCK])
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]         tmp5 = _tmp4 + tmp3
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]         _tmp4 = tl.where(r0_mask & xmask, tmp5, _tmp4)
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]     tmp4 = tl.sum(_tmp4, 1)[:, None]
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]     for r0_offset in tl.range(0, r0_numel, R0_BLOCK):
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]         r0_index = r0_offset + r0_base
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]         r0_mask = r0_index < r0_numel
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]         roffset = r0_offset
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]         rindex = r0_index
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]         r0_1 = r0_index
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]         tmp6 = tl.load(in_ptr0 + (r0_1 + 6144*x0), r0_mask & xmask, eviction_policy='evict_first', other=0.0).to(tl.float32)
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]         tmp15 = tl.load(in_ptr1 + (r0_1), r0_mask, eviction_policy='evict_last', other=0.0).to(tl.float32)
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]         tmp7 = tmp6.to(tl.float32)
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]         tmp8 = tl.full([1, 1], 6144.0, tl.float32)
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]         tmp9 = (tmp4 / tmp8)
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]         tmp10 = tl.full([1, 1], 1e-05, tl.float32)
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]         tmp11 = tmp9 + tmp10
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]         tmp12 = libdevice.rsqrt(tmp11)
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]         tmp13 = tmp7 * tmp12
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]         tmp14 = tmp13.to(tl.float32)
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]         tmp16 = tmp14 * tmp15
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]         tl.store(out_ptr1 + (r0_1 + 6144*x0), tmp16, r0_mask & xmask)
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874] 
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874] metadata: {'signature': {'in_ptr0': '*bf16', 'in_ptr1': '*bf16', 'out_ptr1': '*bf16', 'xnumel': 'i32', 'r0_numel': 'i32', 'XBLOCK': 'constexpr', 'R0_BLOCK': 'constexpr'}, 'device': 1, 'constants': {'XBLOCK': 4, 'R0_BLOCK': 4}, 'native_matmul': False, 'enable_fp_fusion': True, 'launch_pdl': False, 'disable_ftz': False, 'configs': [{(0,): [['tt.divisibility', 16]], (1,): [['tt.divisibility', 16]], (2,): [['tt.divisibility', 16]], (4,): [['tt.divisibility', 16]]}], 'device_type': 'cuda', 'num_warps': 8, 'num_stages': 1, 'debug': True, 'cc': 90}
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874] Traceback (most recent call last):
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/_inductor/runtime/triton_heuristics.py", line 872, in _precompile_config
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]     binary = triton.compile(*compile_args, **compile_kwargs)
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/triton/compiler/compiler.py", line 353, in compile
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]     fn_cache_manager.put_group(metadata_filename, metadata_group)
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/triton/runtime/cache.py", line 96, in put_group
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]     return self.put(grp_contents, grp_filename, binary=False)
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/triton/runtime/cache.py", line 116, in put
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]     with open(temp_path, mode) as f:
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874]          ^^^^^^^^^^^^^^^^^^^^^
+(Worker_TP1_DCP1_EP1 pid=1755043) [rank1]:E0801 01:44:44.415000 1755043 torch/_inductor/runtime/triton_heuristics.py:874] OSError: [Errno 122] Disk quota exceeded: '/e/project1/profound/alint77/.replica-caches/v2-off-s4-off/torch_compile_cache/torch_aot_compile/4700a9a87d8e3170c52069ab2ada8fd7818178a1673116c0f50aec38b7197140/inductor_cache/triton/1/VI5QLT2S7HJFWSKCG32B6T43SQA6TOT7W7YLJ4YCYKHZRFWQRSMQ/tmp.pid_1755043_22bf20fe-ae7a-4bc8-9dd7-d2d0f868efa6/__grp__triton_red_fused_rms_norm_1.json'
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874] Triton compilation failed: triton_red_fused_3
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874] def triton_red_fused_3(in_ptr0, in_ptr1, in_ptr2, in_ptr3, in_ptr4, in_ptr5, out_ptr2, out_ptr4, out_ptr6, XBLOCK : tl.constexpr, R0_BLOCK : tl.constexpr):
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]     pid = tl.program_id(0)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]     if pid % 3 == 0:
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         pid_offset = pid // 3
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         xnumel = 4
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         r0_numel = 128
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         R0_BLOCK_0: tl.constexpr = 128
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         rnumel = r0_numel
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         RBLOCK: tl.constexpr = R0_BLOCK_0
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         xoffset = pid_offset * XBLOCK
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         xindex = xoffset + tl.arange(0, XBLOCK)[:, None]
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         xmask = xindex < xnumel
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         r0_index = tl.arange(0, R0_BLOCK_0)[None, :]
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         r0_offset = 0
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         r0_mask = r0_index < r0_numel
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         roffset = r0_offset
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         rindex = r0_index
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         r0_1 = r0_index
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         x0 = xindex
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp0 = tl.load(in_ptr0 + (r0_1 + 160*x0), r0_mask & xmask, other=0.0).to(tl.float32)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp25 = tl.load(in_ptr1 + (r0_1), r0_mask, eviction_policy='evict_last', other=0.0)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp27 = tl.load(in_ptr2 + (r0_1), r0_mask, eviction_policy='evict_last', other=0.0)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp1 = tmp0.to(tl.float32)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp2 = tl.broadcast_to(tmp1, [XBLOCK, R0_BLOCK_0])
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp4 = tl.where(r0_mask & xmask, tmp2, 0)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp5 = tl.broadcast_to(tmp2, [XBLOCK, R0_BLOCK_0])
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp7 = tl.where(r0_mask & xmask, tmp5, 0)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp8 = tl.sum(tmp7, 1)[:, None].to(tl.float32)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp9 = tl.full([1, 1], 128, tl.int32)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp10 = tmp9.to(tl.float32)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp11 = (tmp8 / tmp10)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp12 = tmp2 - tmp11
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp13 = tmp12 * tmp12
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp14 = tl.broadcast_to(tmp13, [XBLOCK, R0_BLOCK_0])
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp16 = tl.where(r0_mask & xmask, tmp14, 0)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp17 = tl.sum(tmp16, 1)[:, None].to(tl.float32)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp18 = tmp1 - tmp11
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp19 = tl.full([1, 1], 128.0, tl.float32)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp20 = (tmp17 / tmp19)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp21 = tl.full([1, 1], 1e-06, tl.float32)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp22 = tmp20 + tmp21
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp23 = libdevice.rsqrt(tmp22)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp24 = tmp18 * tmp23
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp26 = tmp24 * tmp25
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp28 = tmp26 + tmp27
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp29 = tmp28.to(tl.float32)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tl.store(out_ptr2 + (r0_1 + 128*x0), tmp29, r0_mask & xmask)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]     elif pid % 3 == 1:
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         pid_offset = pid // 3
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         xnumel = 4
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         r0_numel = 2048
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         rnumel = r0_numel
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         RBLOCK: tl.constexpr = R0_BLOCK
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         xoffset = pid_offset * XBLOCK
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         xindex = xoffset + tl.arange(0, XBLOCK)[:, None]
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         xmask = xindex < xnumel
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         r0_base = tl.arange(0, R0_BLOCK)[None, :]
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         rbase = r0_base
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         x2 = xindex
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         _tmp34 = tl.full([XBLOCK, R0_BLOCK], 0, tl.float32)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         for r0_offset in tl.range(0, r0_numel, R0_BLOCK):
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]             r0_index = r0_offset + r0_base
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]             r0_mask = r0_index < r0_numel
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]             roffset = r0_offset
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]             rindex = r0_index
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]             r0_3 = r0_index
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]             tmp30 = tl.load(in_ptr3 + (r0_3 + 2624*x2), r0_mask & xmask, eviction_policy='evict_last', other=0.0).to(tl.float32)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]             tmp31 = tmp30.to(tl.float32)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]             tmp32 = tmp31 * tmp31
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]             tmp33 = tl.broadcast_to(tmp32, [XBLOCK, R0_BLOCK])
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]             tmp35 = _tmp34 + tmp33
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]             _tmp34 = tl.where(r0_mask & xmask, tmp35, _tmp34)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp34 = tl.sum(_tmp34, 1)[:, None]
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         for r0_offset in tl.range(0, r0_numel, R0_BLOCK):
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]             r0_index = r0_offset + r0_base
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]             r0_mask = r0_index < r0_numel
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]             roffset = r0_offset
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]             rindex = r0_index
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]             r0_3 = r0_index
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]             tmp36 = tl.load(in_ptr3 + (r0_3 + 2624*x2), r0_mask & xmask, eviction_policy='evict_first', other=0.0).to(tl.float32)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]             tmp45 = tl.load(in_ptr4 + (r0_3), r0_mask, eviction_policy='evict_last', other=0.0).to(tl.float32)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]             tmp37 = tmp36.to(tl.float32)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]             tmp38 = tl.full([1, 1], 2048.0, tl.float32)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]             tmp39 = (tmp34 / tmp38)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]             tmp40 = tl.full([1, 1], 1e-05, tl.float32)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]             tmp41 = tmp39 + tmp40
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]             tmp42 = libdevice.rsqrt(tmp41)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]             tmp43 = tmp37 * tmp42
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]             tmp44 = tmp43.to(tl.float32)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]             tmp46 = tmp44 * tmp45
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]             tl.store(out_ptr4 + (r0_3 + 2048*x2), tmp46, r0_mask & xmask)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]     elif pid % 3 == 2:
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         pid_offset = pid // 3
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         xnumel = 4
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         r0_numel = 512
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         R0_BLOCK_2: tl.constexpr = 512
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         rnumel = r0_numel
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         RBLOCK: tl.constexpr = R0_BLOCK_2
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         xoffset = pid_offset * XBLOCK
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         xindex = xoffset + tl.arange(0, XBLOCK)[:, None]
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         xmask = xindex < xnumel
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         r0_index = tl.arange(0, R0_BLOCK_2)[None, :]
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         r0_offset = 0
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         r0_mask = r0_index < r0_numel
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         roffset = r0_offset
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         rindex = r0_index
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         r0_5 = r0_index
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         x4 = xindex
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp47 = tl.load(in_ptr3 + (2048 + r0_5 + 2624*x4), r0_mask & xmask, other=0.0).to(tl.float32)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp61 = tl.load(in_ptr5 + (r0_5), r0_mask, eviction_policy='evict_last', other=0.0).to(tl.float32)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp48 = tmp47.to(tl.float32)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp49 = tmp48 * tmp48
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp50 = tl.broadcast_to(tmp49, [XBLOCK, R0_BLOCK_2])
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp52 = tl.where(r0_mask & xmask, tmp50, 0)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp53 = tl.sum(tmp52, 1)[:, None].to(tl.float32)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp54 = tl.full([1, 1], 512.0, tl.float32)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp55 = (tmp53 / tmp54)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp56 = tl.full([1, 1], 1e-05, tl.float32)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp57 = tmp55 + tmp56
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp58 = libdevice.rsqrt(tmp57)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp59 = tmp48 * tmp58
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp60 = tmp59.to(tl.float32)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tmp62 = tmp60 * tmp61
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         tl.store(out_ptr6 + (r0_5 + 512*x4), tmp62, r0_mask & xmask)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]     else:
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]         pass
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874] 
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874] metadata: {'signature': {'in_ptr0': '*bf16', 'in_ptr1': '*fp32', 'in_ptr2': '*fp32', 'in_ptr3': '*bf16', 'in_ptr4': '*bf16', 'in_ptr5': '*bf16', 'out_ptr2': '*bf16', 'out_ptr4': '*bf16', 'out_ptr6': '*bf16', 'XBLOCK': 'constexpr', 'R0_BLOCK': 'constexpr'}, 'device': 0, 'constants': {'XBLOCK': 2, 'R0_BLOCK': 64}, 'enable_fp_fusion': True, 'configs': [{(0,): [['tt.divisibility', 16]], (1,): [['tt.divisibility', 16]], (2,): [['tt.divisibility', 16]], (3,): [['tt.divisibility', 16]], (4,): [['tt.divisibility', 16]], (5,): [['tt.divisibility', 16]], (6,): [['tt.divisibility', 16]], (7,): [['tt.divisibility', 16]], (8,): [['tt.divisibility', 16]]}], 'device_type': 'cuda', 'num_warps': 2, 'num_stages': 1, 'debug': True, 'cc': 90}
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874] Traceback (most recent call last):
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/_inductor/runtime/triton_heuristics.py", line 872, in _precompile_config
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]     binary = triton.compile(*compile_args, **compile_kwargs)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/triton/compiler/compiler.py", line 353, in compile
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]     fn_cache_manager.put_group(metadata_filename, metadata_group)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/triton/runtime/cache.py", line 96, in put_group
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]     return self.put(grp_contents, grp_filename, binary=False)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/triton/runtime/cache.py", line 112, in put
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]     os.makedirs(temp_dir, exist_ok=True)
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874]   File "<frozen os>", line 225, in makedirs
+(Worker_TP0_DCP0_EP0 pid=1755041) [rank0]:E0801 01:44:44.529000 1755041 torch/_inductor/runtime/triton_heuristics.py:874] OSError: [Errno 122] Disk quota exceeded: '/e/project1/profound/alint77/.replica-caches/v2-off-s4-off/torch_compile_cache/torch_aot_compile/4700a9a87d8e3170c52069ab2ada8fd7818178a1673116c0f50aec38b7197140/inductor_cache/triton/0/7VUGULVH6IEIU3BDJOBGCB7LPRR5CXPLSIDUUY4P446HSGKHIOPA/tmp.pid_1755041_6d496ec2-3162-4a3a-9c82-75623c5697c3'
+(EngineCore pid=1754769) Process EngineCore:
+(EngineCore pid=1754769) Traceback (most recent call last):
+(EngineCore pid=1754769)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+(EngineCore pid=1754769)     self.run()
+(EngineCore pid=1754769)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/multiprocessing/process.py", line 108, in run
+(EngineCore pid=1754769)     self._target(*self._args, **self._kwargs)
+(EngineCore pid=1754769)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/core.py", line 1334, in run_engine_core
+(EngineCore pid=1754769)     raise e
+(EngineCore pid=1754769)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/core.py", line 1299, in run_engine_core
+(EngineCore pid=1754769)     engine_core = EngineCoreProc(*args, engine_index=dp_rank, **kwargs)
+(EngineCore pid=1754769)                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=1754769)   File "/e/project1/profound/alint77/vllm/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore pid=1754769)     return func(*args, **kwargs)
+(EngineCore pid=1754769)            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=1754769)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/core.py", line 1065, in __init__
+(EngineCore pid=1754769)     super().__init__(
+(EngineCore pid=1754769)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/core.py", line 136, in __init__
+(EngineCore pid=1754769)     kv_cache_config = self._initialize_kv_caches(vllm_config)
+(EngineCore pid=1754769)                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=1754769)   File "/e/project1/profound/alint77/vllm/vllm/tracing/otel.py", line 178, in sync_wrapper
+(EngineCore pid=1754769)     return func(*args, **kwargs)
+(EngineCore pid=1754769)            ^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=1754769)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/core.py", line 286, in _initialize_kv_caches
+(EngineCore pid=1754769)     available_gpu_memory = self.model_executor.determine_available_memory()
+(EngineCore pid=1754769)                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=1754769)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/abstract.py", line 147, in determine_available_memory
+(EngineCore pid=1754769)     return self.collective_rpc("determine_available_memory")
+(EngineCore pid=1754769)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=1754769)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 405, in collective_rpc
+(EngineCore pid=1754769)     return future if non_block else future.result()
+(EngineCore pid=1754769)                                     ^^^^^^^^^^^^^^^
+(EngineCore pid=1754769)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 91, in result
+(EngineCore pid=1754769)     return super().result()
+(EngineCore pid=1754769)            ^^^^^^^^^^^^^^^^
+(EngineCore pid=1754769)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/concurrent/futures/_base.py", line 449, in result
+(EngineCore pid=1754769)     return self.__get_result()
+(EngineCore pid=1754769)            ^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=1754769)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+(EngineCore pid=1754769)     raise self._exception
+(EngineCore pid=1754769)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 95, in _wait_for_response
+(EngineCore pid=1754769)     response = self.aggregate(self.get_response())
+(EngineCore pid=1754769)                               ^^^^^^^^^^^^^^^^^^^
+(EngineCore pid=1754769)   File "/e/project1/profound/alint77/vllm/vllm/v1/executor/multiproc_executor.py", line 394, in get_response
+(EngineCore pid=1754769)     raise RuntimeError(
+(EngineCore pid=1754769) RuntimeError: Worker failed with error 'RuntimeError: Failed to run autotuning code block: [Errno 122] Disk quota exceeded: '/e/project1/profound/alint77/.replica-caches/v2-off-s4-off/torch_compile_cache/torch_aot_compile/4700a9a87d8e3170c52069ab2ada8fd7818178a1673116c0f50aec38b7197140/inductor_cache/triton/0/7VUGULVH6IEIU3BDJOBGCB7LPRR5CXPLSIDUUY4P446HSGKHIOPA/tmp.pid_1755041_6d496ec2-3162-4a3a-9c82-75623c5697c3'', please check the stack trace above for the root cause
+(APIServer pid=1753892) Traceback (most recent call last):
+(APIServer pid=1753892)   File "/e/project1/profound/alint77/vllm/.venv/bin/vllm", line 10, in <module>
+(APIServer pid=1753892)     sys.exit(main())
+(APIServer pid=1753892)              ^^^^^^
+(APIServer pid=1753892)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/cli/main.py", line 95, in main
+(APIServer pid=1753892)     args.dispatch_function(args)
+(APIServer pid=1753892)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/cli/serve.py", line 162, in cmd
+(APIServer pid=1753892)     uvloop.run(run_server(args))
+(APIServer pid=1753892)   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/uvloop/__init__.py", line 96, in run
+(APIServer pid=1753892)     return __asyncio.run(
+(APIServer pid=1753892)            ^^^^^^^^^^^^^^
+(APIServer pid=1753892)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/asyncio/runners.py", line 195, in run
+(APIServer pid=1753892)     return runner.run(main)
+(APIServer pid=1753892)            ^^^^^^^^^^^^^^^^
+(APIServer pid=1753892)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/asyncio/runners.py", line 118, in run
+(APIServer pid=1753892)     return self._loop.run_until_complete(task)
+(APIServer pid=1753892)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1753892)   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+(APIServer pid=1753892)   File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/uvloop/__init__.py", line 48, in wrapper
+(APIServer pid=1753892)     return await main
+(APIServer pid=1753892)            ^^^^^^^^^^
+(APIServer pid=1753892)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/openai/api_server.py", line 759, in run_server
+(APIServer pid=1753892)     await run_server_worker(listen_address, sock, args, **uvicorn_kwargs)
+(APIServer pid=1753892)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/openai/api_server.py", line 773, in run_server_worker
+(APIServer pid=1753892)     async with build_async_engine_client(
+(APIServer pid=1753892)                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1753892)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/contextlib.py", line 210, in __aenter__
+(APIServer pid=1753892)     return await anext(self.gen)
+(APIServer pid=1753892)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1753892)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/openai/api_server.py", line 139, in build_async_engine_client
+(APIServer pid=1753892)     async with build_async_engine_client_from_engine_args(
+(APIServer pid=1753892)                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1753892)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/contextlib.py", line 210, in __aenter__
+(APIServer pid=1753892)     return await anext(self.gen)
+(APIServer pid=1753892)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1753892)   File "/e/project1/profound/alint77/vllm/vllm/entrypoints/openai/api_server.py", line 175, in build_async_engine_client_from_engine_args
+(APIServer pid=1753892)     async_llm = AsyncLLM.from_vllm_config(
+(APIServer pid=1753892)                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1753892)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/async_llm.py", line 217, in from_vllm_config
+(APIServer pid=1753892)     return cls(
+(APIServer pid=1753892)            ^^^^
+(APIServer pid=1753892)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/async_llm.py", line 146, in __init__
+(APIServer pid=1753892)     self.engine_core = EngineCoreClient.make_async_mp_client(
+(APIServer pid=1753892)                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1753892)   File "/e/project1/profound/alint77/vllm/vllm/tracing/otel.py", line 178, in sync_wrapper
+(APIServer pid=1753892)     return func(*args, **kwargs)
+(APIServer pid=1753892)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1753892)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/core_client.py", line 132, in make_async_mp_client
+(APIServer pid=1753892)     return AsyncMPClient(*client_args)
+(APIServer pid=1753892)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1753892)   File "/e/project1/profound/alint77/vllm/vllm/tracing/otel.py", line 178, in sync_wrapper
+(APIServer pid=1753892)     return func(*args, **kwargs)
+(APIServer pid=1753892)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1753892)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/core_client.py", line 963, in __init__
+(APIServer pid=1753892)     super().__init__(
+(APIServer pid=1753892)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/core_client.py", line 573, in __init__
+(APIServer pid=1753892)     with launch_core_engines(
+(APIServer pid=1753892)          ^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=1753892)   File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/contextlib.py", line 144, in __exit__
+(APIServer pid=1753892)     next(self.gen)
+(APIServer pid=1753892)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/utils.py", line 1213, in launch_core_engines
+(APIServer pid=1753892)     wait_for_engine_startup(
+(APIServer pid=1753892)   File "/e/project1/profound/alint77/vllm/vllm/v1/engine/utils.py", line 1272, in wait_for_engine_startup
+(APIServer pid=1753892)     raise RuntimeError(
+(APIServer pid=1753892) RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 4 leaked shared_memory objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
