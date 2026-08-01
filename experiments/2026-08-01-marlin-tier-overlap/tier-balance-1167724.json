@@ -1,0 +1,28 @@
+{
+ "off": {
+  "layers": 2400,
+  "union_us": 307.95463704427084,
+  "sum_us": 431.09739583333334,
+  "union_over_sum": 0.7143504925354021,
+  "overlap_floor_us": 305.83359708333336,
+  "overlap_floor_ratio": 0.7094303979548319,
+  "overlap_efficiency_us": 2.1210399609374804,
+  "balanced_floor_us": 215.54869791666667,
+  "recoverable_by_balance_us": 90.28489916666669,
+  "tier_imbalance_percent": 39.41848250707424,
+  "start_skew_us": 1.2649686686197916
+ },
+ "exact": {
+  "layers": 2400,
+  "union_us": 309.98829772949216,
+  "sum_us": 441.84760166666666,
+  "union_over_sum": 0.7015728874847437,
+  "overlap_floor_us": 308.0256933333333,
+  "overlap_floor_ratio": 0.6971310745411952,
+  "overlap_efficiency_us": 1.962604396158838,
+  "balanced_floor_us": 220.92380083333333,
+  "recoverable_by_balance_us": 87.10189249999999,
+  "tier_imbalance_percent": 38.61743390855562,
+  "start_skew_us": 1.2343587239583333
+ }
+}
