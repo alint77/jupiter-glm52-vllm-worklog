@@ -43,7 +43,10 @@ repeats="${3:-5}"
 repo=/e/project1/profound/alint77/vllm
 result_dir="${repo}/agent_space/experiments/2026-07-31-replica-scheduling-v2"
 model=/e/fscratch/profound/naeimitabiei1/models/GLM-5.2-AutoRound-W4G64-MTP-e1ba887
-profile="${result_dir}/../2026-07-31-replicated-expert-scheduling/runtime-placements/replicas-1697.json"
+# 985 copies/rank is the validated placement. 1,697 is worth a further 3%%
+# of modelled span but job 1122219 lost a worker loading it, and job 1160995
+# reproduced that here, so it needs its own loader investigation first.
+profile="${result_dir}/../2026-07-31-replicated-expert-scheduling/runtime-placements/replicas-985.json"
 prompts="${repo}/agent_space/experiments/2026-07-29-marlin-smem-monopoly/agentic-prompts.jsonl"
 
 cd "${repo}"
@@ -56,6 +59,17 @@ if [[ "${spec}" == "mtp3" ]]; then
 fi
 batch=$(( seqs * verify_tokens ))
 tag_base="phase3-${SLURM_JOB_ID}-s${seqs}-${spec}"
+# Fail fast on the project1 inode quota. Exhausting it makes a worker die
+# during weight loading with no traceback, which reads like a model or
+# placement fault and costs a full allocation to misdiagnose.
+probe="/e/project1/profound/alint77/.replica-caches/.quota-probe-${SLURM_JOB_ID}"
+mkdir -p "$(dirname "${probe}")"
+if ! touch "${probe}" 2>/dev/null; then
+  echo "project1 quota is exhausted; clear .replica-caches before running" >&2
+  exit 1
+fi
+rm -f "${probe}"
+
 echo "node: $(hostname)  job: ${SLURM_JOB_ID}  seqs: ${seqs}  spec: ${spec}"
 echo "decode batch: ${batch}  repeats: ${repeats}"
 
@@ -79,8 +93,13 @@ start_server() {
   local assignment="$1" tag="$2"
   unset VLLM_USE_V2_MODEL_RUNNER
   export VLLM_SERVER_DEV_MODE=1
-  export VLLM_CACHE_ROOT="/e/project1/profound/alint77/.replica-caches/v2-${assignment}-s${seqs}-${spec}"
-  export TRTLLM_DG_CACHE_DIR="/e/project1/profound/alint77/.replica-caches/v2t-${assignment}-s${seqs}-${spec}"
+  # One cache root per compiled shape, shared by both arms. Replica
+  # assignment does not change the compiled graph's shapes, and a root per
+  # arm is what exhausted the project1 inode quota - which shows up as an
+  # Inductor autotune failure or, worse, a worker that dies during weight
+  # loading with no traceback at all.
+  export VLLM_CACHE_ROOT="/e/project1/profound/alint77/.replica-caches/v2-s${seqs}-${spec}"
+  export TRTLLM_DG_CACHE_DIR="/e/project1/profound/alint77/.replica-caches/v2t-s${seqs}-${spec}"
   export TIERED_MOE_MODEL_PATH="${model}"
   export TIERED_MOE_PLACEMENT_PROFILE="${profile}"
   export VLLM_TIERED_MOE_PROFILE_CAP=1
