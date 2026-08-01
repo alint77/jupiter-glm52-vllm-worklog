@@ -55,7 +55,9 @@ else
   echo "model: project1 fallback - fscratch copy missing or incomplete;" \
        "expect ~12 min slower load. Restage with stage_model_fscratch.sh"
 fi
-export TIERED_MOE_PLACEMENT_PROFILE="${repo_dir}/agent_space/experiments/2026-07-26-autoround-w4g64/hybrid-p0.5-profile.json"
+# Same owners and HBM residency as hybrid-p0.5, plus 985 Grace replica copies
+# per rank that per-step replica assignment can schedule onto.
+export TIERED_MOE_PLACEMENT_PROFILE="${repo_dir}/agent_space/experiments/2026-07-31-replica-scheduling-v2/hybrid-p0.5-replicas-985.json"
 export VLLM_TIERED_MOE_PROFILE_CAP=0
 export TIERED_MOE_HBM_RESERVE_GB=7
 export TIERED_MOE_COMPILATION_CONFIG='{"mode":3,"cudagraph_mode":"FULL_AND_PIECEWISE","cudagraph_capture_sizes":[4,8,12,16],"compile_sizes":[4,8,12,16],"cudagraph_num_of_warmups":1,"pass_config":{"fuse_allreduce_rms":false}}'
@@ -76,6 +78,7 @@ trap cleanup EXIT INT TERM
 agent_space/experiments/2026-07-17-end-to-end-tuning/run-server.sh \
   --speculative-config '{"method":"mtp","num_speculative_tokens":3}' \
   --decode-context-parallel-size 4 \
+  --tiered-moe-replica-assignment exact \
   --max-num-seqs 4 \
   --host 0.0.0.0 \
   --port "${port}" \
