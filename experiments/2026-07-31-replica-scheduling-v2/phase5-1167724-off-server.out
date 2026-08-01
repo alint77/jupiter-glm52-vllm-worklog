@@ -1,0 +1,429 @@
+WARNING 08-01 08:02:52 [argparse_utils.py:422] Found duplicate keys --tiered-moe-host-reserve-gb, --max-num-seqs, --gpu-memory-utilization
+(APIServer pid=867630) INFO 08-01 08:02:52 [api_utils.py:345] 
+(APIServer pid=867630) INFO 08-01 08:02:52 [api_utils.py:345]        █     █     █▄   ▄█
+(APIServer pid=867630) INFO 08-01 08:02:52 [api_utils.py:345]  ▄▄ ▄█ █     █     █ ▀▄▀ █  version 0.23.1rc1.dev1219+gffae5a399.d20260729
+(APIServer pid=867630) INFO 08-01 08:02:52 [api_utils.py:345]   █▄█▀ █     █     █     █  model   /e/fscratch/profound/naeimitabiei1/models/GLM-5.2-AutoRound-W4G64-MTP-e1ba887
+(APIServer pid=867630) INFO 08-01 08:02:52 [api_utils.py:345]    ▀▀  ▀▀▀▀▀ ▀▀▀▀▀ ▀     ▀
+(APIServer pid=867630) INFO 08-01 08:02:52 [api_utils.py:345] 
+(APIServer pid=867630) INFO 08-01 08:02:52 [api_utils.py:273] non-default args: {'model_tag': '/e/fscratch/profound/naeimitabiei1/models/GLM-5.2-AutoRound-W4G64-MTP-e1ba887', 'host': '127.0.0.1', 'port': 8027, 'model': '/e/fscratch/profound/naeimitabiei1/models/GLM-5.2-AutoRound-W4G64-MTP-e1ba887', 'max_model_len': 400000, 'served_model_name': ['glm52-w4a16-tiered'], 'distributed_executor_backend': 'mp', 'numa_bind': True, 'tensor_parallel_size': 4, 'decode_context_parallel_size': 4, 'enable_expert_parallel': True, 'enable_ep_weight_filter': True, 'block_size': 64, 'gpu_memory_utilization': 0.85, 'kv_cache_dtype': 'fp8_ds_mla', 'enable_prefix_caching': False, 'enable_tiered_moe': True, 'tiered_moe_backend': 'uva', 'tiered_moe_placement_profile': '/e/project1/profound/alint77/vllm/agent_space/experiments/2026-07-31-replica-scheduling-v2/../2026-07-31-replicated-expert-scheduling/runtime-placements/replicas-985.json', 'tiered_moe_host_reserve_gb': 16.0, 'mla_cache_tier': 'hbm', 'grace_machine_profile': 'agent_space/profiles/jupiter-gh200-baseline.json', 'max_num_batched_tokens': 8192, 'max_num_seqs': 4, 'speculative_config': {'method': 'mtp', 'num_speculative_tokens': 3}, 'compilation_config': {'mode': <CompilationMode.VLLM_COMPILE: 3>, 'debug_dump_path': None, 'cache_dir': '', 'compile_cache_save_format': 'binary', 'backend': 'inductor', 'custom_ops': [], 'ir_enable_torch_wrap': None, 'splitting_ops': None, 'compile_mm_encoder': False, 'cudagraph_mm_encoder': False, 'encoder_cudagraph_token_budgets': [], 'encoder_cudagraph_max_vision_items_per_batch': 0, 'encoder_cudagraph_max_frames_per_batch': None, 'compile_sizes': [4, 8, 12, 16], 'compile_ranges_endpoints': None, 'inductor_compile_config': {'enable_auto_functionalized_v2': False, 'size_asserts': False, 'alignment_asserts': False, 'scalar_asserts': False, 'combo_kernels': True, 'benchmark_combo_kernel': True}, 'inductor_passes': {}, 'cudagraph_mode': <CUDAGraphMode.FULL_AND_PIECEWISE: (2, 1)>, 'cudagraph_num_of_warmups': 1, 'cudagraph_capture_sizes': [4, 8, 12, 16], 'cudagraph_copy_inputs': False, 'cudagraph_specialize_lora': True, 'use_inductor_graph_partition': None, 'pass_config': {'fuse_allreduce_rms': False}, 'max_cudagraph_capture_size': None, 'dynamic_shapes_config': {'type': <DynamicShapesType.BACKED: 'backed'>, 'evaluate_guards': False, 'assume_32_bit_indexing': False}, 'local_cache_dir': None, 'fast_moe_cold_start': None, 'static_all_moe_layers': []}, 'profiler_config': ProfilerConfig(profiler='torch', torch_profiler_dir='/e/scratch/profound/naeimitabiei1/replica-v2-phase5-1167724-off', torch_profiler_with_stack=False, torch_profiler_with_flops=False, torch_profiler_use_gzip=True, torch_profiler_dump_cuda_time_total=True, torch_profiler_record_shapes=True, torch_profiler_with_memory=False, ignore_frontend=True, delay_iterations=4, max_iterations=40, warmup_iterations=0, active_iterations=5, wait_iterations=0), 'optimization_level': '2'}
+(APIServer pid=867630) WARNING 08-01 08:02:52 [envs.py:2150] Unknown vLLM environment variable detected: VLLM_VENV_DIR
+(APIServer pid=867630) INFO 08-01 08:02:54 [model.py:621] Resolved architecture: GlmMoeDsaForCausalLM
+(APIServer pid=867630) INFO 08-01 08:02:54 [model.py:1786] Using max model len 400000
+(APIServer pid=867630) INFO 08-01 08:03:00 [cache.py:285] Using fp8_ds_mla data type to store kv cache. It reduces the GPU memory footprint and boosts the performance. Meanwhile, it may cause accuracy drop without a proper scaling factor
+(APIServer pid=867630) INFO 08-01 08:03:00 [model.py:621] Resolved architecture: DeepSeekMTPModel
+(APIServer pid=867630) INFO 08-01 08:03:00 [model.py:1786] Using max model len 1048576
+(APIServer pid=867630) WARNING 08-01 08:03:00 [speculative.py:879] Enabling num_speculative_tokens > 1 will run multiple times of forward on same MTP layer,which may result in lower acceptance rate
+(APIServer pid=867630) INFO 08-01 08:03:00 [speculative.py:1078] Overriding draft model max model len from 1048576 to 400000
+(APIServer pid=867630) INFO 08-01 08:03:00 [scheduler.py:252] Chunked prefill is enabled with max_num_batched_tokens=8192.
+(APIServer pid=867630) INFO 08-01 08:03:00 [vllm.py:1096] Asynchronous scheduling is enabled.
+(APIServer pid=867630) INFO 08-01 08:03:00 [kernel.py:295] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+(APIServer pid=867630) INFO 08-01 08:03:03 [numa_utils.py:111] Auto-detected NUMA nodes for GPUs: [0, 1, 2, 3]
+(APIServer pid=867630) INFO 08-01 08:03:03 [numa_utils.py:441] Binding EngineCore subprocess (local_rank=0) to NUMA nodes 0,1,2,3
+(EngineCore pid=868541) INFO 08-01 08:03:13 [core.py:116] Initializing a V1 LLM engine (v0.23.1rc1.dev1219+gffae5a399.d20260729) with config: model='/e/fscratch/profound/naeimitabiei1/models/GLM-5.2-AutoRound-W4G64-MTP-e1ba887', speculative_config=SpeculativeConfig(method='mtp', model='/e/fscratch/profound/naeimitabiei1/models/GLM-5.2-AutoRound-W4G64-MTP-e1ba887', num_spec_tokens=3), tokenizer='/e/fscratch/profound/naeimitabiei1/models/GLM-5.2-AutoRound-W4G64-MTP-e1ba887', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, tokenizer_revision=None, trust_remote_code=False, dtype=torch.bfloat16, max_seq_len=400000, download_dir=None, load_format=auto, tensor_parallel_size=4, pipeline_parallel_size=1, data_parallel_size=1, decode_context_parallel_size=4, dcp_comm_backend=ag_rs, disable_custom_all_reduce=False, quantization=inc, quantization_config=None, enforce_eager=False, enable_return_routed_experts=False, kv_cache_dtype=fp8_ds_mla, device_config=cuda, structured_outputs_config=StructuredOutputsConfig(backend='auto', disable_any_whitespace=False, disable_additional_properties=False, reasoning_parser='', reasoning_parser_plugin='', enable_in_reasoning=False), observability_config=ObservabilityConfig(show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None, kv_cache_metrics=False, kv_cache_metrics_sample=0.01, cudagraph_metrics=False, enable_layerwise_nvtx_tracing=False, enable_mfu_metrics=False, enable_mm_processor_stats=False, enable_logging_iteration_details=False, jit_monitor_mode='warn', jit_monitor_verbose=False), seed=0, served_model_name=glm52-w4a16-tiered, enable_prefix_caching=False, enable_chunked_prefill=True, pooler_config=None, compilation_config={'mode': <CompilationMode.VLLM_COMPILE: 3>, 'debug_dump_path': None, 'cache_dir': '', 'compile_cache_save_format': 'binary', 'backend': 'inductor', 'custom_ops': ['none'], 'ir_enable_torch_wrap': True, 'splitting_ops': ['vllm::unified_attention_with_output', 'vllm::unified_mla_attention_with_output', 'vllm::mamba_mixer2', 'vllm::mamba_mixer', 'vllm::short_conv', 'vllm::linear_attention', 'vllm::plamo2_mamba_mixer', 'vllm::qwen_gdn_attention_core', 'vllm::gdn_attention_core_xpu', 'vllm::olmo_hybrid_gdn_full_forward', 'vllm::kda_attention', 'vllm::sparse_attn_indexer', 'vllm::rocm_aiter_sparse_attn_indexer', 'vllm::deepseek_v4_attention', 'vllm::hpc_rope_norm_forward', 'vllm::unified_kv_cache_update', 'vllm::unified_mla_kv_cache_update'], 'compile_mm_encoder': False, 'cudagraph_mm_encoder': False, 'encoder_cudagraph_token_budgets': [], 'encoder_cudagraph_max_vision_items_per_batch': 0, 'encoder_cudagraph_max_frames_per_batch': None, 'compile_sizes': [8, 16, 4, 12], 'compile_ranges_endpoints': [8192], 'inductor_compile_config': {'enable_auto_functionalized_v2': False, 'size_asserts': False, 'alignment_asserts': False, 'scalar_asserts': False, 'combo_kernels': True, 'benchmark_combo_kernel': True}, 'inductor_passes': {}, 'cudagraph_mode': <CUDAGraphMode.FULL_AND_PIECEWISE: (2, 1)>, 'cudagraph_num_of_warmups': 1, 'cudagraph_capture_sizes': [4, 8, 12, 16], 'cudagraph_copy_inputs': False, 'cudagraph_specialize_lora': True, 'use_inductor_graph_partition': False, 'pass_config': {'fuse_norm_quant': False, 'fuse_act_quant': False, 'fuse_attn_quant': False, 'enable_sp': False, 'fuse_gemm_comms': False, 'fuse_allreduce_rms': False, 'fuse_rope_kvcache_cat_mla': False, 'fuse_act_padding': False}, 'max_cudagraph_capture_size': 16, 'dynamic_shapes_config': {'type': <DynamicShapesType.BACKED: 'backed'>, 'evaluate_guards': False, 'assume_32_bit_indexing': False}, 'local_cache_dir': None, 'fast_moe_cold_start': False, 'static_all_moe_layers': []}, kernel_config=KernelConfig(ir_op_priority=IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native']), enable_flashinfer_autotune=True, enable_cutedsl_warmup=True, enable_bf16x3_router_gemm=False, moe_backend='auto', linear_backend='auto')
+(EngineCore pid=868541) WARNING 08-01 08:03:13 [multiproc_executor.py:1070] Reducing Torch parallelism from 288 threads to 1 to avoid unnecessary CPU contention. Set OMP_NUM_THREADS in the external environment to tune this value as needed.
+(EngineCore pid=868541) INFO 08-01 08:03:13 [multiproc_executor.py:140] DP group leader: node_rank=0, node_rank_within_dp=0, master_addr=127.0.0.1, mq_connect_ip=0.0.0.0 (local), world_size=4, local_world_size=4
+(EngineCore pid=868541) INFO 08-01 08:03:13 [numa_utils.py:363] Binding worker subprocess (local_rank=0, gpu_index=0) to NUMA node 0
+(EngineCore pid=868541) INFO 08-01 08:03:13 [numa_utils.py:363] Binding worker subprocess (local_rank=1, gpu_index=1) to NUMA node 1
+(EngineCore pid=868541) INFO 08-01 08:03:13 [numa_utils.py:363] Binding worker subprocess (local_rank=2, gpu_index=2) to NUMA node 2
+(EngineCore pid=868541) INFO 08-01 08:03:13 [numa_utils.py:363] Binding worker subprocess (local_rank=3, gpu_index=3) to NUMA node 3
+(Worker pid=868811) INFO 08-01 08:03:30 [parallel_state.py:1615] world_size=4 rank=0 local_rank=0 distributed_init_method=tcp://127.0.0.1:36003 backend=nccl
+(Worker pid=868817) INFO 08-01 08:03:30 [parallel_state.py:1615] world_size=4 rank=3 local_rank=3 distributed_init_method=tcp://127.0.0.1:36003 backend=nccl
+(Worker pid=868815) INFO 08-01 08:03:30 [parallel_state.py:1615] world_size=4 rank=2 local_rank=2 distributed_init_method=tcp://127.0.0.1:36003 backend=nccl
+(Worker pid=868813) INFO 08-01 08:03:30 [parallel_state.py:1615] world_size=4 rank=1 local_rank=1 distributed_init_method=tcp://127.0.0.1:36003 backend=nccl
+(Worker pid=868811) INFO 08-01 08:03:40 [pynccl.py:113] vLLM is using nccl==2.28.9
+(Worker pid=868811) WARNING 08-01 08:03:43 [symm_mem.py:106] SymmMemCommunicator: symmetric memory multicast operations are not supported.
+(Worker pid=868815) WARNING 08-01 08:03:43 [symm_mem.py:106] SymmMemCommunicator: symmetric memory multicast operations are not supported.
+(Worker pid=868817) WARNING 08-01 08:03:43 [symm_mem.py:106] SymmMemCommunicator: symmetric memory multicast operations are not supported.
+(Worker pid=868813) WARNING 08-01 08:03:43 [symm_mem.py:106] SymmMemCommunicator: symmetric memory multicast operations are not supported.
+(Worker pid=868811) INFO 08-01 08:03:44 [cuda_communicator.py:264] Using ['CUSTOM', 'PYNCCL'] all-reduce backends (in dispatch order) for group 'tp:0' out of potential backends: ['NCCL_SYMM_MEM', 'QUICK_REDUCE', 'FLASHINFER', 'AITER_CUSTOM', 'CUSTOM', 'SYMM_MEM', 'PYNCCL'].
+(Worker pid=868811) INFO 08-01 08:03:44 [cuda_communicator.py:264] Using ['PYNCCL'] all-reduce backends (in dispatch order) for group 'dcp:0' out of potential backends: ['NCCL_SYMM_MEM', 'QUICK_REDUCE', 'FLASHINFER', 'AITER_CUSTOM', 'CUSTOM', 'SYMM_MEM', 'PYNCCL'].
+(Worker pid=868811) INFO 08-01 08:03:45 [cuda_communicator.py:264] Using ['PYNCCL'] all-reduce backends (in dispatch order) for group 'ep:0' out of potential backends: ['NCCL_SYMM_MEM', 'QUICK_REDUCE', 'FLASHINFER', 'AITER_CUSTOM', 'CUSTOM', 'SYMM_MEM', 'PYNCCL'].
+(Worker pid=868811) INFO 08-01 08:03:45 [cuda_communicator.py:201] Using AgRsAll2AllManager all2all manager.
+(Worker pid=868811) INFO 08-01 08:03:45 [parallel_state.py:1950] rank 0 in world size 4 is assigned as DP rank 0, PP rank 0, PCP rank 0, TP rank 0, EP rank 0, EPLB rank N/A
+(Worker pid=868811) INFO 08-01 08:03:46 [topk_topp_sampler.py:55] Using FlashInfer for top-p & top-k sampling.
+(Worker pid=868811) WARNING 08-01 08:03:46 [__init__.py:204] min_p and logit_bias parameters won't work with speculative decoding.
+(Worker pid=868817) WARNING 08-01 08:03:46 [__init__.py:204] min_p and logit_bias parameters won't work with speculative decoding.
+(Worker pid=868815) WARNING 08-01 08:03:46 [__init__.py:204] min_p and logit_bias parameters won't work with speculative decoding.
+(Worker pid=868813) WARNING 08-01 08:03:46 [__init__.py:204] min_p and logit_bias parameters won't work with speculative decoding.
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:03:46 [gpu_model_runner.py:5248] Starting to load model /e/fscratch/profound/naeimitabiei1/models/GLM-5.2-AutoRound-W4G64-MTP-e1ba887...
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:03:48 [default_loader.py:469] Tiered EP weight filter: ep_size=4, ep_rank=0, loading 64 experts across 76 routed layers
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:03:49 [cuda.py:482] Using FLASHMLA_SPARSE attention backend out of potential backends: ['FLASHMLA_SPARSE'].
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:03:49 [selector.py:174] Using FLASH_ATTN MLA prefill backend.
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:03:49 [deep_gemm.py:175] deep_gemm not found in site-packages, trying vendored vllm.third_party.deep_gemm
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:03:49 [deep_gemm.py:202] DeepGEMM PDL enabled on vllm.third_party.deep_gemm.
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:03:49 [deep_gemm.py:120] DeepGEMM E8M0 enabled on current platform.
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:03:49 [expert_map_manager.py:245] [EP Rank 0/4] Expert parallelism is enabled. Expert placement strategy: linear. Local/global number of experts: 64/256. Experts local to global index map: 0->0, 1->1, 2->2, 3->3, 4->4, 5->5, 6->6, 7->7, 8->8, 9->9, 10->10, 11->11, 12->12, 13->13, 14->14, 15->15, 16->16, 17->17, 18->18, 19->19, 20->20, 21->21, 22->22, 23->23, 24->24, 25->25, 26->26, 27->27, 28->28, 29->29, 30->30, 31->31, 32->32, 33->33, 34->34, 35->35, 36->36, 37->37, 38->38, 39->39, 40->40, 41->41, 42->42, 43->43, 44->44, 45->45, 46->46, 47->47, 48->48, 49->49, 50->50, 51->51, 52->52, 53->53, 54->54, 55->55, 56->56, 57->57, 58->58, 59->59, 60->60, 61->61, 62->62, 63->63.
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:03:49 [int_wna16.py:206] Using 'MARLIN' WNA16 MoE backend.
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:03:54 [weight_utils.py:888] Deferring 14 local experts split across checkpoint shards
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:03:54 [weight_utils.py:901] Filesystem type for checkpoints: GPFS. Checkpoint size: 404.92 GiB. Available RAM: 159.16 GiB.
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:03:54 [weight_utils.py:931] Auto-prefetch is disabled because the filesystem (GPFS) is not a recognized network FS (NFS/Lustre) and the checkpoint size (404.92 GiB) exceeds 90% of available RAM (159.16 GiB).
+(Worker_TP2_DCP2_EP2 pid=868815) INFO 08-01 08:06:09 [kernel.py:295] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:06:09 [tiered_moe_streaming.py:99] Streamed 4800 routed experts into final tiers in 94.59 seconds
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:06:09 [default_loader.py:535] Loading weights took 135.00 seconds
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:06:09 [int_wna16.py:317] Using MoEPrepareAndFinalizeNoDPEPModular
+(Worker_TP1_DCP1_EP1 pid=868813) INFO 08-01 08:06:09 [kernel.py:295] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+(Worker_TP3_DCP3_EP3 pid=868817) INFO 08-01 08:06:09 [kernel.py:295] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:06:09 [gpu_model_runner.py:5272] Loading drafter model...
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:06:09 [vllm.py:1096] Asynchronous scheduling is enabled.
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:06:09 [kernel.py:295] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:06:09 [default_loader.py:441] MTP EP weight filter: ep_size=4, ep_rank=0, loading 64/256 draft experts
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:06:09 [weight_utils.py:888] Deferring 0 local experts split across checkpoint shards
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:06:09 [weight_utils.py:901] Filesystem type for checkpoints: GPFS. Checkpoint size: 404.92 GiB. Available RAM: 201.63 GiB.
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:06:09 [weight_utils.py:931] Auto-prefetch is disabled because the filesystem (GPFS) is not a recognized network FS (NFS/Lustre) and the checkpoint size (404.92 GiB) exceeds 90% of available RAM (201.63 GiB).
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:06:12 [default_loader.py:535] Loading weights took 3.12 seconds
+(Worker_TP2_DCP2_EP2 pid=868815) INFO 08-01 08:06:12 [llm_base_proposer.py:1475] Detected MTP model. Sharing target model embedding weights with the draft model.
+(Worker_TP2_DCP2_EP2 pid=868815) INFO 08-01 08:06:12 [llm_base_proposer.py:1551] Detected MTP model. Sharing target model lm_head weights with the draft model.
+(Worker_TP2_DCP2_EP2 pid=868815) INFO 08-01 08:06:12 [llm_base_proposer.py:1575] Shared target model lm_head with MTP shared_head.head.
+(Worker_TP3_DCP3_EP3 pid=868817) INFO 08-01 08:06:12 [llm_base_proposer.py:1475] Detected MTP model. Sharing target model embedding weights with the draft model.
+(Worker_TP3_DCP3_EP3 pid=868817) INFO 08-01 08:06:12 [llm_base_proposer.py:1551] Detected MTP model. Sharing target model lm_head weights with the draft model.
+(Worker_TP3_DCP3_EP3 pid=868817) INFO 08-01 08:06:12 [llm_base_proposer.py:1575] Shared target model lm_head with MTP shared_head.head.
+(Worker_TP1_DCP1_EP1 pid=868813) INFO 08-01 08:06:12 [llm_base_proposer.py:1475] Detected MTP model. Sharing target model embedding weights with the draft model.
+(Worker_TP1_DCP1_EP1 pid=868813) INFO 08-01 08:06:12 [llm_base_proposer.py:1551] Detected MTP model. Sharing target model lm_head weights with the draft model.
+(Worker_TP1_DCP1_EP1 pid=868813) INFO 08-01 08:06:12 [llm_base_proposer.py:1575] Shared target model lm_head with MTP shared_head.head.
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:06:12 [llm_base_proposer.py:1475] Detected MTP model. Sharing target model embedding weights with the draft model.
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:06:12 [llm_base_proposer.py:1551] Detected MTP model. Sharing target model lm_head weights with the draft model.
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:06:12 [llm_base_proposer.py:1575] Shared target model lm_head with MTP shared_head.head.
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:06:13 [gpu_model_runner.py:5345] Model loading took 63.99 GiB memory and 145.846028 seconds
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:06:30 [backends.py:1094] Using cache directory: /e/project1/profound/alint77/.replica-caches/v2-s4-mtp3/torch_compile_cache/a3a09c8944/rank_0_0/backbone for vLLM's torch.compile
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:06:30 [backends.py:1155] Dynamo bytecode transform time: 17.55 s
+(EngineCore pid=868541) INFO 08-01 08:07:14 [shm_broadcast.py:705] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization).
+(Worker_TP2_DCP2_EP2 pid=868815) INFO 08-01 08:07:31 [decorators.py:311] Directly load AOT compilation from path /e/project1/profound/alint77/.replica-caches/v2-s4-mtp3/torch_compile_cache/torch_aot_compile/c05bd134ed89075d003f89bd851179317598b8ed944fa502d2aae865edc5d608/rank_2_0/model
+(Worker_TP1_DCP1_EP1 pid=868813) INFO 08-01 08:07:33 [decorators.py:311] Directly load AOT compilation from path /e/project1/profound/alint77/.replica-caches/v2-s4-mtp3/torch_compile_cache/torch_aot_compile/c05bd134ed89075d003f89bd851179317598b8ed944fa502d2aae865edc5d608/rank_1_0/model
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:07:33 [backends.py:292] Directly load the compiled graph(s) for compile range (8, 8) from the cache, took 46.636 s
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:07:33 [backends.py:292] Directly load the compiled graph(s) for compile range (16, 16) from the cache, took 46.787 s
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:07:33 [backends.py:292] Directly load the compiled graph(s) for compile range (4, 4) from the cache, took 47.114 s
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:07:34 [backends.py:292] Directly load the compiled graph(s) for compile range (12, 12) from the cache, took 47.397 s
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:07:34 [backends.py:292] Directly load the compiled graph(s) for compile range (1, 8192) from the cache, took 47.662 s
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:07:34 [decorators.py:311] Directly load AOT compilation from path /e/project1/profound/alint77/.replica-caches/v2-s4-mtp3/torch_compile_cache/torch_aot_compile/c05bd134ed89075d003f89bd851179317598b8ed944fa502d2aae865edc5d608/rank_0_0/model
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:07:34 [monitor.py:53] torch.compile took 80.97 s in total
+(Worker_TP3_DCP3_EP3 pid=868817) INFO 08-01 08:07:34 [decorators.py:311] Directly load AOT compilation from path /e/project1/profound/alint77/.replica-caches/v2-s4-mtp3/torch_compile_cache/torch_aot_compile/c05bd134ed89075d003f89bd851179317598b8ed944fa502d2aae865edc5d608/rank_3_0/model
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:07:45 [monitor.py:81] Initial profiling/warmup run took 11.16 s
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:07:45 [backends.py:1094] Using cache directory: /e/project1/profound/alint77/.replica-caches/v2-s4-mtp3/torch_compile_cache/a3a09c8944/rank_0_0/eagle_head for vLLM's torch.compile
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:07:45 [backends.py:1155] Dynamo bytecode transform time: 0.29 s
+(Worker_TP2_DCP2_EP2 pid=868815) INFO 08-01 08:07:58 [decorators.py:311] Directly load AOT compilation from path /e/project1/profound/alint77/.replica-caches/v2-s4-mtp3/torch_compile_cache/torch_aot_compile/8b089897d42659d3f234631b3d13f31484a6e3fc3f0cfbb8ad77a550b9d1de4e/rank_2_0/model
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:07:58 [backends.py:292] Directly load the compiled graph(s) for compile range (8, 8) from the cache, took 1.438 s
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:07:59 [backends.py:292] Directly load the compiled graph(s) for compile range (16, 16) from the cache, took 2.154 s
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:07:59 [backends.py:292] Directly load the compiled graph(s) for compile range (4, 4) from the cache, took 2.523 s
+(Worker_TP3_DCP3_EP3 pid=868817) INFO 08-01 08:07:59 [decorators.py:311] Directly load AOT compilation from path /e/project1/profound/alint77/.replica-caches/v2-s4-mtp3/torch_compile_cache/torch_aot_compile/8b089897d42659d3f234631b3d13f31484a6e3fc3f0cfbb8ad77a550b9d1de4e/rank_3_0/model
+(Worker_TP1_DCP1_EP1 pid=868813) INFO 08-01 08:07:59 [decorators.py:311] Directly load AOT compilation from path /e/project1/profound/alint77/.replica-caches/v2-s4-mtp3/torch_compile_cache/torch_aot_compile/8b089897d42659d3f234631b3d13f31484a6e3fc3f0cfbb8ad77a550b9d1de4e/rank_1_0/model
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:08:00 [backends.py:292] Directly load the compiled graph(s) for compile range (12, 12) from the cache, took 3.422 s
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:08:00 [backends.py:292] Directly load the compiled graph(s) for compile range (1, 8192) from the cache, took 3.670 s
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:08:00 [decorators.py:311] Directly load AOT compilation from path /e/project1/profound/alint77/.replica-caches/v2-s4-mtp3/torch_compile_cache/torch_aot_compile/8b089897d42659d3f234631b3d13f31484a6e3fc3f0cfbb8ad77a550b9d1de4e/rank_0_0/model
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:08:00 [monitor.py:53] torch.compile took 15.13 s in total
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:08:01 [monitor.py:81] Initial profiling/warmup run took 0.59 s
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:08:03 [indexer.py:300] DSA indexer decode path: use_flattening=True (next_n=4, use_fp4_indexer_cache=False)
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:08:03 [gpu_model_runner.py:6591] Skipping FULL CUDA graph memory profiling under DCP (4 graph(s)); estimating from piecewise graphs only
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:08:03 [gpu_model_runner.py:6630] Profiling CUDA graph memory: PIECEWISE=4 (largest=16)
+(Worker_TP2_DCP2_EP2 pid=868815) INFO 08-01 08:08:03 [gpu_model_runner.py:6591] Skipping FULL CUDA graph memory profiling under DCP (4 graph(s)); estimating from piecewise graphs only
+(Worker_TP2_DCP2_EP2 pid=868815) INFO 08-01 08:08:03 [gpu_model_runner.py:6630] Profiling CUDA graph memory: PIECEWISE=4 (largest=16)
+(Worker_TP1_DCP1_EP1 pid=868813) INFO 08-01 08:08:04 [gpu_model_runner.py:6591] Skipping FULL CUDA graph memory profiling under DCP (4 graph(s)); estimating from piecewise graphs only
+(Worker_TP1_DCP1_EP1 pid=868813) INFO 08-01 08:08:04 [gpu_model_runner.py:6630] Profiling CUDA graph memory: PIECEWISE=4 (largest=16)
+(Worker_TP3_DCP3_EP3 pid=868817) INFO 08-01 08:08:04 [gpu_model_runner.py:6591] Skipping FULL CUDA graph memory profiling under DCP (4 graph(s)); estimating from piecewise graphs only
+(Worker_TP3_DCP3_EP3 pid=868817) INFO 08-01 08:08:04 [gpu_model_runner.py:6630] Profiling CUDA graph memory: PIECEWISE=4 (largest=16)
+(EngineCore pid=868541) INFO 08-01 08:08:14 [shm_broadcast.py:705] No available shared memory broadcast block found in 60 seconds. This typically happens when some processes are hanging or doing some time-consuming work (e.g. compilation, weight/kv cache quantization).
+(Worker_TP1_DCP1_EP1 pid=868813) INFO 08-01 08:08:20 [custom_all_reduce.py:213] Registering 320 cuda graph addresses
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:08:24 [custom_all_reduce.py:213] Registering 320 cuda graph addresses
+(Worker_TP2_DCP2_EP2 pid=868815) INFO 08-01 08:08:27 [custom_all_reduce.py:213] Registering 320 cuda graph addresses
+(Worker_TP3_DCP3_EP3 pid=868817) INFO 08-01 08:08:30 [custom_all_reduce.py:213] Registering 320 cuda graph addresses
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:08:31 [gpu_model_runner.py:6755] Estimated CUDA graph memory: 0.23 GiB total
+(Worker_TP2_DCP2_EP2 pid=868815) INFO 08-01 08:08:31 [gpu_model_runner.py:6755] Estimated CUDA graph memory: 0.24 GiB total
+(Worker_TP3_DCP3_EP3 pid=868817) INFO 08-01 08:08:31 [gpu_model_runner.py:6755] Estimated CUDA graph memory: 0.22 GiB total
+(Worker_TP1_DCP1_EP1 pid=868813) INFO 08-01 08:08:31 [gpu_model_runner.py:6755] Estimated CUDA graph memory: 0.23 GiB total
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:08:31 [gpu_worker.py:569] Available KV cache memory: 13.76 GiB
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:08:31 [gpu_worker.py:584] CUDA graph memory profiling is enabled (default since v0.21.0). The current --gpu-memory-utilization=0.8500 is equivalent to --gpu-memory-utilization=0.8476 without CUDA graph memory profiling. To maintain the same effective KV cache size as before, increase --gpu-memory-utilization to 0.8524. To disable, set VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS=0.
+(Worker_TP2_DCP2_EP2 pid=868815) INFO 08-01 08:08:31 [gpu_worker.py:584] CUDA graph memory profiling is enabled (default since v0.21.0). The current --gpu-memory-utilization=0.8500 is equivalent to --gpu-memory-utilization=0.8475 without CUDA graph memory profiling. To maintain the same effective KV cache size as before, increase --gpu-memory-utilization to 0.8525. To disable, set VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS=0.
+(Worker_TP3_DCP3_EP3 pid=868817) INFO 08-01 08:08:31 [gpu_worker.py:584] CUDA graph memory profiling is enabled (default since v0.21.0). The current --gpu-memory-utilization=0.8500 is equivalent to --gpu-memory-utilization=0.8477 without CUDA graph memory profiling. To maintain the same effective KV cache size as before, increase --gpu-memory-utilization to 0.8523. To disable, set VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS=0.
+(Worker_TP1_DCP1_EP1 pid=868813) INFO 08-01 08:08:31 [gpu_worker.py:584] CUDA graph memory profiling is enabled (default since v0.21.0). The current --gpu-memory-utilization=0.8500 is equivalent to --gpu-memory-utilization=0.8476 without CUDA graph memory profiling. To maintain the same effective KV cache size as before, increase --gpu-memory-utilization to 0.8524. To disable, set VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS=0.
+(EngineCore pid=868541) INFO 08-01 08:08:32 [kv_cache_utils.py:2216] GPU KV cache size: 1,600,255 tokens
+(EngineCore pid=868541) INFO 08-01 08:08:32 [kv_cache_utils.py:2217] Maximum concurrency for 400,000 tokens per request: 4.00x
+(Worker_TP2_DCP2_EP2 pid=868815) INFO 08-01 08:08:34 [kernel_warmup.py:65] Warming up ll_bf16 router GEMM kernels.
+(Worker_TP1_DCP1_EP1 pid=868813) INFO 08-01 08:08:34 [kernel_warmup.py:65] Warming up ll_bf16 router GEMM kernels.
+(Worker_TP3_DCP3_EP3 pid=868817) INFO 08-01 08:08:34 [kernel_warmup.py:65] Warming up ll_bf16 router GEMM kernels.
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:08:34 [kernel_warmup.py:65] Warming up ll_bf16 router GEMM kernels.
+(Worker_TP2_DCP2_EP2 pid=868815) INFO 08-01 08:08:43 [cutedsl_warmup.py:97] Skipping CuTeDSL warmup because no compile units were requested.
+(Worker_TP3_DCP3_EP3 pid=868817) INFO 08-01 08:08:43 [cutedsl_warmup.py:97] Skipping CuTeDSL warmup because no compile units were requested.
+(Worker_TP1_DCP1_EP1 pid=868813) INFO 08-01 08:08:43 [cutedsl_warmup.py:97] Skipping CuTeDSL warmup because no compile units were requested.
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:08:43 [cutedsl_warmup.py:97] Skipping CuTeDSL warmup because no compile units were requested.
+(Worker_TP3_DCP3_EP3 pid=868817) INFO 08-01 08:09:06 [custom_all_reduce.py:213] Registering 1268 cuda graph addresses
+(Worker_TP2_DCP2_EP2 pid=868815) INFO 08-01 08:09:06 [custom_all_reduce.py:213] Registering 1268 cuda graph addresses
+(Worker_TP1_DCP1_EP1 pid=868813) INFO 08-01 08:09:06 [custom_all_reduce.py:213] Registering 1268 cuda graph addresses
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:09:06 [custom_all_reduce.py:213] Registering 1268 cuda graph addresses
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:09:06 [gpu_model_runner.py:6823] Graph capturing finished in 23 secs, took 1.62 GiB
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:09:06 [gpu_worker.py:802] CUDA graph pool memory: 1.62 GiB (actual), 0.23 GiB (estimated), difference: 1.39 GiB (85.7%).
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:09:06 [gpu_worker.py:866] Free memory on device (92.47/95.0 GiB) on startup. Desired GPU memory utilization is (0.85, 80.75 GiB). Actual usage is 63.99 GiB for weight, 2.67 GiB for peak activation, 0.1 GiB for non-torch memory, and 1.62 GiB for CUDAGraph memory. Replace gpu_memory_utilization config with `--kv-cache-memory=13120418816` (12.22 GiB) to fit into requested memory, or `--kv-cache-memory=25703527424` (23.94 GiB) to fully utilize gpu memory. Current kv cache memory in use is 13.76 GiB.
+(Worker_TP2_DCP2_EP2 pid=868815) INFO 08-01 08:09:06 [gpu_worker.py:802] CUDA graph pool memory: 1.62 GiB (actual), 0.24 GiB (estimated), difference: 1.38 GiB (85.2%).
+(Worker_TP2_DCP2_EP2 pid=868815) INFO 08-01 08:09:06 [gpu_worker.py:866] Free memory on device (92.49/95.0 GiB) on startup. Desired GPU memory utilization is (0.85, 80.75 GiB). Actual usage is 63.99 GiB for weight, 1.95 GiB for peak activation, 0.13 GiB for non-torch memory, and 1.62 GiB for CUDAGraph memory. Replace gpu_memory_utilization config with `--kv-cache-memory=13863531520` (12.91 GiB) to fit into requested memory, or `--kv-cache-memory=26468529152` (24.65 GiB) to fully utilize gpu memory. Current kv cache memory in use is 14.44 GiB.
+(Worker_TP1_DCP1_EP1 pid=868813) INFO 08-01 08:09:06 [gpu_worker.py:802] CUDA graph pool memory: 1.62 GiB (actual), 0.23 GiB (estimated), difference: 1.39 GiB (86.0%).
+(Worker_TP1_DCP1_EP1 pid=868813) INFO 08-01 08:09:06 [gpu_worker.py:866] Free memory on device (92.46/95.0 GiB) on startup. Desired GPU memory utilization is (0.85, 80.75 GiB). Actual usage is 63.99 GiB for weight, 1.95 GiB for peak activation, 0.1 GiB for non-torch memory, and 1.62 GiB for CUDAGraph memory. Replace gpu_memory_utilization config with `--kv-cache-memory=13890663424` (12.94 GiB) to fit into requested memory, or `--kv-cache-memory=26469315584` (24.65 GiB) to fully utilize gpu memory. Current kv cache memory in use is 14.48 GiB.
+(Worker_TP3_DCP3_EP3 pid=868817) INFO 08-01 08:09:06 [gpu_worker.py:802] CUDA graph pool memory: 1.62 GiB (actual), 0.22 GiB (estimated), difference: 1.4 GiB (86.3%).
+(Worker_TP3_DCP3_EP3 pid=868817) INFO 08-01 08:09:06 [gpu_worker.py:866] Free memory on device (92.46/95.0 GiB) on startup. Desired GPU memory utilization is (0.85, 80.75 GiB). Actual usage is 63.99 GiB for weight, 1.95 GiB for peak activation, 0.09 GiB for non-torch memory, and 1.62 GiB for CUDAGraph memory. Replace gpu_memory_utilization config with `--kv-cache-memory=13902197760` (12.95 GiB) to fit into requested memory, or `--kv-cache-memory=26471347200` (24.65 GiB) to fully utilize gpu memory. Current kv cache memory in use is 14.49 GiB.
+(Worker_TP3_DCP3_EP3 pid=868817) INFO 08-01 08:09:07 [gpu_worker.py:920] Tiered MoE observed HBM reserve: 7.00 GiB free (minimum 5.59 GiB)
+(Worker_TP2_DCP2_EP2 pid=868815) INFO 08-01 08:09:07 [gpu_worker.py:920] Tiered MoE observed HBM reserve: 7.00 GiB free (minimum 5.59 GiB)
+(Worker_TP1_DCP1_EP1 pid=868813) INFO 08-01 08:09:07 [gpu_worker.py:920] Tiered MoE observed HBM reserve: 7.00 GiB free (minimum 5.59 GiB)
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:09:07 [gpu_worker.py:920] Tiered MoE observed HBM reserve: 7.01 GiB free (minimum 5.59 GiB)
+(Worker_TP2_DCP2_EP2 pid=868815) INFO 08-01 08:09:12 [jit_monitor.py:79] Kernel JIT monitor activated; monitored JIT compilations during inference will use mode=warn.
+(Worker_TP1_DCP1_EP1 pid=868813) INFO 08-01 08:09:12 [jit_monitor.py:79] Kernel JIT monitor activated; monitored JIT compilations during inference will use mode=warn.
+(Worker_TP3_DCP3_EP3 pid=868817) INFO 08-01 08:09:12 [jit_monitor.py:79] Kernel JIT monitor activated; monitored JIT compilations during inference will use mode=warn.
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:09:12 [jit_monitor.py:79] Kernel JIT monitor activated; monitored JIT compilations during inference will use mode=warn.
+(EngineCore pid=868541) INFO 08-01 08:09:13 [core.py:340] init engine (profile, create kv cache, warmup model) took 180.21 s (compilation: 96.10 s)
+(EngineCore pid=868541) INFO 08-01 08:09:15 [vllm.py:1096] Asynchronous scheduling is enabled.
+(EngineCore pid=868541) INFO 08-01 08:09:15 [kernel.py:295] Final IR op priority after setting platform defaults: IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native'])
+(APIServer pid=867630) INFO 08-01 08:09:15 [api_server.py:673] Supported tasks: ['generate']
+(APIServer pid=867630) WARNING 08-01 08:09:15 [api_router.py:41] Profiler with mode 'torch' is enabled in the API server. This should ONLY be used for local development!
+(APIServer pid=867630) WARNING 08-01 08:09:15 [__init__.py:36] SECURITY WARNING: Development endpoints are enabled! This should NOT be used in production!
+(APIServer pid=867630) WARNING 08-01 08:09:15 [model.py:1544] Default vLLM sampling parameters have been overridden by the model's `generation_config.json`: `{'temperature': 1.0, 'top_p': 0.95}`. If this is not intended, please relaunch vLLM instance with `--generation-config vllm`.
+(APIServer pid=867630) INFO 08-01 08:09:17 [hf.py:540] Detected the chat template content format to be 'openai'. You can set `--chat-template-content-format` to override this.
+(APIServer pid=867630) INFO 08-01 08:09:17 [api_server.py:677] Starting vLLM server on http://127.0.0.1:8027
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:37] Available routes are:
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /openapi.json, Methods: HEAD, GET
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /docs, Methods: HEAD, GET
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /docs/oauth2-redirect, Methods: HEAD, GET
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /redoc, Methods: HEAD, GET
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /load, Methods: GET
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /version, Methods: GET
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /health, Methods: GET
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /metrics, Methods: GET
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /start_profile, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /stop_profile, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /tokenize, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /detokenize, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /v1/models, Methods: GET
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /ping, Methods: GET
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /ping, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /invocations, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /reset_prefix_cache, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /reset_mm_cache, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /reset_encoder_cache, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /pause, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /resume, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /abort_requests, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /is_paused, Methods: GET
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /init_weight_transfer_engine, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /start_weight_update, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /start_draft_weight_update, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /update_weights, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /finish_weight_update, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /get_world_size, Methods: GET
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /collective_rpc, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /server_info, Methods: GET
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /sleep, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /wake_up, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /is_sleeping, Methods: GET
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /v1/chat/completions, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /v1/chat/completions/batch, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /v1/responses, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /v1/responses/{response_id}, Methods: GET
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /v1/responses/{response_id}/cancel, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /v1/completions, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /v1/messages, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /v1/messages/count_tokens, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /generative_scoring, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /scale_elastic_ep, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /is_scaling_elastic_ep, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /v1/chat/completions/render, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /v1/completions/render, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /v1/chat/completions/derender, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /v1/completions/derender, Methods: POST
+(APIServer pid=867630) INFO 08-01 08:09:17 [launcher.py:46] Route: /inference/v1/generate, Methods: POST
+(APIServer pid=867630) INFO:     127.0.0.1:53022 - "GET /health HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:34200 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:34200 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:34200 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:34202 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:34212 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:34222 - "POST /v1/completions HTTP/1.1" 200 OK
+(Worker_TP0_DCP0_EP0 pid=868811) WARNING 08-01 08:09:50 [jit_monitor.py:135] Triton kernel JIT compilation during inference: _build_prefill_chunk_metadata_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+(Worker_TP0_DCP0_EP0 pid=868811) WARNING 08-01 08:09:50 [jit_monitor.py:135] Triton kernel JIT compilation during inference: _pack_dcp_topk_candidates_triton_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+(Worker_TP0_DCP0_EP0 pid=868811) WARNING 08-01 08:09:51 [jit_monitor.py:135] Triton kernel JIT compilation during inference: eagle_prepare_next_token_padded_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+(Worker_TP0_DCP0_EP0 pid=868811) WARNING 08-01 08:09:51 [jit_monitor.py:135] Triton kernel JIT compilation during inference: eagle_step_slot_mapping_metadata_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+(Worker_TP0_DCP0_EP0 pid=868811) WARNING 08-01 08:09:52 [jit_monitor.py:135] Triton kernel JIT compilation during inference: rejection_greedy_sample_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+(Worker_TP0_DCP0_EP0 pid=868811) WARNING 08-01 08:09:52 [jit_monitor.py:135] Triton kernel JIT compilation during inference: eagle_prepare_inputs_padded_kernel. This causes a latency spike; consider extending warmup to cover this shape/config.
+(APIServer pid=867630) INFO 08-01 08:09:58 [loggers.py:310] Engine 000: Avg prompt throughput: 549.4 tokens/s, Avg generation throughput: 87.3 tokens/s, Running: 4 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.4%, Prefix cache hit rate: 0.0%
+(APIServer pid=867630) INFO 08-01 08:09:58 [metrics.py:120] SpecDecoding metrics: Mean acceptance length: 2.39, Accepted throughput: 11.68 tokens/s, Drafted throughput: 25.25 tokens/s, Accepted: 505 tokens, Drafted: 1092 tokens, Per-position acceptance rate: 0.703, 0.423, 0.261, Avg Draft acceptance rate: 46.2%
+(APIServer pid=867630) INFO:     127.0.0.1:34222 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:34200 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:34202 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:34212 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:34200 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:34222 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:34212 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO 08-01 08:10:08 [loggers.py:310] Engine 000: Avg prompt throughput: 381.4 tokens/s, Avg generation throughput: 153.3 tokens/s, Running: 4 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.2%, Prefix cache hit rate: 0.0%
+(APIServer pid=867630) INFO 08-01 08:10:08 [metrics.py:120] SpecDecoding metrics: Mean acceptance length: 2.81, Accepted throughput: 98.79 tokens/s, Drafted throughput: 164.09 tokens/s, Accepted: 988 tokens, Drafted: 1641 tokens, Per-position acceptance rate: 0.771, 0.581, 0.453, Avg Draft acceptance rate: 60.2%
+(APIServer pid=867630) INFO:     127.0.0.1:34202 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:34200 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:34212 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:34222 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:34202 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO 08-01 08:10:18 [loggers.py:310] Engine 000: Avg prompt throughput: 236.2 tokens/s, Avg generation throughput: 160.6 tokens/s, Running: 1 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.0%, Prefix cache hit rate: 0.0%
+(APIServer pid=867630) INFO 08-01 08:10:18 [metrics.py:120] SpecDecoding metrics: Mean acceptance length: 2.93, Accepted throughput: 106.10 tokens/s, Drafted throughput: 165.30 tokens/s, Accepted: 1061 tokens, Drafted: 1653 tokens, Per-position acceptance rate: 0.831, 0.623, 0.472, Avg Draft acceptance rate: 64.2%
+(APIServer pid=867630) INFO:     127.0.0.1:34200 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:34222 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO 08-01 08:10:20 [api_router.py:23] Starting profiler...
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:10:20 [wrapper.py:23] GPU profiling will start 4 steps after start_profile.
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:10:20 [wrapper.py:30] GPU profiling will stop after 40 worker steps, or when stop_profile is received.
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:10:20 [wrapper.py:174] Torch profiling enabled. Traces will be saved to: /e/scratch/profound/naeimitabiei1/replica-v2-phase5-1167724-off
+(APIServer pid=867630) INFO 08-01 08:10:20 [api_router.py:25] Profiler started.
+(APIServer pid=867630) INFO:     127.0.0.1:49798 - "POST /start_profile HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO 08-01 08:10:28 [loggers.py:310] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 8.4 tokens/s, Running: 0 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.0%, Prefix cache hit rate: 0.0%
+(APIServer pid=867630) INFO 08-01 08:10:28 [metrics.py:120] SpecDecoding metrics: Mean acceptance length: 2.69, Accepted throughput: 5.40 tokens/s, Drafted throughput: 9.60 tokens/s, Accepted: 54 tokens, Drafted: 96 tokens, Per-position acceptance rate: 0.719, 0.562, 0.406, Avg Draft acceptance rate: 56.2%
+(APIServer pid=867630) INFO:     127.0.0.1:49992 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:49992 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:49992 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:50002 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:50012 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:50018 - "POST /v1/completions HTTP/1.1" 200 OK
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:10:33 [wrapper.py:96] Starting profiler after delay...
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:10:36 [wrapper.py:112] Max profiling iterations reached. Stopping profiler...
+(APIServer pid=867630) INFO 08-01 08:10:38 [loggers.py:310] Engine 000: Avg prompt throughput: 549.4 tokens/s, Avg generation throughput: 44.1 tokens/s, Running: 4 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.4%, Prefix cache hit rate: 0.0%
+(APIServer pid=867630) INFO 08-01 08:10:38 [metrics.py:120] SpecDecoding metrics: Mean acceptance length: 2.70, Accepted throughput: 27.50 tokens/s, Drafted throughput: 48.60 tokens/s, Accepted: 275 tokens, Drafted: 486 tokens, Per-position acceptance rate: 0.759, 0.549, 0.389, Avg Draft acceptance rate: 56.6%
+(APIServer pid=867630) INFO 08-01 08:10:48 [loggers.py:310] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 0.0 tokens/s, Running: 4 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.4%, Prefix cache hit rate: 0.0%
+(Worker_TP0_DCP0_EP0 pid=868811) -------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+(Worker_TP0_DCP0_EP0 pid=868811)                                                    Name    Self CPU %      Self CPU   CPU total %     CPU total  CPU time avg     Self CUDA   Self CUDA %    CUDA total  CUDA time avg    # of Calls  
+(Worker_TP0_DCP0_EP0 pid=868811) -------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+(Worker_TP0_DCP0_EP0 pid=868811)                   execute_context_0(0)_generation_4(16)         0.00%       0.000us         0.00%       0.000us       0.000us       10.335s       401.91%       10.335s      51.677ms           200  
+(Worker_TP0_DCP0_EP0 pid=868811) void marlin_moe_wna16::Marlin<1125899906909960l, 112...         0.00%       0.000us         0.00%       0.000us       0.000us        1.405s        54.63%        1.405s     114.781us         12240  
+(Worker_TP0_DCP0_EP0 pid=868811) void vllm::cross_device_reduce_1stage<__nv_bfloat16,...         0.00%       0.000us         0.00%       0.000us       0.000us     374.914ms        14.58%     374.914ms      56.463us          6640  
+(Worker_TP0_DCP0_EP0 pid=868811)                 nvjet_sm90_tst_64x16_64x16_4x1_v_bz_TNT         0.00%       0.000us         0.00%       0.000us       0.000us      85.594ms         3.33%      85.594ms      13.717us          6240  
+(Worker_TP0_DCP0_EP0 pid=868811) ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsSto...         0.00%       0.000us         0.00%       0.000us       0.000us      85.107ms         3.31%      85.107ms      11.198us          7600  
+(Worker_TP0_DCP0_EP0 pid=868811) void sm90::decode::sparse_fp8::flash_fwd_splitkv_mla...         0.00%       0.000us         0.00%       0.000us       0.000us      78.943ms         3.07%      78.943ms      24.365us          3240  
+(Worker_TP0_DCP0_EP0 pid=868811)          nvjet_sm90_tst_64x16_64x16_4x1_v_bz_splitK_TNT         0.00%       0.000us         0.00%       0.000us       0.000us      61.991ms         2.41%      61.991ms       9.999us          6200  
+(Worker_TP0_DCP0_EP0 pid=868811) ncclDevKernel_ReduceScatter_Sum_bf16_RING_LL(ncclDev...         0.00%       0.000us         0.00%       0.000us       0.000us      33.682ms         1.31%      33.682ms      10.396us          3240  
+(Worker_TP0_DCP0_EP0 pid=868811) void vllm::moe::moe_sum_vec_kernel<c10::BFloat16, in...         0.00%       0.000us         0.00%       0.000us       0.000us      27.684ms         1.08%      27.684ms       4.523us          6120  
+(Worker_TP0_DCP0_EP0 pid=868811) void at::native::elementwise_kernel<128, 4, at::nati...         0.00%       0.000us         0.00%       0.000us       0.000us      26.107ms         1.02%      26.107ms       2.642us          9880  
+(Worker_TP0_DCP0_EP0 pid=868811) void smxx::decode::flash_fwd_mla_combine_kernel<cutl...         0.00%       0.000us         0.00%       0.000us       0.000us      25.752ms         1.00%      25.752ms       8.149us          3160  
+(Worker_TP0_DCP0_EP0 pid=868811)                                                aten::mm         0.19%       6.584ms         0.25%       8.822ms      55.137us      22.481ms         0.87%      22.481ms     140.504us           160  
+(Worker_TP0_DCP0_EP0 pid=868811) kernel_cutlass_kernel_vllmmodel_executorkernelsatten...         0.00%       0.000us         0.00%       0.000us       0.000us      21.263ms         0.83%      21.263ms      22.149us           960  
+(Worker_TP0_DCP0_EP0 pid=868811) void vllm::moe::moe_align_block_size_kernel<int>(int...         0.00%       0.000us         0.00%       0.000us       0.000us      21.009ms         0.82%      21.009ms       3.433us          6120  
+(Worker_TP0_DCP0_EP0 pid=868811) void vllm::act_and_mul_kernel<c10::BFloat16, __nv_bf...         0.00%       0.000us         0.00%       0.000us       0.000us      20.103ms         0.78%      20.103ms       3.285us          6120  
+(Worker_TP0_DCP0_EP0 pid=868811)       triton_tem_fused_mm_rms_norm_split_with_sizes_t_5         0.00%       0.000us         0.00%       0.000us       0.000us      17.727ms         0.69%      17.727ms       7.914us          2240  
+(Worker_TP0_DCP0_EP0 pid=868811) void at::native::vectorized_elementwise_kernel<4, at...         0.00%       0.000us         0.00%       0.000us       0.000us      16.862ms         0.66%      16.862ms       1.215us         13880  
+(Worker_TP0_DCP0_EP0 pid=868811)                  nvjet_sm90_tst_192x8_64x8_2x1_v_bz_TNT         0.00%       0.000us         0.00%       0.000us       0.000us      16.833ms         0.65%      16.833ms     140.271us           120  
+(Worker_TP0_DCP0_EP0 pid=868811) void vllm::moe::count_and_sort_expert_tokens_kernel<...         0.00%       0.000us         0.00%       0.000us       0.000us      14.665ms         0.57%      14.665ms       2.396us          6120  
+(Worker_TP0_DCP0_EP0 pid=868811)                  nvjet_sm90_tst_64x8_64x16_1x2_h_bz_TNT         0.00%       0.000us         0.00%       0.000us       0.000us      13.845ms         0.54%      13.845ms       4.381us          3160  
+(Worker_TP0_DCP0_EP0 pid=868811) kernel_cutlass_kernel_vllmmodel_executorkernelslinea...         0.00%       0.000us         0.00%       0.000us       0.000us      13.274ms         0.52%      13.274ms       4.425us          3000  
+(Worker_TP0_DCP0_EP0 pid=868811)                   triton_red_fused_fused_add_rms_norm_2         0.00%       0.000us         0.00%       0.000us       0.000us      13.072ms         0.51%      13.072ms       4.357us          3000  
+(Worker_TP0_DCP0_EP0 pid=868811) void vllm::moe::grouped_topk_fused_small_expert_coun...         0.00%       0.000us         0.00%       0.000us       0.000us      12.214ms         0.47%      12.214ms       3.915us          3120  
+(Worker_TP0_DCP0_EP0 pid=868811)                 nvjet_sm90_tst_64x16_64x16_2x1_v_bz_NNT         0.00%       0.000us         0.00%       0.000us       0.000us      12.122ms         0.47%      12.122ms       3.836us          3160  
+(Worker_TP0_DCP0_EP0 pid=868811)                                           memcpy32_post         0.00%       0.000us         0.00%       0.000us       0.000us      11.208ms         0.44%      11.208ms       1.796us          6240  
+(Worker_TP0_DCP0_EP0 pid=868811)                                 triton_tem_fused_mm_t_5         0.00%       0.000us         0.00%       0.000us       0.000us      11.204ms         0.44%      11.204ms       7.780us          1440  
+(Worker_TP0_DCP0_EP0 pid=868811) void cublasLt::splitKreduce_kernel<32, 16, int, floa...         0.00%       0.000us         0.00%       0.000us       0.000us      11.143ms         0.43%      11.143ms       1.752us          6360  
+(Worker_TP0_DCP0_EP0 pid=868811)                                      triton_red_fused_4         0.00%       0.000us         0.00%       0.000us       0.000us      10.539ms         0.41%      10.539ms       3.561us          2960  
+(Worker_TP0_DCP0_EP0 pid=868811) void at::native::(anonymous namespace)::CatArrayBatc...         0.00%       0.000us         0.00%       0.000us       0.000us       9.529ms         0.37%       9.529ms       2.941us          3240  
+(Worker_TP0_DCP0_EP0 pid=868811) triton_red_fused_fused_add_rms_norm_moe_forward_shar...         0.00%       0.000us         0.00%       0.000us       0.000us       8.476ms         0.33%       8.476ms       2.788us          3040  
+(Worker_TP0_DCP0_EP0 pid=868811)                                        vllm::all_gather         1.49%      52.957ms         3.01%     107.040ms     205.845us       7.839ms         0.30%       9.138ms      17.574us           520  
+(Worker_TP0_DCP0_EP0 pid=868811)               _convert_req_index_to_global_index_kernel         0.00%       0.000us         0.00%       0.000us       0.000us       7.739ms         0.30%       7.739ms       2.389us          3240  
+(Worker_TP0_DCP0_EP0 pid=868811)                                             aten::copy_         1.20%      42.653ms         2.53%      90.072ms      19.246us       6.934ms         0.27%       6.934ms       1.482us          4680  
+(Worker_TP0_DCP0_EP0 pid=868811)                             _correct_attn_cp_out_kernel         0.00%       0.000us         0.00%       0.000us       0.000us       6.663ms         0.26%       6.663ms       2.057us          3240  
+(Worker_TP0_DCP0_EP0 pid=868811)                                 triton_tem_fused_mm_t_3         0.00%       0.000us         0.00%       0.000us       0.000us       6.226ms         0.24%       6.226ms      51.884us           120  
+(Worker_TP0_DCP0_EP0 pid=868811) void vllm::concat_and_cache_ds_mla_kernel<__nv_bfloa...         0.00%       0.000us         0.00%       0.000us       0.000us       5.938ms         0.23%       5.938ms       1.833us          3240  
+(Worker_TP0_DCP0_EP0 pid=868811)                 nvjet_sm90_tst_192x16_64x8_2x1_v_bz_TNT         0.00%       0.000us         0.00%       0.000us       0.000us       5.648ms         0.22%       5.648ms     141.203us            40  
+(Worker_TP0_DCP0_EP0 pid=868811) void at::native::elementwise_kernel<128, 2, at::nati...         0.00%       0.000us         0.00%       0.000us       0.000us       5.079ms         0.20%       5.079ms       1.568us          3240  
+(Worker_TP0_DCP0_EP0 pid=868811)                       triton_poi_fused_mul_silu_slice_0         0.00%       0.000us         0.00%       0.000us       0.000us       4.347ms         0.17%       4.347ms       1.393us          3120  
+(Worker_TP0_DCP0_EP0 pid=868811) void at::native::vectorized_elementwise_kernel<8, at...         0.00%       0.000us         0.00%       0.000us       0.000us       4.063ms         0.16%       4.063ms       1.354us          3000  
+(Worker_TP0_DCP0_EP0 pid=868811)                          _flashmla_C::sparse_decode_fwd         0.22%       7.768ms         0.56%      19.734ms     164.446us       3.906ms         0.15%       3.906ms      32.549us           120  
+(Worker_TP0_DCP0_EP0 pid=868811) void at::native::vectorized_elementwise_kernel<4, at...         0.00%       0.000us         0.00%       0.000us       0.000us       3.650ms         0.14%       3.650ms       1.127us          3240  
+(Worker_TP0_DCP0_EP0 pid=868811)                              triton_poi_fused_add_mul_1         0.00%       0.000us         0.00%       0.000us       0.000us       3.618ms         0.14%       3.618ms       1.190us          3040  
+(Worker_TP0_DCP0_EP0 pid=868811) triton_poi_fused_add_copy_index_select_mul_slice_spl...         0.00%       0.000us         0.00%       0.000us       0.000us       3.561ms         0.14%       3.561ms       1.562us          2280  
+(Worker_TP0_DCP0_EP0 pid=868811) void deep_gemm::sm90_fp8_paged_mqa_logits<1u, 32u, 1...         0.00%       0.000us         0.00%       0.000us       0.000us       3.511ms         0.14%       3.511ms       3.657us           960  
+(Worker_TP0_DCP0_EP0 pid=868811)                                 triton_tem_fused_mm_t_0         0.00%       0.000us         0.00%       0.000us       0.000us       3.370ms         0.13%       3.370ms      21.066us           160  
+(Worker_TP0_DCP0_EP0 pid=868811)                               vllm::sparse_attn_indexer         1.26%      44.933ms         2.76%      97.987ms     816.559us       3.255ms         0.13%       5.846ms      48.715us           120  
+(Worker_TP0_DCP0_EP0 pid=868811)                 nvjet_sm90_tss_64x16_64x16_4x1_v_bz_TNT         0.00%       0.000us         0.00%       0.000us       0.000us       3.013ms         0.12%       3.013ms       3.587us           840  
+(Worker_TP0_DCP0_EP0 pid=868811)                                      triton_poi_fused_3         0.00%       0.000us         0.00%       0.000us       0.000us       3.006ms         0.12%       3.006ms       1.342us          2240  
+(Worker_TP0_DCP0_EP0 pid=868811)                          Memcpy HtoD (Pinned -> Device)         0.00%       0.000us         0.00%       0.000us       0.000us       2.232ms         0.09%       2.232ms       2.232us          1000  
+(Worker_TP0_DCP0_EP0 pid=868811)                                            aten::argmax         0.18%       6.513ms         0.30%      10.800ms      54.001us       2.023ms         0.08%       2.044ms      10.220us           200  
+(Worker_TP0_DCP0_EP0 pid=868811) void at::native::elementwise_kernel<128, 2, at::nati...         0.00%       0.000us         0.00%       0.000us       0.000us       1.951ms         0.08%       1.951ms       2.033us           960  
+(Worker_TP0_DCP0_EP0 pid=868811) void vllm::indexer_k_quant_and_cache_kernel<__nv_bfl...         0.00%       0.000us         0.00%       0.000us       0.000us       1.935ms         0.08%       1.935ms       2.015us           960  
+(Worker_TP0_DCP0_EP0 pid=868811)                  nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT         0.00%       0.000us         0.00%       0.000us       0.000us       1.874ms         0.07%       1.874ms       5.857us           320  
+(Worker_TP0_DCP0_EP0 pid=868811)                                 triton_tem_fused_mm_t_7         0.00%       0.000us         0.00%       0.000us       0.000us       1.848ms         0.07%       1.848ms       7.699us           240  
+(Worker_TP0_DCP0_EP0 pid=868811)                      _fused_indexer_q_rope_quant_kernel         0.00%       0.000us         0.00%       0.000us       0.000us       1.836ms         0.07%       1.836ms       1.913us           960  
+(Worker_TP0_DCP0_EP0 pid=868811) void vllm::cooperative::cooperative_topk_cs4<2048u>(...         0.00%       0.000us         0.00%       0.000us       0.000us       1.605ms         0.06%       1.605ms       1.824us           880  
+(Worker_TP0_DCP0_EP0 pid=868811)           nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT         0.00%       0.000us         0.00%       0.000us       0.000us       1.511ms         0.06%       1.511ms       9.445us           160  
+(Worker_TP0_DCP0_EP0 pid=868811)                 _pack_dcp_topk_candidates_triton_kernel         0.00%       0.000us         0.00%       0.000us       0.000us       1.443ms         0.06%       1.443ms       1.503us           960  
+(Worker_TP0_DCP0_EP0 pid=868811)                                 triton_per_fused_mm_t_3         0.00%       0.000us         0.00%       0.000us       0.000us       1.265ms         0.05%       1.265ms       1.757us           720  
+(Worker_TP0_DCP0_EP0 pid=868811)      triton_red_fused_add_fused_add_rms_norm_rms_norm_3         0.00%       0.000us         0.00%       0.000us       0.000us       1.263ms         0.05%       1.263ms      15.789us            80  
+(Worker_TP0_DCP0_EP0 pid=868811) triton_poi_fused_add_copy_index_select_mul_slice_spl...         0.00%       0.000us         0.00%       0.000us       0.000us       1.168ms         0.05%       1.168ms       1.536us           760  
+(Worker_TP0_DCP0_EP0 pid=868811)                  triton_tem_fused_mm_mul_silu_slice_t_3         0.00%       0.000us         0.00%       0.000us       0.000us       1.108ms         0.04%       1.108ms      13.853us            80  
+(Worker_TP0_DCP0_EP0 pid=868811) void at::native::reduce_kernel<512, 1, at::native::R...         0.00%       0.000us         0.00%       0.000us       0.000us       1.065ms         0.04%       1.065ms       8.875us           120  
+(Worker_TP0_DCP0_EP0 pid=868811)                                    vllm::reduce_scatter         0.39%      13.844ms         0.93%      32.901ms     274.177us       1.047ms         0.04%       1.600ms      13.330us           120  
+(Worker_TP0_DCP0_EP0 pid=868811)                                      triton_poi_fused_6         0.00%       0.000us         0.00%       0.000us       0.000us       1.009ms         0.04%       1.009ms       1.402us           720  
+(Worker_TP0_DCP0_EP0 pid=868811)                          Memcpy DtoD (Device -> Device)         0.00%       0.000us         0.00%       0.000us       0.000us     998.119us         0.04%     998.119us       0.998us          1000  
+(Worker_TP0_DCP0_EP0 pid=868811)                                               aten::bmm         0.24%       8.648ms         0.34%      12.081ms      50.336us     940.139us         0.04%     940.139us       3.917us           240  
+(Worker_TP0_DCP0_EP0 pid=868811) void at::native::unrolled_elementwise_kernel<at::nat...         0.00%       0.000us         0.00%       0.000us       0.000us     846.227us         0.03%     846.227us       3.526us           240  
+(Worker_TP0_DCP0_EP0 pid=868811) smxx::decode::get_mla_metadata_kernel(GetDecodeSched...         0.00%       0.000us         0.00%       0.000us       0.000us     830.318us         0.03%     830.318us       5.189us           160  
+(Worker_TP0_DCP0_EP0 pid=868811)                                               aten::mul         0.22%       7.698ms         0.36%      12.746ms      19.916us     808.942us         0.03%     808.942us       1.264us           640  
+(Worker_TP0_DCP0_EP0 pid=868811)                                             aten::index         0.35%      12.591ms         0.89%      31.524ms      65.675us     775.886us         0.03%       1.127ms       2.347us           480  
+(Worker_TP0_DCP0_EP0 pid=868811) void at::native::reduce_kernel<512, 1, at::native::R...         0.00%       0.000us         0.00%       0.000us       0.000us     709.071us         0.03%     709.071us       8.863us            80  
+(Worker_TP0_DCP0_EP0 pid=868811) void smxx::decode::flash_fwd_mla_combine_kernel<cutl...         0.00%       0.000us         0.00%       0.000us       0.000us     678.121us         0.03%     678.121us       8.477us            80  
+(Worker_TP0_DCP0_EP0 pid=868811)                                 triton_tem_fused_mm_t_4         0.00%       0.000us         0.00%       0.000us       0.000us     656.306us         0.03%     656.306us       8.204us            80  
+(Worker_TP0_DCP0_EP0 pid=868811) void at::native::vectorized_elementwise_kernel<4, at...         0.00%       0.000us         0.00%       0.000us       0.000us     648.183us         0.03%     648.183us       1.013us           640  
+(Worker_TP0_DCP0_EP0 pid=868811)                                               aten::sub         0.28%       9.937ms         0.47%      16.777ms      18.235us     625.496us         0.02%     625.496us       0.680us           920  
+(Worker_TP0_DCP0_EP0 pid=868811)                                               aten::add         0.23%       8.043ms         0.37%      13.098ms      20.465us     574.803us         0.02%     576.339us       0.901us           640  
+(Worker_TP0_DCP0_EP0 pid=868811)                  triton_tem_fused_mm_mul_silu_slice_t_2         0.00%       0.000us         0.00%       0.000us       0.000us     559.351us         0.02%     559.351us      13.984us            40  
+(Worker_TP0_DCP0_EP0 pid=868811)                                              aten::mean         0.06%       2.297ms         0.10%       3.494ms      29.115us     536.408us         0.02%     536.408us       4.470us           120  
+(Worker_TP0_DCP0_EP0 pid=868811) void at::native::reduce_kernel<512, 1, at::native::R...         0.00%       0.000us         0.00%       0.000us       0.000us     536.408us         0.02%     536.408us       4.470us           120  
+(Worker_TP0_DCP0_EP0 pid=868811) void at::native::unrolled_elementwise_kernel<at::nat...         0.00%       0.000us         0.00%       0.000us       0.000us     535.224us         0.02%     535.224us       1.216us           440  
+(Worker_TP0_DCP0_EP0 pid=868811)                                             aten::fill_         0.28%      10.114ms         0.55%      19.375ms      13.455us     533.142us         0.02%     533.142us       0.370us          1440  
+(Worker_TP0_DCP0_EP0 pid=868811)                                      triton_red_fused_6         0.00%       0.000us         0.00%       0.000us       0.000us     487.867us         0.02%     487.867us       2.439us           200  
+(Worker_TP0_DCP0_EP0 pid=868811)                 vllm::unified_mla_attention_with_output         1.71%      60.869ms         6.13%     217.888ms       1.816ms     462.933us         0.02%      10.564ms      88.031us           120  
+(Worker_TP0_DCP0_EP0 pid=868811) void deep_gemm::sched::smxx_paged_mqa_logits_metadat...         0.00%       0.000us         0.00%       0.000us       0.000us     456.311us         0.02%     456.311us       2.852us           160  
+(Worker_TP0_DCP0_EP0 pid=868811)                   triton_red_fused_fused_add_rms_norm_1         0.00%       0.000us         0.00%       0.000us       0.000us     439.928us         0.02%     439.928us       5.499us            80  
+(Worker_TP0_DCP0_EP0 pid=868811) void at::native::vectorized_gather_kernel<16, long>(...         0.00%       0.000us         0.00%       0.000us       0.000us     406.038us         0.02%     406.038us       1.692us           240  
+(Worker_TP0_DCP0_EP0 pid=868811)                                      aten::floor_divide         0.15%       5.257ms         0.34%      12.213ms      30.532us     390.136us         0.02%     390.136us       0.975us           400  
+(Worker_TP0_DCP0_EP0 pid=868811) void at::native::vectorized_elementwise_kernel<4, at...         0.00%       0.000us         0.00%       0.000us       0.000us     390.136us         0.02%     390.136us       1.219us           320  
+(Worker_TP0_DCP0_EP0 pid=868811)                                 triton_per_fused_mm_t_5         0.00%       0.000us         0.00%       0.000us       0.000us     364.629us         0.01%     364.629us       1.823us           200  
+(Worker_TP0_DCP0_EP0 pid=868811)       triton_tem_fused_mm_rms_norm_split_with_sizes_t_6         0.00%       0.000us         0.00%       0.000us       0.000us     327.323us         0.01%     327.323us       8.183us            40  
+(Worker_TP0_DCP0_EP0 pid=868811)                                               aten::cat         0.09%       3.162ms         0.15%       5.240ms      32.750us     325.405us         0.01%     325.405us       2.034us           160  
+(Worker_TP0_DCP0_EP0 pid=868811)                                   cudaStreamIsCapturing         0.05%       1.697ms         0.05%       1.697ms       0.786us     319.482us         0.01%     319.482us       0.148us          2160  
+(Worker_TP0_DCP0_EP0 pid=868811)                                      triton_red_fused_5         0.00%       0.000us         0.00%       0.000us       0.000us     304.186us         0.01%     304.186us       7.605us            40  
+(Worker_TP0_DCP0_EP0 pid=868811) void at::native::index_elementwise_kernel<128, 4, at...         0.00%       0.000us         0.00%       0.000us       0.000us     304.024us         0.01%     304.024us       1.520us           200  
+(Worker_TP0_DCP0_EP0 pid=868811) void at::native::vectorized_elementwise_kernel<4, at...         0.00%       0.000us         0.00%       0.000us       0.000us     299.931us         0.01%     299.931us       0.937us           320  
+(Worker_TP0_DCP0_EP0 pid=868811) void router_gemm_kernel_float_output<__nv_bfloat16, ...         0.00%       0.000us         0.00%       0.000us       0.000us     299.228us         0.01%     299.228us       3.740us            80  
+(Worker_TP0_DCP0_EP0 pid=868811)                  nvjet_sm90_tst_64x8_64x16_2x1_v_bz_NNT         0.00%       0.000us         0.00%       0.000us       0.000us     298.938us         0.01%     298.938us       3.737us            80  
+(Worker_TP0_DCP0_EP0 pid=868811) void at::native::elementwise_kernel<128, 4, at::nati...         0.00%       0.000us         0.00%       0.000us       0.000us     292.921us         0.01%     292.921us       2.441us           120  
+(Worker_TP0_DCP0_EP0 pid=868811) -------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  
+(Worker_TP0_DCP0_EP0 pid=868811) Self CPU time total: 3.553s
+(Worker_TP0_DCP0_EP0 pid=868811) Self CUDA time total: 2.572s
+(Worker_TP0_DCP0_EP0 pid=868811) 
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:10:52 [wrapper.py:66] Profiler stopped successfully.
+(APIServer pid=867630) INFO:     127.0.0.1:50018 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:50002 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:49992 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:50012 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO 08-01 08:10:58 [loggers.py:310] Engine 000: Avg prompt throughput: 228.8 tokens/s, Avg generation throughput: 74.8 tokens/s, Running: 4 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.2%, Prefix cache hit rate: 0.0%
+(APIServer pid=867630) INFO 08-01 08:10:58 [metrics.py:120] SpecDecoding metrics: Mean acceptance length: 2.63, Accepted throughput: 23.25 tokens/s, Drafted throughput: 42.75 tokens/s, Accepted: 465 tokens, Drafted: 855 tokens, Per-position acceptance rate: 0.782, 0.481, 0.368, Avg Draft acceptance rate: 54.4%
+(APIServer pid=867630) INFO:     127.0.0.1:50018 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:50012 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:50002 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:49992 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:50018 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO 08-01 08:11:08 [loggers.py:310] Engine 000: Avg prompt throughput: 188.1 tokens/s, Avg generation throughput: 151.0 tokens/s, Running: 4 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.2%, Prefix cache hit rate: 0.0%
+(APIServer pid=867630) INFO 08-01 08:11:08 [metrics.py:120] SpecDecoding metrics: Mean acceptance length: 2.51, Accepted throughput: 90.90 tokens/s, Drafted throughput: 180.00 tokens/s, Accepted: 909 tokens, Drafted: 1800 tokens, Per-position acceptance rate: 0.710, 0.480, 0.325, Avg Draft acceptance rate: 50.5%
+(APIServer pid=867630) INFO:     127.0.0.1:50012 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:49992 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:50018 - "POST /v1/completions HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:50002 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO:     127.0.0.1:50012 - "GET /metrics HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO 08-01 08:11:17 [api_router.py:31] Stopping profiler...
+(APIServer pid=867630) INFO 08-01 08:11:17 [api_router.py:33] Profiler stopped.
+(APIServer pid=867630) INFO:     127.0.0.1:57620 - "POST /stop_profile HTTP/1.1" 200 OK
+(APIServer pid=867630) INFO 08-01 08:11:18 [loggers.py:310] Engine 000: Avg prompt throughput: 200.7 tokens/s, Avg generation throughput: 139.7 tokens/s, Running: 0 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.0%, Prefix cache hit rate: 0.0%
+(APIServer pid=867630) INFO 08-01 08:11:18 [metrics.py:120] SpecDecoding metrics: Mean acceptance length: 2.85, Accepted throughput: 90.99 tokens/s, Drafted throughput: 147.88 tokens/s, Accepted: 910 tokens, Drafted: 1479 tokens, Per-position acceptance rate: 0.795, 0.604, 0.446, Avg Draft acceptance rate: 61.5%
+(APIServer pid=867630) INFO 08-01 08:11:28 [loggers.py:310] Engine 000: Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 0.0 tokens/s, Running: 0 reqs, Waiting: 0 reqs, GPU KV cache usage: 0.0%, Prefix cache hit rate: 0.0%
+(APIServer pid=867630) INFO 08-01 08:11:47 [launcher.py:100] [shutdown] API server: shutdown triggered
+(APIServer pid=867630) INFO 08-01 08:11:47 [launcher.py:116] [shutdown] API server: stopping engine client mode=abort timeout=0s
+(APIServer pid=867630) INFO 08-01 08:11:47 [core_client.py:655] [shutdown] MPClient: start timeout=0s
+(APIServer pid=867630) INFO 08-01 08:11:47 [core_client.py:657] [shutdown] MPClient: stopping engine manager
+(APIServer pid=867630) WARNING 08-01 08:11:47 [utils.py:626] [shutdown] Process manager: force killing remaining processes count=1
+(EngineCore pid=868541) INFO 08-01 08:11:47 [core.py:1313] [shutdown] EngineCore: trigger received signal=SIGTERM
+(EngineCore pid=868541) INFO 08-01 08:11:47 [core.py:1432] [shutdown] EngineCore: start mode=abort timeout=0s
+(EngineCore pid=868541) INFO 08-01 08:11:47 [core.py:1463] [shutdown] EngineCore: request processing complete; starting resource teardown
+(EngineCore pid=868541) INFO 08-01 08:11:47 [core.py:1326] [shutdown] EngineCore: exiting busy loop
+(EngineCore pid=868541) INFO 08-01 08:11:47 [multiproc_executor.py:429] [shutdown] Executor: waiting for worker exit count=4
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:11:47 [multiproc_executor.py:793] Parent process exited, terminating worker queues
+(Worker_TP0_DCP0_EP0 pid=868811) INFO 08-01 08:11:47 [wrapper.py:142] Shutting down profiler
+(APIServer pid=867630) INFO 08-01 08:11:47 [core_client.py:659] [shutdown] MPClient: engine manager stopped
+(APIServer pid=867630) INFO 08-01 08:11:47 [core_client.py:660] [shutdown] MPClient: cleaning up background resources
+(APIServer pid=867630) INFO 08-01 08:11:47 [core_client.py:662] [shutdown] MPClient: complete
+(APIServer pid=867630) INFO 08-01 08:11:47 [launcher.py:125] [shutdown] API server: engine client stopped
+(APIServer pid=867630) INFO 08-01 08:11:47 [launcher.py:128] [shutdown] API server: signalling HTTP server shutdown
+(APIServer pid=867630) INFO 08-01 08:11:47 [launcher.py:149] [shutdown] API server: shutting down FastAPI HTTP server

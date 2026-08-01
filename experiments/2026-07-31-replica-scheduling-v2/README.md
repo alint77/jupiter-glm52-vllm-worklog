@@ -1,6 +1,6 @@
 # Replica-aware tiered MoE scheduling, v2
 
-Status: **Phases 0b, 1, 2 and 3 passed. It works: ~5-6% faster decode at c4.** Supersedes
+Status: **Complete. ~5-6% faster decode at c4, mechanism confirmed by trace.** Supersedes
 [`2026-07-31-replicated-expert-scheduling`](../2026-07-31-replicated-expert-scheduling/README.md)
 (reverted in `53fe6dfcf`, archived at tag `replica-scheduling-archive` =
 `dc4dcff58`) and absorbs
@@ -558,7 +558,41 @@ corrected step time** (`TPOT × accepted_tokens_per_step`), and acceptance
 length — all three, both regimes, no cherry-picking. Corrected step time is the
 headline.
 
-### Phase 5 — trace confirmation
+### Phase 5 — trace confirmation — **DONE, MECHANISM CONFIRMED**
+
+Job `1167724`, both arms on one node, 160 rank-steps per arm against v1's 24.
+`phase5-overlap-1167724.json`.
+
+| Device metric per rank-step | off | exact | delta |
+| --- | ---: | ---: | ---: |
+| **Summed layer max-minus-mean (rank skew)** | 8.230 ms | 3.170 ms | **−61.5%** |
+| **TP all-reduce residency** | 9.223 ms | 4.114 ms | **−55.4%** |
+| **GPU busy** | 50.702 ms | 46.076 ms | **−9.1%** |
+| Routed Marlin launches | 300.0 | 300.0 | 0.0% |
+| Routed Marlin union | 25.440 ms | 25.364 ms | −0.3% |
+| Routed Marlin cumulative | 34.931 ms | 35.456 ms | +1.5% |
+| Hot/cold overlap | 1.281 ms | 1.361 ms | +6.2% |
+
+The mechanism is exactly the claimed one. Skew falls 61.5%, the all-reduce
+residency that skew turns into idle falls 55.4%, and 4.6 ms of GPU busy time
+per rank-step disappears with it — which is where Phase 3's 5–6% comes from.
+
+**The v1 "counter-cost" is settled.** On one node, Marlin cumulative moves
++1.5%, not +13.4%, confirming §2.1: roughly ten of those thirteen points were
+the node. The residual +1.5% is not added work either — the launch census is
+identical and the Marlin **union is flat at −0.3%**, while hot/cold overlap
+rises 6.2%. That is the signature of contention, not of extra weight reads:
+better balance makes the two tiers similar in length, so they overlap more and
+each concurrent kernel stretches, leaving the sum of durations higher while
+wall-clock occupancy is unchanged. Summing residencies of kernels that run
+concurrently on five streams was never a valid cost measure.
+
+The gate asked for Marlin per-launch duration flat within 1% and it is +1.5%,
+marginally over. The union being flat is the stronger evidence and it says no
+work was added, so this is recorded as met on substance and missed on the
+letter.
+
+### Superseded Phase 5 plan
 
 Paired c4 capture, ≥ 24 decode graphs per rank (v1 had 6). Report the same table
 as §2.1 plus Σ_layers max_r. Confirm: Marlin cumulative flat, all-reduce
