@@ -29,6 +29,8 @@ RANK_RE = re.compile(r"_rank(\d+)\.")
 GPU_CATEGORIES = {"kernel", "gpu_memcpy", "gpu_memset", "gpu_user_annotation"}
 RUNTIME_CATEGORIES = {"cuda_runtime", "cuda_driver"}
 MARLIN = "marlin_moe_wna16"
+ALLREDUCE = "cross_device_reduce"
+TOPK_ANCHOR = "grouped_topk"
 
 
 def parse_args() -> argparse.Namespace:
@@ -130,8 +132,40 @@ def rank_steps(path: Path) -> list[dict]:
                 "union_us": union_us(spans),
             }
         all_marlin = [s for spans in marlin_by_stream.values() for s in spans]
+        allreduce = [
+            (float(e["ts"]), float(e["ts"] + e["dur"]))
+            for e in ops
+            if ALLREDUCE in e["name"]
+        ]
+        # Per-layer device spans, anchored on the router, so the same layer can
+        # be compared across ranks. Rank skew shows up as the spread of these.
+        anchors = sorted(
+            (e for e in ops if TOPK_ANCHOR in e["name"]), key=lambda e: e["ts"]
+        )
+        graph_end = max(float(e["ts"] + e["dur"]) for e in ops)
+        layer_spans = []
+        for index, anchor in enumerate(anchors):
+            stop = (
+                float(anchors[index + 1]["ts"])
+                if index + 1 < len(anchors)
+                else graph_end
+            )
+            segment = [
+                e
+                for e in ops
+                if float(anchor["ts"]) <= float(e["ts"]) < stop
+                and MARLIN in e["name"]
+            ]
+            if not segment:
+                continue
+            start = min(float(e["ts"]) for e in segment)
+            finish = max(float(e["ts"] + e["dur"]) for e in segment)
+            layer_spans.append(finish - start)
         steps.append(
             {
+                "allreduce_us": sum(hi - lo for lo, hi in allreduce),
+                "allreduce_calls": len(allreduce),
+                "layer_spans_us": layer_spans,
                 "marlin_launches": len(all_marlin),
                 "marlin_streams": len(marlin_by_stream),
                 "gpu_busy_us": union_us(
@@ -152,10 +186,37 @@ def rank_steps(path: Path) -> list[dict]:
     return steps
 
 
+def _skew_ms(per_rank: list[list[dict]]) -> float:
+    """Sum over layers of (max - mean) of the layer span *across ranks*.
+
+    Must be grouped by step: pooling every rank-step together would fold
+    step-to-step variation into the spread and overstate it roughly twofold.
+
+    This measures removable idle, not the critical path - lowering a
+    non-critical rank's span does not shorten the step - so read it alongside
+    the all-reduce residency and the end-to-end step time.
+    """
+    if len(per_rank) < 2:
+        return 0.0
+    steps = min(len(rank) for rank in per_rank)
+    if steps == 0:
+        return 0.0
+    total = 0.0
+    for step in range(steps):
+        spans = [rank[step]["layer_spans_us"] for rank in per_rank]
+        depth = min(len(s) for s in spans)
+        for layer in range(depth):
+            values = [s[layer] for s in spans]
+            total += max(values) - sum(values) / len(values)
+    return total / steps / 1000.0
+
+
 def summarize(directory: Path) -> dict:
-    flat: list[dict] = []
-    for path in sorted(Path(directory).glob("*.pt.trace.json.gz")):
-        flat.extend(rank_steps(path))
+    per_rank = [
+        rank_steps(path)
+        for path in sorted(Path(directory).glob("*.pt.trace.json.gz"))
+    ]
+    flat: list[dict] = [step for rank in per_rank for step in rank]
     if not flat:
         raise ValueError(f"No steady decode graphs in {directory}")
 
@@ -175,6 +236,11 @@ def summarize(directory: Path) -> dict:
         # every launch uniformly.
         "marlin_mean_us": sum(s["marlin_cumulative_us"] for s in flat)
         / sum(s["marlin_launches"] for s in flat),
+        # The mechanism metric: time spent inside the TP all-reduce is where a
+        # rank that finished early waits for the slowest one.
+        "allreduce_ms": mean("allreduce_us"),
+        "allreduce_calls": sum(s["allreduce_calls"] for s in flat) / len(flat),
+        "summed_layer_max_minus_mean_ms": _skew_ms(per_rank),
     }
     for label in ("hot", "cold"):
         rows = [step["streams"][label] for step in flat if label in step["streams"]]
