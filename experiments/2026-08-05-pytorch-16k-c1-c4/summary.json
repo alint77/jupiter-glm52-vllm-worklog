@@ -1,0 +1,214 @@
+{
+  "repetitions": [
+    {
+      "tag": "c1-r1",
+      "concurrency": 1,
+      "requests": 16,
+      "input_tokens_mean": 16395.75,
+      "output_tokens_mean": 512.0,
+      "duration_s": 163.01279152184725,
+      "ttft_mean_s": 5.148912822609418,
+      "ttft_median_s": 5.14361673197709,
+      "ttft_p99_s": 5.193251979385968,
+      "prefill_tok_s_mean": 3184.3878254915876,
+      "tpot_mean_ms": 9.861684920863839,
+      "tpot_median_ms": 9.873367382629015,
+      "itl_median_ms": 27.98734395764768,
+      "decode_tok_s_per_request": 101.40255017520926,
+      "output_tok_s_aggregate": 50.25372502072695,
+      "total_tok_s": 1659.526209412492,
+      "draft_tokens": 8601.0,
+      "accepted_tokens": 5330.0,
+      "generated_tokens": 8192.0,
+      "target_steps": 2862.0,
+      "acceptance_rate": 0.6196953842576445,
+      "tokens_per_step": 2.8623340321453528
+    },
+    {
+      "tag": "c1-r2",
+      "concurrency": 1,
+      "requests": 16,
+      "input_tokens_mean": 16395.75,
+      "output_tokens_mean": 512.0,
+      "duration_s": 163.60265203099698,
+      "ttft_mean_s": 5.1576495973422425,
+      "ttft_median_s": 5.15485321811866,
+      "ttft_p99_s": 5.194563933450263,
+      "prefill_tok_s_mean": 3178.9970923907263,
+      "tpot_mean_ms": 9.916745529087706,
+      "tpot_median_ms": 9.925280787632117,
+      "itl_median_ms": 27.949102921411395,
+      "decode_tok_s_per_request": 100.83953420674246,
+      "output_tok_s_aggregate": 50.07253793445783,
+      "total_tok_s": 1653.5428774635338,
+      "draft_tokens": 8655.0,
+      "accepted_tokens": 5304.0,
+      "generated_tokens": 8192.0,
+      "target_steps": 2888.0,
+      "acceptance_rate": 0.6128249566724436,
+      "tokens_per_step": 2.8365650969529086
+    },
+    {
+      "tag": "c4-r1",
+      "concurrency": 4,
+      "requests": 16,
+      "input_tokens_mean": 16395.75,
+      "output_tokens_mean": 512.0,
+      "duration_s": 115.49750950094312,
+      "ttft_mean_s": 7.896480575698661,
+      "ttft_median_s": 5.439383245422505,
+      "ttft_p99_s": 20.124847445008346,
+      "prefill_tok_s_mean": 2528.934108201792,
+      "tpot_mean_ms": 40.410686262660896,
+      "tpot_median_ms": 41.174401782012005,
+      "itl_median_ms": 43.29183092340827,
+      "decode_tok_s_per_request": 24.74592966573772,
+      "output_tok_s_aggregate": 70.9279363286453,
+      "total_tok_s": 2342.249639571587,
+      "draft_tokens": 8607.0,
+      "accepted_tokens": 5330.0,
+      "generated_tokens": 8192.0,
+      "target_steps": 2862.0,
+      "acceptance_rate": 0.6192633902637388,
+      "tokens_per_step": 2.8623340321453528
+    },
+    {
+      "tag": "c4-r2",
+      "concurrency": 4,
+      "requests": 16,
+      "input_tokens_mean": 16395.75,
+      "output_tokens_mean": 512.0,
+      "duration_s": 115.31363322492689,
+      "ttft_mean_s": 8.306500872495235,
+      "ttft_median_s": 5.438215233152732,
+      "ttft_p99_s": 19.98477815858787,
+      "prefill_tok_s_mean": 2390.17439374471,
+      "tpot_mean_ms": 39.6116068824208,
+      "tpot_median_ms": 40.3558787718459,
+      "itl_median_ms": 43.23186294641346,
+      "decode_tok_s_per_request": 25.245125828101386,
+      "output_tok_s_aggregate": 71.0410362668997,
+      "total_tok_s": 2345.9845330892053,
+      "draft_tokens": 8682.0,
+      "accepted_tokens": 5305.0,
+      "generated_tokens": 8192.0,
+      "target_steps": 2887.0,
+      "acceptance_rate": 0.611034323888505,
+      "tokens_per_step": 2.8375476272947697
+    }
+  ],
+  "arms": {
+    "c1": {
+      "ttft_mean_s": {
+        "mean": 5.15328120997583,
+        "min": 5.148912822609418,
+        "max": 5.1576495973422425,
+        "spread_pct": 0.16953809382479618
+      },
+      "prefill_tok_s_mean": {
+        "mean": 3181.692458941157,
+        "min": 3178.9970923907263,
+        "max": 3184.3878254915876,
+        "spread_pct": 0.16942973497367247
+      },
+      "tpot_mean_ms": {
+        "mean": 9.889215224975771,
+        "min": 9.861684920863839,
+        "max": 9.916745529087706,
+        "spread_pct": 0.5567742937256361
+      },
+      "decode_tok_s_per_request": {
+        "mean": 101.12104219097586,
+        "min": 100.83953420674246,
+        "max": 101.40255017520926,
+        "spread_pct": 0.556774293725628
+      },
+      "output_tok_s_aggregate": {
+        "mean": 50.16313147759239,
+        "min": 50.07253793445783,
+        "max": 50.25372502072695,
+        "spread_pct": 0.3611957246928548
+      },
+      "total_tok_s": {
+        "mean": 1656.5345434380129,
+        "min": 1653.5428774635338,
+        "max": 1659.526209412492,
+        "spread_pct": 0.3611957246928465
+      },
+      "acceptance_rate": {
+        "mean": 0.6162601704650441,
+        "min": 0.6128249566724436,
+        "max": 0.6196953842576445,
+        "spread_pct": 1.1148582878585616
+      },
+      "tokens_per_step": {
+        "mean": 2.849449564549131,
+        "min": 2.8365650969529086,
+        "max": 2.8623340321453528,
+        "spread_pct": 0.9043478260869512
+      },
+      "duration_s": {
+        "mean": 163.3077217764221,
+        "min": 163.01279152184725,
+        "max": 163.60265203099698,
+        "spread_pct": 0.3611957246928495
+      }
+    },
+    "c4": {
+      "ttft_mean_s": {
+        "mean": 8.101490724096948,
+        "min": 7.896480575698661,
+        "max": 8.306500872495235,
+        "spread_pct": 5.061047537547828
+      },
+      "prefill_tok_s_mean": {
+        "mean": 2459.554250973251,
+        "min": 2390.17439374471,
+        "max": 2528.934108201792,
+        "spread_pct": 5.6416610612339335
+      },
+      "tpot_mean_ms": {
+        "mean": 40.01114657254085,
+        "min": 39.6116068824208,
+        "max": 40.410686262660896,
+        "spread_pct": 1.997141918418535
+      },
+      "decode_tok_s_per_request": {
+        "mean": 24.995527746919553,
+        "min": 24.74592966573772,
+        "max": 25.245125828101386,
+        "spread_pct": 1.9971419184185373
+      },
+      "output_tok_s_aggregate": {
+        "mean": 70.98448629777249,
+        "min": 70.9279363286453,
+        "max": 71.0410362668997,
+        "spread_pct": 0.1593305018507156
+      },
+      "total_tok_s": {
+        "mean": 2344.117086330396,
+        "min": 2342.249639571587,
+        "max": 2345.9845330892053,
+        "spread_pct": 0.15933050185070208
+      },
+      "acceptance_rate": {
+        "mean": 0.6151488570761219,
+        "min": 0.611034323888505,
+        "max": 0.6192633902637388,
+        "spread_pct": 1.3377357822539995
+      },
+      "tokens_per_step": {
+        "mean": 2.8499408297200612,
+        "min": 2.8375476272947697,
+        "max": 2.8623340321453528,
+        "spread_pct": 0.8697164724299804
+      },
+      "duration_s": {
+        "mean": 115.405571362935,
+        "min": 115.31363322492689,
+        "max": 115.49750950094312,
+        "spread_pct": 0.15933050185070285
+      }
+    }
+  }
+}

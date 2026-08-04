@@ -1,0 +1,4 @@
+vllm:spec_decode_num_draft_tokens_total{engine="0",model_name="glm52-w4a16-tiered"} 8619.0
+vllm:spec_decode_num_accepted_tokens_total{engine="0",model_name="glm52-w4a16-tiered"} 5327.0
+vllm:prompt_tokens_total{engine="0",model_name="glm52-w4a16-tiered"} 262337.0
+vllm:generation_tokens_total{engine="0",model_name="glm52-w4a16-tiered"} 8200.0

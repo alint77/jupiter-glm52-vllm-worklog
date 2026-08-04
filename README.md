@@ -32,6 +32,8 @@ matters more than the number: do not compare rows.
 | 18-prompt mixed-domain suite, c4 | 18.687 ms TPOT, 181.60 tok/s aggregate | 27 |
 | No-MTP acceptance-free step time, c1/c2/c4 | shared-memory fix worth 5.3-6.7% | 26 |
 | Acceptance-free batch 4 / MTP3 batch 16, same node | replica assignment worth 5.96% / 6.50% of step time | 31 |
+| 16K-in / 512-out PyTorch coding, c1 | 101.3 tok/s decode, 50.16 end to end | 33 |
+| 16K-in / 512-out PyTorch coding, c4 | 265.2 tok/s decode aggregate, 70.98 end to end | 33 |
 
 The Phase 27 aggregate is the most recent full-suite number, but it predates
 both the replica work and its own retracted per-domain table; no post-replica
@@ -54,6 +56,7 @@ Lever status, so that settled questions are not reopened:
 | Grace-to-HBM cold-weight staging | Open (30), but its control predates the shared-memory fix and it must be re-measured before it means anything |
 | Buying more HBM residency | The next lever (32); not yet costed |
 | The 1.8 ms/step sampling and logits boundary | Open (26); host-side, so graph capture alone will not recover it |
+| Prefill/decode co-scheduling | Open (33): a prefill chunk displaces all decode streams for ~1.8 s, 71% of wall clock on long-input shapes |
 
 ## Platform
 
@@ -702,6 +705,24 @@ under graph replay, where stream ids rotate per layer, so the "cold longer in
 are distinguishable by grid, 264 blocks hot against 132 cold. The next lever is
 not balance but residency. See the
 [tier-balance result](experiments/2026-08-01-marlin-tier-overlap/README.md).
+
+Phase 33 measures the deployed server on a long-context coding shape: 16 unique
+16,384-token PyTorch code-generation prompts, 512 forced output tokens, at
+concurrency 1 and 4, run inside the server's own allocation against the live
+production job rather than a purpose-built one. Steady-state decode is
+**101.3 tok/s at c1** and **66.3 per request / 265.2 aggregate at c4**, with
+draft acceptance flat at 61.6% versus 61.5% and per-position 81/61/44. But
+end-to-end output is only 50.16 and 70.98 tok/s, because at 32:1 input-to-output
+the workload is prefill-bound: prefill runs at ~3,200 tok/s and takes 82 of the
+115 s at c4. The gap is one mechanism - chunked prefill of a newly admitted
+request stops all four decode streams for ~1.8 s, 118 times per run, holding
+213 s of the 330 s of summed inter-token gap. Nothing was preempted and KV
+peaked at 4.1%, so it is scheduling, not capacity, and a decode-plus-prefill
+step would recover it. A wall-clock reconciliation from the two rates lands
+within 2.4% of the measured total. Quote the steady-state number for decode
+work and the end-to-end number for this shape; they answer different questions.
+See the
+[16K coding benchmark](experiments/2026-08-05-pytorch-16k-c1-c4/README.md).
 
 In flight, undocumented: `experiments/2026-08-01-marlin-grid-fit` holds raw
 sweep results from jobs 1197398, 1197614, 1197769 and 1198412 with no report and
