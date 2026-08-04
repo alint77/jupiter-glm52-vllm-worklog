@@ -1,0 +1,82 @@
+{
+  "decode-c1": {
+    "arm_dir": "/e/project1/profound/alint77/traces/prod-profile-1240192/decode-c1",
+    "rank_steps": {
+      "0": 25,
+      "1": 25,
+      "2": 25,
+      "3": 25
+    },
+    "rank_steps_total": 100,
+    "wall_ms_per_step": 32.350447827148436,
+    "gpu_span_ms_per_step": 32.73149673375001,
+    "gpu_busy_ms_per_step": 28.610452408905253,
+    "gpu_empty_ms_per_step": 4.121044324844754,
+    "wall_minus_span_ms_per_step": -0.38104890660156726,
+    "kernel_census": {
+      "cross_device_reduce_1stage": 166,
+      "ncclDevKernel_AllGather": 190,
+      "marlin_moe_wna16": 306
+    },
+    "budget_ms_per_step": {
+      "TP/EP communication and synchronization": 8.00884473101576,
+      "routed experts (W4 Marlin)": 6.568508619843858,
+      "dense/shared compiled GEMMs": 5.689066578215972,
+      "glue, elementwise and uncategorized": 4.843612000096254,
+      "GPU-empty host/graph gaps": 4.121044324844753,
+      "attention (FlashMLA + DSA + KV)": 2.4107941796877643,
+      "MoE routing, activation and sum": 1.0896263000456405
+    },
+    "budget_total_ms_per_step": 32.73149673375,
+    "target_graph_span_ms_per_step": 28.049265631249995,
+    "tiered": {
+      "hot_ms_per_step": 5.7792454499999995,
+      "cold_ms_per_step": 4.26630263,
+      "marlin_cumulative_ms_per_step": 10.04554808,
+      "layer_span_ms_per_step": 7.434101958554658,
+      "overlap_headroom_ms_per_step": 1.6548565085546585
+    },
+    "ep_skew": {
+      "aligned_steps": 25,
+      "summed_max_minus_mean_ms_per_step": 2.098203615507842,
+      "spread_ms": [
+        1.7064049736326725,
+        2.5696623847659334
+      ],
+      "worst_layers_us": [
+        {
+          "layer": 45,
+          "mean_excess_us": 43.62545171875525
+        },
+        {
+          "layer": 53,
+          "mean_excess_us": 41.08206738281872
+        },
+        {
+          "layer": 58,
+          "mean_excess_us": 39.73132132812303
+        },
+        {
+          "layer": 42,
+          "mean_excess_us": 38.60838343749222
+        },
+        {
+          "layer": 0,
+          "mean_excess_us": 38.10264074218955
+        },
+        {
+          "layer": 44,
+          "mean_excess_us": 37.698829257811575
+        },
+        {
+          "layer": 10,
+          "mean_excess_us": 37.56023808594262
+        },
+        {
+          "layer": 2,
+          "mean_excess_us": 36.99138570312701
+        }
+      ]
+    }
+  }
+}

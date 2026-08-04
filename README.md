@@ -56,7 +56,10 @@ Lever status, so that settled questions are not reopened:
 | Grace-to-HBM cold-weight staging | Open (30), but its control predates the shared-memory fix and it must be re-measured before it means anything |
 | Buying more HBM residency | The next lever (32); not yet costed |
 | The 1.8 ms/step sampling and logits boundary | Open (26); host-side, so graph capture alone will not recover it |
-| Prefill/decode co-scheduling | Open (33): a prefill chunk displaces all decode streams for ~1.8 s, 71% of wall clock on long-input shapes |
+| Prefill/decode co-scheduling | **Top open lever (33, 34)**: a mixed step falls out of the CUDA graph, switches to the un-graphed two-stage all-reduce, and spends 61.5% of itself in communication |
+| DCP4 at concurrency 1 | Open (34): 2.4 ms/step, 8.5% of the c1 step, for capacity only c4 uses |
+| Dense GEMMs and elementwise glue | Open (34): 10.5 ms/step at c1, 37% of the step, batch-one fixed cost |
+| The sampling/logits boundary | Largely closed (34) by the V2 runner: between-graph idle 2.0 -> 0.642 ms |
 
 ## Platform
 
@@ -723,6 +726,31 @@ within 2.4% of the measured total. Quote the steady-state number for decode
 work and the end-to-end number for this shape; they answer different questions.
 See the
 [16K coding benchmark](experiments/2026-08-05-pytorch-16k-c1-c4/README.md).
+
+Phase 34 profiles the deployed configuration on the Phase 33 shape and finds
+the mixed step. Four torch captures - prefill, c1 decode, c4 decode, and a
+window straddling the end of prefill - measure profiler distortion at +4.3% on
+c1 and +0.8% on c4, since graph-replayed steps are barely instrumented, so the
+decode absolutes are quotable. At c1 the 28.1 ms step is 24.1% routed Marlin,
+19.1% TP/EP communication, 18.9% dense GEMMs, 15.6% glue, 10.8% GPU-empty and
+8.0% attention; hot/cold overlap sits **1.287 ms above `max(hot, cold)`** and EP
+skew is **2.454 ms/step**, down from the 3.615 ms Phase 26 measured before
+replica assignment. At c4 the 42.9 ms step is **44.5% routed Marlin** while
+dense, glue and attention barely move from c1 - the batch-one fixed cost
+amortizes and the MoE becomes the step. Prefill costs 2.62 s per 8,192-token
+chunk and had never been profiled: 34.0% routed Marlin, 22.4% communication,
+20.4% attention. The V2 runner has also already closed most of the
+sampling/logits boundary Phase 26 named, cutting between-graph idle from 2.0 to
+0.642 ms and un-graphed kernels from 1.918 to 0.310 ms across 4 replays instead
+of 7. The new lever is the **mixed step**: when a chunked prefill shares a step
+with decode, that step issues **six** one-stage custom all-reduces instead of
+166, the other 160 falling back to the un-graphed two-stage kernel, and the step
+leaves the CUDA graph - 50.6 ms/step of un-graphed kernels, 15.0 ms of host
+outside any CUDA call, and **61.5% of the step in communication against 15.8%
+in pure decode**. On a shape that is 71% prefill-bound that is the largest
+lever the trace exposes. Also priced: DCP4 collectives cost 2.4 ms/step, 8.5%
+of the c1 step, buying capacity only concurrency 4 uses. See the
+[production profile](experiments/2026-08-05-prod-profile/README.md).
 
 In flight, undocumented: `experiments/2026-08-01-marlin-grid-fit` holds raw
 sweep results from jobs 1197398, 1197614, 1197769 and 1198412 with no report and

@@ -1,0 +1,34 @@
+{
+  "rank_steps": 8,
+  "steps_per_rank": {
+    "0": 2,
+    "1": 2,
+    "2": 2,
+    "3": 2
+  },
+  "census": {},
+  "wall_ms_per_step": 2704.3073278808592,
+  "gpu_span_ms_per_step": 2703.5994959267578,
+  "gpu_busy_ms_per_step": 2515.8756593681273,
+  "gpu_empty_ms_per_step": 187.72383655863058,
+  "budget": {
+    "routed experts (W4 Marlin)": 891.5499585166019,
+    "TP/EP communication and synchronization": 593.8983667500006,
+    "attention (FlashMLA + DSA + KV)": 533.7302116381813,
+    "glue, elementwise and uncategorized": 287.3837291921028,
+    "GPU-empty host/graph gaps": 187.72383655863058,
+    "dense/shared compiled GEMMs": 154.39067923095664,
+    "MoE routing, activation and sum": 54.92271404028368
+  },
+  "budget_total": 2703.5994959267578,
+  "step_wall_ms": [
+    2669.4954482421876,
+    2669.78305859375,
+    2670.074766113282,
+    2671.0012763671875,
+    2737.5933720703124,
+    2738.556201660156,
+    2738.7174150390624,
+    2739.2370849609374
+  ]
+}

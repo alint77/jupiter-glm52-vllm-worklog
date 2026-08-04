@@ -1,0 +1,102 @@
+{
+  "decode-c1": {
+    "arm_dir": "/e/project1/profound/alint77/traces/prod-profile-1240192/decode-c1",
+    "rank_steps": 100,
+    "graphs_per_step": 7,
+    "kernels_per_graph": {
+      "0": 4105.0,
+      "1": 16.5,
+      "2": 20.0,
+      "3": 16.5,
+      "4": 20.0,
+      "5": 16.5,
+      "6": 20.0
+    },
+    "in_graph_gap_ms_per_step": {
+      "0": 2.2742470692587413,
+      "1": 0.00773302847656197,
+      "2": 0.005353160664082388,
+      "3": 0.007667358906255828,
+      "4": 0.005326238632803921,
+      "5": 0.007665421757804722,
+      "6": 0.005247886874991607
+    },
+    "in_graph_gap_total_ms_per_step": 2.313240164571242,
+    "between_graph_gap_ms_per_step": 1.8078041602735013,
+    "between_graph_gap_by_boundary_ms_per_step": {
+      "0": 0.9769308830859409,
+      "1": 0.13752662457030315,
+      "2": 0.06999094351564296,
+      "3": 0.09843601390626226,
+      "4": 0.06375819062497996,
+      "5": 0.12414749750003047,
+      "6": 0.23704108378908983,
+      "7": 0.0999729232812519
+    },
+    "host_inside_cuda_api_ms_per_step": 0.22292610191408138,
+    "host_not_in_cuda_api_ms_per_step": 1.5848780583594249,
+    "ungraphed_kernels_ms_per_step": {
+      "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>": 0.6793462300000003,
+      "nvjet_sm90_tst_192x8_64x8_2x1_v_bz_TNT": 0.56435814,
+      "ncclDevKernel_ReduceScatter_Sum_bf16_RING_LL(ncclDevKernelArgsSt": 0.08055224999999996,
+      "smxx::decode::get_mla_metadata_kernel(GetDecodeSchedMetaParams)": 0.05812680000000019,
+      "Memcpy HtoD (Pinned -> Device)": 0.05353438999999983,
+      "void sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_sparse_": 0.037041040000000025,
+      "void at::native::unrolled_elementwise_kernel<at::native::direct_": 0.03473370999999989,
+      "kernel_cutlass_kernel_vllmmodel_executorkernelsattentiondsadcp_i": 0.03266566,
+      "void smxx::decode::flash_fwd_mla_combine_kernel<cutlass::bfloat1": 0.03117067000000002,
+      "void at::native::vectorized_elementwise_kernel<4, at::native::CU": 0.026823170000000278
+    },
+    "ungraphed_total_ms_per_step": 1.9184516200000004
+  },
+  "decode-c4": {
+    "arm_dir": "/e/project1/profound/alint77/traces/prod-profile-1240192/decode-c4",
+    "rank_steps": 56,
+    "graphs_per_step": 7,
+    "kernels_per_graph": {
+      "0": 3812.7321428571427,
+      "1": 16.517857142857142,
+      "2": 19.75,
+      "3": 16.75,
+      "4": 18.571428571428573,
+      "5": 15.321428571428571,
+      "6": 18.571428571428573
+    },
+    "in_graph_gap_ms_per_step": {
+      "0": 2.180915401434455,
+      "1": 0.007282703822570268,
+      "2": 0.005147408970397497,
+      "3": 0.007527345284580227,
+      "4": 0.004903858677445376,
+      "5": 0.0071690862862275094,
+      "6": 0.004955852190308617
+    },
+    "in_graph_gap_total_ms_per_step": 2.2179016566659846,
+    "between_graph_gap_ms_per_step": 13.633393180663811,
+    "between_graph_gap_by_boundary_ms_per_step": {
+      "0": 12.912905867466515,
+      "1": 0.18355783063607994,
+      "2": 0.11416718819755747,
+      "3": 0.1435982742047425,
+      "4": 0.08881554764226555,
+      "5": 0.07812012562773418,
+      "6": 0.07399656194189472,
+      "7": 0.038231784947021605
+    },
+    "host_inside_cuda_api_ms_per_step": 1.645167769322052,
+    "host_not_in_cuda_api_ms_per_step": 11.988225411341773,
+    "ungraphed_kernels_ms_per_step": {
+      "void vllm::cross_device_reduce_2stage<__nv_bfloat16, 4>(vllm::Ra": 12.632591107142844,
+      "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>": 10.234200053571433,
+      "void marlin_moe_wna16::Marlin<1125899906909960l, 112589990789222": 5.579615767857136,
+      "ncclDevKernel_ReduceScatter_Sum_bf16_RING_LL(ncclDevKernelArgsSt": 1.7746390178571418,
+      "void sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_sparse_": 0.43863569642857086,
+      "nvjet_sm90_tst_192x8_64x8_2x1_v_bz_TNT": 0.4253247857142858,
+      "nvjet_sm90_tst_64x56_64x14_4x1_v_bz_TNT": 0.256844928571429,
+      "nvjet_sm90_tst_192x16_64x8_2x1_v_bz_TNT": 0.14378591071428568,
+      "nvjet_sm90_tst_64x56_64x14_4x1_v_bz_splitK_TNT": 0.13607639285714287,
+      "void at::native::elementwise_kernel<128, 4, at::native::gpu_kern": 0.1227390178571426
+    },
+    "ungraphed_total_ms_per_step": 33.01576680357141
+  }
+}

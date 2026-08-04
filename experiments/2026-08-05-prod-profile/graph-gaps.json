@@ -1,0 +1,84 @@
+{
+  "decode-c1": {
+    "arm_dir": "/e/project1/profound/alint77/traces/prod-profile-1240390/decode-c1",
+    "rank_steps": 108,
+    "graphs_per_step": 4,
+    "kernels_per_graph": {
+      "0": 4106.0,
+      "1": 82.75,
+      "2": 78.75,
+      "3": 78.75
+    },
+    "in_graph_gap_ms_per_step": {
+      "0": 2.433709697989797,
+      "1": 0.06749041051798106,
+      "2": 0.06626960058594594,
+      "3": 0.064919432508679
+    },
+    "in_graph_gap_total_ms_per_step": 2.6323891416024026,
+    "between_graph_gap_ms_per_step": 0.6417637571976692,
+    "between_graph_gap_by_boundary_ms_per_step": {
+      "0": 0.4490126230830447,
+      "1": 0.05964782685908254,
+      "2": 0.061259385706055075,
+      "3": 0.05923710962819525,
+      "4": 0.012606811921291773
+    },
+    "host_inside_cuda_api_ms_per_step": 0.02278127152054348,
+    "host_not_in_cuda_api_ms_per_step": 0.6189824856771259,
+    "ungraphed_kernels_ms_per_step": {
+      "nvjet_sm90_tst_192x8_64x8_2x1_v_bz_TNT": 0.14080925000000002,
+      "Memcpy HtoD (Pinned -> Device)": 0.01782515740740738,
+      "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>": 0.017666240740740736,
+      "void at::native::vectorized_elementwise_kernel<4, at::native::CU": 0.01343344444444454,
+      "_compute_slot_mappings_kernel": 0.012225824074074083,
+      "void deep_gemm::sched::smxx_paged_mqa_logits_metadata<32u, 256u,": 0.00817993518518517,
+      "Memcpy DtoD (Device -> Device)": 0.008094620370370424,
+      "void at::native::vectorized_elementwise_kernel<4, at::native::BU": 0.00779603703703703,
+      "void at::native::index_elementwise_kernel<128, 4, at::native::gp": 0.007353638888888879,
+      "void at::native::unrolled_elementwise_kernel<at::native::direct_": 0.0070951851851852035
+    },
+    "ungraphed_total_ms_per_step": 0.30970647222222236
+  },
+  "decode-c4": {
+    "arm_dir": "/e/project1/profound/alint77/traces/prod-profile-1240390/decode-c4",
+    "rank_steps": 44,
+    "graphs_per_step": 4,
+    "kernels_per_graph": {
+      "0": 3739.8863636363635,
+      "1": 83.29545454545455,
+      "2": 71.5909090909091,
+      "3": 71.5909090909091
+    },
+    "in_graph_gap_ms_per_step": {
+      "0": 2.2049955141126505,
+      "1": 0.06778096883880638,
+      "2": 0.05950184588067228,
+      "3": 0.05877544016336277
+    },
+    "in_graph_gap_total_ms_per_step": 2.391053768995492,
+    "between_graph_gap_ms_per_step": 17.15481508975506,
+    "between_graph_gap_by_boundary_ms_per_step": {
+      "0": 16.948194121981654,
+      "1": 0.09869675585935572,
+      "2": 0.05063675355115358,
+      "3": 0.04618304412288539,
+      "4": 0.011104414240014132
+    },
+    "host_inside_cuda_api_ms_per_step": 2.168231170987236,
+    "host_not_in_cuda_api_ms_per_step": 14.986583918767733,
+    "ungraphed_kernels_ms_per_step": {
+      "void vllm::cross_device_reduce_2stage<__nv_bfloat16, 4>(vllm::Ra": 22.017720772727277,
+      "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>": 16.357139136363656,
+      "void marlin_moe_wna16::Marlin<1125899906909960l, 112589990789222": 7.170361136363647,
+      "ncclDevKernel_ReduceScatter_Sum_bf16_RING_LL(ncclDevKernelArgsSt": 2.7200053636363624,
+      "void sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_sparse_": 0.4880587954545458,
+      "nvjet_sm90_tst_64x56_64x14_4x1_v_bz_TNT": 0.32100336363636406,
+      "nvjet_sm90_tst_64x56_64x14_4x1_v_bz_splitK_TNT": 0.16063609090909065,
+      "nvjet_sm90_tst_192x16_64x8_2x1_v_bz_TNT": 0.14329861363636362,
+      "void at::native::elementwise_kernel<128, 4, at::native::gpu_kern": 0.10401456818181821,
+      "void vllm::moe::moe_sum_vec_kernel<c10::BFloat16, int, 8, true>(": 0.06131349999999995
+    },
+    "ungraphed_total_ms_per_step": 50.56380988636367
+  }
+}

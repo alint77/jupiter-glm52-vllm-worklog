@@ -1,0 +1,51 @@
+{
+  "split_ms": 200.0,
+  "decode_only": {
+    "steps": 40,
+    "wall_ms_mean": 43.2443677734375,
+    "wall_ms_median": 47.22524267578126,
+    "wall_ms_min": 13.664108886718736,
+    "wall_ms_max": 47.76593505859387,
+    "gpu_busy_ms": 44.65483140693708,
+    "gpu_empty_ms": 3.0009892229457167,
+    "budget": {
+      "routed experts (W4 Marlin)": 21.223897914420878,
+      "TP/EP communication and synchronization": 7.550131547607377,
+      "dense/shared compiled GEMMs": 6.033962889827645,
+      "glue, elementwise and uncategorized": 5.453759057521782,
+      "attention (FlashMLA + DSA + KV)": 3.231466002832316,
+      "GPU-empty host/graph gaps": 3.0009892229457167,
+      "MoE routing, activation and sum": 1.1616139947270798
+    },
+    "budget_total": 47.6558206298828,
+    "kernel_counts_per_step": {
+      "cross_device_reduce_1stage": 166.0,
+      "ncclDevKernel_AllGather": 190.0,
+      "marlin_moe_wna16": 306.0
+    }
+  },
+  "prefill_bearing": {
+    "steps": 4,
+    "wall_ms_mean": 760.5012999267578,
+    "wall_ms_median": 758.7394038085938,
+    "wall_ms_min": 758.2291430664062,
+    "wall_ms_max": 766.3780795898438,
+    "gpu_busy_ms": 556.4467307949204,
+    "gpu_empty_ms": 184.99466521679832,
+    "budget": {
+      "TP/EP communication and synchronization": 455.85480924999973,
+      "GPU-empty host/graph gaps": 184.99466521679832,
+      "routed experts (W4 Marlin)": 78.82724665429706,
+      "attention (FlashMLA + DSA + KV)": 7.32953038281259,
+      "dense/shared compiled GEMMs": 6.565187778645989,
+      "glue, elementwise and uncategorized": 5.738462337726511,
+      "MoE routing, activation and sum": 2.1314943914385838
+    },
+    "budget_total": 741.4413960117188,
+    "kernel_counts_per_step": {
+      "cross_device_reduce_1stage": 6.0,
+      "ncclDevKernel_AllGather": 212.0,
+      "marlin_moe_wna16": 306.0
+    }
+  }
+}

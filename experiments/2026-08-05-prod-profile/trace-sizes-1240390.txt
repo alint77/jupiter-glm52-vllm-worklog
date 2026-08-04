@@ -1,0 +1,9 @@
+512	/e/project1/profound/alint77/traces/prod-profile-1240390/capture-report.json
+30M	/e/project1/profound/alint77/traces/prod-profile-1240390/decode-c1
+19M	/e/project1/profound/alint77/traces/prod-profile-1240390/decode-c4
+109M	/e/project1/profound/alint77/traces/prod-profile-1240390/mixed-c4
+14M	/e/project1/profound/alint77/traces/prod-profile-1240390/prefill-c1
+24K	/e/project1/profound/alint77/traces/prod-profile-1240390/profiler_out_0.txt
+24K	/e/project1/profound/alint77/traces/prod-profile-1240390/profiler_out_1.txt
+24K	/e/project1/profound/alint77/traces/prod-profile-1240390/profiler_out_2.txt
+24K	/e/project1/profound/alint77/traces/prod-profile-1240390/profiler_out_3.txt

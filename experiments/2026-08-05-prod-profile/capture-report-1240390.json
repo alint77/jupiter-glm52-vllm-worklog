@@ -1,0 +1,26 @@
+{
+  "prefill-c1": {
+    "window_s": 19.644,
+    "trace_files": 4,
+    "generated_tokens": 1.0,
+    "target_steps": 1.0
+  },
+  "decode-c1": {
+    "window_s": 12.663,
+    "trace_files": 4,
+    "generated_tokens": 512.0,
+    "target_steps": 180.0
+  },
+  "decode-c4": {
+    "window_s": 13.828,
+    "trace_files": 4,
+    "generated_tokens": 2048.0,
+    "target_steps": 667.0
+  },
+  "mixed-c4": {
+    "window_s": 37.952,
+    "trace_files": 4,
+    "generated_tokens": 4096.0,
+    "target_steps": 1421.0
+  }
+}
