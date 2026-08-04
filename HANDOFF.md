@@ -1,6 +1,7 @@
 # GLM-5.2 on JUPITER: agent handoff
 
-Last updated: 2026-07-29 (Marlin shared-memory monopoly; qualification in flight)
+Last updated: 2026-08-04 (exact replica assignment shipped; tier-balance lever
+closed; next lever is HBM residency)
 
 ## Start here
 
@@ -10,31 +11,48 @@ useful routed experts in HBM, runs the rest directly from NUMA-local Grace
 memory through CUDA UVA, and uses the official GLM-5.2 MTP head for
 speculative decoding.
 
-The current qualified default is **MTP3 + concurrent hot/cold expert
-execution, without sequence parallelism or local draft argmax**. It delivers
-about 124-136 decode tok/s on the exact 399,744-input/256-output test, versus
-37.57 tok/s for native vLLM CPU offload. Correctness remains lossless because
-the W4 target model verifies the draft tokens.
+The current qualified default is **MTP3 + concurrent hot/cold expert execution
+under the tight Marlin shared-memory launch policy + exact replica assignment,
+without sequence parallelism or local draft argmax**. Correctness remains
+lossless because the W4 target model verifies the draft tokens.
 
-Phase 15 is a decode-context-parallel (DCP4) port of the FlashMLA sparse
-backend for concurrency-4 serving at 400K. DFlash was deprioritized: the
-draft is only 7% of the step and DFlash's ~3K-context training makes 400K
-acceptance a poor bet. Source changes are pushed to the fork branch
-`tiered-moe-grace-mtp` through `990b1d378`; the human must still review every
-changed line before proposing upstream work. See the
-[DCP port experiment](experiments/2026-07-18-dcp-port/README.md) for state,
-including any still-running Slurm jobs.
+Two serving configurations are qualified on one node:
+
+- **Interactive**: c1/DCP1, V1 model runner, HBM main KV cache, 400K context.
+- **Agent swarm**: c4/DCP4, V2 model runner, per-sequence KV, 11 GB planned
+  HBM reserve.
+
+Quote numbers with their harness attached; they are not comparable to each
+other. The reference points are 37.57 tok/s for native vLLM CPU offload at
+exact 400K, 123.65-127.67 tok/s decode for tiered MTP3 with overlap on that
+same test, 108.08 decode tok/s on the warmed 24-prompt realistic suite at
+c1/q4, and 181.60 tok/s aggregate at c4 on the 18-prompt mixed-domain suite.
+The last two predate the shared-memory fix and the replica work respectively,
+so both are conservative; no post-replica full-suite measurement exists yet.
+`README.md` carries the full harness table and the lever ledger - read the
+ledger before proposing an optimization, because most of the obvious ones are
+already settled.
+
+Source changes are pushed to the fork branch `tiered-moe-grace-mtp`; the human
+must still review every changed line before proposing upstream work.
 
 Read these before changing anything:
 
 - [`AGENTS.md`](../AGENTS.md): mandatory vLLM development rules.
-- [`README.md`](README.md): chronological project status and headline results.
+- [`README.md`](README.md): current state, lever ledger, and the chronological
+  phase chain. The "Current state" section is the fastest way in.
 - [`gh200-vllm-w4a16-tiered-moe-plan-v2.md`](gh200-vllm-w4a16-tiered-moe-plan-v2.md): implementation plan.
-- [MTP fast-path report](experiments/2026-07-18-mtp-fastpath/README.md): current result and rejected sequence-parallel trial.
+- [Replica scheduling v2](experiments/2026-07-31-replica-scheduling-v2/README.md): the most recent shipped change, and the measurement protocol every later A/B should copy.
+- [Shared-memory monopoly](experiments/2026-07-29-marlin-smem-monopoly/README.md): the kernel bug that invalidated five earlier overlap experiments, plus the current step budget.
+- [Tier balance](experiments/2026-08-01-marlin-tier-overlap/README.md): why the cold tier is retired as a target and what the next lever is.
 - [MTP roofline](experiments/2026-07-18-mtp-prompt-profile/roofline-analysis.md): kernel, communication, and transfer analysis.
 
 Keep changes minimal, measure every optimization against a matched control,
-and update this worklog with commands, correctness evidence, and results.
+and update this worklog with commands, correctness evidence, and results. Log
+each phase as it lands: a README phase entry, a dated experiment directory, and
+a HANDOFF update, committed as you go. This file and the index drifted five
+days and eight experiments behind between 2026-07-30 and 2026-08-04, and the
+stale text was worse than no text - it sent readers to redo settled work.
 
 ## Repositories and state
 
@@ -47,10 +65,32 @@ The source repository is:
 - Upstream: `vllm-project/vllm`
 - User fork: `alint77/vllm`
 - Branch: `tiered-moe-grace-mtp`
-- Current/pushed commit: `5000658c4` (`Optimize tiered MoE MTP verification`)
+- Current commit: `cec73c66b` (`Load secondary expert copies only when
+  assignment can use them`)
 - Main implementation commit: `a66535e59`
 - Branch base: `d08eebad1`
 - No upstream PR has been opened.
+
+Recent source history, newest first:
+
+| Commit | What |
+| --- | --- |
+| `cec73c66b` | Load secondary expert copies only when assignment can use them |
+| `44a24d909` | Read the tiered MoE config from its real field, enforce the layout |
+| `919cfa9a7` | Graph-capturable route fingerprint for replica assignment |
+| `ae4293d08` | Integrate exact replica assignment (v2) into the tiered MoE path |
+| `53fe6dfcf` | Revert replica scheduling v1, **preserving** the shared-memory fix |
+| `dc4dcff58` | v1 hardening; archived at tag `replica-scheduling-archive` |
+| `1a94ed458` | v1 replica scheduling - also carried the Phase 26 shared-memory fix |
+| `2f92b5365` | Avoid a blocking scalar H2D copy in DCP seq-len localization |
+| `990b1d378` | Avoid NCCL symmetric all-reduce under DCP |
+
+One process note worth not repeating: `1a94ed458` bundled the independently
+qualified Marlin shared-memory fix into an unrelated feature commit, so when
+that feature was reverted a plain `git revert` of either commit would have
+taken the fix with it. `53fe6dfcf` handles it correctly and its message records
+byte for byte what was preserved and that `tiered_moe_execution.py` was rebuilt
+rather than reverted. Land qualified fixes as their own commits.
 
 The vLLM source changes are committed and pushed. The outer worktree contains
 untracked core dumps, Slurm logs, and the nested `agent_space` repository. Do
@@ -98,7 +138,11 @@ Use a unique label for every run because it names result files. Check jobs with:
 squeue -u "$USER"
 ```
 
-There were no active jobs when this handoff was written.
+Jobs at the time of writing (2026-08-04): `1238882` is the `glm52-claude` c4
+serving host on `jpbo-013-35`, which backs the local Claude Code launcher and is
+not a benchmark - do not cancel it or read its metrics as an experiment.
+`1239026` and `1239027` are unrelated four-node `arm9-mlm` jobs. Always re-check
+with `squeue` rather than trusting this line.
 
 ## Environment
 
@@ -172,6 +216,16 @@ The cumulative branch adds:
 8. Hot-HBM/cold-Grace stream overlap for MTP verification sizes up to four.
 9. An opt-in local draft-argmax reduction. It greatly reduces collective
    bytes but did not improve batch-one throughput reliably, so it is off.
+10. A DCP port of the FlashMLA sparse backend, admitting DCP1/DCP4, with
+    block-sharded KV planning and per-sequence provisioning at c4.
+11. AutoRound W4G64 loading through the same tiered Marlin path.
+12. A tight Marlin shared-memory launch policy (`VLLM_TIERED_MOE_TIGHT_SMEM`,
+    hot at 2 CTAs/SM and cold at 1), which is what makes the two tiers actually
+    co-resident.
+13. Exact per-step replica assignment: selected routed experts hold a second
+    physical copy in paired Grace memory, and a fused kernel assigns each active
+    logical expert to one copy to minimize the predicted slowest-rank MoE time,
+    with a graph-capturable route fingerprint enforcing exactly-once.
 
 The main launch path is composed from:
 
@@ -196,6 +250,18 @@ All headline decode tests are batch one, greedy, ignore EOS, 256 output tokens.
 | MTP3 with verification overlap | - | 127.67 tok/s mean |
 | Fresh no-SP control after SP trial | - | 123.65 tok/s mean |
 
+Later gains were measured on suites and on step time rather than on this
+synthetic test, and are not additive with the rows above:
+
+| Change | Harness | Effect |
+| --- | --- | --- |
+| DCP4 at concurrency 4 | exact 400K, c4 | 173-179 tok/s aggregate |
+| V2 runner MTP full graphs | 4K c4 | 186.52 -> 225.23 tok/s effective |
+| Draft-sync H2D fix | realistic c4 warmed | 179.47 -> 185.05 tok/s |
+| Marlin shared-memory fix | no-MTP step time, c1/c2/c4 | -5.3% / -6.4% / -6.7% |
+| Exact replica assignment | acceptance-free batch 4 | -5.96% step time |
+| Exact replica assignment | MTP3 batch 16 | -6.50% step, -5.11% corrected |
+
 The overlap result is about 18% faster than its matched serial MTP3 control.
 Its exact-400K draft acceptance is about 60-61%. Across 18 Python, PyTorch,
 CUDA C++, math, email, and explanation prompts, weighted acceptance was 67.61%
@@ -213,9 +279,19 @@ Performance is not accepted from throughput alone. The qualified runs used:
 - a semantic smoke prompt whose eight-token continuation is
   ` Paris. Distance from Paris to Lyon is`;
 - exact-400K continuation SHA-256
-  `d594e4d4268600a0d9e2d51355913907c638ef0c61615547598615384dcfc528`;
+  `d594e4d4268600a0d9e2d51355913907c638ef0c61615547598615384dcfc528`, which
+  predates the Marlin grid change and has to be re-established (see below);
 - focused unit tests, project hooks, and source guards recorded in each report;
 - repeat runs for optimization decisions.
+
+Two later corrections to how correctness is gated:
+
+- **Exact-text A/B between two servers is not a valid gate.** Off-versus-off
+  matched 0 of 8 completions with a median first-token divergence of 3.5
+  tokens. Gate kernel and scheduling changes on invariants instead:
+  exactly-once execution, launch census, tolerance-bounded tensor compare.
+- A grid change moves Marlin's fp32 reduction order by at most one bf16 ulp,
+  deterministically. That changes the golden SHA without being a regression.
 
 The roofline/profile showed that target routed W4 MoE, synchronization, and
 dense W4 kernels dominate; the FP8 MTP block itself is small. Verification
@@ -241,11 +317,67 @@ reduce-scatter/all-gather pair.
   FlashInfer. Reuse scratch JIT caches and keep `MAX_JOBS=4`; do not diagnose
   warmed request throughput from startup time.
 - Parallel jobs need job-specific JIT/cache directories to avoid corruption;
-  `mtp-fastpath/job.sh` already derives them from `SLURM_JOB_ID`.
+  `mtp-fastpath/job.sh` already derives them from `SLURM_JOB_ID`. Per-job cache
+  roots multiply the inode problem below, so prefer per-arm roots under
+  `/e/project1/profound/alint77/.marlin-caches/`.
 - Do not re-enable target sequence parallelism or deeper fixed MTP without a
-  new measured reason.
+  new measured reason. Wider third-party speculators are settled the same way:
+  DSpark and DFlash both work and both lose, in strict inverse order of verify
+  batch width.
+- **Never compare an in-situ time against an isolated time and call the
+  difference recoverable.** This error produced a confident wrong answer at
+  least three times: the "39-40% overlap saving", the "12 ms/step of hot/cold
+  overlap headroom", and the Grace-to-HBM staging win below.
+- Identifying the hot and cold Marlin tiers by CUDA stream is invalid under
+  graph replay, where stream ids rotate per layer. Identify them by grid: 264
+  blocks hot, 132 cold.
+- Timing a fork/join eagerly charges two stream barriers per iteration, a
+  ~110 us floor on Booster that can exceed the whole kernel at low activated-
+  expert counts. Measure under graph replay.
+- The login node and Booster do not prefer the same Marlin grid (66 CTAs vs
+  132). Never tune a shipped constant off Booster.
 
-## Current thread: the Marlin shared-memory monopoly (2026-07-29)
+## Current thread: buy HBM residency (2026-08-01, open)
+
+The tier-balance work closed the last cheap lever and named the next one.
+
+Within a routed layer the two Marlin tiers now overlap essentially perfectly:
+the measured union is 310.0 us against a 308.0 us floor set by the observed
+chain lengths, and the streams start within 1.2 us of each other. Occupancy,
+grid shape and register pressure have at most **0.15 ms/rank-step** left in
+them. The union/sum ratio of 0.70 is not an overlap defect - it is that one
+tier does about 39% more work than the other in the layer.
+
+Redistributing HBM slots across layers to fix that imbalance models at
+**exactly 0.0%**, because it only pays when some layer is hot-bound and none is.
+A cold expert costs 45.32 us against a hot expert's 9.75 us, 4.6x, and 6.77 cold
+experts per layer in 306.9 us is ~442 GB/s per rank - at or past the 421 GB/s
+C2C roof. The cold tier is moving weights as fast as the link allows.
+
+So the only remaining move on the routed MoE is to move fewer weights:
+
+1. **Reclaim HBM.** `gpu_memory_utilization` is 0.85 and the tiered reserve is
+   7 GB. Freeing ~5 GB safely is the cheapest thing to test and should be next.
+   Balance would want ~4.7 GB more resident against a measured peak free of
+   3,874 MiB, so this is close to the right size.
+2. **Shrink the resident copy.** The cold tier moves 20.05 MB per expert; any
+   reduction converts to cold-tier time at 4.6x the leverage of hot work.
+3. **The sampling and logits boundary**, ~1.8 ms/step, is the largest remaining
+   non-MoE item and is host-bound.
+
+Do not spend time on: cold-tier kernel tuning, tier rebalancing, occupancy
+work, green contexts, or capturing the draft graphs. All are measured and
+closed - see the lever ledger in `README.md`.
+
+Also open, and undocumented: `experiments/2026-08-01-marlin-grid-fit` holds raw
+sweep results from jobs 1197398, 1197614, 1197769 and 1198412 with no report, an
+empty `analysis/`, and nothing committed. `policy-1197614.json` reads as the
+shipped 264/132 grid at 93.67 us against 129.91 us for the pre-fix launch, with
+the best alternative found (264/99) 1.6% better over 51.6% of the c1 operating
+point. Either finish the report or delete the directory; do not leave it as a
+third state.
+
+## Earlier thread: the Marlin shared-memory monopoly (2026-07-29, shipped)
 
 Marlin's MoE launch passed `deviceSharedMemOptin / blocks_per_sm` as its dynamic
 shared memory instead of the `sh_cache_size` it computes one line earlier, so a
@@ -257,8 +389,9 @@ what the kernel uses, and launching hot at 2 CTAs/SM and cold at 1, cuts the
 measured two-tier union by 41-48% on the login node and lands it on
 `max(hot, cold)`.
 
-Source changes are in the working tree (not yet committed at the time of
-writing): `ops.cu`, `torch_bindings.cpp`, `_custom_ops.py`, `envs.py`,
+Source changes are committed and live at HEAD. They landed bundled inside
+`1a94ed458` and survive via the hand-built revert `53fe6dfcf`: `ops.cu`,
+`torch_bindings.cpp`, `_custom_ops.py`, `envs.py`,
 `marlin_moe.py`, `tiered_moe_execution.py`, plus
 `tests/kernels/moe/test_moe.py::test_fused_marlin_moe_launch_policy`. Defaults
 are unchanged for every non-tiered caller, and `VLLM_TIERED_MOE_TIGHT_SMEM=0`
@@ -295,8 +428,9 @@ Open items:
 - The exact-400K golden SHA is expected to change: the shipped grid moves work
   between Marlin's data-parallel and split-K halves, so the fp32 reduction order
   differs by at most one bf16 ulp, deterministically. Re-establish it; do not
-  treat a mismatch as a regression.
-- Nothing is committed. Source changes sit in the working tree.
+  treat a mismatch as a regression. **Still not re-established as of
+  2026-08-04**; the replica work landed on top of it, so re-establish the SHA
+  against current HEAD rather than against the Phase 26 tree.
 
 ### Where the decode step goes now, and what is retired
 
@@ -318,16 +452,26 @@ Three results should shape what gets tried next:
   53 us/layer for a 20.1 MB W4G64 expert is 379 GB/s against the 373 GB/s
   measured achievable rate (`2026-07-25-grace-bandwidth`). It is node-invariant
   to 0.2% where hot varies 2.5%. Do not tune cold tiles, split-K, grids or
-  occupancy - and do not re-try Grace-to-HBM staging, refuted twice already.
-  Residual overlap headroom is a bounded 1.72 ms/step (span above
-  `max(hot, cold)`).
-- **Per-layer EP-rank balance is the top lever, at 3.615 ms/step** of summed
-  `max - mean` routed-layer skew, 47% of the routed span. This corrects an
-  earlier 1.485 ms figure in the report and now agrees within 12% with the
-  4.13 ms of all-reduce synchronization excess: **they are one lever, not two
-  additive ones.** Worst layers are 34, 69, 18, 20, 61, 67. The 4.13 ms is a
-  ceiling (per-call min over four ranks, unachievable by any single rank); treat
-  3.6 ms as the target.
+  occupancy. Residual overlap headroom was bounded here at 1.72 ms/step and
+  Phase 32 later tightened it to 0.15 ms/rank-step.
+
+  On Grace-to-HBM staging, this line previously read "refuted twice already".
+  That is no longer the whole story: the 2026-07-27 green-context experiment
+  measured a within-layer staged path 19.8% faster at m=16 and 36-38% at m=256,
+  bit-exact for the copy. But its production control was the **pre-fix** co-run,
+  which the shared-memory monopoly had serialized, and the premise of staging is
+  "stop co-running" - which the fix already achieved. Treat staging as neither
+  refuted nor open: it is unmeasured against current production, and any retry
+  starts by re-running that control.
+- **Per-layer EP-rank balance was the top lever, at 3.615 ms/step** of summed
+  `max - mean` routed-layer skew, 47% of the routed span, and it is now the
+  shipped replica assignment. This corrected an earlier 1.485 ms figure and
+  agrees within 12% with the 4.13 ms of all-reduce synchronization excess:
+  **one lever, not two additive ones.** Worst layers were 34, 69, 18, 20, 61,
+  67. Phase 31's paired trace took skew from 8.230 to 3.170 ms/rank-step
+  (-61.5%) and all-reduce residency from 9.223 to 4.114 ms (-55.4%), worth 5-6%
+  end to end. What remains of this bucket is the per-step max-of-four-ranks
+  order statistic, which no assignment can remove.
 
 And on the GPU-empty half, from `analyze_graph_gaps.py`:
 
@@ -394,7 +538,7 @@ policy rather than a performance result before relying on it, since a filesystem
 that purges would make this a per-job staging step rather than a new home for
 the checkpoints.
 
-## Earlier thread: DCP4 and concurrency 4 (supersedes DFlash)
+## Earlier thread: DCP4 and concurrency 4
 
 Read, in order: the [SOL re-analysis](experiments/2026-07-18-sol-reanalysis/README.md)
 (kernel-level roofline of the qualified config, TP2xPP2 rejection, DCP
@@ -419,34 +563,41 @@ DCP while retaining NVLS AG/RS; it passed commit hooks but still needs one
 runtime qualification. No Slurm jobs are active. The stable DCP4 default is
 still `ag_rs` at 179.56 tok/s aggregate.
 
-## Superseded next experiment: DFlash
+## Settled: third-party speculators lose to MTP3 (2026-07-25)
 
-DFlash and FlashMLA-ETAP were investigated but have not been implemented or
-benchmarked in this project. No DFlash checkpoint has been downloaded yet.
+This section previously recommended downloading and evaluating DFlash. **That
+work is done.** Both DFlash and DSpark were downloaded, made to run on this
+stack, and rejected on measurement. Do not redo it.
 
-The relevant draft is `UCloud-org/GLM-5.2-FP8-DFlash`. It is a five-layer,
-block-size-16 DFlash model trained against GLM-5.2-FP8. The current vLLM tree
-already contains native DFlash support. Because our verifying target is W4A16,
-output correctness should remain lossless, but acceptance and speed must be
-measured rather than inferred from the checkpoint's FP8-target results.
+| | MTP3 (V2, c1) | DSpark t=8 | DFlash t=15 |
+| --- | ---: | ---: | ---: |
+| verify batch | 4 | 9 | 16 |
+| acceptance length | ~2.9 / 4 | 3.98 / 8 | **6.84 / 15** |
+| implied decode tok/s | **106.08** | ~93 | ~70 |
+| realistic end to end | **95.44** | 84.67 | 65.6 |
+| implied step time | ~27 ms | ~42 ms | ~97 ms |
 
-Recommended next steps:
+Both reproduce the exact deterministic completion, so neither failed on
+correctness. **The ranking is strictly inverse to verify-batch width, and
+acceptance length is anticorrelated with throughput**: DFlash accepts more than
+twice as many tokens per step as MTP3 and is 34% slower end to end. The cause
+is structural, from the critical-path review - this target's routed MoE is only
+35% fixed weight streaming and 65% proportional to token count, so verification
+cost grows nearly linearly with block width while acceptance grows sublinearly.
 
-1. Download the roughly 7.5 GB DFlash checkpoint on the internet-facing login
-   node into a new immutable local model directory.
-2. First run a short-context load/correctness/capacity smoke on one Booster
-   node; do not start with 400K.
-3. In parallel, run a matched 4K prompt-suite comparison against the current
-   MTP3 default and a 400K capacity/startup test.
-4. The draft KV cache is the main long-context risk. Estimate per-rank draft KV
-   at about 7.6 GiB in BF16 or 3.8 GiB in FP8 at 400K, then confirm actual
-   allocations. Use FP8 draft KV if the vLLM configuration supports it.
-5. Only profile DFlash after it passes exact-output checks and beats or
-   plausibly approaches MTP3 on the matched benchmark.
+The consequence generalizes: **any wider speculative block loses here unless it
+also cuts per-token routed-MoE cost.** Do not evaluate another wide-block
+speculator on acceptance figures from its model card.
 
-The DFlash checkpoint was trained mostly on English, non-thinking data around
-3K context. Expect prompt- and length-dependent acceptance, especially at
-400K. Keep DFlash changes separate from the already-qualified MTP3 path.
+Source changes for both were reverted. DSpark's bring-up cleared five real
+defects worth knowing about if a similar draft is ever attempted - three
+upstream (`642076d26`, `a7d00ec05`, `e18f0037a`) and two in this branch's
+tiered contract (the dtype check rejecting a draft-derived `VllmConfig`, and
+tiered KV allocation assuming MLA-only cache specs). Details in the
+[DSpark bring-up](experiments/2026-07-25-dspark/README.md) and
+[DFlash result](experiments/2026-07-25-dflash/README.md).
+
+FlashMLA-ETAP remains uninvestigated.
 
 ## First-session checklist
 

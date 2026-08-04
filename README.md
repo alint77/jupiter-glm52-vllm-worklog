@@ -4,8 +4,56 @@ Experimental worklog for serving the 361.06 GiB
 `lowbitcoffee/GLM-5.2-W4A16` checkpoint on one JUPITER Booster node. The goal
 is to improve batch-one decode at up to 400K context by keeping hot MoE experts
 in HBM and executing colder experts from coherent Grace memory through CUDA
-UVA. The current 37.5 tok/s result is the baseline; the project target starts
-at 100 tok/s.
+UVA. Native vLLM CPU offload decodes this model at 37.57 tok/s. The project
+minimum of 100 tok/s was passed at Phase 9; the sections below record where the
+qualified path stands now.
+
+## Current state
+
+Last indexed 2026-08-04, covering worklog commit `dc487e3` and source commit
+`cec73c66b`.
+
+| | |
+| --- | --- |
+| Qualified default | MTP3, TP4/EP4, hot/cold Marlin overlap under the tight shared-memory launch policy, exact replica assignment, no sequence parallelism, no local draft argmax |
+| Interactive | c1/DCP1, V1 model runner, HBM main KV cache, 400K context |
+| Agent swarm | c4/DCP4, V2 model runner, per-sequence KV, 11 GB planned HBM reserve |
+| Correctness gates | greedy exact-text smoke; invariant, census and tolerance checks for kernel changes; the exact-400K golden SHA, which must be re-established after any Marlin grid change |
+
+Headline measurements. Each is against its own matched control, and the harness
+matters more than the number: do not compare rows.
+
+| Harness | Measurement | Phase |
+| --- | --- | --- |
+| Batch-one 4K/256, native CPU offload | 37.06 tok/s decode | baseline |
+| Batch-one exact 399,744+256, native CPU offload | 37.57 tok/s decode | baseline |
+| Batch-one exact 399,744+256, tiered MTP3 + overlap | 123.65-127.67 tok/s decode | 12, 13 |
+| Warmed 24-prompt realistic suite, c1/q4 | 108.08 tok/s decode, 98.03 end to end | 17 |
+| 18-prompt mixed-domain suite, c4 | 18.687 ms TPOT, 181.60 tok/s aggregate | 27 |
+| No-MTP acceptance-free step time, c1/c2/c4 | shared-memory fix worth 5.3-6.7% | 26 |
+| Acceptance-free batch 4 / MTP3 batch 16, same node | replica assignment worth 5.96% / 6.50% of step time | 31 |
+
+The Phase 27 aggregate is the most recent full-suite number, but it predates
+both the replica work and its own retracted per-domain table; no post-replica
+measurement on that suite exists yet.
+
+Lever status, so that settled questions are not reopened:
+
+| Lever | Status |
+| --- | --- |
+| Marlin shared-memory monopoly | Fixed (26); worth 5.3-8.1% of step time |
+| Exact replica assignment | Shipped (31); worth 5-6.5% of step time at c4 |
+| Cold-tier kernel, tile, split-K and occupancy tuning | Retired (26, 32): the cold tier runs at the C2C roof |
+| Per-layer hot/cold rebalance | Refuted (32): every layer is already cold-bound |
+| Green contexts for SM isolation | Refuted (30): 9-40% worse than the production fork/join |
+| `blocks_per_sm` and SM-budget partitioning | Refuted (21, 23, 26) |
+| Target sequence parallelism | Refuted (13) |
+| Wider or deeper speculation: MTP6, DSpark, DFlash | Refuted (11, 28): throughput is inverse to verify-batch width |
+| Capturing the draft path in CUDA graphs | Refuted (26): the drafts are already graphed |
+| Graph-node fusion | Priced (24) at about 1.2%; not started |
+| Grace-to-HBM cold-weight staging | Open (30), but its control predates the shared-memory fix and it must be re-measured before it means anything |
+| Buying more HBM residency | The next lever (32); not yet costed |
+| The 1.8 ms/step sampling and logits boundary | Open (26); host-side, so graph capture alone will not recover it |
 
 ## Platform
 
@@ -429,7 +477,8 @@ speed while overlapped. The isolated benchmark's low co-residency was an
 eager-launch artifact that does not survive CUDA-graph replay. Same error class
 as the "39-40% overlap saving" corrected earlier; the rule is never to compare
 an in-situ time against an isolated time and call the difference recoverable.
-See the [tier-overlap diagnosis](experiments/2026-07-25-tier-overlap/README.md)
+See the [diagnosis plan](experiments/2026-07-25-p1b-phase-a/README.md),
+[tier-overlap diagnosis](experiments/2026-07-25-tier-overlap/README.md)
 and [reorder qualification](experiments/2026-07-25-tier-order/README.md).
 
 Phase 24 prices P4 before building it. The per-graph-node cost model implied by
@@ -554,6 +603,112 @@ draining requests. Drain position alone is worth **15.7%** (16.175 ms TPOT
 against 19.190 ms steady), which is the whole apparent domain spread. A
 round-robin `prompts-interleaved.jsonl` arm replaces it. See the
 [mixed-domain c4 result](experiments/2026-07-29-c4-mtp3-mixed-suite/README.md).
+
+Phases 28 to 30 were run between 2026-07-25 and 2026-07-28 but were never
+indexed here; they are backfilled in date order and numbered after Phase 27
+rather than renumbering the chain.
+
+Phase 28 makes both third-party speculators work and adopts neither. DSpark
+(`RedHatAI/GLM-5.2-speculator.dspark`, block 8) needed five distinct real
+defects cleared, three of them upstream and two in this branch's tiered
+contract, and then reproduced the exact deterministic completion at c1. DFlash
+(`UCloud-org/GLM-5.2-FP8-DFlash`, block 16) loaded first try with no blockers
+at all. Both lose to MTP3: 4-wide verification reaches 106.08 decode tok/s and
+95.44 end to end, 9-wide DSpark ~93 and 84.67, 16-wide DFlash ~70 and 65.6.
+**The ranking is strictly inverse to verify-batch width, and acceptance length
+is anticorrelated with throughput** - DFlash accepts 6.84 of 15 against MTP3's
+~2.9 of 4 and is 34% slower. The cause is the property Phase 20 measured: this
+target's routed MoE is only 35% fixed weight streaming, so verification cost
+grows nearly linearly with block width while acceptance grows sublinearly. Step
+time against verify width is 27 ms at 4, 42 ms at 9 and 97 ms at 16. Source
+changes were reverted. See the
+[DSpark bring-up](experiments/2026-07-25-dspark/README.md) and
+[DFlash result](experiments/2026-07-25-dflash/README.md).
+
+Phase 29 sweeps AutoRound W4G64/MTP3 residency extremes on the same 256-question
+five-shot GSM8K harness as Phase 25, from zero target experts in HBM up to
+1,800 per rank, plus trace-cold placements. The literal all-Grace job failed
+during pinned allocation before checkpoint loading, so 300 and 600 hot experts
+bracket the practical floor. The phase also stands up the Claude Code routing
+capture: routed-expert IDs are recorded from natural Claude Code turns, without
+storing prompts, responses or repository contents, and aggregated into a
+75-layer by 256-expert hotness grid. That capture set is what every later
+placement replay is fitted and validated on. Its smoke run exposed a streamed
+output-token metadata bug, fixed in `ffae5a399`. See the
+[residency extremes](experiments/2026-07-26-autoround-residency-extremes/README.md)
+and [routing capture](experiments/2026-07-26-claude-routing-capture/README.md).
+The c1 and c4 AutoRound Claude hosts that serve these sessions are documented in
+[`2026-07-26-claude-autoround`](experiments/2026-07-26-claude-autoround/README.md)
+and [`2026-07-26-claude-autoround-c4`](experiments/2026-07-26-claude-autoround-c4/README.md).
+
+Phase 30 tests hard SM isolation and fails it. The CUDA 13.0.48 runtime has no
+green-context wrappers, so the probe uses the driver API; green contexts do
+partition SMs and dispatch concurrently, which passes the mechanism gate. They
+then lose to the existing production fork/join on every split and every axis:
+at 8, 16, 24 and 32 cold SMs the green union is 388.5, 307.4, 300.5 and
+304.1 us against a same-job production union of ~278 us, 9-40% worse, with hot
+interference at +43-47% against production's +3-6%. Track A is dead. The pivot
+measured Grace-to-HBM staging - overlap a pure C2C weight copy with hot Marlin,
+then run cold Marlin from HBM after hot retires - at 19.8% faster at m=16 and
+36-38% at m=256, bit-exact for the copy. **That result must not be read as
+current**: its production control is the pre-Phase-26 co-run, which the
+shared-memory monopoly had serialized, and Phase 32 later measured cold-from-
+Grace at the C2C roof with the tiers 99.4% co-resident. Staging has to be
+re-measured against post-fix production before it means anything. See the
+[green-context probe](experiments/2026-07-27-green-context-marlin/README.md).
+
+Phase 31 lands per-step replica assignment, the first thing to move the
+EP-rank skew that Phase 26 identified as the top lever. Selected routed experts
+get a second physical copy in otherwise free paired-Grace memory, and after
+routing each active logical expert is assigned to exactly one physical copy so
+that the predicted slowest-rank MoE time is minimized. The first implementation
+optimized a harder objective than it needed to, paid 375 extra graph nodes per
+rank-step, and was measured across nodes at n=2; it netted out flat and was
+reverted in `53fe6dfcf`, preserving the Phase 26 shared-memory fix that the same
+commit had carried. The v2 rewrite is simpler - the corrected min-max objective
+needs no cost constants - and fuses assignment with dual-tier Marlin alignment
+so the extra nodes disappear. Same-node alternating arms with paired statistics
+measure **5.96% off the acceptance-free step at batch 4 and 6.50% at MTP3
+batch 16**, with acceptance flat at +1.60% (t=0.88) and an acceptance-corrected
+step time of -5.11% at t=-13.85. A paired trace over 160 rank-steps per arm
+confirms the mechanism rather than the outcome: rank skew falls 61.5%
+(8.230 -> 3.170 ms), TP all-reduce residency falls 55.4% (9.223 -> 4.114 ms),
+GPU busy falls 9.1%, and the Marlin launch census and union are unchanged. The
+v1 "counter-cost" is settled as a cross-node artifact - Marlin cumulative moves
++1.5% on one node, not +13.4%. Exactly-once is enforced by a graph-capturable
+per-step route fingerprint over all 75 layers, replacing v1's check that
+required `--enforce-eager` and covered only layer 0. See the
+[v2 plan and results](experiments/2026-07-31-replica-scheduling-v2/README.md),
+which supersedes
+[v1](experiments/2026-07-31-replicated-expert-scheduling/README.md) and absorbs
+[the alignment fusion](experiments/2026-07-31-replica-align-fusion/README.md).
+
+Phase 32 stops at its own Phase 1 gate and is more useful for it. A layer's
+four Marlin launches have a union of 310.0 us against a sum of 441.8 us, a
+ratio of 0.70 where perfect overlap should approach 0.50. The cause is not
+occupancy: the measured union is within 2.0 us of the 308.0 us floor the
+observed chain lengths permit, the two streams start within 1.2 us of each
+other, and kernel-level overlap work has at most 0.15 ms/rank-step in it. The
+gap is that one tier does ~39% more work than the other within a layer. The
+proposed fix - redistribute HBM slots across layers to minimize the sum of
+per-layer `max(hot, cold)` - **models at exactly 0.0%**, because redistribution
+only pays when some layer is hot-bound and none is. A cold expert costs 45.32 us
+against a hot expert's 9.75 us, 4.6x, and 6.77 cold experts per layer in 306.9 us
+is ~442 GB/s per rank, at or past the 421 GB/s C2C roof. Balance would need
+about 4.7 GB more resident HBM against a measured peak free of 3,874 MiB. The
+phase also corrects its own Phase 0: identifying tiers by CUDA stream is invalid
+under graph replay, where stream ids rotate per layer, so the "cold longer in
+56.6% of layers" direction claim was random labelling and is withdrawn; tiers
+are distinguishable by grid, 264 blocks hot against 132 cold. The next lever is
+not balance but residency. See the
+[tier-balance result](experiments/2026-08-01-marlin-tier-overlap/README.md).
+
+In flight, undocumented: `experiments/2026-08-01-marlin-grid-fit` holds raw
+sweep results from jobs 1197398, 1197614, 1197769 and 1198412 with no report and
+an empty `analysis/`, and is not committed. Its `policy-1197614.json` puts the
+shipped 264/132 hot/cold grid at 93.67 us against 129.91 us for the pre-fix
+production launch, with the best alternative found (264/99) at 92.20 us, 1.6%
+better and covering 51.6% of the c1 operating point. Read that as provisional.
 
 ## Reproducing
 

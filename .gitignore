@@ -7,15 +7,25 @@ __pycache__/
 core
 core.*
 
+# Raw Slurm and server logs. Hundreds accumulate per experiment and only a few
+# are ever cited. Force-add the ones a report depends on:
+#   git add -f experiments/<date>-<name>/<label>-server.err
+# Already-tracked logs stay tracked and keep showing modifications.
+*.out
+*.err
+*.log
 
-# Green-context experiment: build artifacts + large nsys/ncu reports
-agent_space/experiments/2026-07-27-green-context-marlin/green_context_probe
-agent_space/experiments/2026-07-27-green-context-marlin/nsys/*.nsys-rep
-agent_space/experiments/2026-07-27-green-context-marlin/ncu/*.ncu-rep
+# Profiler captures. These are the largest artifacts in the tree by an order of
+# magnitude (the green-context nsys directory alone is 400 MB).
+*.nsys-rep
+*.ncu-rep
+*.qdrep
+*.sqlite
 
-# Shared-memory monopoly experiment: compiled probes (rebuild with nvcc).
-# Paths are relative to this file; the repo root is agent_space itself, so an
-# "agent_space/" prefix never matches - the green-context entries above have the
-# same defect and are left alone rather than silently changing their behaviour.
+# Compiled probes. Rebuild with nvcc; the sources are tracked.
+# Paths are relative to this file and the repo root is agent_space itself, so
+# an "agent_space/" prefix never matches. Earlier entries here carried that
+# prefix and silently did nothing; they are corrected below.
+experiments/2026-07-27-green-context-marlin/green_context_probe
 experiments/2026-07-29-marlin-smem-monopoly/analysis/smem_monopoly
 experiments/2026-07-29-marlin-smem-monopoly/analysis/tier_union
