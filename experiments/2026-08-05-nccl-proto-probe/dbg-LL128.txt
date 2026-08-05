@@ -1,0 +1,11 @@
+W0805 10:42:04.813000 1474361 torch/distributed/run.py:851] 
+W0805 10:42:04.813000 1474361 torch/distributed/run.py:851] *****************************************
+W0805 10:42:04.813000 1474361 torch/distributed/run.py:851] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W0805 10:42:04.813000 1474361 torch/distributed/run.py:851] *****************************************
+[W805 10:42:06.899186874 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:46579 (errno: 97 - Address family not supported by protocol).
+[W805 10:42:06.900380102 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [localhost]:46579 (errno: 97 - Address family not supported by protocol).
+[W805 10:42:07.980669386 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [jpbo-053-43-interconnect-1.jupiter.internal]:35881 (errno: 97 - Address family not supported by protocol).
+[W805 10:42:08.118043010 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [r53-nod35.jupiter.internal]:35881 (errno: 97 - Address family not supported by protocol).
+[W805 10:42:08.118083041 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [jpbo-053-43.jupiter.internal]:35881 (errno: 97 - Address family not supported by protocol).
+[W805 10:42:08.118086081 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [r53-nod35.jupiter.internal]:35881 (errno: 97 - Address family not supported by protocol).
+[W805 10:42:08.118617944 socket.cpp:764] [c10d] The client socket cannot be initialized to connect to [r53-nod35.jupiter.internal]:35881 (errno: 97 - Address family not supported by protocol).

@@ -1,0 +1,258 @@
+jpbo-053-43:1474206:1474206 [0] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Stack size limit (unlimited) is unsafe; will use 8192KB for newly launched threads
+jpbo-053-43:1474206:1474206 [0] NCCL INFO cudaDriverVersion 13020
+jpbo-053-43:1474206:1474206 [0] NCCL INFO NCCL version 2.28.9+cuda13.0
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Comm config Blocking set to 1
+jpbo-053-43:1474207:1474207 [1] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+jpbo-053-43:1474208:1474208 [2] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+jpbo-053-43:1474207:1474207 [1] NCCL INFO cudaDriverVersion 13020
+jpbo-053-43:1474209:1474209 [3] NCCL INFO ENV/Plugin: Could not find: libnccl-env.so
+jpbo-053-43:1474208:1474208 [2] NCCL INFO cudaDriverVersion 13020
+jpbo-053-43:1474209:1474209 [3] NCCL INFO cudaDriverVersion 13020
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Stack size limit (unlimited) is unsafe; will use 8192KB for newly launched threads
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Stack size limit (unlimited) is unsafe; will use 8192KB for newly launched threads
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Stack size limit (unlimited) is unsafe; will use 8192KB for newly launched threads
+jpbo-053-43:1474207:1474207 [1] NCCL INFO NCCL version 2.28.9+cuda13.0
+jpbo-053-43:1474208:1474208 [2] NCCL INFO NCCL version 2.28.9+cuda13.0
+jpbo-053-43:1474209:1474209 [3] NCCL INFO NCCL version 2.28.9+cuda13.0
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Comm config Blocking set to 1
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Comm config Blocking set to 1
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Comm config Blocking set to 1
+jpbo-053-43:1474208:1474208 [2] NCCL INFO NET/Plugin: Could not find: libnccl-net.so
+jpbo-053-43:1474207:1474207 [1] NCCL INFO NET/Plugin: Could not find: libnccl-net.so
+jpbo-053-43:1474206:1474206 [0] NCCL INFO NET/Plugin: Could not find: libnccl-net.so
+jpbo-053-43:1474209:1474209 [3] NCCL INFO NET/Plugin: Could not find: libnccl-net.so
+jpbo-053-43:1474208:1474208 [2] NCCL INFO NET/IB : Using [0]mlx5_0:1/IB [1]mlx5_1:1/IB [2]mlx5_2:1/IB [3]mlx5_3:1/IB [RO]; OOB ib0:10.128.34.107<0>
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Initialized NET plugin IB
+jpbo-053-43:1474209:1474209 [3] NCCL INFO NET/IB : Using [0]mlx5_0:1/IB [1]mlx5_1:1/IB [2]mlx5_2:1/IB [3]mlx5_3:1/IB [RO]; OOB ib0:10.128.34.107<0>
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Initialized NET plugin IB
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Assigned NET plugin IB to comm
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Using network IB
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Assigned NET plugin IB to comm
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Using network IB
+jpbo-053-43:1474206:1474206 [0] NCCL INFO NET/IB : Using [0]mlx5_0:1/IB [1]mlx5_1:1/IB [2]mlx5_2:1/IB [3]mlx5_3:1/IB [RO]; OOB ib0:10.128.34.107<0>
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Initialized NET plugin IB
+jpbo-053-43:1474207:1474207 [1] NCCL INFO NET/IB : Using [0]mlx5_0:1/IB [1]mlx5_1:1/IB [2]mlx5_2:1/IB [3]mlx5_3:1/IB [RO]; OOB ib0:10.128.34.107<0>
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Initialized NET plugin IB
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Assigned NET plugin IB to comm
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Using network IB
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Assigned NET plugin IB to comm
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Assigned GIN plugin GIN_IB_GDAKI to comm
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Using network IB
+jpbo-053-43:1474208:1474208 [2] NCCL INFO DMA-BUF is available on GPU device 2
+jpbo-053-43:1474208:1474208 [2] NCCL INFO ncclCommInitRankConfig comm 0xaaaaf8b47d00 rank 2 nranks 4 cudaDev 2 nvmlDev 2 busId 2901000 commId 0x37d2cf1fa69737a8 - Init START
+jpbo-053-43:1474209:1474209 [3] NCCL INFO DMA-BUF is available on GPU device 3
+jpbo-053-43:1474209:1474209 [3] NCCL INFO ncclCommInitRankConfig comm 0xaaaaf7137f20 rank 3 nranks 4 cudaDev 3 nvmlDev 3 busId 3901000 commId 0x37d2cf1fa69737a8 - Init START
+jpbo-053-43:1474207:1474207 [1] NCCL INFO DMA-BUF is available on GPU device 1
+jpbo-053-43:1474207:1474207 [1] NCCL INFO ncclCommInitRankConfig comm 0xaaab00797db0 rank 1 nranks 4 cudaDev 1 nvmlDev 1 busId 1901000 commId 0x37d2cf1fa69737a8 - Init START
+jpbo-053-43:1474208:1474208 [2] NCCL INFO RAS client listening socket at 127.0.0.1<28028>
+jpbo-053-43:1474206:1474206 [0] NCCL INFO DMA-BUF is available on GPU device 0
+jpbo-053-43:1474206:1474206 [0] NCCL INFO ncclCommInitRankConfig comm 0xaaab01878220 rank 0 nranks 4 cudaDev 0 nvmlDev 0 busId 901000 commId 0x37d2cf1fa69737a8 - Init START
+jpbo-053-43:1474207:1474207 [1] NCCL INFO RAS client listening socket at 127.0.0.1<28028>
+jpbo-053-43:1474206:1474206 [0] NCCL INFO RAS client listening socket at 127.0.0.1<28028>
+jpbo-053-43:1474209:1474209 [3] NCCL INFO RAS client listening socket at 127.0.0.1<28028>
+jpbo-053-43:1474207:1474207 [1] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 1 is 72-143. (GPU affinity = 72-143 ; CPU affinity = 0-287).
+jpbo-053-43:1474208:1474208 [2] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 2 is 144-215. (GPU affinity = 144-215 ; CPU affinity = 0-287).
+jpbo-053-43:1474207:1474207 [1] NCCL INFO NVLS multicast support is not available on dev 1 (NVLS_NCHANNELS 0)
+jpbo-053-43:1474206:1474206 [0] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 0 is 0-71. (GPU affinity = 0-71 ; CPU affinity = 0-287).
+jpbo-053-43:1474209:1474209 [3] NCCL INFO ncclTopoGetCpuAffinity: Affinity for GPU 3 is 216-287. (GPU affinity = 216-287 ; CPU affinity = 0-287).
+jpbo-053-43:1474208:1474208 [2] NCCL INFO NVLS multicast support is not available on dev 2 (NVLS_NCHANNELS 0)
+jpbo-053-43:1474206:1474206 [0] NCCL INFO NVLS multicast support is not available on dev 0 (NVLS_NCHANNELS 0)
+jpbo-053-43:1474209:1474209 [3] NCCL INFO NVLS multicast support is not available on dev 3 (NVLS_NCHANNELS 0)
+jpbo-053-43:1474207:1474207 [1] NCCL INFO comm 0xaaab00797db0 rank 1 nRanks 4 nNodes 1 localRanks 4 localRank 1 MNNVL 0
+jpbo-053-43:1474206:1474206 [0] NCCL INFO comm 0xaaab01878220 rank 0 nRanks 4 nNodes 1 localRanks 4 localRank 0 MNNVL 0
+jpbo-053-43:1474209:1474209 [3] NCCL INFO comm 0xaaaaf7137f20 rank 3 nRanks 4 nNodes 1 localRanks 4 localRank 3 MNNVL 0
+jpbo-053-43:1474208:1474208 [2] NCCL INFO comm 0xaaaaf8b47d00 rank 2 nRanks 4 nNodes 1 localRanks 4 localRank 2 MNNVL 0
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Trees [0] 2/-1/-1->1->0 [1] 2/-1/-1->1->0 [2] 2/-1/-1->1->0 [3] 2/-1/-1->1->0 [4] 3/-1/-1->1->2 [5] 3/-1/-1->1->2 [6] 3/-1/-1->1->2 [7] 3/-1/-1->1->2 [8] 0/-1/-1->1->-1 [9] 0/-1/-1->1->-1 [10] 0/-1/-1->1->-1 [11] 0/-1/-1->1->-1 [12] 2/-1/-1->1->0 [13] 2/-1/-1->1->0 [14] 2/-1/-1->1->0 [15] 2/-1/-1->1->0 [16] 3/-1/-1->1->2 [17] 3/-1/-1->1->2 [18] 3/-1/-1->1->2 [19] 3/-1/-1->1->2 [20] 0/-1/-1->1->-1 [21] 0/-1/-1->1->-1 [22] 0/-1/-1->1->-1 [23] 0/-1/-1->1->-1
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 00/24 : 0 1 2 3
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Trees [0] -1/-1/-1->3->2 [1] -1/-1/-1->3->2 [2] -1/-1/-1->3->2 [3] -1/-1/-1->3->2 [4] -1/-1/-1->3->1 [5] -1/-1/-1->3->1 [6] -1/-1/-1->3->1 [7] -1/-1/-1->3->1 [8] 2/-1/-1->3->0 [9] 2/-1/-1->3->0 [10] 2/-1/-1->3->0 [11] 2/-1/-1->3->0 [12] -1/-1/-1->3->2 [13] -1/-1/-1->3->2 [14] -1/-1/-1->3->2 [15] -1/-1/-1->3->2 [16] -1/-1/-1->3->1 [17] -1/-1/-1->3->1 [18] -1/-1/-1->3->1 [19] -1/-1/-1->3->1 [20] 2/-1/-1->3->0 [21] 2/-1/-1->3->0 [22] 2/-1/-1->3->0 [23] 2/-1/-1->3->0
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Trees [0] 3/-1/-1->2->1 [1] 3/-1/-1->2->1 [2] 3/-1/-1->2->1 [3] 3/-1/-1->2->1 [4] 1/-1/-1->2->0 [5] 1/-1/-1->2->0 [6] 1/-1/-1->2->0 [7] 1/-1/-1->2->0 [8] -1/-1/-1->2->3 [9] -1/-1/-1->2->3 [10] -1/-1/-1->2->3 [11] -1/-1/-1->2->3 [12] 3/-1/-1->2->1 [13] 3/-1/-1->2->1 [14] 3/-1/-1->2->1 [15] 3/-1/-1->2->1 [16] 1/-1/-1->2->0 [17] 1/-1/-1->2->0 [18] 1/-1/-1->2->0 [19] 1/-1/-1->2->0 [20] -1/-1/-1->2->3 [21] -1/-1/-1->2->3 [22] -1/-1/-1->2->3 [23] -1/-1/-1->2->3
+jpbo-053-43:1474207:1474207 [1] NCCL INFO P2P Chunksize set to 524288
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 01/24 : 0 1 3 2
+jpbo-053-43:1474209:1474209 [3] NCCL INFO P2P Chunksize set to 524288
+jpbo-053-43:1474208:1474208 [2] NCCL INFO P2P Chunksize set to 524288
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 02/24 : 0 2 3 1
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 03/24 : 0 2 1 3
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 04/24 : 0 3 1 2
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 05/24 : 0 3 2 1
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 06/24 : 0 1 2 3
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 07/24 : 0 1 3 2
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 08/24 : 0 2 3 1
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 09/24 : 0 2 1 3
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 10/24 : 0 3 1 2
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 11/24 : 0 3 2 1
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 12/24 : 0 1 2 3
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 13/24 : 0 1 3 2
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 14/24 : 0 2 3 1
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 15/24 : 0 2 1 3
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 16/24 : 0 3 1 2
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 17/24 : 0 3 2 1
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 18/24 : 0 1 2 3
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 19/24 : 0 1 3 2
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 20/24 : 0 2 3 1
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 21/24 : 0 2 1 3
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 22/24 : 0 3 1 2
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 23/24 : 0 3 2 1
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Trees [0] 1/-1/-1->0->-1 [1] 1/-1/-1->0->-1 [2] 1/-1/-1->0->-1 [3] 1/-1/-1->0->-1 [4] 2/-1/-1->0->-1 [5] 2/-1/-1->0->-1 [6] 2/-1/-1->0->-1 [7] 2/-1/-1->0->-1 [8] 3/-1/-1->0->1 [9] 3/-1/-1->0->1 [10] 3/-1/-1->0->1 [11] 3/-1/-1->0->1 [12] 1/-1/-1->0->-1 [13] 1/-1/-1->0->-1 [14] 1/-1/-1->0->-1 [15] 1/-1/-1->0->-1 [16] 2/-1/-1->0->-1 [17] 2/-1/-1->0->-1 [18] 2/-1/-1->0->-1 [19] 2/-1/-1->0->-1 [20] 3/-1/-1->0->1 [21] 3/-1/-1->0->1 [22] 3/-1/-1->0->1 [23] 3/-1/-1->0->1
+jpbo-053-43:1474206:1474206 [0] NCCL INFO P2P Chunksize set to 524288
+jpbo-053-43:1474206:1474206 [0] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+jpbo-053-43:1474206:1474348 [0] NCCL INFO [Proxy Service UDS] Device 0 CPU core 2
+jpbo-053-43:1474206:1474347 [0] NCCL INFO [Proxy Service] Device 0 CPU core 1
+jpbo-053-43:1474209:1474209 [3] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+jpbo-053-43:1474207:1474207 [1] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+jpbo-053-43:1474209:1474351 [0] NCCL INFO [Proxy Service] Device 3 CPU core 218
+jpbo-053-43:1474209:1474352 [0] NCCL INFO [Proxy Service UDS] Device 3 CPU core 219
+jpbo-053-43:1474207:1474353 [0] NCCL INFO [Proxy Service] Device 1 CPU core 91
+jpbo-053-43:1474207:1474354 [0] NCCL INFO [Proxy Service UDS] Device 1 CPU core 92
+jpbo-053-43:1474208:1474208 [2] NCCL INFO PROFILER/Plugin: Could not find: libnccl-profiler.so
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Check P2P Type isAllDirectP2p 1 directMode 0 isAllCudaP2p 1
+jpbo-053-43:1474208:1474355 [0] NCCL INFO [Proxy Service] Device 2 CPU core 147
+jpbo-053-43:1474208:1474356 [0] NCCL INFO [Proxy Service UDS] Device 2 CPU core 148
+jpbo-053-43:1474206:1474206 [0] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+jpbo-053-43:1474206:1474206 [0] NCCL INFO NCCL_PROTO set by environment to LL
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Enabled NCCL Func/Proto/Algo Matrix:
+     Function |       LL     LL128    Simple   |          Tree           Ring  CollNetDirect   CollNetChain           NVLS       NVLSTree            PAT  
+    Broadcast |        1         0         0   |             1              1              1              1              1              1              1  
+       Reduce |        1         0         0   |             1              1              1              1              1              1              1  
+    AllGather |        1         0         0   |             1              1              1              1              1              1              1  
+ReduceScatter |        1         0         0   |             1              1              1              1              1              1              1  
+    AllReduce |        1         0         0   |             1              1              1              1              1              1              1  
+
+jpbo-053-43:1474206:1474206 [0] NCCL INFO threadThresholds 8/8/64 | 32/8/64 | 512 | 512
+jpbo-053-43:1474206:1474206 [0] NCCL INFO 24 coll channels, 24 collnet channels, 0 nvls channels, 32 p2p channels, 16 p2p channels per peer
+jpbo-053-43:1474208:1474208 [2] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+jpbo-053-43:1474208:1474208 [2] NCCL INFO NCCL_PROTO set by environment to LL
+jpbo-053-43:1474208:1474208 [2] NCCL INFO threadThresholds 8/8/64 | 32/8/64 | 512 | 512
+jpbo-053-43:1474208:1474208 [2] NCCL INFO 24 coll channels, 24 collnet channels, 0 nvls channels, 32 p2p channels, 16 p2p channels per peer
+jpbo-053-43:1474206:1474206 [0] NCCL INFO CC Off, workFifoBytes 1048576
+jpbo-053-43:1474209:1474209 [3] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+jpbo-053-43:1474209:1474209 [3] NCCL INFO NCCL_PROTO set by environment to LL
+jpbo-053-43:1474209:1474209 [3] NCCL INFO threadThresholds 8/8/64 | 32/8/64 | 512 | 512
+jpbo-053-43:1474209:1474209 [3] NCCL INFO 24 coll channels, 24 collnet channels, 0 nvls channels, 32 p2p channels, 16 p2p channels per peer
+jpbo-053-43:1474207:1474207 [1] NCCL INFO TUNER/Plugin: Could not find: libnccl-tuner.so
+jpbo-053-43:1474207:1474207 [1] NCCL INFO NCCL_PROTO set by environment to LL
+jpbo-053-43:1474207:1474207 [1] NCCL INFO threadThresholds 8/8/64 | 32/8/64 | 512 | 512
+jpbo-053-43:1474207:1474207 [1] NCCL INFO 24 coll channels, 24 collnet channels, 0 nvls channels, 32 p2p channels, 16 p2p channels per peer
+jpbo-053-43:1474208:1474208 [2] NCCL INFO ncclCommInitRankConfig comm 0xaaaaf8b47d00 rank 2 nranks 4 cudaDev 2 nvmlDev 2 busId 2901000 commId 0x37d2cf1fa69737a8 - Init COMPLETE
+jpbo-053-43:1474206:1474206 [0] NCCL INFO ncclCommInitRankConfig comm 0xaaab01878220 rank 0 nranks 4 cudaDev 0 nvmlDev 0 busId 901000 commId 0x37d2cf1fa69737a8 - Init COMPLETE
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Init timings - ncclCommInitRankConfig: rank 2 nranks 4 total 1.98 (kernels 0.11, alloc 1.74, bootstrap 0.02, allgathers 0.00, topo 0.02, graphs 0.01, connections 0.05, rest 0.03)
+jpbo-053-43:1474207:1474207 [1] NCCL INFO ncclCommInitRankConfig comm 0xaaab00797db0 rank 1 nranks 4 cudaDev 1 nvmlDev 1 busId 1901000 commId 0x37d2cf1fa69737a8 - Init COMPLETE
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Init timings - ncclCommInitRankConfig: rank 0 nranks 4 total 1.99 (kernels 0.11, alloc 1.77, bootstrap 0.00, allgathers 0.00, topo 0.02, graphs 0.01, connections 0.05, rest 0.02)
+jpbo-053-43:1474209:1474209 [3] NCCL INFO ncclCommInitRankConfig comm 0xaaaaf7137f20 rank 3 nranks 4 cudaDev 3 nvmlDev 3 busId 3901000 commId 0x37d2cf1fa69737a8 - Init COMPLETE
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Init timings - ncclCommInitRankConfig: rank 1 nranks 4 total 1.98 (kernels 0.11, alloc 1.77, bootstrap 0.01, allgathers 0.00, topo 0.02, graphs 0.01, connections 0.05, rest 0.02)
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Init timings - ncclCommInitRankConfig: rank 3 nranks 4 total 1.98 (kernels 0.11, alloc 1.75, bootstrap 0.02, allgathers 0.00, topo 0.02, graphs 0.01, connections 0.05, rest 0.02)
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 00/0 : 0[0] -> 1[1] via P2P/CUMEM
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Channel 00/0 : 2[2] -> 3[3] via P2P/CUMEM
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 01/0 : 0[0] -> 1[1] via P2P/CUMEM
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 06/0 : 0[0] -> 1[1] via P2P/CUMEM
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Channel 02/0 : 2[2] -> 3[3] via P2P/CUMEM
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Channel 00/0 : 1[1] -> 2[2] via P2P/CUMEM
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Channel 06/0 : 2[2] -> 3[3] via P2P/CUMEM
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 07/0 : 0[0] -> 1[1] via P2P/CUMEM
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Channel 08/0 : 2[2] -> 3[3] via P2P/CUMEM
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 12/0 : 0[0] -> 1[1] via P2P/CUMEM
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Channel 00/0 : 3[3] -> 0[0] via P2P/CUMEM
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Channel 04/0 : 1[1] -> 2[2] via P2P/CUMEM
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 13/0 : 0[0] -> 1[1] via P2P/CUMEM
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Channel 12/0 : 2[2] -> 3[3] via P2P/CUMEM
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Channel 06/0 : 1[1] -> 2[2] via P2P/CUMEM
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Channel 03/0 : 3[3] -> 0[0] via P2P/CUMEM
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 18/0 : 0[0] -> 1[1] via P2P/CUMEM
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Channel 14/0 : 2[2] -> 3[3] via P2P/CUMEM
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Channel 10/0 : 1[1] -> 2[2] via P2P/CUMEM
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Channel 06/0 : 3[3] -> 0[0] via P2P/CUMEM
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 19/0 : 0[0] -> 1[1] via P2P/CUMEM
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Channel 18/0 : 2[2] -> 3[3] via P2P/CUMEM
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Channel 12/0 : 1[1] -> 2[2] via P2P/CUMEM
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Channel 09/0 : 3[3] -> 0[0] via P2P/CUMEM
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Channel 16/0 : 1[1] -> 2[2] via P2P/CUMEM
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Channel 12/0 : 3[3] -> 0[0] via P2P/CUMEM
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Channel 20/0 : 2[2] -> 3[3] via P2P/CUMEM
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Channel 18/0 : 1[1] -> 2[2] via P2P/CUMEM
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Channel 15/0 : 3[3] -> 0[0] via P2P/CUMEM
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Channel 22/0 : 1[1] -> 2[2] via P2P/CUMEM
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Channel 18/0 : 3[3] -> 0[0] via P2P/CUMEM
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Channel 21/0 : 3[3] -> 0[0] via P2P/CUMEM
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 02/0 : 0[0] -> 2[2] via P2P/CUMEM
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Channel 01/0 : 1[1] -> 3[3] via P2P/CUMEM
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 03/0 : 0[0] -> 2[2] via P2P/CUMEM
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Channel 01/0 : 2[2] -> 0[0] via P2P/CUMEM
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Channel 03/0 : 1[1] -> 3[3] via P2P/CUMEM
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 08/0 : 0[0] -> 2[2] via P2P/CUMEM
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Channel 07/0 : 1[1] -> 3[3] via P2P/CUMEM
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Channel 04/0 : 2[2] -> 0[0] via P2P/CUMEM
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 09/0 : 0[0] -> 2[2] via P2P/CUMEM
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Channel 09/0 : 1[1] -> 3[3] via P2P/CUMEM
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Channel 07/0 : 2[2] -> 0[0] via P2P/CUMEM
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Channel 02/0 : 3[3] -> 1[1] via P2P/CUMEM
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Channel 13/0 : 1[1] -> 3[3] via P2P/CUMEM
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 14/0 : 0[0] -> 2[2] via P2P/CUMEM
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Channel 10/0 : 2[2] -> 0[0] via P2P/CUMEM
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Channel 04/0 : 3[3] -> 1[1] via P2P/CUMEM
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Channel 15/0 : 1[1] -> 3[3] via P2P/CUMEM
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 15/0 : 0[0] -> 2[2] via P2P/CUMEM
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Channel 13/0 : 2[2] -> 0[0] via P2P/CUMEM
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Channel 08/0 : 3[3] -> 1[1] via P2P/CUMEM
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Channel 19/0 : 1[1] -> 3[3] via P2P/CUMEM
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 20/0 : 0[0] -> 2[2] via P2P/CUMEM
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Channel 16/0 : 2[2] -> 0[0] via P2P/CUMEM
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Channel 21/0 : 1[1] -> 3[3] via P2P/CUMEM
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Channel 10/0 : 3[3] -> 1[1] via P2P/CUMEM
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 21/0 : 0[0] -> 2[2] via P2P/CUMEM
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Channel 19/0 : 2[2] -> 0[0] via P2P/CUMEM
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Channel 14/0 : 3[3] -> 1[1] via P2P/CUMEM
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Channel 22/0 : 2[2] -> 0[0] via P2P/CUMEM
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Channel 16/0 : 3[3] -> 1[1] via P2P/CUMEM
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Channel 20/0 : 3[3] -> 1[1] via P2P/CUMEM
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Channel 22/0 : 3[3] -> 1[1] via P2P/CUMEM
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 04/0 : 0[0] -> 3[3] via P2P/CUMEM
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 05/0 : 0[0] -> 3[3] via P2P/CUMEM
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Channel 03/0 : 2[2] -> 1[1] via P2P/CUMEM
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Channel 05/0 : 2[2] -> 1[1] via P2P/CUMEM
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 10/0 : 0[0] -> 3[3] via P2P/CUMEM
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Channel 02/0 : 1[1] -> 0[0] via P2P/CUMEM
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Channel 01/0 : 3[3] -> 2[2] via P2P/CUMEM
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 11/0 : 0[0] -> 3[3] via P2P/CUMEM
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Channel 09/0 : 2[2] -> 1[1] via P2P/CUMEM
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Channel 05/0 : 1[1] -> 0[0] via P2P/CUMEM
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Channel 05/0 : 3[3] -> 2[2] via P2P/CUMEM
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 16/0 : 0[0] -> 3[3] via P2P/CUMEM
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Channel 11/0 : 2[2] -> 1[1] via P2P/CUMEM
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Channel 07/0 : 3[3] -> 2[2] via P2P/CUMEM
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Channel 08/0 : 1[1] -> 0[0] via P2P/CUMEM
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 17/0 : 0[0] -> 3[3] via P2P/CUMEM
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Channel 15/0 : 2[2] -> 1[1] via P2P/CUMEM
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Channel 11/0 : 3[3] -> 2[2] via P2P/CUMEM
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 22/0 : 0[0] -> 3[3] via P2P/CUMEM
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Channel 11/0 : 1[1] -> 0[0] via P2P/CUMEM
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Channel 17/0 : 2[2] -> 1[1] via P2P/CUMEM
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Channel 13/0 : 3[3] -> 2[2] via P2P/CUMEM
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Channel 23/0 : 0[0] -> 3[3] via P2P/CUMEM
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Channel 14/0 : 1[1] -> 0[0] via P2P/CUMEM
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Channel 21/0 : 2[2] -> 1[1] via P2P/CUMEM
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Channel 17/0 : 3[3] -> 2[2] via P2P/CUMEM
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Channel 17/0 : 1[1] -> 0[0] via P2P/CUMEM
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Channel 23/0 : 2[2] -> 1[1] via P2P/CUMEM
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Channel 19/0 : 3[3] -> 2[2] via P2P/CUMEM
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Channel 20/0 : 1[1] -> 0[0] via P2P/CUMEM
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Channel 23/0 : 3[3] -> 2[2] via P2P/CUMEM
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Channel 23/0 : 1[1] -> 0[0] via P2P/CUMEM
+jpbo-053-43:1474207:1474207 [1] NCCL INFO Connected all rings, use ring PXN 0 GDR 1
+jpbo-053-43:1474206:1474206 [0] NCCL INFO Connected all rings, use ring PXN 0 GDR 1
+jpbo-053-43:1474208:1474208 [2] NCCL INFO Connected all rings, use ring PXN 0 GDR 1
+jpbo-053-43:1474209:1474209 [3] NCCL INFO Connected all rings, use ring PXN 0 GDR 1
+{"NCCL_PROTO": "LL", "NCCL_ALGO": "<unset>", "world": 4, "results": [{"tokens": 8192, "MiB": 96.0, "median_us": 1105.0, "algbw_GBs": 91.1, "busbw_GBs": 136.7}, {"tokens": 16384, "MiB": 192.0, "median_us": 2163.1, "algbw_GBs": 93.1, "busbw_GBs": 139.6}]}
+jpbo-053-43:1474207:1474207 [1] NCCL INFO comm 0xaaab00797db0 rank 1 nranks 4 cudaDev 1 busId 1901000 - Destroy COMPLETE
+jpbo-053-43:1474209:1474209 [3] NCCL INFO comm 0xaaaaf7137f20 rank 3 nranks 4 cudaDev 3 busId 3901000 - Destroy COMPLETE
+jpbo-053-43:1474206:1474206 [0] NCCL INFO comm 0xaaab01878220 rank 0 nranks 4 cudaDev 0 busId 901000 - Destroy COMPLETE
+jpbo-053-43:1474208:1474208 [2] NCCL INFO comm 0xaaaaf8b47d00 rank 2 nranks 4 cudaDev 2 busId 2901000 - Destroy COMPLETE
+jpbo-053-43:1474207:1474207 [1] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault
+jpbo-053-43:1474209:1474209 [3] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault
+jpbo-053-43:1474208:1474208 [2] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault
+jpbo-053-43:1474206:1474206 [0] NCCL INFO ENV/Plugin: Closing env plugin ncclEnvDefault

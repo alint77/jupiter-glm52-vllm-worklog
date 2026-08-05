@@ -1,7 +1,7 @@
 # Prefill collectives: NCCL protocol and chunk size
 
-Status: **In flight** (job `1245333`). Design and the two failed attempts are
-recorded here; results follow.
+Status: **Complete — the premise was wrong.** The collectives already run at
+hardware speed; 75% of their measured time is waiting, not moving bytes.
 
 ## The question
 
@@ -100,7 +100,107 @@ are what is pressing a **project-wide** quota, so this can affect other users of
 
 ## Results
 
-Pending job `1245333`.
+Job `1245581` (jobs `1245124`, `1245137`, `1245333` failed for the reasons
+above). Two arms completed; the 16K arms were refused by the tiered validator.
+
+| arm | TTFT | vs base | spread | protocol | comm/chunk | AR/chunk |
+| --- | ---: | ---: | ---: | :-: | ---: | ---: |
+| `baseline` | 5.127 s | 1.000x | 0.17% | LL | 396.6 ms | 225.3 ms |
+| `proto-simple` | 5.114 s | 1.003x | 0.16% | LL | 397.0 ms | 225.9 ms |
+| `chunk16k` | refused | | | | | |
+| `chunk16k-simple` | refused | | | | | |
+
+**The protocol never changed.** Both arms show
+`ncclDevKernel_AllReduce_Sum_bf16_RING_LL` and identical comm time; the 0.3%
+TTFT difference is inside the 0.17% repeat spread. `NCCL_PROTO` exported in the
+shell did not reach the communicator. Note vLLM itself sets it *from Python*
+(`batch_invariant.py:975`) rather than relying on the environment.
+
+**The 16K arms were refused by design**, not crashed:
+`vllm/config/vllm.py:2316` raises "Tiered MoE initially requires
+max_num_batched_tokens=8192".
+
+## What the standalone probe showed
+
+[`2026-08-05-nccl-proto-probe`](../2026-08-05-nccl-proto-probe/README.md)
+measured the identical 96 MiB all-reduce outside vLLM:
+
+| `NCCL_PROTO` | 96 MiB | busbw |
+| --- | ---: | ---: |
+| unset | 514 us | 294 GB/s |
+| Simple | 520 us | 290 GB/s |
+| LL128 | 557 us | 271 GB/s |
+| LL (forced) | 1,105 us | 137 GB/s |
+
+`NCCL_PROTO` *is* honoured there, and **NCCL's default already picks the fast
+protocol**. There was never a protocol fix to make.
+
+## The real finding: the median is already optimal, the tail is not
+
+Per-rank all-reduce duration in the production prefill trace:
+
+| rank | n | mean | p10 | **p50** | p90 | max |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0 | 320 | 2,064 us | 472 | **520** | 6,541 | 11,067 |
+| 1 | 319 | 2,008 | 472 | **491** | 6,422 | 11,841 |
+| 2 | 319 | 2,029 | 470 | **482** | 6,365 | 11,239 |
+| 3 | 319 | 1,983 | 485 | **500** | 6,109 | 9,893 |
+
+**The median all-reduce (482-520 us) equals the standalone hardware optimum
+(514 us).** The bandwidth was never bad. The "70 GB/s bus rate" reported in the
+production profile was an artifact of averaging wait time into transfer time.
+
+p90 is 6.1-6.5 ms, twelve times the median. Cross-rank spread of the means is
+**4.0%**, so no rank is slow — every rank sees the same fast-median, heavy-tail
+distribution, which is the signature of **symmetric arrival skew**: whoever
+reaches the collective first blocks until the straggler arrives, and the
+straggler rotates.
+
+Pricing it: 160 all-reduces at the p50 would be ~80 ms/chunk against the
+330 ms measured, so **~250 ms/chunk — 9.5% of prefill — is waiting, not
+communication.**
+
+### Unresolved
+
+Production's kernels are named `RING_LL` yet reach a p50 that matches *Simple*
+standalone, while forced-LL standalone is twice as slow. The two are therefore
+not the same operating point — channel count is the likely difference, since the
+production launch is `grid=(24,1,1)` and several communicators (TP, DCP, EP)
+coexist. This does not affect the conclusion, which rests on the median/tail
+split, but it is not explained.
+
+## Consequence: the lever moves
+
+Prefill's collective cost is not bandwidth and not protocol. It is **EP load
+imbalance across ranks**, which is the same quantity replica assignment was
+built for — and which cut decode's skew 61.5% and all-reduce residency 55.4%
+in [`2026-07-31-replica-scheduling-v2`](../2026-07-31-replica-scheduling-v2/README.md).
+
+Replica assignment does not run in prefill.
+`tiered_moe_execution.py:221` returns early when
+`num_tokens > tiered_overlap_max_tokens`, which is 16.
+
+That is the fourth decode-only gate found in this area, all with the same shape:
+
+| gate | site | effect in prefill |
+| --- | --- | --- |
+| tight shared-memory launch policy | `marlin_moe.py:142` | legacy launch (measured: worth little) |
+| hot/cold stream overlap | `apply_tiered` | tiers run serially |
+| **replica assignment** | `tiered_moe_execution.py:221` | **no EP balancing** |
+| `max_num_batched_tokens` pin | `vllm/config/vllm.py:2316` | chunk size fixed at 8192 |
+
+## Also settled: the chunk-size lever is a bad trade
+
+`plan_tiered_glm_runtime_buffers` is fully parametric in
+`max_num_batched_tokens`, so the `!= 8192` guard hides no assumption. But the
+Marlin arenas are `M * 393,216` bytes: **3.22 GB/rank at 8,192 and 6.44 GB at
+16,384**. Against the measured 7.15 GiB free and a 5.59 GiB audit floor, +3.22 GB
+fails the post-warmup audit outright. Paying for it in residency means moving
+**160 experts/rank** (3.22 GB / 20.05 MB) from HBM to Grace, dropping hot
+residency 59.8% -> 56.5%, which costs roughly 1.8 ms/step of decode
+(~0.7 more active cold experts per layer x 35.6 us x 75 layers) to save ~123 ms
+of per-chunk prefill fixed cost. Phase 32's conclusion was to *buy* HBM
+residency; this spends it. Dropped.
 
 ## Files
 
