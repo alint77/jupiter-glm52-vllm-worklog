@@ -189,6 +189,57 @@ That is the fourth decode-only gate found in this area, all with the same shape:
 | **replica assignment** | `tiered_moe_execution.py:221` | **no EP balancing** |
 | `max_num_batched_tokens` pin | `vllm/config/vllm.py:2316` | chunk size fixed at 8192 |
 
+## Follow-up: the skew is per-layer, and replica assignment cannot fix it
+
+The obvious next step from the finding above was to ungate replica assignment
+for prefill. Two measurements say no.
+
+**Aggregate rank load is already balanced.** Per-rank totals over a chunk:
+
+| rank | Marlin ms | all compute ms |
+| ---: | ---: | ---: |
+| 0 | 883.7 | 1,902.9 |
+| 1 | 890.5 | 1,917.1 |
+| 2 | 886.8 | 1,915.5 |
+| 3 | 894.5 | 1,920.3 |
+
+Spread is **1.21% on Marlin and 0.91% on all compute** — max-minus-mean of
+6.3 ms, which cannot explain a 250 ms tail.
+
+**The imbalance is per-layer, and it rotates.** Grouping Marlin launches into
+routed layers and comparing ranks at each one:
+
+| | |
+| --- | ---: |
+| per-layer rank spread, p50 | **45.2%** |
+| p90 | 74.5% |
+| max | 89.4% |
+| summed per-layer max-minus-mean | **185.7 ms/chunk** (60 of 75 layers in window; ~232 ms scaled) |
+
+That accounts for most of the ~250 ms of all-reduce time above the p50, and it
+reconciles the two facts: each layer is badly imbalanced, every barrier cashes
+that in, and because the straggler rotates the totals still come out level.
+
+**Why the existing mechanism does not apply.** `tiered_moe_scheduler.py` states
+its own assumption: *"Every active cold expert costs the same Grace weight read
+regardless of how many tokens route to it, so the objective is purely to
+minimise the maximum per-rank count of active cold experts. No cost constants
+appear."* That holds at decode, which is weight-streaming bound at 45.32 us per
+active cold expert. It is false at prefill, which
+[the profile](../2026-08-05-prod-profile/README.md) measured as compute-bound by
+**8.1x over its streaming floor** — cost there scales with tokens, not expert
+count. And at 8,192 tokens essentially every expert is active, so a count-based
+min-max is degenerate: every rank already holds a full active set.
+
+Mechanically it does not fit either: the fused kernel is a single CTA with
+`tl.arange(0, ROUTE_BLOCK)` sized for decode's ~128 routes against prefill's
+65,536, and it emits `BLOCK_M=16` metadata where prefill's Marlin call selects
+`block_size_m=64`.
+
+So the lever is real and now priced at **185-232 ms/chunk, 7-9% of prefill**,
+but taking it needs a *token-weighted* min-max assignment — a different
+objective and a different kernel, not an ungating.
+
 ## Also settled: the chunk-size lever is a bad trade
 
 `plan_tiered_glm_runtime_buffers` is fully parametric in
