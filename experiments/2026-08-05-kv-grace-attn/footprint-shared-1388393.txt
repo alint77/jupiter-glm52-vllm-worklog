@@ -1,0 +1,1 @@
+detected Grace NUMA node 0 for GPU 0

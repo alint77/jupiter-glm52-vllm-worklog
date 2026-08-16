@@ -1,0 +1,144 @@
+pattern     tok mode           HBM ms  Grace ms  penalty  HBM GB/s  Grace GB/s
+random       16 eager           3.531    10.724    3.04x     474.9       156.4
+random       16 cuda_graph      2.186    10.542    4.82x     767.0       159.0
+sorted       16 eager           3.515     9.524    2.71x     477.0       176.1
+sorted       16 cuda_graph      2.208     9.360    4.24x     759.3       179.1
+clustered    16 eager           3.502     5.744    1.64x     478.7       291.9
+clustered    16 cuda_graph      2.183     5.572    2.55x     768.2       300.9
+{
+  "block_size": 64,
+  "correctness": {
+    "clustered/t16": "exact across tiers",
+    "random/t16": "exact across tiers",
+    "sorted/t16": "exact across tiers"
+  },
+  "device": "NVIDIA GH200 120GB",
+  "entry_bytes": 656,
+  "iterations": 40,
+  "layers": 78,
+  "minimum_local_fraction_after": 1.0,
+  "minimum_local_fraction_before": 1.0,
+  "num_blocks": 6251,
+  "real_index_trace": null,
+  "results": {
+    "clustered/t16": {
+      "cuda_graph": {
+        "hbm": {
+          "effective_gbps_median": 768.2195774199485,
+          "max_ms": 2.2423999309539795,
+          "median_ms": 2.182543992996216,
+          "min_ms": 2.1806719303131104,
+          "p95_ms": 2.1847360134124756,
+          "p99_ms": 2.2423999309539795
+        },
+        "host_uva": {
+          "effective_gbps_median": 300.89230737213217,
+          "max_ms": 5.711904048919678,
+          "median_ms": 5.572335958480835,
+          "min_ms": 5.56060791015625,
+          "p95_ms": 5.579775810241699,
+          "p99_ms": 5.711904048919678
+        }
+      },
+      "eager": {
+        "hbm": {
+          "effective_gbps_median": 478.74961489750564,
+          "max_ms": 5.824607849121094,
+          "median_ms": 3.50219190120697,
+          "min_ms": 3.411263942718506,
+          "p95_ms": 5.796895980834961,
+          "p99_ms": 5.824607849121094
+        },
+        "host_uva": {
+          "effective_gbps_median": 291.87957260532585,
+          "max_ms": 6.034175872802734,
+          "median_ms": 5.7444000244140625,
+          "min_ms": 5.716544151306152,
+          "p95_ms": 5.830272197723389,
+          "p99_ms": 6.034175872802734
+        }
+      }
+    },
+    "random/t16": {
+      "cuda_graph": {
+        "hbm": {
+          "effective_gbps_median": 767.0219033894133,
+          "max_ms": 2.2462399005889893,
+          "median_ms": 2.1859519481658936,
+          "min_ms": 2.1835520267486572,
+          "p95_ms": 2.1966400146484375,
+          "p99_ms": 2.2462399005889893
+        },
+        "host_uva": {
+          "effective_gbps_median": 159.04696007611156,
+          "max_ms": 10.637056350708008,
+          "median_ms": 10.541999816894531,
+          "min_ms": 10.524991989135742,
+          "p95_ms": 10.56009578704834,
+          "p99_ms": 10.637056350708008
+        }
+      },
+      "eager": {
+        "hbm": {
+          "effective_gbps_median": 474.9071663111101,
+          "max_ms": 4.842048168182373,
+          "median_ms": 3.530527949333191,
+          "min_ms": 3.4294400215148926,
+          "p95_ms": 3.601439952850342,
+          "p99_ms": 4.842048168182373
+        },
+        "host_uva": {
+          "effective_gbps_median": 156.35075839777687,
+          "max_ms": 10.777440071105957,
+          "median_ms": 10.72379207611084,
+          "min_ms": 10.690752029418945,
+          "p95_ms": 10.749183654785156,
+          "p99_ms": 10.777440071105957
+        }
+      }
+    },
+    "sorted/t16": {
+      "cuda_graph": {
+        "hbm": {
+          "effective_gbps_median": 759.3132385485484,
+          "max_ms": 2.2667200565338135,
+          "median_ms": 2.2081440687179565,
+          "min_ms": 2.205631971359253,
+          "p95_ms": 2.210207939147949,
+          "p99_ms": 2.2667200565338135
+        },
+        "host_uva": {
+          "effective_gbps_median": 179.13019767164084,
+          "max_ms": 9.472384452819824,
+          "median_ms": 9.360080242156982,
+          "min_ms": 9.329376220703125,
+          "p95_ms": 9.379136085510254,
+          "p99_ms": 9.472384452819824
+        }
+      },
+      "eager": {
+        "hbm": {
+          "effective_gbps_median": 476.99319108196397,
+          "max_ms": 5.990752220153809,
+          "median_ms": 3.5150879621505737,
+          "min_ms": 3.410111904144287,
+          "p95_ms": 5.926080226898193,
+          "p99_ms": 5.990752220153809
+        },
+        "host_uva": {
+          "effective_gbps_median": 176.0509953355979,
+          "max_ms": 9.574080467224121,
+          "median_ms": 9.523791790008545,
+          "min_ms": 9.500127792358398,
+          "p95_ms": 9.555871963500977,
+          "p99_ms": 9.574080467224121
+        }
+      }
+    }
+  },
+  "sparse_read_bytes_per_token": 104792064,
+  "topk": 2048,
+  "torch": "2.11.0+cu130",
+  "warmups": 5,
+  "working_set_bytes": 20470474752
+}

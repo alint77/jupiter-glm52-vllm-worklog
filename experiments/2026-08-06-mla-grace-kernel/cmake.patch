@@ -1,0 +1,32 @@
+diff --git a/cmake/external_projects/flashmla.cmake b/cmake/external_projects/flashmla.cmake
+index 56f7a83f6..686a2d8b4 100644
+--- a/cmake/external_projects/flashmla.cmake
++++ b/cmake/external_projects/flashmla.cmake
+@@ -70,6 +70,14 @@ if(FLASH_MLA_ARCHS)
+     message(STATUS "FlashMLA CUDA architectures: ${FLASH_MLA_ARCHS}")
+     set(VLLM_FLASHMLA_GPU_FLAGS ${VLLM_GPU_FLAGS})
+     list(APPEND VLLM_FLASHMLA_GPU_FLAGS "--expt-relaxed-constexpr" "--expt-extended-lambda" "--use_fast_math")
++    # Number of 128 B L2 prefetch lines the sparse decode kernel issues per
++    # thread for the next KV block. 0 disables. Only useful when the KV cache
++    # lives in far memory (Grace over C2C), where the two-deep shared-memory
++    # pipeline cannot cover the load latency.
++    if(NOT DEFINED FLASHMLA_GRACE_L2_PREFETCH)
++        set(FLASHMLA_GRACE_L2_PREFETCH 1)
++    endif()
++
+ 
+     set(FlashMLA_SOURCES
+         ${flashmla_SOURCE_DIR}/csrc/api/api.cpp
+@@ -153,6 +161,12 @@ if(FLASH_MLA_ARCHS)
+         USE_SABI 3
+         WITH_SOABI)
+ 
++    # The sparse decode kernel lives in _flashmla_C, which compiles with
++    # VLLM_GPU_FLAGS rather than VLLM_FLASHMLA_GPU_FLAGS, so the prefetch depth
++    # has to be set on the target directly.
++    target_compile_definitions(_flashmla_C PRIVATE
++        FLASHMLA_GRACE_L2_PREFETCH=${FLASHMLA_GRACE_L2_PREFETCH})
++
+     # Enable C++20 for the FlashMLA sources (required for std::span, requires, etc.)
+     target_compile_options(_flashmla_C PRIVATE
+         $<$<COMPILE_LANGUAGE:CXX>:-std=c++20>

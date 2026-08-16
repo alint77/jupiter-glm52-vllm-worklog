@@ -30,7 +30,17 @@ def make_index_sets(
     pattern: str,
     device: torch.device,
     real_index_trace: Path | None = None,
+    query_tokens: int = 1,
+    index_mode: str = "shared",
 ) -> list[torch.Tensor]:
+    """Top-k index sets shaped (1, query_tokens, TOPK).
+
+    `index_mode` decides what the extra query tokens select. MTP3's draft
+    positions are consecutive and attend to almost the same context, so their
+    top-k sets overlap heavily -- `shared` models that and is the realistic
+    case. `independent` gives every token its own draw, which is the worst case
+    for cache reuse and an upper bound on traffic.
+    """
     if pattern == "real":
         if real_index_trace is None:
             raise ValueError("The real pattern requires --real-index-trace")
@@ -46,20 +56,34 @@ def make_index_sets(
             raise ValueError("Real DSA trace must contain 21 complete top-2048 sets")
         scale = (NUM_BLOCKS * BLOCK_SIZE - 1) / context_position
         scaled = np.floor(source * scale).astype(np.int32)
-        return [torch.from_numpy(row).to(device).view(1, 1, TOPK) for row in scaled]
+        return [
+            torch.from_numpy(row).to(device).view(1, 1, TOPK).expand(1, query_tokens, TOPK).contiguous()
+            for row in scaled
+        ]
 
     generator = torch.Generator(device=device).manual_seed(17)
     sets = []
     for index in range(21):
-        if pattern == "random":
-            values = torch.randperm(400_000, generator=generator, device=device)[:TOPK]
-        elif pattern == "sorted":
-            values = torch.randperm(400_000, generator=generator, device=device)[:TOPK]
-            values = values.sort().values
-        else:
-            start = (index * 19_003) % (400_000 - TOPK)
-            values = torch.arange(start, start + TOPK, device=device)
-        sets.append(values.to(torch.int32).view(1, 1, TOPK))
+        rows = []
+        draws = query_tokens if index_mode == "independent" else 1
+        for draw in range(draws):
+            if pattern == "random":
+                values = torch.randperm(400_000, generator=generator, device=device)[
+                    :TOPK
+                ]
+            elif pattern == "sorted":
+                values = torch.randperm(400_000, generator=generator, device=device)[
+                    :TOPK
+                ]
+                values = values.sort().values
+            else:
+                start = ((index + draw) * 19_003) % (400_000 - TOPK)
+                values = torch.arange(start, start + TOPK, device=device)
+            rows.append(values.to(torch.int32))
+        stacked = torch.stack(rows, dim=0)
+        if draws == 1 and query_tokens > 1:
+            stacked = stacked.expand(query_tokens, TOPK).contiguous()
+        sets.append(stacked.view(1, query_tokens, TOPK))
     return sets
 
 
@@ -101,7 +125,9 @@ def measure(
     use_cuda_graph: bool,
 ) -> tuple[dict[str, float], torch.Tensor]:
     metadata, _ = fm.get_mla_metadata()
-    output = torch.empty((1, 1, HEADS, VALUE_DIM), dtype=q.dtype, device=q.device)
+    output = torch.empty(
+        (1, q.shape[1], HEADS, VALUE_DIM), dtype=q.dtype, device=q.device
+    )
     for _ in range(warmups):
         output = run_token(caches, q, index_sets, metadata, output)
     torch.cuda.synchronize()
@@ -126,7 +152,8 @@ def measure(
         end.synchronize()
         times.append(start.elapsed_time(end))
 
-    bytes_per_token = LAYERS * TOPK * ENTRY_BYTES
+    query_tokens = q.shape[1]
+    bytes_per_token = LAYERS * TOPK * ENTRY_BYTES * query_tokens
     median_ms = statistics.median(times)
     return (
         {
@@ -143,7 +170,25 @@ def measure(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--numa-node", type=int, default=0)
+    parser.add_argument(
+        "--numa-node",
+        type=int,
+        default=-1,
+        help="paired Grace NUMA node; -1 auto-detects (it is node-specific)",
+    )
+    parser.add_argument(
+        "--query-tokens",
+        type=int,
+        nargs="+",
+        default=[1],
+        help="query tokens per step to sweep; MTP3 is 4 at c1 and 16 at c4",
+    )
+    parser.add_argument(
+        "--index-mode",
+        choices=("shared", "independent"),
+        default="shared",
+        help="whether extra query tokens reuse one top-k set or draw their own",
+    )
     parser.add_argument("--warmups", type=int, default=3)
     parser.add_argument("--iterations", type=int, default=30)
     parser.add_argument("--real-index-trace", type=Path)
@@ -158,8 +203,16 @@ def main() -> None:
 
     torch.manual_seed(17)
     device = torch.device("cuda:0")
-    q = torch.randn((1, 1, HEADS, HEAD_DIM), dtype=torch.bfloat16, device=device)
     cache_shape = (NUM_BLOCKS, BLOCK_SIZE, 1, ENTRY_BYTES)
+
+    numa_node = args.numa_node
+    if numa_node < 0:
+        from vllm.platforms import current_platform
+
+        numa_node = current_platform.get_device_numa_node(device.index or 0)
+        if numa_node is None:
+            raise SystemExit("could not determine the paired Grace NUMA node")
+        print(f"detected Grace NUMA node {numa_node} for GPU {device.index or 0}")
 
     grace_allocations = []
     grace_caches = []
@@ -168,7 +221,7 @@ def main() -> None:
             (NUM_BLOCKS * BLOCK_SIZE * ENTRY_BYTES,),
             torch.int8,
             device.index or 0,
-            args.numa_node,
+            numa_node,
         )
         allocation.cpu_tensor.zero_()
         grace_allocations.append(allocation)
@@ -187,32 +240,56 @@ def main() -> None:
     patterns = ["random", "sorted", "clustered"]
     if args.real_index_trace is not None:
         patterns.append("real")
-    for pattern in patterns:
-        index_sets = make_index_sets(pattern, device, args.real_index_trace)
-        results[pattern] = {
-            "eager": {},
-            "cuda_graph": {},
-        }
-        outputs = {}
-        for mode, use_cuda_graph in (("eager", False), ("cuda_graph", True)):
-            for tier, caches in (("host_uva", grace_caches), ("hbm", hbm_caches)):
-                result, output = measure(
-                    caches,
-                    q,
-                    index_sets,
-                    args.warmups,
-                    args.iterations,
-                    use_cuda_graph,
-                )
-                results[pattern][mode][tier] = result
-                outputs[(mode, tier)] = output
-            torch.testing.assert_close(
-                outputs[(mode, "host_uva")],
-                outputs[(mode, "hbm")],
-                rtol=0,
-                atol=0,
+    print(
+        f"{'pattern':10} {'tok':>4} {'mode':11} {'HBM ms':>9} {'Grace ms':>9} "
+        f"{'penalty':>8} {'HBM GB/s':>9} {'Grace GB/s':>11}"
+    )
+    for tokens in args.query_tokens:
+        q = torch.randn(
+            (1, tokens, HEADS, HEAD_DIM), dtype=torch.bfloat16, device=device
+        )
+        for pattern in patterns:
+            index_sets = make_index_sets(
+                pattern,
+                device,
+                args.real_index_trace,
+                query_tokens=tokens,
+                index_mode=args.index_mode,
             )
-        correctness[pattern] = "exact across tiers"
+            key = f"{pattern}/t{tokens}"
+            results[key] = {"eager": {}, "cuda_graph": {}}
+            outputs = {}
+            for mode, use_cuda_graph in (("eager", False), ("cuda_graph", True)):
+                for tier, caches in (
+                    ("host_uva", grace_caches),
+                    ("hbm", hbm_caches),
+                ):
+                    result, output = measure(
+                        caches,
+                        q,
+                        index_sets,
+                        args.warmups,
+                        args.iterations,
+                        use_cuda_graph,
+                    )
+                    results[key][mode][tier] = result
+                    outputs[(mode, tier)] = output
+                torch.testing.assert_close(
+                    outputs[(mode, "host_uva")],
+                    outputs[(mode, "hbm")],
+                    rtol=0,
+                    atol=0,
+                )
+                hbm = results[key][mode]["hbm"]
+                host = results[key][mode]["host_uva"]
+                print(
+                    f"{pattern:10} {tokens:>4} {mode:11} "
+                    f"{hbm['median_ms']:9.3f} {host['median_ms']:9.3f} "
+                    f"{host['median_ms'] / hbm['median_ms']:7.2f}x "
+                    f"{hbm['effective_gbps_median']:9.1f} "
+                    f"{host['effective_gbps_median']:11.1f}"
+                )
+            correctness[key] = "exact across tiers"
 
     locality_after = [
         allocation.audit_numa(samples=4) for allocation in grace_allocations

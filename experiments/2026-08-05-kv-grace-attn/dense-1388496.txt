@@ -1,0 +1,112 @@
+Grace NUMA node 0, device NVIDIA GH200 120GB
+
+kind            ctx  tok    HBM ms  Grace ms  penalty  HBM GB/s  Grace GB/s
+mla_dense      4096    4  FAILED: fwd_kvcache_mla_fp8, /e/project1/profound/alint77/vllm/.deps/flashmla-src/csrc/extension/sm90/dense_fp8/pybind.cpp:5
+mla_dense      4096   16  FAILED: fwd_kvcache_mla_fp8, /e/project1/profound/alint77/vllm/.deps/flashmla-src/csrc/extension/sm90/dense_fp8/pybind.cpp:5
+mla_dense     32768    4  FAILED: fwd_kvcache_mla_fp8, /e/project1/profound/alint77/vllm/.deps/flashmla-src/csrc/extension/sm90/dense_fp8/pybind.cpp:5
+mla_dense     32768   16  FAILED: fwd_kvcache_mla_fp8, /e/project1/profound/alint77/vllm/.deps/flashmla-src/csrc/extension/sm90/dense_fp8/pybind.cpp:5
+mla_dense    131072    4  FAILED: fwd_kvcache_mla_fp8, /e/project1/profound/alint77/vllm/.deps/flashmla-src/csrc/extension/sm90/dense_fp8/pybind.cpp:5
+mla_dense    131072   16  FAILED: fwd_kvcache_mla_fp8, /e/project1/profound/alint77/vllm/.deps/flashmla-src/csrc/extension/sm90/dense_fp8/pybind.cpp:5
+mla_dense    400000    4  FAILED: fwd_kvcache_mla_fp8, /e/project1/profound/alint77/vllm/.deps/flashmla-src/csrc/extension/sm90/dense_fp8/pybind.cpp:5
+mla_dense    400000   16  FAILED: fwd_kvcache_mla_fp8, /e/project1/profound/alint77/vllm/.deps/flashmla-src/csrc/extension/sm90/dense_fp8/pybind.cpp:5
+gqa            4096    4     0.114     0.330    2.89x     146.9        50.8
+gqa            4096   16     0.114     0.329    2.87x     146.7        51.0
+gqa           32768    4     0.877     2.558    2.92x     153.0        52.5
+gqa           32768   16     0.870     2.557    2.94x     154.2        52.5
+gqa          131072    4     3.379    10.237    3.03x     158.9        52.4
+gqa          131072   16     3.377    10.205    3.02x     159.0        52.6
+gqa          400000    4    10.276    31.364    3.05x     159.4        52.2
+gqa          400000   16    10.279    31.255    3.04x     159.4        52.4
+
+{
+ "rows": [
+  {
+   "kind": "gqa",
+   "context": 4096,
+   "query_tokens": 4,
+   "kv_bytes_per_layer": 16777216,
+   "hbm_ms": 0.11420799791812897,
+   "grace_ms": 0.33001598715782166,
+   "penalty": 2.889604871581731,
+   "hbm_gbps": 146.90053503982182,
+   "grace_gbps": 50.83758561059264
+  },
+  {
+   "kind": "gqa",
+   "context": 4096,
+   "query_tokens": 16,
+   "kv_bytes_per_layer": 16777216,
+   "hbm_ms": 0.11433599889278412,
+   "grace_ms": 0.32867199182510376,
+   "penalty": 2.8746151256640364,
+   "hbm_gbps": 146.73607754747863,
+   "grace_gbps": 51.0454690916519
+  },
+  {
+   "kind": "gqa",
+   "context": 32768,
+   "query_tokens": 4,
+   "kv_bytes_per_layer": 134217728,
+   "hbm_ms": 0.8771839737892151,
+   "grace_ms": 2.55841600894928,
+   "penalty": 2.9166242035836145,
+   "hbm_gbps": 153.009781312138,
+   "grace_gbps": 52.46126022136725
+  },
+  {
+   "kind": "gqa",
+   "context": 32768,
+   "query_tokens": 16,
+   "kv_bytes_per_layer": 134217728,
+   "hbm_ms": 0.8704319894313812,
+   "grace_ms": 2.5567359924316406,
+   "penalty": 2.937318507907614,
+   "hbm_gbps": 154.19668581766982,
+   "grace_gbps": 52.49573221377044
+  },
+  {
+   "kind": "gqa",
+   "context": 131072,
+   "query_tokens": 4,
+   "kv_bytes_per_layer": 536870912,
+   "hbm_ms": 3.379456043243408,
+   "grace_ms": 10.237135887145996,
+   "penalty": 3.0292259334496268,
+   "hbm_gbps": 158.86311439776622,
+   "grace_gbps": 52.44346836053124
+  },
+  {
+   "kind": "gqa",
+   "context": 131072,
+   "query_tokens": 16,
+   "kv_bytes_per_layer": 536870912,
+   "hbm_ms": 3.3770079612731934,
+   "grace_ms": 10.204671859741211,
+   "penalty": 3.0218086474080637,
+   "hbm_gbps": 158.97827845143422,
+   "grace_gbps": 52.61030627726769
+  },
+  {
+   "kind": "gqa",
+   "context": 400000,
+   "query_tokens": 4,
+   "kv_bytes_per_layer": 1638400000,
+   "hbm_ms": 10.276400089263916,
+   "grace_ms": 31.3644962310791,
+   "penalty": 3.0520898328828783,
+   "hbm_gbps": 159.43326318247273,
+   "grace_gbps": 52.23740843560906
+  },
+  {
+   "kind": "gqa",
+   "context": 400000,
+   "query_tokens": 16,
+   "kv_bytes_per_layer": 1638400000,
+   "hbm_ms": 10.278560161590576,
+   "grace_ms": 31.255040168762207,
+   "penalty": 3.040799458036697,
+   "hbm_gbps": 159.39975777175997,
+   "grace_gbps": 52.420345363609414
+  }
+ ]
+}

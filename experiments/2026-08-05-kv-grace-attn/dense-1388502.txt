@@ -1,0 +1,92 @@
+Grace NUMA node 0, device NVIDIA GH200 120GB
+
+kind            ctx  tok   bs    HBM ms  Grace ms  penalty  HBM GB/s  Grace GB/s
+mla_dense     32768    4    1  FAILED: fwd_kvcache_mla_fp8, /e/project1/profound/alint77/vllm/.deps/flashmla-src/csrc/extension/sm90/dense_fp8/pybind.
+mla_dense     32768    4    8  FAILED: fwd_kvcache_mla_fp8, /e/project1/profound/alint77/vllm/.deps/flashmla-src/csrc/extension/sm90/dense_fp8/pybind.
+mla_dense     32768    4   32  FAILED: fwd_kvcache_mla_fp8, /e/project1/profound/alint77/vllm/.deps/flashmla-src/csrc/extension/sm90/dense_fp8/pybind.
+mla_dense    131072    4    1  FAILED: fwd_kvcache_mla_fp8, /e/project1/profound/alint77/vllm/.deps/flashmla-src/csrc/extension/sm90/dense_fp8/pybind.
+mla_dense    131072    4    8  FAILED: fwd_kvcache_mla_fp8, /e/project1/profound/alint77/vllm/.deps/flashmla-src/csrc/extension/sm90/dense_fp8/pybind.
+mla_dense    131072    4   32  FAILED: fwd_kvcache_mla_fp8, /e/project1/profound/alint77/vllm/.deps/flashmla-src/csrc/extension/sm90/dense_fp8/pybind.
+gqa           32768    4    1     0.885     2.559    2.89x     151.7        52.4
+gqa           32768    4    8     2.838    20.578    7.25x     378.3        52.2
+gqa           32768    4   32    11.148    82.244    7.38x     385.3        52.2
+gqa          131072    4    1     3.417    10.233    2.99x     157.1        52.5
+gqa          131072    4    8    11.240    81.985    7.29x     382.1        52.4
+gqa          131072    4   32    45.103   329.084    7.30x     380.9        52.2
+
+{
+ "rows": [
+  {
+   "kind": "gqa",
+   "context": 32768,
+   "query_tokens": 4,
+   "batch": 1,
+   "kv_bytes_per_layer": 134217728,
+   "hbm_ms": 0.8849439918994904,
+   "grace_ms": 2.5592479705810547,
+   "penalty": 2.891988638837753,
+   "hbm_gbps": 151.6680481799848,
+   "grace_gbps": 52.44420608821546
+  },
+  {
+   "kind": "gqa",
+   "context": 32768,
+   "query_tokens": 4,
+   "batch": 8,
+   "kv_bytes_per_layer": 1073741824,
+   "hbm_ms": 2.838304042816162,
+   "grace_ms": 20.578271865844727,
+   "penalty": 7.2501999628718385,
+   "hbm_gbps": 378.30401810464065,
+   "grace_gbps": 52.17842542853019
+  },
+  {
+   "kind": "gqa",
+   "context": 32768,
+   "query_tokens": 4,
+   "batch": 32,
+   "kv_bytes_per_layer": 4294967296,
+   "hbm_ms": 11.147951602935791,
+   "grace_ms": 82.24435424804688,
+   "penalty": 7.377530615255631,
+   "hbm_gbps": 385.2696395693832,
+   "grace_gbps": 52.22203195913592
+  },
+  {
+   "kind": "gqa",
+   "context": 131072,
+   "query_tokens": 4,
+   "batch": 1,
+   "kv_bytes_per_layer": 536870912,
+   "hbm_ms": 3.4174879789352417,
+   "grace_ms": 10.233136177062988,
+   "penalty": 2.994344454212606,
+   "hbm_gbps": 157.09518667195675,
+   "grace_gbps": 52.463966345270244
+  },
+  {
+   "kind": "gqa",
+   "context": 131072,
+   "query_tokens": 4,
+   "batch": 8,
+   "kv_bytes_per_layer": 4294967296,
+   "hbm_ms": 11.240303993225098,
+   "grace_ms": 81.98512268066406,
+   "penalty": 7.2938527934902115,
+   "hbm_gbps": 382.1041938535398,
+   "grace_gbps": 52.3871545905847
+  },
+  {
+   "kind": "gqa",
+   "context": 131072,
+   "query_tokens": 4,
+   "batch": 32,
+   "kv_bytes_per_layer": 17179869184,
+   "hbm_ms": 45.10291290283203,
+   "grace_ms": 329.08412170410156,
+   "penalty": 7.296294197518188,
+   "hbm_gbps": 380.9037616043036,
+   "grace_gbps": 52.20509909453306
+  }
+ ]
+}

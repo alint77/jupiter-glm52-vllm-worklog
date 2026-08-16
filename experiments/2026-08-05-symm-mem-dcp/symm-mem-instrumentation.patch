@@ -1,0 +1,76 @@
+diff --git a/vllm/distributed/device_communicators/all_reduce_utils.py b/vllm/distributed/device_communicators/all_reduce_utils.py
+index 1b34d393b..c8eebc448 100644
+--- a/vllm/distributed/device_communicators/all_reduce_utils.py
++++ b/vllm/distributed/device_communicators/all_reduce_utils.py
+@@ -118,7 +118,17 @@ def should_nccl_symm_mem_allreduce(world_size: int, input_tensor: torch.Tensor)
+     from vllm.config import get_current_vllm_config_or_none
+ 
+     config = get_current_vllm_config_or_none()
+-    if config is not None and config.parallel_config.decode_context_parallel_size > 1:
++    if (
++        config is not None
++        and config.parallel_config.decode_context_parallel_size > 1
++        and not envs.VLLM_NCCL_SYMM_MEM_ALLOW_DCP
++    ):
++        # Disabled after a rank stalled in ncclCommWindowRegister while its
++        # peers were already inside the matching all-reduce. Registration is
++        # collective but driven by each rank's own allocator history, so ranks
++        # can disagree about whether a window needs registering even when the
++        # collective's shape is uniform. The escape hatch exists to qualify
++        # narrowing or lifting this; it is not a supported production setting.
+         return False
+ 
+     if not is_symmetric_memory_enabled():
+diff --git a/vllm/distributed/device_communicators/pynccl_allocator.py b/vllm/distributed/device_communicators/pynccl_allocator.py
+index a5d7faceb..12f33194b 100644
+--- a/vllm/distributed/device_communicators/pynccl_allocator.py
++++ b/vllm/distributed/device_communicators/pynccl_allocator.py
+@@ -186,9 +186,23 @@ class nccl_symm_mem_context:
+             _registered_base_addrs[comm_key] = set()
+         for segment in _cached_pool_snapshot:
+             if segment["address"] not in _registered_base_addrs[comm_key]:
++                # ncclCommWindowRegister is collective, but which segments this
++                # pool contains is a function of this rank's allocation history
++                # alone. If one rank grew a segment the others did not, it calls
++                # this while they are already inside the matching collective and
++                # everyone deadlocks with no error. Log every registration so
++                # that divergence is diagnosable instead of a silent stall.
++                registered = _registered_base_addrs[comm_key]
++                logger.info(
++                    "NCCL symmetric memory: registering window #%d "
++                    "at 0x%x, %d bytes",
++                    len(registered) + 1,
++                    segment["address"],
++                    segment["total_size"],
++                )
+                 self.pynccl_comm.register_comm_window_raw(
+                     segment["address"], segment["total_size"]
+                 )
+-                _registered_base_addrs[comm_key].add(segment["address"])
++                registered.add(segment["address"])
+         if self.is_graph_capture:
+             torch._C._cuda_beginAllocateCurrentThreadToPool(self.device, _graph_pool_id)
+diff --git a/vllm/envs.py b/vllm/envs.py
+index b1f8fc04b..65e4a7f8a 100755
+--- a/vllm/envs.py
++++ b/vllm/envs.py
+@@ -269,6 +269,7 @@ if TYPE_CHECKING:
+     VLLM_ENABLE_INDUCTOR_MAX_AUTOTUNE: bool = True
+     VLLM_ENABLE_INDUCTOR_COORDINATE_DESCENT_TUNING: bool = True
+     VLLM_USE_NCCL_SYMM_MEM: bool = False
++    VLLM_NCCL_SYMM_MEM_ALLOW_DCP: bool = False
+     VLLM_TIERED_MOE_PROFILE_CAP: bool = False
+     VLLM_TIERED_MOE_TIGHT_SMEM: bool = True
+     VLLM_TIERED_MOE_PREFILL_TILE: bool = True
+@@ -1912,6 +1913,11 @@ environment_variables: dict[str, Callable[[], Any]] = {
+         int(os.getenv("VLLM_ENABLE_INDUCTOR_COORDINATE_DESCENT_TUNING", "1"))
+     ),
+     # Flag to enable NCCL symmetric memory allocation and registration
++    # Qualification-only: re-enable NCCL symmetric-memory all-reduce under DCP,
++    # which is disabled by default after a collective window-registration stall.
++    "VLLM_NCCL_SYMM_MEM_ALLOW_DCP": lambda: bool(
++        int(os.getenv("VLLM_NCCL_SYMM_MEM_ALLOW_DCP", "0"))
++    ),
+     "VLLM_USE_NCCL_SYMM_MEM": lambda: bool(
+         int(os.getenv("VLLM_USE_NCCL_SYMM_MEM", "0"))
+     ),

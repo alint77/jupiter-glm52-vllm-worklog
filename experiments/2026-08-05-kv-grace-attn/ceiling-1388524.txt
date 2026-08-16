@@ -1,0 +1,25 @@
+Grace NUMA node 0, NVIDIA GH200 120GB
+Grace buffer 4.0 GiB, 100% local
+
+  CTAs   HBM GB/s   Grace GB/s   ratio
+   132      660.2        284.9   2.32x
+   264     1281.8        395.7   3.24x
+   528     2331.1        411.1   5.67x
+  1056     3348.1        403.4   8.30x
+  2112     3659.1        399.7   9.15x
+
+   gran   CTAs   HBM GB/s   Grace GB/s   ratio   (scattered gather)
+   262144   1056      315.3        136.0   2.32x
+   262144   2112      569.6        233.8   2.44x
+   262144   1056      410.4        245.4   1.67x
+   262144   2112      759.2        346.5   2.19x
+   262144   1056      783.9        360.9   2.17x
+   262144   2112     1418.2        375.8   3.77x
+   262144   1056     1513.7        379.8   3.99x
+   262144   2112     2505.4        384.3   6.52x
+
+tier       TMA GB/s   note
+hbm          1840.7   ok
+grace         419.7   ok
+
+copy engine H2D: 417.2 GB/s

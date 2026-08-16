@@ -1,0 +1,11 @@
+Grace NUMA node 0, NVIDIA GH200 120GB
+Grace buffer 4.0 GiB, 100% local
+
+  CTAs   HBM GB/s   Grace GB/s   ratio
+   132      663.1        288.2   2.30x
+   264     1288.5        412.7   3.12x
+   528     2340.6        408.3   5.73x
+  1056     3337.8        402.4   8.30x
+  2112     3677.7        399.9   9.20x
+
+     rows   CTAs   HBM GB/s   Grace GB/s   ratio

@@ -1,0 +1,7 @@
+pattern     tok mode           HBM ms  Grace ms  penalty  HBM GB/s  Grace GB/s
+random        1 eager           4.061     4.184    1.03x      25.8        25.0
+random        1 cuda_graph      1.496     3.012    2.01x      70.0        34.8
+sorted        1 eager           3.978     4.052    1.02x      26.3        25.9
+sorted        1 cuda_graph      1.490     3.142    2.11x      70.3        33.4
+clustered     1 eager           4.006     4.043    1.01x      26.2        25.9
+clustered     1 cuda_graph      1.473     1.749    1.19x      71.1        59.9

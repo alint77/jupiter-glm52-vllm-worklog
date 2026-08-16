@@ -1,0 +1,59 @@
+diff --git a/csrc/sm90/decode/sparse_fp8/components/dequant.h b/csrc/sm90/decode/sparse_fp8/components/dequant.h
+index 0c4022d..ef97464 100644
+--- a/csrc/sm90/decode/sparse_fp8/components/dequant.h
++++ b/csrc/sm90/decode/sparse_fp8/components/dequant.h
+@@ -40,6 +40,15 @@ enum class L1CacheHint {
+     EVICT_LAST
+ };
+ 
++// Pure L2 prefetch: brings a line toward L2 without returning data and without
++// creating a register dependency, so it can be issued for a future tile while
++// the current one is still being consumed. Used to give the sparse KV gather
++// more memory-level parallelism when the cache lives in far (Grace/C2C) memory,
++// where the two-deep shared-memory pipeline cannot cover the load latency.
++__device__ __forceinline__ void prefetch_l2(const void* addr) {
++    asm volatile("prefetch.global.L2 [%0];" :: "l"(addr));
++}
++
+ enum class L2PrefetchHint {
+     B64,
+     B128,
+diff --git a/csrc/sm90/decode/sparse_fp8/splitkv_mla.cuh b/csrc/sm90/decode/sparse_fp8/splitkv_mla.cuh
+index 9994568..4337438 100644
+--- a/csrc/sm90/decode/sparse_fp8/splitkv_mla.cuh
++++ b/csrc/sm90/decode/sparse_fp8/splitkv_mla.cuh
+@@ -621,6 +621,34 @@ __device__ void KernelTemplate<MODEL_TYPE, NUM_HEADS>::devfunc(const SparseAttnD
+                             st_async_128b(sK_rope_peer_base + smem_offset, cur_bf16x8, peer_bar_k_remote_ready);
+                         }
+                     }
++
++#if FLASHMLA_GRACE_L2_PREFETCH
++                    // Warm L2 with the row this thread will read in the *next*
++                    // block. nxt_token_indexs[round] was refreshed above, and
++                    // the current tile's loads are already in flight, so this
++                    // issues without stalling on either. L2 acts as the extra
++                    // pipeline stage that shared memory has no room for:
++                    // NUM_K_BUFS is 2 and a third buffer would need 296 KiB
++                    // against Hopper's 227 KiB cap.
++                    {
++                        int nxt_token_index = nxt_token_indexs[round];
++                        if (nxt_token_index >= 0) {
++                            int nxt_block = (uint32_t)nxt_token_index / (uint32_t)page_block_size;
++                            int nxt_rel = (uint32_t)nxt_token_index % (uint32_t)page_block_size;
++                            const char* nxt_row = (const char*)(k_ptr
++                                + nxt_block*k_block_stride
++                                + nxt_rel*(MODEL_TYPE == ModelType::V32
++                                    ? k_row_stride
++                                    : (HEAD_DIM_NOPE + HEAD_DIM_ROPE*sizeof(bf16))));
++                            // Four lane groups cover the 512 B nope row with one
++                            // instruction each; extra lines are harmless hints.
++                            CUTE_UNROLL
++                            for (int line = 0; line < FLASHMLA_GRACE_L2_PREFETCH; ++line) {
++                                prefetch_l2(nxt_row + ((lane_idx/8) + line*4)*128);
++                            }
++                        }
++                    }
++#endif
+                 }
+ 
+                 fence_view_async_shared();
