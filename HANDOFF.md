@@ -1,7 +1,7 @@
 # GLM-5.2 on JUPITER: agent handoff
 
-Last updated: 2026-08-04 (exact replica assignment shipped; tier-balance lever
-closed; next lever is HBM residency)
+Last updated: 2026-08-06 (Phases 35-39: prefill priced and two of its levers
+retired; KV-on-Grace refuted; the open lever is prefill/decode co-scheduling)
 
 ## Start here
 
@@ -45,6 +45,8 @@ Read these before changing anything:
 - [Replica scheduling v2](experiments/2026-07-31-replica-scheduling-v2/README.md): the most recent shipped change, and the measurement protocol every later A/B should copy.
 - [Shared-memory monopoly](experiments/2026-07-29-marlin-smem-monopoly/README.md): the kernel bug that invalidated five earlier overlap experiments, plus the current step budget.
 - [Tier balance](experiments/2026-08-01-marlin-tier-overlap/README.md): why the cold tier is retired as a target and what the next lever is.
+- [Production profile](experiments/2026-08-05-prod-profile/README.md): where every millisecond of the c1, c4 and prefill steps goes, and the mixed-step lever.
+- [Prefill collectives](experiments/2026-08-05-prefill-comms-ab/README.md): why prefill's comms are not a bandwidth problem, and the per-layer skew that is priced but unfixed.
 - [MTP roofline](experiments/2026-07-18-mtp-prompt-profile/roofline-analysis.md): kernel, communication, and transfer analysis.
 
 Keep changes minimal, measure every optimization against a matched control,
@@ -65,8 +67,8 @@ The source repository is:
 - Upstream: `vllm-project/vllm`
 - User fork: `alint77/vllm`
 - Branch: `tiered-moe-grace-mtp`
-- Current commit: `cec73c66b` (`Load secondary expert copies only when
-  assignment can use them`)
+- Current commit: `e59d34275` (`Give prefill its own Marlin tile; the occupancy
+  hypothesis was wrong`)
 - Main implementation commit: `a66535e59`
 - Branch base: `d08eebad1`
 - No upstream PR has been opened.
@@ -75,6 +77,7 @@ Recent source history, newest first:
 
 | Commit | What |
 | --- | --- |
+| `e59d34275` | Give prefill its own Marlin tile (behind `VLLM_TIERED_MOE_PREFILL_TILE`) |
 | `cec73c66b` | Load secondary expert copies only when assignment can use them |
 | `44a24d909` | Read the tiered MoE config from its real field, enforce the layout |
 | `919cfa9a7` | Graph-capturable route fingerprint for replica assignment |
@@ -92,7 +95,9 @@ taken the fix with it. `53fe6dfcf` handles it correctly and its message records
 byte for byte what was preserved and that `tiered_moe_execution.py` was rebuilt
 rather than reverted. Land qualified fixes as their own commits.
 
-The vLLM source changes are committed and pushed. The outer worktree contains
+The vLLM source changes are committed; **`e59d34275` is not yet pushed**, and
+it turns the prefill Marlin tile on by default with no server-level A/B behind
+it. The outer worktree contains
 untracked core dumps, Slurm logs, and the nested `agent_space` repository. Do
 not use `git add -A` or delete those files without reviewing ownership.
 
@@ -317,9 +322,12 @@ reduce-scatter/all-gather pair.
   FlashInfer. Reuse scratch JIT caches and keep `MAX_JOBS=4`; do not diagnose
   warmed request throughput from startup time.
 - Parallel jobs need job-specific JIT/cache directories to avoid corruption;
-  `mtp-fastpath/job.sh` already derives them from `SLURM_JOB_ID`. Per-job cache
-  roots multiply the inode problem below, so prefer per-arm roots under
-  `/e/project1/profound/alint77/.marlin-caches/`.
+  `mtp-fastpath/job.sh` already derives them from `SLURM_JOB_ID`. **Do not create
+  one cache root per arm** - each is ~44K files, and doing it for four arms
+  exhausted the *project-wide* inode quota on `/e/project1` in Phase 36
+  (`OSError: [Errno 122] Disk quota exceeded` with the filesystem 33% full).
+  Share one warm root per server config; `NCCL_PROTO` and similar env arms do
+  not affect the graph hash Inductor keys on.
 - Do not re-enable target sequence parallelism or deeper fixed MTP without a
   new measured reason. Wider third-party speculators are settled the same way:
   DSpark and DFlash both work and both lose, in strict inverse order of verify
@@ -336,8 +344,67 @@ reduce-scatter/all-gather pair.
   expert counts. Measure under graph replay.
 - The login node and Booster do not prefer the same Marlin grid (66 CTAs vs
   132). Never tune a shipped constant off Booster.
+- **Verify a build define actually reached the binary before believing a null
+  result.** `_flashmla_C` takes `COMPILE_FLAGS ${VLLM_GPU_FLAGS}`, not
+  `VLLM_FLASHMLA_GPU_FLAGS`; a define appended to the latter compiled cleanly and
+  did nothing, and the `#if` silently evaluated false. Caught only by diffing SASS
+  instruction counts against a backed-up `.so`. Without that, Phase 39 would have
+  logged a false refutation.
+- **A kernel's achieved bandwidth is not the memory's capability.** 52 GB/s (FA3
+  GQA) and 157 GB/s (FlashMLA sparse) were both read as C2C limits; the link does
+  400-420, and TMA on host-mapped UVA does 419.5. When comparing a kernel against
+  a ceiling, match the parallelism - the sparse MLA kernel runs 132 CTAs, and the
+  gather it was losing to ran 1,056.
+- `GraceAllocation.allocate_pinned` **binds nothing**; its docstring requires the
+  caller to already be NUMA-bound. Production gets that from `--numa-bind`, a bare
+  `sbatch` does not, and the allocation silently lands at 0% locality. Wrap
+  benchmarks in `numactl --cpunodebind --membind`.
+- An explicit Marlin `(thread_k, thread_n)` with no kernel instantiation **raises
+  at launch rather than falling back** to the heuristic. Pin any explicit tile to
+  the `block_size_m` it was validated against (`MarlinLaunchPolicy.requires_block_m`).
+- When a job greps its own logs for the result, check it greps the file the lines
+  are in. Phase 37 read `*-server.err` where registrations go to `*-server.out`,
+  producing three byte-identical result files that silently hid an arm that never
+  ran the code path.
 
-## Current thread: buy HBM residency (2026-08-01, open)
+## Current thread: prefill is the workload (2026-08-06, open)
+
+On the shape the production server actually serves - 16K in, 512 out - the
+model is **prefill-bound, 71% of wall clock**. Phases 33-36 measured and priced
+that step for the first time; Phases 37-39 closed three side questions. Nothing
+in 35-39 changed the top lever.
+
+A prefill chunk is 8,192 tokens and 2,619 ms: **35.4% routed Marlin, 23.8%
+collectives, 20.8% attention, 0.0% comm/compute overlap.** Both obvious
+collective levers are now dead - the median all-reduce already runs at the
+hardware optimum (482-520 us against a standalone 514), and `NCCL_PROTO` and
+chunk size both measured as nothing. What is left there is **rank arrival skew**:
+~250 ms/chunk of waiting, caused by per-layer EP imbalance of 45.2% at the
+median with a rotating straggler. It is priced at 185-232 ms/chunk, 7-9% of
+prefill, and the existing replica scheduler **cannot** take it - its objective
+counts active cold experts, which is right at decode and degenerate at 8,192
+tokens where nearly every expert is active. Taking it means a token-weighted
+min-max and a new kernel.
+
+In priority order:
+
+1. **The mixed step (Phase 34), still the largest lever the trace exposes.**
+   When a chunked prefill shares a step with decode, the step leaves the CUDA
+   graph: 6 one-stage custom all-reduces instead of 166, 50.6 ms/step of
+   un-graphed kernels, and **61.5% of the step in communication against 15.8%
+   in pure decode**. Chunked prefill of a newly admitted request stops all four
+   decode streams for ~1.8 s, 118 times per c4 run.
+2. **A server-level A/B of the prefill Marlin tile**, which ships **on by
+   default** in `e59d34275` on a kernel measurement alone. Predicted ~2.2%, so
+   it needs the acceptance-free protocol; a 1.8% run-to-run spread would
+   swallow it otherwise.
+3. **Token-weighted replica assignment for prefill**, per the pricing above.
+
+Closed by 35-39, do not reopen: prefill shared memory and CTAs/SM, NCCL
+protocol, chunk size, ungating the existing replica assignment, and putting the
+KV cache on Grace. Reasons are in the lever ledger.
+
+## Earlier thread: buy HBM residency (2026-08-01, open)
 
 The tier-balance work closed the last cheap lever and named the next one.
 
@@ -559,8 +626,11 @@ prefills serialize at ~110 s each (cold simultaneous agent starts ladder
 TTFTs; cross-turn prefix caching mitigates). A2A+NVLS reached 190.15 tok/s
 once but is experimental: a replica hung in collective symmetric-memory
 registration. Commit `990b1d378` disables symmetric-memory all-reduce under
-DCP while retaining NVLS AG/RS; it passed commit hooks but still needs one
-runtime qualification. No Slurm jobs are active. The stable DCP4 default is
+DCP while retaining NVLS AG/RS. Phase 37 attempted the runtime qualification
+and could not finish it: three runs with the guard lifted showed no hang and
+exactly symmetric registration, but the `a2a` arm registered no windows at
+all, so the configuration that originally hung was never exercised. The guard
+stays. No Slurm jobs are active. The stable DCP4 default is
 still `ag_rs` at 179.56 tok/s aggregate.
 
 ## Settled: third-party speculators lose to MTP3 (2026-07-25)

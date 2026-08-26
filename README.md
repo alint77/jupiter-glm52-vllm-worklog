@@ -10,8 +10,8 @@ qualified path stands now.
 
 ## Current state
 
-Last indexed 2026-08-04, covering worklog commit `dc487e3` and source commit
-`cec73c66b`.
+Last indexed 2026-08-06, covering worklog commit `e2945bd` and source commit
+`e59d34275`, through Phase 39.
 
 | | |
 | --- | --- |
@@ -46,6 +46,11 @@ Lever status, so that settled questions are not reopened:
 | Marlin shared-memory monopoly | Fixed (26); worth 5.3-8.1% of step time |
 | Exact replica assignment | Shipped (31); worth 5-6.5% of step time at c4 |
 | Cold-tier kernel, tile, split-K and occupancy tuning | Retired (26, 32): the cold tier runs at the C2C roof |
+| Prefill Marlin tile | Shipped (35) behind `VLLM_TIERED_MOE_PREFILL_TILE`, default on; ~2.2% of c4 wall clock, **kernel-measured only** |
+| Prefill shared-memory policy and CTAs/SM | Refuted (35): worth 0.3%; the grid oversubscribes the machine eightfold |
+| Prefill collective bandwidth, NCCL protocol, chunk size | Refuted (36): the median all-reduce is already the hardware optimum |
+| Ungating replica assignment for prefill | Refuted (36): the objective is count-based and degenerate at 8,192 tokens |
+| KV cache on Grace over C2C | Refuted (38, 39): +8.5 ms/step at c4 against a ~9.4 ms residency gain, and the kernel is occupancy-bound |
 | Per-layer hot/cold rebalance | Refuted (32): every layer is already cold-bound |
 | Green contexts for SM isolation | Refuted (30): 9-40% worse than the production fork/join |
 | `blocks_per_sm` and SM-budget partitioning | Refuted (21, 23, 26) |
@@ -54,7 +59,9 @@ Lever status, so that settled questions are not reopened:
 | Capturing the draft path in CUDA graphs | Refuted (26): the drafts are already graphed |
 | Graph-node fusion | Priced (24) at about 1.2%; not started |
 | Grace-to-HBM cold-weight staging | Open (30), but its control predates the shared-memory fix and it must be re-measured before it means anything |
-| Buying more HBM residency | The next lever (32); not yet costed |
+| Buying more HBM residency | Open (32); not yet costed, and the KV-cache route to it is closed (38) |
+| Per-layer EP skew in prefill | **Open (36)**: priced at 185-232 ms/chunk, 7-9% of prefill; needs a token-weighted min-max and a new kernel |
+| Symmetric memory under DCP | Guard kept (37): no hang in 3 runs, but the arm that originally hung never exercised the path |
 | The 1.8 ms/step sampling and logits boundary | Open (26); host-side, so graph capture alone will not recover it |
 | Prefill/decode co-scheduling | **Top open lever (33, 34)**: a mixed step falls out of the CUDA graph, switches to the un-graphed two-stage all-reduce, and spends 61.5% of itself in communication |
 | DCP4 at concurrency 1 | Open (34): 2.4 ms/step, 8.5% of the c1 step, for capacity only c4 uses |
@@ -751,6 +758,137 @@ in pure decode**. On a shape that is 71% prefill-bound that is the largest
 lever the trace exposes. Also priced: DCP4 collectives cost 2.4 ms/step, 8.5%
 of the c1 step, buying capacity only concurrency 4 uses. See the
 [production profile](experiments/2026-08-05-prod-profile/README.md).
+
+Phase 35 takes the first prefill lever the profile named and finds the proposal
+wrong in both halves. Phase 34 read prefill's routed MoE at 10.6% of bf16 peak
+running the pre-Phase-26 legacy launch and proposed ungating the tight
+shared-memory policy and lifting `ops.cu`'s `allow_count <= 2` cap. Sweeping the
+launch config at the production chunk shape with explicit `(thread_k, thread_n)`
+- which makes `ops.cu` skip `determine_exec_config` and take `blocks_per_sm`
+verbatim - shows shared memory is worth **0.3%** here, because a prefill chunk
+launches **1,051 blocks against 132 SMs** and co-residency stops mattering once
+the grid oversubscribes the machine eightfold; and more CTAs per SM is
+consistently *worse*, 0.82x at two and 0.92x at three, so the cap is above the
+optimum rather than below it. The real lever is the tile: Marlin's heuristic
+picks a 128-thread `(64, 128)` - confirmed at **0.0 ulp** against auto, which
+doubles as the harness's positive control - where the 256-thread `(64, 256)` is
+**1.10-1.12x** faster at every chunk size, differing by 0.2 ulp of
+reduction-order noise. Honestly sized that is ~80 ms of a 2,619 ms chunk, 3.1%
+of prefill and **~2.2% of c4 wall clock**, against the profile's ~12% estimate,
+which was 5x optimistic because it assumed an occupancy limit that does not
+exist; whatever holds W4A16 Marlin to ~11% of peak is not reachable from the
+launch configuration. Shipped in `e59d34275` behind
+`VLLM_TIERED_MOE_PREFILL_TILE`: `MarlinLaunchPolicy` gains an explicit tile and
+a `min_tokens` bound, and `_fused_marlin_moe` takes a *list* of policies so
+decode and prefill can have opposite launches without special-casing. A unit
+test caught the trap that makes this dangerous - Marlin only instantiates some
+`(thread_m, thread_n, thread_k)` combinations and **an explicit tile with no
+instantiation raises at launch rather than falling back**, so `requires_block_m`
+now pins a tile to the block size it was validated against. **The server-level
+A/B has not been run and the flag defaults on.** See the
+[prefill Marlin launch sweep](experiments/2026-08-05-prefill-marlin-launch/README.md).
+
+Phase 36 retires bandwidth and protocol as prefill levers and re-attributes the
+cost to rank skew. Prefill spends 593 ms/chunk, 23.8%, in collectives, at 0.0%
+overlap with compute - comm 592.9 + compute 1902.6 + idle 123.7 against a
+2,619.1 ms wall, with 99.9% of both issued to the main stream - so any real
+bandwidth win would convert 1:1 into wall clock. A four-arm `NCCL_PROTO` x chunk
+size A/B returned 1.003x and unchanged kernel names, meaning the variable never
+reached the communicator; the 16K arms were refused by design at
+`vllm/config/vllm.py:2316`. A standalone four-rank probe outside vLLM shows
+`NCCL_PROTO` *is* honoured there (forced `LL` costs 2.1x) and that **NCCL's
+default already picks the fast protocol**: 514 us unset against 520 us for
+`Simple` on the same 96 MiB message. Production's *median* all-reduce is
+**482-520 us - the hardware optimum** - with a p90 of 6.1-6.5 ms and only 4.0%
+cross-rank spread of means. The 70 GB/s bus rate in the Phase 34 profile was
+averaging wait time into transfer time; **~250 ms/chunk, 9.5% of prefill, is
+waiting for a rotating straggler.** Ungating replica assignment does not take
+it: aggregate rank load is already balanced to 1.21% on Marlin, and the
+imbalance is *per-layer*, 45.2% spread at the median and a summed max-minus-mean
+of **185.7 ms/chunk**, which reconciles the two because the straggler rotates.
+The existing scheduler cannot address it - its own docstring assumes every
+active cold expert costs the same Grace read regardless of token count, true at
+decode's 45.32 us per expert and false at prefill, which is compute-bound by
+8.1x over its streaming floor and activates nearly every expert at 8,192 tokens,
+making a count-based min-max degenerate. The lever is real and priced at
+**185-232 ms/chunk, 7-9% of prefill**, but needs a token-weighted objective and
+a different kernel. Doubling the chunk was also dropped: the Marlin arenas are
+`M * 393,216` bytes, so 16K costs +3.22 GB/rank against 7.15 GiB free, which
+would mean moving 160 experts/rank out of HBM to save ~123 ms of prefill. This
+is the fourth decode-only gate found in the same area. See the
+[collective A/B](experiments/2026-08-05-prefill-comms-ab/README.md) and the
+[protocol probe](experiments/2026-08-05-nccl-proto-probe/README.md).
+
+Phase 37 pays off the runtime qualification `990b1d378` has owed since Round 9
+of the DCP port, and mostly fails to. Symmetric-memory all-reduce is disabled
+under DCP because job `976497` hung with one rank inside
+`ncclCommWindowRegister` while the others had entered the matching all-reduce -
+parking A2A+NVLS's 190.15 tok/s as experimental against the qualified `ag_rs`
+default's 179.56. Instrumenting the allocator with one INFO line per window
+registration and adding a `VLLM_NCCL_SYMM_MEM_ALLOW_DCP` escape hatch, three
+production-config runs with the guard lifted all came up, returned identical
+greedy text and finished the benchmark. **No hang, and registration is exactly
+symmetric** - 20/20/20/20 in the first run and 25/25/25/25 on the `ag_rs` arm,
+agreeing on window index and size. But **the `a2a` arm registered zero windows**
+despite identical environment and backend dispatch order, so the arm that would
+have tested the configuration that actually hung never exercised the path, and
+A2A+NVLS remains unqualified. A collection bug nearly hid this: `job.sh` greps
+`*-server.err` where the lines go to `*-server.out`, making all three saved
+`*-registrations.txt` byte-identical re-dumps of the first run - the arm data
+had to be rebuilt from the raw server logs. The guard was **kept**; three clean
+runs are weak evidence against a race, and the instrumentation was reverted. See
+the [symmetric-memory qualification](experiments/2026-08-05-symm-mem-dcp/README.md).
+
+Phase 38 prices KV-on-Grace in isolation, at the kernel rather than the server,
+and the answer is a wash. Decode reads the KV cache in exactly one place, so if
+the attention kernel could read it over C2C the ~19.3 GiB/rank it occupies would
+go to expert residency - the lever Phase 32 named. Measured on the production
+FlashMLA sparse fp8 path over a full 78-layer 400K-capacity cache, with MTP3's
+query-token counts (4 at c1, 16 at c4), Grace costs **+8.5 ms/step at c4**:
+2.197 ms against 10.691, 763 GB/s against **157**. Output was exact across tiers
+in all nine pattern x token combinations, so the tier is transparent to the
+arithmetic; index locality is worth far more than MTP's index sharing, with a
+clustered pattern reaching 281 GB/s against random's 157 and `independent`
+indices only 6% behind `shared`. Against a residency gain estimated at
+~9.4 ms/step that is a wash before counting prefill, or the fact that the cold
+expert tier already contends for the same link. The ceiling probes matter more
+than the verdict: contiguous streaming reaches **400-420 GB/s**, a TMA
+descriptor load on host-mapped UVA memory reaches **419.5**, and the copy engine
+422 - so neither the link nor TMA is the constraint. Two readings taken during
+this work were wrong and are recorded as such: 52 and 157 GB/s were read as
+*hardware* limits when they are kernel limits, and the gap to a plain gather's
+361 GB/s was read as 2.3x of headroom when that gather was running 1,056 CTAs
+against the kernel's 132. Left unexplained: **FA3 GQA sits at 52 GB/s from
+Grace and does not move** across a 32x change in batch or context, while HBM
+scales 151 to 385. See the
+[isolated KV tier measurement](experiments/2026-08-05-kv-grace-attn/README.md).
+
+Phase 39 acts on that 2.3x headroom, discovers it was an artifact, and stops at
+its own first gate. The plan was to deepen the sparse MLA kernel's pipeline so
+it tolerates C2C latency, targeting 300 GB/s against a 220 GB/s stop condition.
+`NUM_K_BUFS` is 2 and cannot be raised: one K buffer is 72 KiB, and with Q and S
+the kernel already sits at **224 KiB of Hopper's 227**, so every candidate had to
+buy latency tolerance without buying shared memory. The cheapest such candidate,
+an L2 prefetch of the next block's rows using indices the kernel already holds a
+block ahead, was built and measured at **159.0 GB/s against a 157.9 baseline** -
+nothing. A near-miss is worth more than the result: the first build compiled
+cleanly and changed nothing, because the define was appended to
+`VLLM_FLASHMLA_GPU_FLAGS` while `_flashmla_C` takes `COMPILE_FLAGS
+${VLLM_GPU_FLAGS}`, so the `#if` silently evaluated false. It was caught only by
+diffing SASS `CCTL` counts against a backed-up binary (10 vs 10; after the fix,
+10 vs 22) - without that check the run would have been logged as "prefetching
+does not help far memory", a false refutation. **Verifying the instruction
+reached the binary belongs inside the rebuild loop.** The premise then fell:
+224 KiB of shared memory admits one CTA per SM, so the kernel runs **132 CTAs at
+19% warp occupancy**, and at matched parallelism a plain gather gets **73 GB/s**
+where the kernel gets 159 - it is already **2.2x better** than a straightforward
+gather, not 2.3x worse than achievable. Worse for the idea, higher occupancy
+makes the ratio *worse*: HBM keeps scaling while Grace saturates near 385, so
+HBM/Grace goes from 1.5x at 132 CTAs to 6.5x at 2,112. Reaching 382 GB/s needs
+~1,056 CTAs, i.e. ~28 KiB/CTA - a different kernel, not a modification. All
+source changes were reverted and the pre-experiment binary restored; the work
+survives as `kernel.patch` and `cmake.patch`. See the
+[sparse MLA kernel attempt](experiments/2026-08-06-mla-grace-kernel/README.md).
 
 In flight, undocumented: `experiments/2026-08-01-marlin-grid-fit` holds raw
 sweep results from jobs 1197398, 1197614, 1197769 and 1198412 with no report and
