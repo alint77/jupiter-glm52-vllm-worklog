@@ -269,12 +269,19 @@ recovered. The Phase 28 table is the map for the rest:
 
 | # | blocker | status here |
 | --- | --- | --- |
-| 1, 5, 6 | upstream cherry-picks #48639, #48524, #48776 | already in this base |
+| 1, 5, 6 | upstream cherry-picks #48639, #48524, #48776 | **NOT in this base** — corrected below |
 | 2 | placement profile fingerprint mismatch | avoided: matched target/profile pair |
 | 3 | dense draft inherits the target's MLA dtype | avoided: `kv_cache_dtype: auto` |
 | **4** | `validate_tiered_moe` rejects the draft-derived config | **fixed here** |
 | **7** | `Tiered GLM KV allocation only supports MLA cache specs` | **expected next** |
 | 8 | planner budgets draft weights only for `method == "mtp"` | pre-empted by the profile trim |
+
+**Correction.** The row above first read "already in this base". That was
+wrong, and the error was in reading dates rather than the graph: the fork's
+merge-base with upstream is `d08eebad16`, 2026-07-16, and all three PRs merged
+between 2026-07-20 and 2026-07-23. Phase 28 cherry-picked them, and the revert
+that ended that phase took them away again. Verified with
+`git merge-base --is-ancestor` rather than by inference this time.
 
 Blocker 8 deserves a note, because Phase 28 proved the obvious fix does not
 work: raising `TIERED_MOE_HBM_RESERVE_GB` cannot close it, since `required_free`
@@ -306,6 +313,34 @@ after `unify_kv_cache_spec_page_size` promotes it is not knowable by reading.
 Guessing it would mean rewriting the allocator the project's memory safety
 rests on against an assumption. Phase 28 found all eight blockers by running
 into them one at a time; that is the cheaper and safer order here too.
+
+### The bring-up chain, as actually walked
+
+Each row is one job; loads are ~2 minutes on fscratch, so a cycle costs about
+ten minutes.
+
+| job | got as far as | failure | fix |
+| --- | --- | --- | --- |
+| 1525205 | config validation | `Tiered MoE requires kv_cache_dtype=fp8_ds_mla` on the draft-derived config | blocker 4, rederived (`985cc85109`) |
+| 1525715 | profile run | `Expected exactly one compiled range_entry for static shape compilation, but found 2` | empty `compile_sizes` for this arm only |
+| 1526004 | KV cache setup | `page size is not divisible by the maximum page size and cannot be padded` on the DSA indexer | blocker 6, cherry-pick #48776 (`8d94773e01`) |
+
+The middle one is not in Phase 28's list at all: their drafts had no candidate
+selector, so nothing took `piecewise_backend`'s static-shape branch. The
+Phase 28 table is a guide to the class of problem, not a complete list.
+
+Blocker 6 is worth stating precisely, because the arithmetic is what makes it
+unavoidable rather than a configuration mistake. The DSA indexer page is
+`64 * (128 + 4) = 8448 = 2^8 * 33`; a sliding-window draft's page is a power of
+two. Once the draft sets the maximum, 8448 neither divides it nor is paddable,
+and no configuration escapes that. #48776 promotes only the draft's
+*allocation* spec to `FullAttentionSpec` at the target's block size, leaving
+draft attention sliding-window.
+
+Its cherry-pick applies cleanly over this fork's own 45 lines in
+`kv_cache_utils.py`, the tiered hooks at lines 1385 and 2178 survive, the ten
+page-size unification tests pass, and the suite's other 14 failures are
+identical before and after, so they are pre-existing drift.
 
 ## Scripts
 
