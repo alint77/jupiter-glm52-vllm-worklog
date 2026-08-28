@@ -10,13 +10,16 @@
 #
 # MTP3 instantiates layer 78, whose experts are BF16 in this checkpoint: 4.50
 # GiB per rank against W4G64's 1.21. That is 3.29 GiB the profile has to leave
-# free on top of everything else.
+# free on top of everything else. DFlash2 does not instantiate layer 78 at
+# all, so that cost disappears and its own ~4.58 GiB draft, TP-sharded, is
+# cheaper than the head it replaces.
 
 set -euo pipefail
 
 label="${1:?label}"
 concurrency="${2:-4}"
 profile="${3:?placement profile}"
+mode="${4:-mtp3}"   # mtp3 | dflash2
 
 repo_dir=/e/project1/profound/alint77/vllm
 result_dir="${repo_dir}/agent_space/experiments/2026-08-28-nvfp4-tiered"
@@ -40,16 +43,30 @@ export TIERED_MOE_MODEL_PATH="${model}"
 export TIERED_MOE_PLACEMENT_PROFILE="${profile}"
 export TIERED_MOE_HBM_RESERVE_GB="${TIERED_MOE_HBM_RESERVE_GB:-7}"
 
-# Verification width is 4 under MTP3, so graphs are captured at 4 per sequence.
+# Verification width: 4 under MTP3 (3 draft + bonus), 8 under DFlash2 (block 8).
+if [[ "${mode}" == dflash2 ]]; then
+  width=8
+  draft=/e/project1/profound/alint77/models/GLM-5.3-DFlash2
+  spec_config="{\"method\":\"dflash\",\"model\":\"${draft}\",\"num_speculative_tokens\":7,\"kv_cache_dtype\":\"auto\",\"attention_backend\":\"FLASH_ATTN\"}"
+  # DFlash2's CandidateSelector takes only static shapes, so piecewise_backend
+  # uses its static-shape branch and asserts exactly one compiled range entry.
+  # A non-empty compile_sizes gives it two. See the Phase 42 backport.
+  compile_sizes=""
+else
+  width=4
+  spec_config='{"method":"mtp","num_speculative_tokens":3}'
+  compile_sizes_set=1
+fi
 sizes=""
-for ((i = 1; i <= concurrency; i++)); do sizes+="${sizes:+,}$((4 * i))"; done
-export TIERED_MOE_COMPILATION_CONFIG="{\"mode\":3,\"cudagraph_mode\":\"FULL_AND_PIECEWISE\",\"cudagraph_capture_sizes\":[${sizes}],\"compile_sizes\":[${sizes}],\"cudagraph_num_of_warmups\":1,\"pass_config\":{\"fuse_allreduce_rms\":false}}"
+for ((i = 1; i <= concurrency; i++)); do sizes+="${sizes:+,}$((width * i))"; done
+[[ -n "${compile_sizes_set:-}" ]] && compile_sizes="${sizes}"
+export TIERED_MOE_COMPILATION_CONFIG="{\"mode\":3,\"cudagraph_mode\":\"FULL_AND_PIECEWISE\",\"cudagraph_capture_sizes\":[${sizes}],\"compile_sizes\":[${compile_sizes}],\"cudagraph_num_of_warmups\":1,\"pass_config\":{\"fuse_allreduce_rms\":false}}"
 
 dcp=1
 [[ "${concurrency}" -gt 1 ]] && dcp=4
 
 agent_space/experiments/2026-07-17-end-to-end-tuning/run-server.sh \
-  --speculative-config '{"method":"mtp","num_speculative_tokens":3}' \
+  --speculative-config "${spec_config}" \
   --decode-context-parallel-size "${dcp}" \
   --max-num-seqs "${concurrency}" \
   >"${result_dir}/${label}-server.out" 2>"${result_dir}/${label}-server.err" &
@@ -82,6 +99,13 @@ bench() {
 
 echo "=== warmup (excluded) ==="
 bench >/dev/null 2>&1 || true
+
+# The reference harness resets before every measured run. Without this the
+# measured pass replays the warmup's prompts out of the prefix cache, which
+# makes TTFT meaningless and inflates end-to-end throughput. TPOT is unharmed
+# either way, but prefill is the point of measuring it.
+curl -fsS -X POST http://127.0.0.1:8027/reset_prefix_cache >/dev/null \
+  && echo "prefix cache reset" || echo "WARNING: prefix cache reset failed"
 
 curl -fsS http://127.0.0.1:8027/metrics \
   | grep -E '^vllm:spec_decode_num_(draft|accepted)_tokens_total' \
