@@ -11,7 +11,7 @@ qualified path stands now.
 ## Current state
 
 Last indexed 2026-08-28, covering worklog commit `c680c6a` and source commit
-`2a26f151ac` on `dflash2-backport`, through Phase 42. Phases 40 and 41 are
+`4349240546` on `dflash2-backport`, through Phase 42. Phases 40 and 41 are
 reserved for the two 2026-08-28 experiment directories that are on disk but
 not yet written up: `2026-08-28-mtp-acceptance-zero` and
 `2026-08-28-decode-comms`. The qualified production branch is unchanged at
@@ -60,7 +60,7 @@ Lever status, so that settled questions are not reopened:
 | `blocks_per_sm` and SM-budget partitioning | Refuted (21, 23, 26) |
 | Target sequence parallelism | Refuted (13) |
 | Wider or deeper speculation: MTP6, DSpark, DFlash1 | Refuted (11, 28): throughput is inverse to verify-batch width |
-| DFlash2 at verify width 8 | Reopened (42): half the width Phase 28 refuted, and break-even acceptance is 3.35-4.19 against a drafter that publishes 4.19-6.02 |
+| DFlash2 at verify width 8 | Refuted (42) **for the GLM-5.3 checkpoint**: 2.68 acceptance against 3.65 break-even, 26.4% slower than MTP3. The drafter does not transfer to a 5.2 target; width 8 itself is survivable at 32.85 ms |
 | Capturing the draft path in CUDA graphs | Refuted (26): the drafts are already graphed |
 | Graph-node fusion | Priced (24) at about 1.2%; not started |
 | Grace-to-HBM cold-weight staging | Open (30), but its control predates the shared-memory fix and it must be re-measured before it means anything |
@@ -923,9 +923,23 @@ therefore the same tensor on both models. Upstream carries DFlash2 in exactly
 two commits (#52816, #53435), both after this fork's 2026-08-01 base; six of
 the seven cherry-pick conflicts are upstream drift in files this fork does not
 modify, and the seventh is this branch's own DCP support for draft attention,
-which is upstream PR #48392 and still open there. The backport is committed as
-`2a26f151ac` on `dflash2-backport`, off the known-good base, with the
-production branch untouched. Not yet measured. See the
+which is upstream PR #48392 and still open there. **The answer is no.** DFlash2 measures **2.6823** acceptance at 32.85 ms
+against MTP3's pooled 3.0721 at 27.69 ms, making it **26.4% slower**, and
+break-even at its achieved step time was 3.6446. It reproduces the exact
+deterministic completion, so this is a speed verdict and not a correctness
+one. Two things are worth separating. The cost model held: width 8 was
+bracketed at 31.2-39.0 ms before the run and measured 32.85, so **width 8 is
+survivable on this target** and Phase 28's refutation should be read as
+bounding DFlash1 at 16 and DSpark at 9, not width in general. What failed is
+transfer: DFlash2 publishes 4.19-6.02 against a GLM-5.3 target and retains
+about half of that here, and it is already worse than MTP3 **at position 0**,
+42% against 87%, which is the signature of a drafter reading hidden states
+that post-training moved underneath it rather than one decaying with block
+depth. Reaching the number took five source blockers, four of them rederived
+from the reverted Phase 28 work and one -- a compile-range conflict in the
+candidate selector -- that Phase 28 never saw because its drafts had no
+selector. Committed as `4349240546` on `dflash2-backport`, off the known-good
+base, with the production branch untouched. See the
 [DFlash2 backport](experiments/2026-08-28-dflash2-backport/README.md).
 
 ## Reproducing

@@ -1,7 +1,8 @@
 # GLM-5.2 on JUPITER: agent handoff
 
-Last updated: 2026-08-28 (Phase 42: DFlash2 backported onto the known-good
-branch and the speculator-width lever reopened at width 8, not yet measured.
+Last updated: 2026-08-28 (Phase 42: DFlash2 measured and refuted -- 26.4%
+slower than MTP3, because a GLM-5.3-trained drafter does not transfer to a 5.2
+target, not because width 8 is too wide.
 Phases 35-39: prefill priced and two of its levers retired; KV-on-Grace
 refuted; the open lever is prefill/decode co-scheduling)
 
@@ -393,38 +394,54 @@ reduce-scatter/all-gather pair.
   producing three byte-identical result files that silently hid an arm that never
   ran the code path.
 
-## Current thread: DFlash2 at verify width 8 (2026-08-28, open)
+## Settled: DFlash2 loses to MTP3 on this target (2026-08-28, Phase 42)
 
-Ported, not measured. `incoai/GLM-5.3-DFlash2` is at
-`models/GLM-5.3-DFlash2` (4.58 GiB, verified intact) and the backport is
-committed as `2a26f151ac` on branch `dflash2-backport`, off the known-good
-`cec73c66b3`. **The production branch is untouched.**
+**Measured and refuted.** DFlash2 gets **2.6823** acceptance at 32.85 ms
+against MTP3's pooled 3.0721 at 27.69 ms: **26.4% slower**, with break-even at
+its achieved step time being 3.6446. It reproduces the exact deterministic
+completion, so this is a speed result, not a correctness one.
 
-Read `experiments/2026-08-28-dflash2-backport/README.md` before doing anything
-here; it carries the break-even arithmetic and the compatibility audit. The
-short version:
+Read the verdict precisely, because it is narrower than Phase 28's:
 
-- Phase 28 refuted DFlash1 at width 16 and DSpark at 9, on width. DFlash2 is
-  width 8, and Phase 28's own numbers give the cost model that prices it.
-- Break-even acceptance against MTP3 is **3.35** (holding draft cost at the
-  1.06 ms/token routed-MoE slope) to **4.19** (interpolating the measured
-  curve). DFlash2 publishes 4.19 on its worst task and 6.02 on its best,
-  against a GLM-5.3 target.
-- **The one thing that decides it is whether a 5.3-trained drafter retains
-  acceptance against this 5.2 W4G64 target.** Nothing else is unknown.
-  Measure acceptance first; everything downstream is premature until then.
+- **Width 8 is survivable on this target.** It was bracketed at 31.2-39.0 ms
+  before the run and measured 32.85. Phase 28's "throughput is inverse to
+  verify-batch width" bounds DFlash1 at 16 and DSpark at 9; it does not
+  condemn 8. A drafter *trained for 5.2* would need 3.65 acceptance here,
+  comfortably inside what DFlash2 achieves on its own target.
+- **What failed is transfer.** DFlash2 publishes 4.19-6.02 against GLM-5.3 and
+  retains about half here. It is worse than MTP3 **at position 0** - 42%
+  against 87% - before block depth can explain anything. That is a drafter
+  reading hidden states post-training moved underneath it, not one decaying
+  with depth. GLM-5.3 is GLM-5.2's base model with different post-training,
+  and the six layers it reads are not the six layers it was trained on.
 
-The decision rule is fixed: acceptance below 3.35 refutes it outright, above
-4.19 beats MTP3 under both bounds, and in between the measured step time
-decides. Do not start the Marlin tile or CUDA-graph retune that width 8 implies
-until the number is in hand - production captures `[4,8,12,16]`, sized for
-MTP3's four query tokens, and width 8 needs `[8,16,24,32]`.
+**Do not conclude that DFlash2 is a bad architecture from this.** Conclude
+that a 5.3-trained drafter does not serve a 5.2 target.
 
-Two traps specific to this path. `_is_dflash2_draft()` forces the V2 model
-runner unconditionally (`config/vllm.py:560`), so no V1 fallback remains
-reachable for this draft. And the draft is non-causal (`is_causal: false` at
-the top level of its config), so it needs a non-causal-capable backend, as
-DFlash1 did in Phase 28.
+One control was not run and would sharpen it: the Phase 28 DFlash1 checkpoint
+is trained for 5.2, and putting it through this same code path would separate
+"the 5.3 drafter does not transfer" from "the backport mis-wires the drafter".
+Correct output proves the plumbing is not grossly broken; it does not prove
+the hidden-state mapping is right.
+
+The branch `dflash2-backport` at `4349240546` carries five fixes worth keeping
+if a 5.2-trained DFlash2 ever appears. Four are rederived from the reverted
+2026-07-25 DSpark work - **no patch of that work survived, so it had to be
+written again**; if this branch is ever reverted, keep the patches this time:
+
+| | fix |
+| --- | --- |
+| blocker 4 | scope `validate_tiered_moe`'s dtype check to draft-derived configs |
+| new | empty `compile_sizes`: the candidate selector takes `piecewise_backend`'s static-shape branch, which needs exactly one compiled range entry |
+| blocker 6 | cherry-pick #48776; the DSA indexer page `64*132 = 2^8*33` neither divides a dense draft's power-of-two page nor is paddable |
+| blocker 7 | classify the dense draft spec, identify on `unpadded_page_size_bytes` because promotion pads the group, charge draft pages into `bytes_per_block` |
+| blocker 8 | trim the placement profile; raising `TIERED_MOE_HBM_RESERVE_GB` provably cannot work |
+
+Bring-up ran as steps in a held `salloc` allocation rather than through the
+queue, which cut a cycle from ~20 minutes to ~4. `run-in-alloc.sh` does this;
+note that a srun step gets **one CPU** by default even when the allocation
+holds the node, and vLLM's GPU-to-NUMA detection fails hard rather than
+degrading.
 
 ## Current thread: prefill is the workload (2026-08-06, open)
 

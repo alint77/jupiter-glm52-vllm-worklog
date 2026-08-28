@@ -1,0 +1,20 @@
+{
+  "label": "dflash2-a4",
+  "wall_s": 6.3072,
+  "verification_steps": 192.0,
+  "draft_tokens": 1344.0,
+  "accepted_draft_tokens": 323.0,
+  "acceptance_length": 2.6823,
+  "draft_acceptance_rate": 0.2403,
+  "step_time_ms": 32.85,
+  "per_position_accepted": {
+    "0": 81.0,
+    "1": 68.0,
+    "2": 55.0,
+    "3": 41.0,
+    "4": 31.0,
+    "5": 27.0,
+    "6": 20.0
+  },
+  "text_head": "We need to write a Python function that merges two sorted lists into one sorted list without using sorted(). We need to explain the invariant it maintains, then give the complexity.\n\nThe function: mer"
+}

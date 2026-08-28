@@ -342,6 +342,75 @@ Its cherry-pick applies cleanly over this fork's own 45 lines in
 page-size unification tests pass, and the suite's other 14 failures are
 identical before and after, so they are pre-existing drift.
 
+## Result: refuted, and not on the axis that was predicted
+
+Attempt `dflash2-a4`, commit `4349240546`, allocation 1526206 on jpbo-049-10,
+c1, trimmed profile at 2,470 hot slots/rank.
+
+**DFlash2 runs correctly on the 5.2 target.** It reproduces the exact
+deterministic completion ` Paris. Distance from Paris to Lyon is`, as
+speculative decoding guarantees regardless of draft quality. It is simply
+slower.
+
+| | acceptance | step time | tok/s |
+| --- | ---: | ---: | ---: |
+| MTP3 (pooled, n=3) | 3.0721 | 27.69 ms | **110.95** |
+| DFlash2 t=7 | **2.6823** | 32.85 ms | **81.65** |
+
+**DFlash2 is 26.4% slower than MTP3**, and the decision rule refutes it under
+both the pre-registered threshold of 3.35 and the calibrated 3.46. At the
+step time it actually achieved, break-even was 3.6446; it needed 36% more
+acceptance than it got.
+
+### The cost model held; the transfer did not
+
+The step-time prediction was good. Width 8 was bracketed at 31.2 to 39.0 ms
+before the run and measured **32.85 ms**, inside the bracket and near the
+optimistic end — as expected, since DFlash2's draft is much cheaper than the
+DFlash1 that set the pessimistic bound. Phase 28's cost model survives another
+point.
+
+What failed is the assumption the phase was built to test. DFlash2 publishes
+4.19 to 6.02 acceptance against a GLM-5.3 target; here it gets **2.6823**,
+about half its HumanEval figure. The per-position profile shows where:
+
+| position | 0 | 1 | 2 | 3 | 4 | 5 | 6 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| DFlash2 | 42% | 35% | 29% | 21% | 16% | 14% | 10% |
+| MTP3 | 87% | 68% | 51% | — | — | — | — |
+
+**It is already worse than MTP3 at position 0** — 42% against 87% — before
+block depth can explain anything. A drafter that had transferred cleanly and
+merely decayed with depth would start near MTP3 and fall off later. Starting
+at half MTP3's first-token rate is the signature of a drafter reading target
+hidden states it was not trained on: GLM-5.3 is GLM-5.2's base model with
+different post-training, and the six layers DFlash2 reads
+(`[5,19,33,47,61,75]`) moved underneath it.
+
+Overall draft acceptance is 24.03%, 323 of 1,344 draft tokens.
+
+### What this settles, and what it does not
+
+Settled: **a GLM-5.3-trained drafter does not transfer to this 5.2 target.**
+That was the one question the phase existed to answer, and it is answered
+against.
+
+Not settled: whether a DFlash2 *trained for 5.2* would win. The cost model says
+it would need 3.65 acceptance at this step time, which is well inside the range
+DFlash2 achieves on its own target. Nothing here refutes the architecture at
+width 8 — only this checkpoint against this target. Phase 28's width refutation
+stands for DFlash1 at 16 and DSpark at 9; width 8 is now measured and is
+survivable, at 32.85 ms against MTP3's 27.69.
+
+One caveat worth stating rather than burying. The correctness gate proves the
+plumbing is not grossly broken, but it does not prove the drafter is optimally
+configured — a subtly wrong `target_layer_ids` mapping or hidden-state
+selection would also produce exactly this signature: correct output, poor
+acceptance. Running the Phase 28 DFlash1 checkpoint, which *is* trained for
+5.2, through this same code path would separate "the 5.3 drafter does not
+transfer" from "the backport mis-wires the drafter". That control has not been
+run.
+
 ## Scripts
 
 | | |
