@@ -402,14 +402,62 @@ width 8 — only this checkpoint against this target. Phase 28's width refutatio
 stands for DFlash1 at 16 and DSpark at 9; width 8 is now measured and is
 survivable, at 32.85 ms against MTP3's 27.69.
 
-One caveat worth stating rather than burying. The correctness gate proves the
-plumbing is not grossly broken, but it does not prove the drafter is optimally
-configured — a subtly wrong `target_layer_ids` mapping or hidden-state
-selection would also produce exactly this signature: correct output, poor
-acceptance. Running the Phase 28 DFlash1 checkpoint, which *is* trained for
-5.2, through this same code path would separate "the 5.3 drafter does not
-transfer" from "the backport mis-wires the drafter". That control has not been
-run.
+### The wiring control: run, and it passes
+
+The correctness gate proves the plumbing is not grossly broken, but a subtly
+wrong aux-layer mapping would produce exactly this signature too: correct
+output, poor acceptance. Two checks settle it.
+
+**Static.** The nested `dflash_config.target_layer_ids` resolves for both
+checkpoints — `[5,19,33,47,61,75]` becomes aux layers `[6,20,34,48,62,76]` —
+so there is no silent fallback to the draft's `num_hidden_layers`, which is
+the blocker-5 failure mode Phase 28 recorded. `fc` is sized from
+`len(target_layer_ids)`, 6 x 6144 = 36,864, matching the checkpoint exactly,
+and `combine_hidden_states` validates it against `fc.input_size`, so a wrong
+count would raise rather than degrade. What static reading cannot settle is
+whether the `+1` convention itself is right.
+
+**Empirical.** DFlash1 is trained for 5.2 and uses the same convention, so it
+was run through the same code path, binary, target and prompt.
+
+| | width | acceptance | step ms | tok/s | vs MTP3 | pos 0 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| MTP3 | 4 | 3.0721 | 27.69 | 110.95 | — | **87%** |
+| DFlash1 (5.2-trained) | 16 | 3.5944 | 50.43 | 71.28 | −35.8% | **79%** |
+| DFlash2 (5.3-trained) | 8 | 2.6823 | 32.85 | 81.65 | −26.4% | **42%** |
+
+Three things follow.
+
+**Phase 28 reproduces.** It measured DFlash1 at 34.0% slower than MTP3; this
+harness gives **35.8%**, on a different target quantization, a different
+prompt and a rebuilt code path.
+
+**DFlash1 shows Phase 28's qualitative signature**: the best acceptance length
+of the three, 3.59 against MTP3's 3.07, and the worst throughput. Acceptance
+length remains the wrong figure of merit.
+
+**Position 0 is decisive and harness-internal.** A correctly wired drafter
+predicts the very next token well. DFlash1 does, at 79%, near MTP3's 87%.
+DFlash2 gets 42% with everything else held fixed. The `+1` convention is
+validated by the same argument: an off-by-one would have hurt DFlash1
+identically, and it did not.
+
+**The backport does not degrade drafters; DFlash2's collapse is specific to
+it.** The refutation stands.
+
+A threshold correction, recorded because it was set wrongly. This control was
+first framed as "DFlash1 should measure about 6.84, Phase 28's figure". That
+was never a valid comparison: 6.84 came from a 24-prompt realistic suite on the
+W4A16-FP8-MTP target, while this is a single coding prompt on AutoRound W4G64,
+and absolute acceptance is strongly prompt- and target-dependent. The valid
+comparisons are the relative throughput ratio and position-0 accuracy, both
+measured inside one harness, and both are reported above.
+
+The control ran on a deeper trim, 800 slots/rank against the DFlash2 arm's
+400, because DFlash1 is a 7.0 GB draft at verify width 16 with a 22.74 GiB KV
+against DFlash2's 4.58 GB at width 8 and 18.98 GiB, and it OOMed at 400.
+Residency does not affect acceptance, and no step-time comparison is drawn
+between the two arms, so this does not weaken the control.
 
 ## Scripts
 

@@ -39,5 +39,5 @@ cpus="$(scontrol show job "${alloc}" 2>/dev/null | tr ' ' '\n' | sed -n 's/^NumC
 echo "running ${label} as a step in allocation ${alloc} ($(git rev-parse --short HEAD)), ${cpus} CPUs"
 exec srun --jobid="${alloc}" --overlap --nodes=1 --ntasks=1 --mpi=none \
   --cpus-per-task="${cpus}" --gres=gpu:4 --mem=0 \
-  --export=ALL,DFLASH_DRAFT_PATH="${DFLASH_DRAFT_PATH:-}" \
+  --export=ALL,DFLASH_DRAFT_PATH="${DFLASH_DRAFT_PATH:-}",TIERED_MOE_PLACEMENT_PROFILE="${TIERED_MOE_PLACEMENT_PROFILE:-}" \
   bash "${result_dir}/arm-dflash2.sh" "${label}" "${spec_tokens}"

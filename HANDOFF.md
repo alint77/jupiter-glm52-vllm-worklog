@@ -418,11 +418,26 @@ Read the verdict precisely, because it is narrower than Phase 28's:
 **Do not conclude that DFlash2 is a bad architecture from this.** Conclude
 that a 5.3-trained drafter does not serve a 5.2 target.
 
-One control was not run and would sharpen it: the Phase 28 DFlash1 checkpoint
-is trained for 5.2, and putting it through this same code path would separate
-"the 5.3 drafter does not transfer" from "the backport mis-wires the drafter".
-Correct output proves the plumbing is not grossly broken; it does not prove
-the hidden-state mapping is right.
+**The wiring control was run and passed.** DFlash1, which is trained for 5.2,
+went through the same code path, binary, target and prompt:
+
+| | width | acceptance | tok/s | vs MTP3 | pos 0 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| MTP3 | 4 | 3.0721 | 110.95 | — | 87% |
+| DFlash1 | 16 | 3.5944 | 71.28 | -35.8% | 79% |
+| DFlash2 | 8 | 2.6823 | 81.65 | -26.4% | 42% |
+
+Phase 28 measured DFlash1 at 34.0% slower than MTP3; this gives 35.8%, an
+independent reproduction on a different target and prompt. Position 0 is the
+decisive column: a correctly wired drafter predicts the next token well, and
+DFlash1 does at 79% while DFlash2 gets 42% with everything else fixed. That
+also validates the `+1` aux-layer convention, since an off-by-one would have
+hurt DFlash1 identically.
+
+Do not compare absolute acceptance across harnesses. Phase 28's DFlash1 figure
+of 6.84 came from a 24-prompt suite on the W4A16-FP8-MTP target; this is one
+coding prompt on AutoRound W4G64, and it measures 3.59. The comparable
+quantities are the relative throughput ratio and position-0 accuracy.
 
 The branch `dflash2-backport` at `4349240546` carries five fixes worth keeping
 if a 5.2-trained DFlash2 ever appears. Four are rederived from the reverted

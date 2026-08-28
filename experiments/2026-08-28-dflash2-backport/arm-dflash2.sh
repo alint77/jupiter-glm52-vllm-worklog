@@ -39,7 +39,11 @@ model="/e/fscratch/profound/${USER:-$(id -un)}/models/GLM-5.2-AutoRound-W4G64-MT
 [[ -f "${model}/.stage_done" ]] || model="${models_dir}/GLM-5.2-AutoRound-W4G64-MTP-e1ba887"
 echo "model:  ${model}"
 export TIERED_MOE_MODEL_PATH="${model}"
-export TIERED_MOE_PLACEMENT_PROFILE="${result_dir}/dflash2-trim-profile.json"
+# Overridable: the DFlash1 control needs a deeper trim (7.0 GB draft at verify
+# width 16, against DFlash2's 4.58 GB at width 8). Residency does not affect
+# acceptance length, which is the only thing the control measures, so the two
+# arms may sit at different hot-slot counts without breaking the comparison.
+export TIERED_MOE_PLACEMENT_PROFILE="${TIERED_MOE_PLACEMENT_PROFILE:-${result_dir}/dflash2-trim-profile.json}"
 export TIERED_MOE_HBM_RESERVE_GB=7
 
 export DFLASH_DRAFT_PATH="${DFLASH_DRAFT_PATH:-${models_dir}/GLM-5.3-DFlash2}"
