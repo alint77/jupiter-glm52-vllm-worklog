@@ -54,17 +54,19 @@ else
 fi
 
 # Wait for both nodes to register before serving.
+#
+# Read cluster state from `ray status` text, never `ray.init(address="auto")`:
+# a client connection opens its own Ray session, and vLLM then starts another,
+# so its actor handles fail to resolve across the two with
+# "ActorHandleNotFoundError: ActorHandle objects are not valid across Ray
+# sessions". That is what killed the first attempt.
 for _ in $(seq 1 60); do
-  n=$(ray status 2>/dev/null | grep -cE "^ *1 node_|GPU" || echo 0)
-  gpus=$(python - <<'PY' 2>/dev/null || echo 0
-import ray, re
-ray.init(address="auto", ignore_reinit_error=True, logging_level="ERROR")
-print(int(ray.cluster_resources().get("GPU", 0)))
-PY
-)
-  [[ "${gpus}" -ge 8 ]] && { echo "ray cluster ready: ${gpus} GPUs"; break; }
+  gpus=$(ray status 2>/dev/null | sed -n 's@.*\([0-9]\+\)\.0*/\([0-9]\+\)\.0* GPU.*@\2@p' | head -1)
+  [[ -z "${gpus}" ]] && gpus=0
+  if [[ "${gpus}" -ge 8 ]]; then echo "ray cluster ready: ${gpus} GPUs"; break; fi
   sleep 5
 done
+[[ "${gpus:-0}" -ge 8 ]] || { echo "ray cluster never reached 8 GPUs (saw ${gpus:-0})"; exit 1; }
 
 .venv/bin/vllm serve "${model}" \
   --served-model-name glm53-nvfp4-ref \
