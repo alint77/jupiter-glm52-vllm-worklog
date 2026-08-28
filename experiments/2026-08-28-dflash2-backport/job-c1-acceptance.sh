@@ -25,9 +25,25 @@ models_dir=/e/project1/profound/alint77/models
 cd "${repo_dir}"
 source agent_space/jupiter-env.sh
 
+# git is NOT on PATH on Booster compute nodes, under any module. Every job
+# script that logged `git rev-parse` has silently recorded an empty commit --
+# job 1520846 in 2026-08-28-decode-comms did exactly that. Provenance is
+# therefore established on the login node by submit.sh and passed in, and
+# resolved from .git by hand here as a cross-check.
 echo "node:   $(hostname)"
-echo "commit: $(git rev-parse --short HEAD) ($(git rev-parse --abbrev-ref HEAD))"
-git diff --quiet || { echo "REFUSING: working tree is dirty"; exit 1; }
+head_ref="$(<"${repo_dir}/.git/HEAD")"
+if [[ "${head_ref}" == ref:* ]]; then
+  branch="${head_ref#ref: refs/heads/}"
+  commit="$(<"${repo_dir}/.git/refs/heads/${branch}")"
+else
+  branch="(detached)"; commit="${head_ref}"
+fi
+echo "commit: ${commit:0:10} (${branch})"
+if [[ -n "${SOURCE_COMMIT:-}" && "${SOURCE_COMMIT}" != "${commit}" ]]; then
+  echo "REFUSING: HEAD moved since submit (${SOURCE_COMMIT:0:10} -> ${commit:0:10})"
+  exit 1
+fi
+[[ -n "${SOURCE_COMMIT:-}" ]] || echo "WARNING: submitted without submit.sh; tree cleanliness unverified"
 
 export VLLM_USE_V2_MODEL_RUNNER=1
 export VLLM_SERVER_DEV_MODE=1
