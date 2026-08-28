@@ -3,6 +3,18 @@
 Goal: serve `incoai/GLM-5.3-NVFP4` on this fork's tiered MoE path, with the
 cold tier running from Grace over UVA Marlin as it does for W4G64 today.
 
+**Why NVFP4 and not a W4G64 quantization of 5.3.** No AutoRound W4A16 5.3
+checkpoint exists yet and producing one in-house takes too long to be
+practical. NVFP4 is what is available — and it comes with `incoai/GLM-5.3-DFlash2`,
+a drafter from the same quantizer against the same target. That second half
+matters more than it looks: Phase 42 refuted DFlash2 on the 5.2 target
+specifically because a 5.3-trained drafter reads hidden states that 5.3's
+post-training moved, collapsing position-0 acceptance from 87% to 42%. On a
+5.3 target that objection disappears, and Phase 42 already priced what DFlash2
+needs to win: **3.65 acceptance at ~33 ms/step**, against the 4.19-6.02 it
+publishes on a 5.3 target. So this phase is not a throughput play on the
+quantization; it is the route to a working speculator.
+
 `incoai/GLM-5.3-NVFP4` — 433 GiB, 141 shards, NVIDIA ModelOpt format
 (`quant_method: modelopt`, `quant_algo: NVFP4`, `group_size: 16`), NVFP4
 weights with static NVFP4 activation scales and an FP8 KV cache. Base model
@@ -79,6 +91,25 @@ bytes of `qzeros` for AutoRound, 48 for compressed-tensors — from the stored
 size. NVFP4 has no `qzeros`; it has two extra scale tensors instead. That
 arithmetic has to be rederived, not adjusted.
 
+### 5. The MTP head is BF16, and that is fine under DFlash2
+
+`hf_quant_config.json` excludes layer 78's experts, and they are stored as
+plain BF16:
+
+| MTP layer 78 experts | per expert | x256 | per rank at EP4 |
+| --- | ---: | ---: | ---: |
+| W4G64 5.2 (int4) | 19.406 MiB | 4.85 GiB | **1.21 GiB** |
+| NVFP4 5.3 (BF16) | 72.000 MiB | 18.00 GiB | **4.50 GiB** |
+
+That is +3.29 GiB per rank, worth roughly 150 hot expert slots, on top of the
++17.6% on the routed layers. It only bites if MTP3 is run on this target:
+Phase 28 established that the grafted layer 78 **is not instantiated under
+DFlash**, costing nothing but a fingerprint match. Since DFlash2 is the point
+of this phase, the BF16 MTP head is dead weight on disk rather than in HBM.
+
+An MTP3 control on the NVFP4 target is therefore possible but expensive, and
+would need its own deeper profile trim.
+
 ## Plan
 
 1. **Manifest**: accept `quant_method: modelopt` with `quant_algo: NVFP4` and
@@ -92,7 +123,8 @@ arithmetic has to be rederived, not adjusted.
    carries a `config_sha256` fingerprint of its target and the loader fails
    closed on a mismatch. The router also changed with 5.3's post-training, so
    the hot-expert ranking must be re-derived rather than ported.
-4. **Bring-up**: dense first inside the tiered contract, then the cold tier.
+4. **Bring-up**: dense first inside the tiered contract, then the cold tier,
+   then DFlash2 on this target as the pairing the quantizer intended.
 5. **Verify the claim in finding 1 on hardware**: confirm the layer actually
    builds `MarlinExperts` under this checkpoint and that the tier launch
    policy applies to it.
@@ -108,7 +140,12 @@ arithmetic has to be rederived, not adjusted.
 
 ## Known constraint
 
-NVFP4 has no fast path on GH200. `select_nvfp4_moe_backend` tries
+NVFP4 has no fast path on GH200, and it costs 17.6% more resident HBM per
+expert than W4G64 plus 3.29 GiB per rank if the MTP head is instantiated. The
+case for it is not throughput: it is that 5.3 is only available this way, and
+that it brings a matching DFlash2 drafter.
+
+ `select_nvfp4_moe_backend` tries
 FLASHINFER_TRTLLM, FLASHINFER_CUTEDSL, FLASHINFER_CUTEDSL_BATCHED,
 FLASHINFER_CUTLASS and VLLM_CUTLASS first, all of which need SM100, and falls
 through to MARLIN on SM90. That is the same kernel class the W4G64 path
