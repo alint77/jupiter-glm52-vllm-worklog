@@ -38,10 +38,31 @@ assertion. The NVFP4 scale layout is handled inside Marlin's own weight
 preparation (`convert_to_nvfp4_moe_kernel_format` →
 `prepare_nvfp4_moe_layer_for_marlin`), which the tiered code never inspects.
 
-So "make Marlin cold support NVFP4" is likely **not** kernel work. The tier
-split is about launch policy and physical residency, and both are quant-scheme
-agnostic. This needs proving on hardware, not just by reading, but it moves
-the expected work from the kernel to the loader.
+So "make Marlin cold support NVFP4" is **not** kernel work.
+
+**Correction, found while reading further.** The first pass of this finding
+claimed the tiered code was quant-scheme agnostic. It is not. Beyond the
+launch policy, `tiered_moe_execution.py` builds each tier's quant config
+itself, and it is hardcoded to INT4:
+
+```python
+quant_config = make_wna16_moe_quant_config(
+    w1_scale=components["w13_weight_scale"],
+    w2_scale=components["w2_weight_scale"],
+    group_size=group_size, num_bits=num_bits, ...)
+```
+
+and addresses weights as `components["w13_weight_packed"]` /
+`components["w2_weight_packed"]`. NVFP4 needs
+`nvfp4_w4a16_moe_quant_config(g1_alphas, g2_alphas, w1_scale, w2_scale, ...)`
+— the weight-only variant, since Marlin does not quantize activations — which
+additionally requires the global alphas derived from `weight_scale_2`, a
+tensor the tiered storage does not currently carry. The component keys differ
+too: NVFP4 stores `weight`, not `weight_packed`.
+
+The revised claim: the GEMM needs nothing, the launch policy needs nothing,
+and the tiered execution path needs a format branch plus one more stored
+component. Bounded, but not zero.
 
 ### 2. Only the routed experts are NVFP4, and layer 78 is not
 
@@ -155,7 +176,9 @@ would need its own deeper profile trim.
       tiered tests pass
 - [x] Placeholder placement profile loads through the real fail-closed loader
       at 2,348 slots/rank with the NVFP4 fingerprint accepted
-- [ ] Stage to fscratch
+- [ ] Stage to fscratch (in flight)
+- [ ] `tiered_moe_execution.py`: format branch for the tier quant config,
+      carry `weight_scale_2` through tier storage
 - [ ] Dense bring-up under the tiered contract
 - [ ] Cold tier over UVA
 - [ ] DFlash2 on this target
