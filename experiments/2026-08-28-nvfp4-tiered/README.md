@@ -230,6 +230,69 @@ plausible code, which is what distinguishes a working GEMM from a broken one.
 It does not match the project's 5.2 golden string, and should not: different
 model, different quantization. A real correctness gate needs an eval.
 
+## The DFlash2 acceptance investigation
+
+Our 16K-code harness gave DFlash2 3.323 acceptance at width 8. The model card
+reports 5.94 on GSM8K. Replicating the card's protocol -- GSM8K, chat
+template, T=1.0, top_p 0.95, natural EOS, 4096 max tokens, 64 samples --
+settled where the gap was:
+
+| | our 16K suite | card protocol | card | after fixes |
+| --- | ---: | ---: | ---: | ---: |
+| MTP (7 draft tokens) | — | **4.967** | 5.12 | 4.912 |
+| DFlash2 | 3.323 | **2.815** | 5.94 | **4.029** |
+
+**MTP reproducing the card to within 3% validated the harness** and localised
+the fault: sampling, chat template, EOS handling, prompt distribution, target
+model and the tiered stack were all sound, and the problem was specific to
+DFlash2. Note the card's MTP baseline also proposes seven tokens, so its
+comparison is width-8 against width-8; ours had been width-4 against width-8.
+
+Normalised for width the diagnosis was sharper still: our MTP3 sat at 68.8% of
+its ceiling against the card's MTP7 at 64.0%, while DFlash2 at the *same*
+width 8 managed 41.5% against the card's 74.2%.
+
+The per-position profile named the mechanism. Acceptance fell geometrically at
+a near-constant 0.714 ratio per position (stdev 0.020) -- the signature of
+plain autoregressive decay, when DFlash2's entire premise is that its two-tap
+convolutions and candidate selector prevent exactly that.
+
+### Root cause: a backport onto a base that predates its prerequisites
+
+DFlash2 landed upstream on 2026-08-20. This fork's base is 2026-07-16. Between
+those dates upstream shipped several core DFlash fixes that #52816 assumes,
+and cherry-picking DFlash2 alone left it running on a DFlash core missing five
+weeks of its own bugfixes. Auditing all 1704 upstream commits since the base,
+by message, by path, and by content presence -- ancestry is useless here since
+cherry-picks change hashes -- found:
+
+| commit | present | effect |
+| --- | ---: | --- |
+| #53336 / #53002 | 50% | FlashAttention metadata built from the **target's** head geometry, not the draft's |
+| #51256 | 0% | DFlash needs K extra scheduling slots; the budget reserved none |
+| #44492 | 28% | draft `seq_lens_cpu_upper_bound` not populated |
+| #50065 | 0% | query buffers vs cudagraph padding — **ruled out**, see below |
+| #48524 | 50% | `fc` sizing — our `fc` is verified correct at 36,864 |
+
+#53336 is the substantive one. Our target is MLA with head_dim 192 and an
+effective head size of 576; the DFlash2 draft is dense with head_dim 128, 64
+query heads and 8 KV heads. Describing draft attention with target geometry
+degrades the draft without touching output, because verification rejects every
+bad token. It also explains the separate c4 failure, `scheduler_metadata must
+have shape (metadata_size)`.
+
+#50065 was checked rather than assumed and does not apply: `max_query_tokens`
+is 1 x (1+7) = 8 at c1 and our cudagraph capture size is also 8, so the fix's
+`max()` is a no-op. Same at c4, 32 against 32.
+
+**The three fixes recovered 2.815 to 4.029, +43%, with MTP unchanged at 4.912
+against its pre-fix 4.967** -- so they were surgical. A 32% gap to the card
+remains, and the two unapplied audit entries deserve re-examination before
+blaming the GB300/FlashAttention-4 configuration difference: #48524 because
+DFlash2 has 6 hidden and 6 target layers, so a wrong code path still yields a
+right-sized tensor, and #50487 because it changes which hidden state is tapped
+as the aux input, which was dismissed on its Kimi-K3 title alone.
+
 ## What it took
 
 Nine rounds, each one integration gap, none of them in a kernel:

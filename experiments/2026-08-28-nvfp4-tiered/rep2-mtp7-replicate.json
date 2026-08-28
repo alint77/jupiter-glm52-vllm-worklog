@@ -1,0 +1,13 @@
+{
+  "label": "rep2-mtp7",
+  "requests": 64,
+  "wall_s": 171.03,
+  "acceptance_length_mean": 4.9121,
+  "acceptance_length_median": 4.918,
+  "acceptance_length_pooled": 4.8019,
+  "mean_completion_tokens": 246.9,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "max_tokens": 4096,
+  "protocol": "DFlash2 card: chat template, natural EOS, T=1.0 top_p=0.95"
+}
