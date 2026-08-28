@@ -1,0 +1,16 @@
+{
+  "label": "mtp3-control",
+  "wall_s": 4.5687,
+  "verification_steps": 166.0,
+  "draft_tokens": 498.0,
+  "accepted_draft_tokens": 345.0,
+  "acceptance_length": 3.0783,
+  "draft_acceptance_rate": 0.6928,
+  "step_time_ms": 27.5225,
+  "per_position_accepted": {
+    "0": 141.0,
+    "1": 114.0,
+    "2": 90.0
+  },
+  "text_head": "We need to write a Python function that merges two sorted lists into one sorted list without using sorted(). We need to explain the invariant it maintains, then give the complexity.\n\nThe function: mer"
+}

@@ -203,6 +203,45 @@ trimmed profile loads, and residency only has to be right for a later
 throughput arm — which the decision rule says not to start until acceptance
 clears.
 
+## Result: the control arm, and what it does to the thresholds
+
+Job 1524929, `2a26f151ac`, node jpbo-026-48, trimmed profile, c1.
+
+| MTP3 control | measured | Phase 28 assumed |
+| --- | ---: | ---: |
+| acceptance length | **3.0783** | ~2.9 |
+| step time | **27.52 ms** | ~27 ms |
+| draft acceptance rate | 69.28% (345/498) | — |
+| per-position accepted | 141 / 114 / 90 of 166 | 85% / 69% / 54% |
+| semantic smoke | ` Paris. Distance from Paris to Lyon is` | exact expected string |
+
+**The harness is validated.** Step time reproduces Phase 28's ~27 ms to within
+2%, on a different target and a trimmed profile, and the deterministic smoke is
+byte-exact. The control is doing its job.
+
+The measured baseline is slightly stronger than the one the decision rule was
+written against, so the break-even moves up. Calibrating from the **control
+arm** rather than from Phase 28's approximation is legitimate — it is the
+baseline being measured more precisely, not the candidate moving a goalpost —
+but both are recorded so the substitution is visible:
+
+| step time for width 8 | pre-registered (2.9 @ 27 ms) | harness-calibrated (3.0783 @ 27.52 ms) |
+| --- | ---: | ---: |
+| optimistic 31.2 ms | 3.35 | **3.49** |
+| pessimistic 39.0 ms | 4.19 | **4.36** |
+
+DFlash2 will be judged against both. Its published acceptance on a GLM-5.3
+target ranges 4.19 (MT-Bench) to 6.02 (MATH-500); against the calibrated
+pessimistic bound of 4.36, even its worst published task no longer clears, so
+the outcome now hinges more tightly than before on how much acceptance
+survives the move to a 5.2 target.
+
+One presentation defect found and fixed here: `capture_acceptance.py` printed
+the candidate verdict for the control arm too, so the run log shows
+`3.0783 -> REFUTED` against MTP3 itself. That line is meaningless — the
+control cannot fail a rule about beating itself — and the script now suppresses
+it for control labels. The number it reports is correct.
+
 ## Scripts
 
 | | |

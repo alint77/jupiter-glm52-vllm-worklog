@@ -131,8 +131,12 @@ def main() -> int:
 
     a = result["acceptance_length"]
     print(json.dumps({k: v for k, v in result.items() if k != "text_head"}, indent=2))
-    if a is not None:
-        # Phase 42 decision rule, fixed before the run.
+    # The decision rule judges the CANDIDATE. Printing it for the MTP3 control
+    # is nonsense -- the control is the baseline the thresholds are derived
+    # from, so it "fails" a rule about beating itself.
+    if a is not None and "control" not in args.label:
+        # Phase 42 decision rule, fixed before the run against Phase 28's
+        # baseline of ~2.9 acceptance at ~27 ms.
         verdict = (
             "REFUTED (< 3.35: cannot beat MTP3 under any step-time assumption)"
             if a < 3.35
@@ -141,6 +145,8 @@ def main() -> int:
             else "CLEARS (> 4.19: beats MTP3 under both bounds)"
         )
         print(f"\nacceptance length {a} -> {verdict}")
+    elif a is not None:
+        print(f"\nacceptance length {a} (control baseline; no verdict applies)")
     return 0
 
 
