@@ -3,6 +3,11 @@
 # checkpoint serve on GH200 through the stock Marlin NVFP4 backend, untouched?
 # Separates "the fork's loader needs teaching" from "NVFP4 does not work here".
 #
+# kv-cache-dtype must be pinned: the checkpoint's hf_quant_config asks for
+# FP8 KV, and vLLM then selects fp8_e4m3 for a head_size-576 MLA cache, for
+# which no attention backend exists ("No valid attention backend found").
+# fp8_ds_mla is the sparse-MLA layout this model actually needs.
+#
 # The model does not fit in 4x95 GiB, so this is expected to OOM on weights.
 # What it proves is where it gets to first: reaching a memory limit means the
 # format path is sound and only residency stands in the way.
@@ -19,7 +24,8 @@ mkdir -p "${VLLM_CACHE_ROOT}"
 .venv/bin/vllm serve "${model}" --served-model-name glm53-nvfp4 \
   --host 127.0.0.1 --port 8031 --tensor-parallel-size 4 --enable-expert-parallel \
   --distributed-executor-backend mp --max-model-len 8192 --max-num-seqs 1 \
-  --gpu-memory-utilization 0.92 \
+  --gpu-memory-utilization 0.92 --block-size 64 \
+  --kv-cache-dtype fp8_ds_mla \
   >"${result_dir}/${label}-server.out" 2>"${result_dir}/${label}-server.err" &
 pid=$!
 for _ in $(seq 1 300); do
