@@ -10,8 +10,12 @@ qualified path stands now.
 
 ## Current state
 
-Last indexed 2026-08-06, covering worklog commit `e2945bd` and source commit
-`e59d34275`, through Phase 39.
+Last indexed 2026-08-28, covering worklog commit `c680c6a` and source commit
+`2a26f151ac` on `dflash2-backport`, through Phase 42. Phases 40 and 41 are
+reserved for the two 2026-08-28 experiment directories that are on disk but
+not yet written up: `2026-08-28-mtp-acceptance-zero` and
+`2026-08-28-decode-comms`. The qualified production branch is unchanged at
+`cec73c66b3` (`known-good-1238882`).
 
 | | |
 | --- | --- |
@@ -55,7 +59,8 @@ Lever status, so that settled questions are not reopened:
 | Green contexts for SM isolation | Refuted (30): 9-40% worse than the production fork/join |
 | `blocks_per_sm` and SM-budget partitioning | Refuted (21, 23, 26) |
 | Target sequence parallelism | Refuted (13) |
-| Wider or deeper speculation: MTP6, DSpark, DFlash | Refuted (11, 28): throughput is inverse to verify-batch width |
+| Wider or deeper speculation: MTP6, DSpark, DFlash1 | Refuted (11, 28): throughput is inverse to verify-batch width |
+| DFlash2 at verify width 8 | Reopened (42): half the width Phase 28 refuted, and break-even acceptance is 3.35-4.19 against a drafter that publishes 4.19-6.02 |
 | Capturing the draft path in CUDA graphs | Refuted (26): the drafts are already graphed |
 | Graph-node fusion | Priced (24) at about 1.2%; not started |
 | Grace-to-HBM cold-weight staging | Open (30), but its control predates the shared-memory fix and it must be re-measured before it means anything |
@@ -896,6 +901,32 @@ an empty `analysis/`, and is not committed. Its `policy-1197614.json` puts the
 shipped 264/132 hot/cold grid at 93.67 us against 129.91 us for the pre-fix
 production launch, with the best alternative found (264/99) at 92.20 us, 1.6%
 better and covering 51.6% of the c1 operating point. Read that as provisional.
+
+Phase 42 reopens the speculator-width lever for DFlash2 and ports it. Phase 28
+refuted DFlash1 at verify width 16 and DSpark at 9, and the refutation was
+about width: this target's routed MoE is only 35% fixed weight streaming, so
+verify cost grows with block width while acceptance grows sublinearly.
+**DFlash2 is width 8, half of what was refuted, and Phase 28's own three points
+fit `tok/s = acceptance / step_time` to within 1.4%,** which turns the question
+into arithmetic. Width 8 brackets at 31.2 ms (holding draft cost at the 1.06
+ms/token routed-MoE slope, defensible because DFlash2's draft is 6 SWA layers
+with 8 KV heads against DFlash1's 5 full-attention layers with 64) and 39.0 ms
+(interpolating Phase 28's measured curve). Break-even acceptance against MTP3
+is therefore 3.35 to 4.19, and DFlash2 publishes 4.19 on its worst task and
+6.02 on its best. Every remaining unknown collapses into one measurable
+quantity: whether a drafter trained on GLM-5.3 hidden states retains acceptance
+against this 5.2 W4G64 target. GLM-5.3 is the same base model as 5.2 with
+different post-training, and the compatibility audit clears every static
+mismatch, including the mask token — DFlash2's `mask_token_id` 154856 is a
+reserved embedding row in **both** tokenizers, which take no gradient and are
+therefore the same tensor on both models. Upstream carries DFlash2 in exactly
+two commits (#52816, #53435), both after this fork's 2026-08-01 base; six of
+the seven cherry-pick conflicts are upstream drift in files this fork does not
+modify, and the seventh is this branch's own DCP support for draft attention,
+which is upstream PR #48392 and still open there. The backport is committed as
+`2a26f151ac` on `dflash2-backport`, off the known-good base, with the
+production branch untouched. Not yet measured. See the
+[DFlash2 backport](experiments/2026-08-28-dflash2-backport/README.md).
 
 ## Reproducing
 
