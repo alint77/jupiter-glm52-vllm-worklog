@@ -52,7 +52,21 @@ export TIERED_MOE_MODEL_PATH="${TIERED_MOE_MODEL_PATH:-${models_dir}/GLM-5.2-Aut
 export TIERED_MOE_PLACEMENT_PROFILE="${TIERED_MOE_PLACEMENT_PROFILE:?a draft-aware trimmed profile is required; see README}"
 export VLLM_TIERED_MOE_PROFILE_CAP="${VLLM_TIERED_MOE_PROFILE_CAP:-1}"
 export TIERED_MOE_HBM_RESERVE_GB="${TIERED_MOE_HBM_RESERVE_GB:-7}"
-export TIERED_MOE_COMPILATION_CONFIG="{\"mode\":3,\"cudagraph_mode\":\"FULL_AND_PIECEWISE\",\"cudagraph_capture_sizes\":[${sizes}],\"compile_sizes\":[${sizes}],\"cudagraph_num_of_warmups\":1,\"pass_config\":{\"fuse_allreduce_rms\":false}}"
+# compile_sizes is deliberately EMPTY here, unlike every other arm.
+#
+# DFlash2's CandidateSelector takes only statically shaped inputs, so
+# piecewise_backend takes its "all inputs have static shapes" branch, which
+# asserts exactly one compiled range entry. A non-empty compile_sizes gives it
+# two -- the static entry for that size, plus the range entry the engine
+# derives automatically to compile_ranges_endpoints -- and the selector dies
+# with "Expected exactly one compiled range_entry for static shape
+# compilation, but found 2" (job 1525715). MTP3 never hits this because it has
+# no static-shape-only submodule.
+#
+# cudagraph_capture_sizes still carries the width-8 shape, so the graph is
+# captured as before; only the extra static compile entry is dropped.
+compile_sizes="${DFLASH2_COMPILE_SIZES-}"
+export TIERED_MOE_COMPILATION_CONFIG="{\"mode\":3,\"cudagraph_mode\":\"FULL_AND_PIECEWISE\",\"cudagraph_capture_sizes\":[${sizes}],\"compile_sizes\":[${compile_sizes}],\"cudagraph_num_of_warmups\":1,\"pass_config\":{\"fuse_allreduce_rms\":false}}"
 
 profiler_args=()
 if [[ -n "${profile_dir}" ]]; then
