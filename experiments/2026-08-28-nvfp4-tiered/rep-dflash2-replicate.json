@@ -1,0 +1,13 @@
+{
+  "label": "rep-dflash2",
+  "requests": 64,
+  "wall_s": 228.82,
+  "acceptance_length_mean": 2.8146,
+  "acceptance_length_median": 2.8493,
+  "acceptance_length_pooled": 2.8243,
+  "mean_completion_tokens": 248.5,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "max_tokens": 4096,
+  "protocol": "DFlash2 card: chat template, natural EOS, T=1.0 top_p=0.95"
+}
