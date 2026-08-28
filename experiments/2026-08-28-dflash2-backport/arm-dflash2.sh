@@ -42,6 +42,8 @@ export TIERED_MOE_MODEL_PATH="${model}"
 export TIERED_MOE_PLACEMENT_PROFILE="${result_dir}/dflash2-trim-profile.json"
 export TIERED_MOE_HBM_RESERVE_GB=7
 
+export DFLASH_DRAFT_PATH="${DFLASH_DRAFT_PATH:-${models_dir}/GLM-5.3-DFlash2}"
+echo "draft:  ${DFLASH_DRAFT_PATH}"
 "${result_dir}/run-server-dflash2.sh" "${spec_tokens}" 1 "" \
   >"${result_dir}/${label}-server.out" 2>"${result_dir}/${label}-server.err" &
 pid=$!

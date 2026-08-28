@@ -30,7 +30,9 @@ shift 3
 
 repo_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../.." && pwd)"
 models_dir="$(dirname -- "${repo_dir}")/models"
-draft="${models_dir}/GLM-5.3-DFlash2"
+# Overridable so the DFlash1 checkpoint, which IS trained for 5.2, can be run
+# through this exact code path as a wiring control.
+draft="${DFLASH_DRAFT_PATH:-${models_dir}/GLM-5.3-DFlash2}"
 
 [[ -d "${draft}" ]] || { echo "missing draft: ${draft}" >&2; exit 1; }
 
