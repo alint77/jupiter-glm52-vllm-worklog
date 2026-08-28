@@ -42,6 +42,11 @@ def main() -> int:
         default=0.0,
         help="extra HBM per rank to leave free beyond the equal-bytes slot count",
     )
+    ap.add_argument(
+        "--slots",
+        type=int,
+        help="force this many hot slots per rank instead of deriving from bytes",
+    )
     args = ap.parse_args()
 
     from vllm.model_executor.model_loader.tiered_moe_manifest import (
@@ -67,9 +72,12 @@ def main() -> int:
             per_rank_before[layer_owners[expert_id]] += 1
     slots_before = per_rank_before[0]
 
-    budget_bytes = slots_before * W4G64_RUNTIME_BYTES
-    budget_bytes -= int(args.headroom_gib * (1 << 30))
-    slots_after = max(budget_bytes // runtime_bytes, 1)
+    if args.slots is not None:
+        slots_after = args.slots
+    else:
+        budget_bytes = slots_before * W4G64_RUNTIME_BYTES
+        budget_bytes -= int(args.headroom_gib * (1 << 30))
+        slots_after = max(budget_bytes // runtime_bytes, 1)
     drop = slots_before - slots_after
     if drop <= 0:
         raise SystemExit("NVFP4 experts are not larger; nothing to trim")
