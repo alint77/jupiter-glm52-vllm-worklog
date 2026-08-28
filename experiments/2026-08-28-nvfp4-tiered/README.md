@@ -187,9 +187,79 @@ would need its own deeper profile trim.
 - [ ] Stage to fscratch (in flight)
 - [ ] `tiered_moe_execution.py`: format branch for the tier quant config,
       carry `weight_scale_2` through tier storage
-- [ ] Dense bring-up under the tiered contract
-- [ ] Cold tier over UVA
+- [x] Dense NVFP4 baseline: reaches Marlin on SM90 and OOMs on capacity,
+      confirming the format works here and the tiered path is necessary
+- [x] **Serving under the tiered contract with the UVA cold tier**, at 2609,
+      2400, 2200 and 1900 hot slots/rank
+- [ ] Re-derive the placement ranking on this target
 - [ ] DFlash2 on this target
+- [ ] Correctness eval
+
+## Result: it serves
+
+Round nine, commit `1c0998a09a`, four allocations, four hot-slot counts. **All
+four serve GLM-5.3 NVFP4 through the tiered path**, with coherent output:
+
+```
+Using 'MARLIN' NvFp4 MoE backend
+quantization=modelopt_fp4      kv_cache_dtype=fp8_ds_mla
+tiered_moe_backend: uva        GPU KV cache size: 400,064 tokens
+Streamed 4800 routed experts into final tier
+Tiered MoE observed HBM reserve: 12.80 GiB free (minimum 5.59 GiB)
+```
+
+`4800` is 75 routed layers x 64 experts per rank at EP4, so every expert went
+through the new conversion path. The fail-closed HBM audit passed with 12.80
+GiB to spare at 2,609 slots per rank, which means the ceiling is higher than
+anything tested here.
+
+| hot slots/rank | serves | prompt continuation |
+| ---: | --- | --- |
+| 2609 | yes | ` Paris. Distance from London to Paris is 344 km...` |
+| 2400 | yes | ` Paris. Distance from London to Paris is 344 km...` |
+| 2200 | yes | ` Paris. Distance from London to Paris is 344 km...` |
+| 1900 | yes | ` Paris. Distance from London to Paris is 343 km...` |
+
+**Residency was never the binding constraint.** Nine rounds of a four-way
+parallel sweep failed identically at every slot count, every time, which said
+so from the first round; the sweep's value was ruling residency out
+immediately rather than bisecting toward it.
+
+This is a smoke test, not an evaluation. The output is coherent English and
+plausible code, which is what distinguishes a working GEMM from a broken one.
+It does not match the project's 5.2 golden string, and should not: different
+model, different quantization. A real correctness gate needs an eval.
+
+## What it took
+
+Nine rounds, each one integration gap, none of them in a kernel:
+
+| round | stage reached | gap |
+| --- | --- | --- |
+| a | `create_weights` | full expert params allocated beside the tier buffers |
+| b | import | `NvFp4MoeBackend` not imported |
+| c | `load_weights` | placeholders had no `weight_loader` |
+| d | conversion | no NVFP4 component table |
+| e | conversion | staged-byte check was a binary conditional |
+| f | conversion | dispatch sat behind an INT4-only backend check |
+| g | Marlin repack | expert count read from the layer, not the tensor |
+| h | tier storage | scale dtype recorded as bf16 when it is fp8 |
+| i | model forward | `apply` never dispatched to the tiered kernels |
+
+Three hooks make a quant method a tiered participant: `create_weights` to
+register placeholders instead of real parameters,
+`process_weights_after_loading` to build the tier kernels, and `apply` to
+route the forward. Missing any one of them fails late and unhelpfully.
+
+## Still open
+
+- **The placement ranking is a GLM-5.2 placeholder.** No performance number
+  from this configuration means anything until it is re-derived from a routing
+  capture on this target.
+- **DFlash2 on this target**, which is the reason for the phase. Phase 42
+  priced it: 3.65 acceptance at ~33 ms/step to beat MTP3.
+- **The hot-slot ceiling**, which is above 2,609 and unmeasured.
+- **A real correctness gate.** Coherent output is not an eval.
 
 ## Known constraint
 
