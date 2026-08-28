@@ -56,8 +56,10 @@ mkdir -p "${VLLM_CACHE_ROOT}" "${TRTLLM_DG_CACHE_DIR}"
 # so the penalty is worse than the raw filesystem difference suggests:
 # 13.5 s/shard x 86 shards against roughly 2 minutes staged. Job 1524929 paid
 # this on both arms.
-model="/e/fscratch/profound/${USER}/models/GLM-5.2-AutoRound-W4G64-MTP-e1ba887"
-[[ -d "${model}" ]] || model="${models_dir}/GLM-5.2-AutoRound-W4G64-MTP-e1ba887"
+model="/e/fscratch/profound/${USER:-$(id -un)}/models/GLM-5.2-AutoRound-W4G64-MTP-e1ba887"
+# .stage_done is written only after the copy completes; without it the stage
+# may be partial and the GPFS original is the safe choice.
+[[ -f "${model}/.stage_done" ]] || model="${models_dir}/GLM-5.2-AutoRound-W4G64-MTP-e1ba887"
 echo "model:  ${model}"
 export TIERED_MOE_MODEL_PATH="${model}"
 export TIERED_MOE_PLACEMENT_PROFILE="${result_dir}/dflash2-trim-profile.json"
@@ -69,13 +71,13 @@ wait_ready() {
     curl -fsS http://127.0.0.1:8027/health >/dev/null 2>&1 && return 0
     if ! kill -0 "${pid}" 2>/dev/null; then
       echo "SERVER EXITED EARLY (${label})"
-      tail -40 "${result_dir}/${label}-server.err"
+      tail -40 "${result_dir}/${label}-${SLURM_JOB_ID}-server.err"
       return 1
     fi
     sleep 10
   done
   echo "SERVER NOT READY (${label})"
-  tail -40 "${result_dir}/${label}-server.err"
+  tail -40 "${result_dir}/${label}-${SLURM_JOB_ID}-server.err"
   return 1
 }
 
@@ -84,15 +86,15 @@ smoke() {
   curl -fsS http://127.0.0.1:8027/v1/completions \
     -H 'Content-Type: application/json' \
     -d '{"model":"glm52-w4a16-tiered","prompt":"The capital of France is","max_tokens":8,"temperature":0,"seed":13}' \
-    -o "${result_dir}/${label}-semantic.json"
-  echo "--- ${label} semantic: $(jq -r '.choices[0].text' "${result_dir}/${label}-semantic.json")"
+    -o "${result_dir}/${label}-${SLURM_JOB_ID}-semantic.json"
+  echo "--- ${label} semantic: $(jq -r '.choices[0].text' "${result_dir}/${label}-${SLURM_JOB_ID}-semantic.json")"
   echo "--- expected a coherent continuation; degenerate output means stop and diagnose"
 }
 
 run_arm() {
   local label="$1"; shift
   echo "=============== ${label} ==============="
-  "$@" >"${result_dir}/${label}-server.out" 2>"${result_dir}/${label}-server.err" &
+  "$@" >"${result_dir}/${label}-${SLURM_JOB_ID}-server.out" 2>"${result_dir}/${label}-${SLURM_JOB_ID}-server.err" &
   local pid=$!
   local rc=0
   if wait_ready "${label}" "${pid}"; then
