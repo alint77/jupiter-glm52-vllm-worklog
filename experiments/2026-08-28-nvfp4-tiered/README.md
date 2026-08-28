@@ -56,16 +56,28 @@ experts are BF16 and are budgeted separately by the planner. This is the
 cleanest possible split for the tiered design: the tensors that move between
 HBM and Grace are the quantized ones.
 
-### 3. The expert footprint barely changes
+### 3. The expert footprint changes little on disk and a lot in HBM
 
-| | bits/param | per expert |
+| | stored | **resident** |
 | --- | ---: | ---: |
-| W4G64 (int4 + fp16 scale per 64) | 4.25 | 19.12 MiB |
-| NVFP4 (fp4 + fp8 scale per 16) | 4.50 | 20.25 MiB |
+| W4G64 (AutoRound) | 19.406 MiB | **19.125 MiB** |
+| NVFP4 (ModelOpt) | 20.250 MiB | **22.500 MiB** |
+| delta | +4.3% | **+17.6%** |
 
-About 5.9% larger per expert, so the placement profile's slot arithmetic
-carries over almost unchanged. It does mean fewer hot slots fit in the same
-HBM, which the profile refit has to account for.
+Measured, not estimated: both from the checkpoints' own safetensors headers,
+and the runtime figure confirmed by building the manifest.
+
+The runtime gap is larger than the stored gap because
+`prepare_nvfp4_moe_layer_for_marlin` does `scales.to(param_dtype)`. The
+fp8_e4m3 block scales are held in HBM as bfloat16, doubling 2.25 to 4.50 MiB
+per expert. Marlin needs no tile padding for this model: hidden 6144 is a
+multiple of 128 so N rounds up to 64, and the 2048 intermediate size is
+already aligned, so the weight itself is unchanged.
+
+The consequence is residency. At production's 2,870 hot slots per rank, the
+same HBM buys **2,348 NVFP4 slots, about 15% fewer**. This also had to be
+right in `runtime_expert_bytes`, which feeds the fail-closed HBM planner:
+charging the stored size would under-reserve by roughly 6.3 GiB per rank.
 
 ### 4. The tensor layout is genuinely different, and the manifest is the gate
 
@@ -119,10 +131,15 @@ would need its own deeper profile trim.
 2. **Config**: whatever `validate_tiered_moe` pins that NVFP4 violates. The
    architecture, model type and shapes all match; the dtype field is
    `bfloat16` as required. Expect the friction to be in the loader, not here.
-3. **Placement profile**: a new one is required regardless — the profile
-   carries a `config_sha256` fingerprint of its target and the loader fails
-   closed on a mismatch. The router also changed with 5.3's post-training, so
-   the hot-expert ranking must be re-derived rather than ported.
+3. **Placement profile**: a new file is required regardless, because the
+   profile carries a `config_sha256` fingerprint of its target and the loader
+   fails closed on a mismatch. The *ranking* inside it is deliberately
+   deferred: `port_profile.py` carries the GLM-5.2 ranking across,
+   re-fingerprinted and trimmed 2,870 to 2,348 slots to pay for the larger
+   experts. That ranking is wrong — 5.3's post-training moved the router — but
+   placement affects neither loading nor output, so it is fine for bring-up
+   and must not be used for any performance number. Re-derive from a routing
+   capture on this target once it serves.
 4. **Bring-up**: dense first inside the tiered contract, then the cold tier,
    then DFlash2 on this target as the pairing the quantizer intended.
 5. **Verify the claim in finding 1 on hardware**: confirm the layer actually
@@ -132,11 +149,16 @@ would need its own deeper profile trim.
 ## Status
 
 - [x] Survey
-- [ ] Checkpoint pulled (in flight, ~350 MB/s)
-- [ ] Manifest accepts NVFP4
-- [ ] Placement profile for the NVFP4 target
+- [x] Checkpoint pulled: 87 shards, 432.90 GiB, index-verified, none missing
+- [x] Manifest accepts NVFP4 — 20.250 MiB stored, 22.500 MiB resident per
+      expert; AutoRound rebuilds unchanged at 20,054,024 bytes and the 57
+      tiered tests pass
+- [x] Placeholder placement profile loads through the real fail-closed loader
+      at 2,348 slots/rank with the NVFP4 fingerprint accepted
+- [ ] Stage to fscratch
 - [ ] Dense bring-up under the tiered contract
 - [ ] Cold tier over UVA
+- [ ] DFlash2 on this target
 
 ## Known constraint
 
@@ -145,7 +167,7 @@ expert than W4G64 plus 3.29 GiB per rank if the MTP head is instantiated. The
 case for it is not throughput: it is that 5.3 is only available this way, and
 that it brings a matching DFlash2 drafter.
 
- `select_nvfp4_moe_backend` tries
+`select_nvfp4_moe_backend` tries
 FLASHINFER_TRTLLM, FLASHINFER_CUTEDSL, FLASHINFER_CUTEDSL_BATCHED,
 FLASHINFER_CUTLASS and VLLM_CUTLASS first, all of which need SM100, and falls
 through to MARLIN on SM90. That is the same kernel class the W4G64 path
