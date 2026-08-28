@@ -143,7 +143,7 @@ plain BF16:
 | NVFP4 5.3 (BF16) | 72.000 MiB | 18.00 GiB | **4.50 GiB** |
 
 That is +3.29 GiB per rank, worth roughly 150 hot expert slots, on top of the
-+17.6% on the routed layers. It only bites if MTP3 is run on this target:
++5.9% on the routed layers. It only bites if MTP3 is run on this target:
 Phase 28 established that the grafted layer 78 **is not instantiated under
 DFlash**, costing nothing but a fingerprint match. Since DFlash2 is the point
 of this phase, the BF16 MTP head is dead weight on disk rather than in HBM.
@@ -179,11 +179,11 @@ would need its own deeper profile trim.
 
 - [x] Survey
 - [x] Checkpoint pulled: 87 shards, 432.90 GiB, index-verified, none missing
-- [x] Manifest accepts NVFP4 — 20.250 MiB stored, 22.500 MiB resident per
-      expert; AutoRound rebuilds unchanged at 20,054,024 bytes and the 57
-      tiered tests pass
+- [x] Manifest accepts NVFP4 — 20.250 MiB stored and resident per expert;
+      AutoRound rebuilds unchanged at 20,054,024 bytes and the 57 tiered
+      tests pass
 - [x] Placeholder placement profile loads through the real fail-closed loader
-      at 2,348 slots/rank with the NVFP4 fingerprint accepted
+      at 2,609 slots/rank with the NVFP4 fingerprint accepted
 - [ ] Stage to fscratch (in flight)
 - [ ] `tiered_moe_execution.py`: format branch for the tier quant config,
       carry `weight_scale_2` through tier storage
