@@ -248,6 +248,65 @@ the candidate verdict for the control arm too, so the run log shows
 control cannot fail a rule about beating itself — and the script now suppresses
 it for control labels. The number it reports is correct.
 
+## Bring-up: the Phase 28 blocker chain, again
+
+Job 1525205's DFlash2 arm did not start:
+
+```
+pydantic ValidationError: 1 validation error for VllmConfig
+  Value error, Tiered MoE requires kv_cache_dtype=fp8_ds_mla
+  vllm/v1/worker/gpu/spec_decode/dflash/utils.py:23  load_dflash_model
+```
+
+`load_dflash_model` rebuilds the `VllmConfig` with the draft's KV dtype, since
+a dense qwen3 drafter cannot use the target's MLA-only `fp8_ds_mla`. But
+`replace` re-runs every validator, and `validate_tiered_moe` judged the draft's
+config as though it were the target's.
+
+**This is blocker 4 of the 8 in the 2026-07-25 DSpark bring-up.** That work was
+reverted and no patch was kept, so it had to be rederived rather than
+recovered. The Phase 28 table is the map for the rest:
+
+| # | blocker | status here |
+| --- | --- | --- |
+| 1, 5, 6 | upstream cherry-picks #48639, #48524, #48776 | already in this base |
+| 2 | placement profile fingerprint mismatch | avoided: matched target/profile pair |
+| 3 | dense draft inherits the target's MLA dtype | avoided: `kv_cache_dtype: auto` |
+| **4** | `validate_tiered_moe` rejects the draft-derived config | **fixed here** |
+| **7** | `Tiered GLM KV allocation only supports MLA cache specs` | **expected next** |
+| 8 | planner budgets draft weights only for `method == "mtp"` | pre-empted by the profile trim |
+
+Blocker 8 deserves a note, because Phase 28 proved the obvious fix does not
+work: raising `TIERED_MOE_HBM_RESERVE_GB` cannot close it, since `required_free`
+and `available` both scale with the planned reserve and the deficit is
+invariant. Trimming the profile *does* work, because it lowers the placed hot
+slots while the reserve stays fixed. The 4.14 GiB trim built here is that
+lever, arrived at independently and confirmed by the Phase 28 record.
+
+### Blocker 4, as fixed
+
+`validate_tiered_moe` now accepts exactly the dtype the speculative config
+declared, and nothing else. Verified against the cases that must keep failing:
+
+| `cache_dtype` | speculative | outcome |
+| --- | --- | --- |
+| `fp8_ds_mla` | none | accept (target) |
+| `auto` | none | **reject** |
+| `fp16` | none | **reject** |
+| `auto` | `kv_cache_dtype=auto` | accept (draft-derived) |
+| `fp16` | `kv_cache_dtype=auto` | **reject** (not the configured dtype) |
+| `auto` | `kv_cache_dtype=None` | **reject** |
+| `fp8_ds_mla` | `kv_cache_dtype=auto` | accept (MTP3 path unchanged) |
+
+Blocker 7 is deliberately **not** pre-emptively patched. `tiered_moe_kv.py`
+hardcodes 78 main plus 21 indexer specs and adds draft layers only for
+`method == "mtp"`, and `_get_tiered_kv_spec_kind` rejects any non-MLA spec, so
+it will certainly fire — but the exact spec type the DFlash2 draft contributes
+after `unify_kv_cache_spec_page_size` promotes it is not knowable by reading.
+Guessing it would mean rewriting the allocator the project's memory safety
+rests on against an assumption. Phase 28 found all eight blockers by running
+into them one at a time; that is the cheaper and safer order here too.
+
 ## Scripts
 
 | | |
