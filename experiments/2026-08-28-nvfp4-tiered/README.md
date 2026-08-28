@@ -77,28 +77,36 @@ experts are BF16 and are budgeted separately by the planner. This is the
 cleanest possible split for the tiered design: the tensors that move between
 HBM and Grace are the quantized ones.
 
-### 3. The expert footprint changes little on disk and a lot in HBM
+### 3. The expert footprint costs about 6% more, on disk and in HBM alike
 
-| | stored | **resident** |
+| | stored | resident |
 | --- | ---: | ---: |
-| W4G64 (AutoRound) | 19.406 MiB | **19.125 MiB** |
-| NVFP4 (ModelOpt) | 20.250 MiB | **22.500 MiB** |
-| delta | +4.3% | **+17.6%** |
+| W4G64 (AutoRound) | 19.406 MiB | 19.125 MiB |
+| NVFP4 (ModelOpt) | 20.250 MiB | **20.250 MiB** |
+| delta | +4.3% | **+5.9%** |
 
-Measured, not estimated: both from the checkpoints' own safetensors headers,
-and the runtime figure confirmed by building the manifest.
+At production's 2,870 hot slots per rank the same HBM buys **2,710 NVFP4
+slots, 5.6% fewer**. Marlin needs no tile padding for this model: hidden 6144
+is a multiple of 128 so N rounds up to 64, and the 2048 intermediate size is
+already aligned, so the weight is unchanged at 18 MiB.
 
-The runtime gap is larger than the stored gap because
-`prepare_nvfp4_moe_layer_for_marlin` does `scales.to(param_dtype)`. The
-fp8_e4m3 block scales are held in HBM as bfloat16, doubling 2.25 to 4.50 MiB
-per expert. Marlin needs no tile padding for this model: hidden 6144 is a
-multiple of 128 so N rounds up to 64, and the 2048 intermediate size is
-already aligned, so the weight itself is unchanged.
+**This finding was first recorded wrong and is corrected here.** The original
+reading was that `prepare_nvfp4_moe_layer_for_marlin` does
+`scales.to(param_dtype)` and therefore holds the fp8_e4m3 block scales
+resident as bfloat16, doubling 2.25 to 4.50 MiB per expert, for a +17.6%
+penalty and 2,348 slots. That conversion exists only to permute them.
+`nvfp4_marlin_process_scales` then packs the result into the S0E5M3 layout and
+ends on `view(torch.float8_e4m3fn)` followed by `[:, 1::2]`, returning one
+byte per scale. The error was to read the first transform and stop.
 
-The consequence is residency. At production's 2,870 hot slots per rank, the
-same HBM buys **2,348 NVFP4 slots, about 15% fewer**. This also had to be
-right in `runtime_expert_bytes`, which feeds the fail-closed HBM planner:
-charging the stored size would under-reserve by roughly 6.3 GiB per rank.
+The consequence matters for the argument, not just the arithmetic: NVFP4 was
+written up as a meaningful residency loss on GH200, worth taking only for
+accuracy. It is close to free.
+
+The number still had to be right in `runtime_expert_bytes`, which feeds the
+fail-closed HBM planner. It was caught by that planner: the tiered path
+rejected the converted expert with "Converted w13_weight_scale does not match
+its final layout", the schema asserting bfloat16 against fp8 reality.
 
 ### 4. The tensor layout is genuinely different, and the manifest is the gate
 
@@ -156,7 +164,7 @@ would need its own deeper profile trim.
    profile carries a `config_sha256` fingerprint of its target and the loader
    fails closed on a mismatch. The *ranking* inside it is deliberately
    deferred: `port_profile.py` carries the GLM-5.2 ranking across,
-   re-fingerprinted and trimmed 2,870 to 2,348 slots to pay for the larger
+   re-fingerprinted and trimmed 2,870 to 2,609 slots to pay for the larger
    experts. That ranking is wrong — 5.3's post-training moved the router — but
    placement affects neither loading nor output, so it is fine for bring-up
    and must not be used for any performance number. Re-derive from a routing
@@ -185,10 +193,10 @@ would need its own deeper profile trim.
 
 ## Known constraint
 
-NVFP4 has no fast path on GH200, and it costs 17.6% more resident HBM per
-expert than W4G64 plus 3.29 GiB per rank if the MTP head is instantiated. The
-case for it is not throughput: it is that 5.3 is only available this way, and
-that it brings a matching DFlash2 drafter.
+NVFP4 has no fast path on GH200 and costs 5.9% more resident HBM per expert
+than W4G64, plus 3.29 GiB per rank if the MTP head is instantiated. The case
+for it is not throughput: it is that 5.3 is only available this way, and that
+it brings a matching DFlash2 drafter.
 
 `select_nvfp4_moe_backend` tries
 FLASHINFER_TRTLLM, FLASHINFER_CUTEDSL, FLASHINFER_CUTEDSL_BATCHED,

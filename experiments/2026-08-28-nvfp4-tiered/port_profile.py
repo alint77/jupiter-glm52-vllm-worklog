@@ -13,10 +13,10 @@ Two things do have to be right:
   - **Fingerprints.** `load_tiered_moe_placement_profile` compares
     `config_sha256` and `index_sha256` against the manifest and fails closed,
     so the profile cannot simply be copied.
-  - **Slot count.** An NVFP4 expert costs 22.500 MiB resident against W4G64's
-    19.125, because Marlin holds the fp8 block scales as bfloat16. The same
-    HBM buys about 15% fewer hot experts, so the ported profile has to be
-    trimmed or the planner will fail its audit.
+  - **Slot count.** An NVFP4 expert costs 20.250 MiB resident against W4G64's
+    19.125, +5.9%: the block scales stay fp8 through the Marlin layout. The
+    same HBM buys about 5.6% fewer hot experts, so the ported profile still
+    has to be trimmed or the planner will fail its audit.
 """
 
 import argparse
@@ -28,7 +28,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from trim_profile import trim, validate  # noqa: E402
 
 W4G64_RUNTIME_BYTES = 20_054_024
-NVFP4_RUNTIME_BYTES = 23_592_980
+NVFP4_RUNTIME_BYTES = 21_233_680
 
 
 def main() -> int:
