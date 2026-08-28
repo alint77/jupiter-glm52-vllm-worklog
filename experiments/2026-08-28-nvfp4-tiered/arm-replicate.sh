@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 # Serve, then run the DFlash2 card's acceptance protocol against it.
 set -euo pipefail
-label="${1:?label}"; mode="${2:-dflash2}"; profile="${3:?profile}"
+label="${1:?label}"; mode="${2:-dflash2}"; profile="${3:?profile}"; task="${4:-gsm8k}"
+case "${task}" in
+  gsm8k)     ds=/e/project1/profound/alint77/models/datasets/gsm8k/test.jsonl; field=question ;;
+  humaneval) ds=/e/project1/profound/alint77/models/datasets/evalcache/humaneval.jsonl; field=prompt ;;
+  *) echo "unknown task ${task}"; exit 1 ;;
+esac
 repo_dir=/e/project1/profound/alint77/vllm
 result_dir="${repo_dir}/agent_space/experiments/2026-08-28-nvfp4-tiered"
 cd "${repo_dir}"; source agent_space/jupiter-env.sh
@@ -38,5 +43,6 @@ for _ in $(seq 1 400); do
 done
 echo "server ready"
 .venv/bin/python "${result_dir}/replicate_dflash2_eval.py" \
-  --label "${label}" --out "${result_dir}/${label}-replicate.json" --num-samples 64
+  --label "${label}" --out "${result_dir}/${label}-replicate.json" --num-samples 64 \
+  --dataset "${ds}" --prompt-field "${field}"
 kill "${pid}" 2>/dev/null || true; wait "${pid}" 2>/dev/null || true

@@ -78,6 +78,11 @@ def main() -> int:
         "--dataset",
         default="/e/project1/profound/alint77/models/datasets/gsm8k/test.jsonl",
     )
+    ap.add_argument(
+        "--prompt-field",
+        default="question",
+        help="jsonl field holding the prompt: 'question' for GSM8K, 'prompt' for HumanEval",
+    )
     ap.add_argument("--num-samples", type=int, default=128)
     ap.add_argument("--max-tokens", type=int, default=4096)
     ap.add_argument("--temperature", type=float, default=1.0)
@@ -89,7 +94,7 @@ def main() -> int:
         for line in f:
             if len(questions) >= args.num_samples:
                 break
-            questions.append(json.loads(line)["question"])
+            questions.append(json.loads(line)[args.prompt_field])
 
     # Warm the server so compilation and graph capture are outside the window.
     chat(questions[0], args.model, 64, args.temperature, args.top_p)
@@ -142,7 +147,10 @@ def main() -> int:
     }
     Path(args.out).write_text(json.dumps(result, indent=2))
     print(json.dumps(result, indent=2))
-    print("\ncard reference, GSM8K at 7 draft tokens: DFlash2 5.94, MTP 5.12")
+    print(
+        "\ncard reference at 7 draft tokens -- "
+        "GSM8K: DFlash2 5.94 / MTP 5.12;  HumanEval: DFlash2 5.48 / MTP 4.85"
+    )
     return 0
 
 

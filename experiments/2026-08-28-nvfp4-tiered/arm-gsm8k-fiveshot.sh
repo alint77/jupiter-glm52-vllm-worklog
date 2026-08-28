@@ -43,6 +43,10 @@ for _ in $(seq 1 400); do
   sleep 5
 done
 echo "server ready"
+# gsm8k_eval.py fetches the dataset from GitHub and Booster nodes have no
+# internet. download_and_cache_file checks os.path.exists(TMPDIR/<basename>)
+# before fetching, so a pre-seeded TMPDIR satisfies it offline.
+export TMPDIR=/e/project1/profound/alint77/models/datasets/evalcache
 eval_args=(--host http://127.0.0.1 --port 8027 --num-shots 5 --max-tokens 256 --temperature 0 --seed 42)
 .venv/bin/python tests/evals/gsm8k/gsm8k_eval.py "${eval_args[@]}" --num-questions 8 >/dev/null 2>&1 || true
 for repeat in 1 2; do
