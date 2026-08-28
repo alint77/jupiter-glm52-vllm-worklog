@@ -155,11 +155,60 @@ the same binary:
 
 - [x] Checkpoint pulled to `models/GLM-5.3-DFlash2`, 4,918,859,112 bytes,
       safetensors header verified against file size, 96 tensors
-- [x] Backport applied, imports clean, registry resolves `DFlash2DraftModel`
+- [x] Backport applied and committed as `2a26f151ac`; imports clean, registry
+      resolves `DFlash2DraftModel`, all pre-commit hooks pass including mypy
 - [x] 17 backported unit tests pass
-- [ ] Full `tests/v1/spec_decode/` regression
+- [x] **`tests/v1/spec_decode/` shows zero regression.** Branch and base each
+      fail exactly the same 121 tests, with no test failing on one and not the
+      other. Those 121 are pre-existing on `known-good-1238882` and are the
+      network-dependent suites (`test_speculators_*`, `test_vocab_mapping`)
+      that cannot run under `HF_HUB_OFFLINE=1`. Lists kept as `fail-branch.txt`
+      and `fail-base.txt`.
+- [ ] **Blocked: a draft-aware placement profile.** See below.
 - [ ] c1 server bring-up at `num_speculative_tokens: 7`
-- [ ] Acceptance length and TPOT against the matched MTP3 control
+- [ ] Acceptance length against the matched MTP3 control
+
+### The one blocker
+
+The tiered planner budgets draft weights only when `method == "mtp"`, so the
+4.58 GiB DFlash2 draft plus its sliding-window KV is invisible to it and must
+be freed from the hot tier by hand. Phase 28 established that raising
+`TIERED_MOE_HBM_RESERVE_GB` cannot substitute, because the fail-closed audit's
+`required_free` scales 1:1 with the planned reserve; the profile has to be
+trimmed instead.
+
+Production is `hybrid-p0.5-replicas-985.json` at **2,870 hot slots/rank**
+(11,480 across 4 ranks, 75 routed layers, 19,200 secondary). The 2026-08-28
+VRAM breakdown put safe headroom at 1.50 GiB and the exchange rate at ~51
+experts/GiB, so covering ~4.7 GiB of draft needs roughly **163 fewer hot
+slots/rank, i.e. ~2,700** — close to the 2,720 Phase 28 used for the larger
+DFlash1 draft, though against a different target so the numbers do not
+transfer directly. That estimate needs the fail-closed audit to confirm it.
+
+Two ways to produce it, and they are not equivalent:
+
+1. Regenerate with `benchmarks/optimize_routing_profile.py
+   --hot-slots-per-rank 2700`, which needs the routing `--trace-dir` the 985
+   profile was fitted on. That trace is not in this directory.
+2. Trim the existing profile in place, dropping the lowest-value hot experts
+   per rank. Cheaper, but `hot_experts` and `secondary_ranks` must stay
+   mutually consistent or the loader fails closed, and the file carries no
+   explicit priority order to trim along.
+
+**Neither affects the number this phase exists to measure.** Acceptance length
+is a property of the drafter and the target's weights, not of expert
+residency: a lower-residency configuration computes identical logits and
+accepts identically, only slower. So the acceptance arm can run on whatever
+trimmed profile loads, and residency only has to be right for a later
+throughput arm — which the decision rule says not to start until acceptance
+clears.
+
+## Scripts
+
+| | |
+| --- | --- |
+| `run-server-dflash2.sh` | launcher; carries the Phase 28 operational lessons forward, requires `TIERED_MOE_PLACEMENT_PROFILE` explicitly rather than defaulting to the production one |
+| `capture_acceptance.py` | acceptance length from the server's Prometheus counters, as a delta across one fixed generation so warmup cannot contaminate it; prints the Phase 42 verdict directly |
 
 Serving notes for the bring-up, not yet validated:
 
