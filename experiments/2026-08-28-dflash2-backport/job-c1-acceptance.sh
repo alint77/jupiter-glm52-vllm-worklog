@@ -51,7 +51,15 @@ export VLLM_CACHE_ROOT="/e/project1/profound/alint77/.marlin-caches/vllm-cache-d
 export TRTLLM_DG_CACHE_DIR="/e/project1/profound/alint77/.marlin-caches/trtllm-dg-dflash2"
 mkdir -p "${VLLM_CACHE_ROOT}" "${TRTLLM_DG_CACHE_DIR}"
 
-export TIERED_MOE_MODEL_PATH="${models_dir}/GLM-5.2-AutoRound-W4G64-MTP-e1ba887"
+# Prefer the fscratch stage. On GPFS the loader also disables auto-prefetch,
+# because the 404.92 GiB checkpoint exceeds 90% of the node's 232.40 GiB RAM,
+# so the penalty is worse than the raw filesystem difference suggests:
+# 13.5 s/shard x 86 shards against roughly 2 minutes staged. Job 1524929 paid
+# this on both arms.
+model="/e/fscratch/profound/${USER}/models/GLM-5.2-AutoRound-W4G64-MTP-e1ba887"
+[[ -d "${model}" ]] || model="${models_dir}/GLM-5.2-AutoRound-W4G64-MTP-e1ba887"
+echo "model:  ${model}"
+export TIERED_MOE_MODEL_PATH="${model}"
 export TIERED_MOE_PLACEMENT_PROFILE="${result_dir}/dflash2-trim-profile.json"
 export TIERED_MOE_HBM_RESERVE_GB=7
 
