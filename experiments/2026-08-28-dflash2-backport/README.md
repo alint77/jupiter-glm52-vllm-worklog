@@ -207,13 +207,19 @@ clears.
 
 Job 1524929, `2a26f151ac`, node jpbo-026-48, trimmed profile, c1.
 
-| MTP3 control | measured | Phase 28 assumed |
-| --- | ---: | ---: |
-| acceptance length | **3.0783** | ~2.9 |
-| step time | **27.52 ms** | ~27 ms |
-| draft acceptance rate | 69.28% (345/498) | — |
-| per-position accepted | 141 / 114 / 90 of 166 | 85% / 69% / 54% |
-| semantic smoke | ` Paris. Distance from Paris to Lyon is` | exact expected string |
+Two independent replicates on different nodes and different filesystems:
+
+| MTP3 control | 1524929, GPFS | 1525205, fscratch | pooled | Phase 28 assumed |
+| --- | ---: | ---: | ---: | ---: |
+| acceptance length | 3.0783 | 3.0659 | **3.0721** | ~2.9 |
+| step time | 27.52 ms | 27.86 ms | **27.69 ms** | ~27 ms |
+| implied tok/s | 111.85 | 110.06 | **110.95** | 107.41 |
+| draft acceptance | 69.28% (345/498) | 68.86% (345/501) | — | — |
+| per-position accepted | 141/114/90 of 166 | 145/114/86 of 167 | — | — |
+| semantic smoke | exact | exact | — | ` Paris. Distance from Paris to Lyon is` |
+
+The replicates agree to **0.40% on acceptance and 1.21% on step time**, on
+different nodes, so the baseline is not a single-node artefact.
 
 **The harness is validated.** Step time reproduces Phase 28's ~27 ms to within
 2%, on a different target and a trimmed profile, and the deterministic smoke is
@@ -225,10 +231,10 @@ arm** rather than from Phase 28's approximation is legitimate — it is the
 baseline being measured more precisely, not the candidate moving a goalpost —
 but both are recorded so the substitution is visible:
 
-| step time for width 8 | pre-registered (2.9 @ 27 ms) | harness-calibrated (3.0783 @ 27.52 ms) |
+| step time for width 8 | pre-registered (2.9 @ 27 ms) | calibrated (pooled 3.0721 @ 27.69 ms) |
 | --- | ---: | ---: |
-| optimistic 31.2 ms | 3.35 | **3.49** |
-| pessimistic 39.0 ms | 4.19 | **4.36** |
+| optimistic 31.2 ms | 3.35 | **3.46** |
+| pessimistic 39.0 ms | 4.19 | **4.33** |
 
 DFlash2 will be judged against both. Its published acceptance on a GLM-5.3
 target ranges 4.19 (MT-Bench) to 6.02 (MATH-500); against the calibrated
