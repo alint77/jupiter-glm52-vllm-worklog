@@ -29,6 +29,14 @@ git diff --cached --quiet || { echo "REFUSING: staged changes present"; exit 1; 
 state="$(squeue -j "${alloc}" -h -o %T 2>/dev/null || true)"
 [[ "${state}" == RUNNING ]] || { echo "allocation ${alloc} is not RUNNING (state: ${state:-gone})"; exit 1; }
 
-echo "running ${label} as a step in allocation ${alloc} ($(git rev-parse --short HEAD))"
+# A step defaults to one CPU even when the allocation holds the whole node, and
+# vLLM's GPU-to-NUMA detection then fails outright ("could not detect the
+# GPU-to-NUMA topology automatically"). Give the step every CPU and GPU the
+# allocation has, so it sees what a batch job would.
+cpus="$(scontrol show job "${alloc}" 2>/dev/null | tr ' ' '\n' | sed -n 's/^NumCPUs=//p' | head -1)"
+[[ -n "${cpus}" ]] || { echo "could not read NumCPUs for ${alloc}"; exit 1; }
+
+echo "running ${label} as a step in allocation ${alloc} ($(git rev-parse --short HEAD)), ${cpus} CPUs"
 exec srun --jobid="${alloc}" --overlap --nodes=1 --ntasks=1 --mpi=none \
+  --cpus-per-task="${cpus}" --gres=gpu:4 --mem=0 \
   bash "${result_dir}/arm-dflash2.sh" "${label}" "${spec_tokens}"
