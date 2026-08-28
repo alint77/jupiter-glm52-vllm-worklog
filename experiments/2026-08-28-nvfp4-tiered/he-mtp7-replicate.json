@@ -1,0 +1,13 @@
+{
+  "label": "he-mtp7",
+  "requests": 64,
+  "wall_s": 1771.85,
+  "acceptance_length_mean": 4.4174,
+  "acceptance_length_median": 4.4283,
+  "acceptance_length_pooled": 4.2595,
+  "mean_completion_tokens": 2636.8,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "max_tokens": 4096,
+  "protocol": "DFlash2 card: chat template, natural EOS, T=1.0 top_p=0.95"
+}
