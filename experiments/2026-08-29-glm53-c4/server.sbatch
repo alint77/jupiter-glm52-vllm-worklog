@@ -5,7 +5,7 @@
 #SBATCH --ntasks=1
 #SBATCH --gres=gpu:4
 #SBATCH --time=04:00:00
-#SBATCH --job-name=glm53-claude-nvfp4-c4
+#SBATCH --job-name=glm53-claude-w4a16-c4
 #SBATCH --output=agent_space/experiments/2026-08-29-glm53-c4/slurm-%j.out
 #SBATCH --error=agent_space/experiments/2026-08-29-glm53-c4/slurm-%j.err
 
@@ -32,10 +32,13 @@
 #
 # Differences from the 5.2 script, all deliberate:
 #   * checkpoint  JANGQ-AI/GLM-5.3-W4A16, compressed-tensors int4 group 32
-#   * profile     glm53-w4a16-2400.json -- 9600 hot experts, 3940 replicas,
+#   * profile     glm53-w4a16-2496.json -- 9984 hot experts, 3940 replicas,
 #                 carrying the GLM-5.3 ranking re-derived from an agentic
 #                 coding routing capture (129,392 routed positions). That
 #                 ranking is worth +8.3% over the 5.2 placeholder it replaced.
+#                 2496 hot slots per rank, not 2400: gpu_memory_utilization
+#                 0.94 with KV pinned buys 96 more experts per rank, taking
+#                 held-out cold-hit from 0.2290 to 0.2131.
 #   * reasoning   glm45 per the GLM-5.3 model card (tool stays glm47)
 #   * no --tiered-moe-replica-assignment exact: the 5.2 script uses it, but it
 #     was never exercised on 5.3 here, so it is left off rather than shipped
@@ -66,6 +69,13 @@ export VLLM_ENFORCE_STRICT_TOOL_CALLING=false
 # Caches on fscratch: GPFS is slow for the many small files these produce.
 export VLLM_CACHE_ROOT=/e/fscratch/profound/${USER:-$(id -un)}/caches/marlin/vllm-cache-glm53-c4
 export TRTLLM_DG_CACHE_DIR=/e/fscratch/profound/${USER:-$(id -un)}/caches/marlin/trtllm-dg-glm53-c4
+# jupiter-env.sh points XDG_CACHE_HOME at /e/scratch (GPFS), and neither it nor
+# this script set the inductor/triton dirs, so torch.compile artefacts landed on
+# GPFS -- the filesystem that made the uv cache hang for an hour. Pin them to
+# fscratch so a second launch actually reuses them.
+export TRITON_CACHE_DIR=/e/fscratch/profound/${USER:-$(id -un)}/caches/triton
+export TORCHINDUCTOR_CACHE_DIR=/e/fscratch/profound/${USER:-$(id -un)}/caches/inductor
+export FLASHINFER_CACHE_DIR=/e/fscratch/profound/${USER:-$(id -un)}/caches/flashinfer
 
 # Serve from fscratch: it scales with parallel readers where project1 does not
 # (11 -> 21 GB/s across 4-8 readers vs 0.55 -> 0.95). Falls back to project1 so
@@ -85,12 +95,15 @@ fi
 export TIERED_MOE_MODEL_PATH="${model_fscratch}"
 echo "model: ${TIERED_MOE_MODEL_PATH} (${actual_shards} shards)"
 
-export TIERED_MOE_PLACEMENT_PROFILE="${repo_dir}/agent_space/profiles/glm53-w4a16-2400.json"
-export TIERED_MOE_HBM_RESERVE_GB=7
+export TIERED_MOE_PLACEMENT_PROFILE="${repo_dir}/agent_space/profiles/glm53-w4a16-2496.json"
+# 6 GB, not 7: at gpu_memory_utilization 0.94 the reserve check needs 4.66 GiB
+# physically free after KV, and 7 GB would demand 5.59 GiB and refuse to start.
+export TIERED_MOE_HBM_RESERVE_GB=6
 # MTP3 verifies 4 tokens per step, so the graph shapes are 4*1..4*4 at c=4.
 export TIERED_MOE_COMPILATION_CONFIG='{"mode":3,"cudagraph_mode":"FULL_AND_PIECEWISE","cudagraph_capture_sizes":[4,8,12,16],"compile_sizes":[4,8,12,16],"cudagraph_num_of_warmups":1,"pass_config":{"fuse_allreduce_rms":false}}'
 
-mkdir -p "${run_dir}" "${log_dir}" "${VLLM_CACHE_ROOT}" "${TRTLLM_DG_CACHE_DIR}"
+mkdir -p "${run_dir}" "${log_dir}" "${VLLM_CACHE_ROOT}" "${TRTLLM_DG_CACHE_DIR}" \
+  "${TRITON_CACHE_DIR}" "${TORCHINDUCTOR_CACHE_DIR}" "${FLASHINFER_CACHE_DIR}"
 rm -f "${ready_file}" "${endpoint_file}"
 
 server_pid=
@@ -108,6 +121,8 @@ agent_space/experiments/2026-07-17-end-to-end-tuning/run-server.sh \
   --max-num-seqs 4 \
   --host 0.0.0.0 \
   --port "${port}" \
+  --gpu-memory-utilization 0.94 \
+  --kv-cache-memory 21689598771 \
   --enable-prefix-caching \
   --enable-auto-tool-choice \
   --tool-call-parser glm47 \
