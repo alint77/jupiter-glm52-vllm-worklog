@@ -13,7 +13,7 @@ here="${repo}/agent_space/experiments/2026-08-29-glm53-w4a16"
 [[ -s "${profile}" ]] || { printf 'profile not found: %s\n' "${profile}" >&2; exit 1; }
 mkdir -p "${here}/snapshots"
 snap="${here}/snapshots/arm-${label}-$(date +%H%M%S).sh"
-cp "${here}/arm-quant-ab.sh" "${snap}"
+cp "${here}/${ARM:-arm-quant-ab.sh}" "${snap}"
 sbatch --account=profound --partition=booster --nodes=1 --ntasks=1 --gres=gpu:4 \
   --cpus-per-task=288 --time=02:00:00 --job-name="${label}" \
   --output="${here}/slurm-${label}-%j.out" --error="${here}/slurm-${label}-%j.err" \

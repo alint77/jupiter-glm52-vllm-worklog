@@ -123,3 +123,49 @@ stable across sessions and nodes.
 
 W4A16 pending: `1534564`-`1534569` failed on issue 3, `1534577`-`1534579` on
 issue 4, `1534697`-`1534699` are the third attempt.
+
+## Prefix caching degrades the first pass (pre-existing, both checkpoints)
+
+GSM8K five-shot, 256 questions, temperature 0, seed 42 -- so every repeat sends
+**identical questions greedily** and must produce identical answers.
+
+| arm | prefix caching | r1 | r2 | r3 |
+| --- | --- | --- | --- | --- |
+| W4A16 g32 | on | **0.586** | 0.914 | 0.910 |
+| W4A16 g32 | off | 0.914 | 0.926 | 0.914 |
+| NVFP4 g16 | on | **0.563** | 0.906 | 0.910 |
+
+Reproduced independently at 0.594 in an earlier run, so it is deterministic.
+
+Established:
+
+- **Prefix caching is necessary.** With `--no-enable-prefix-caching` the first
+  pass is clean, on the same server, after the same warmup.
+- **Not checkpoint-specific.** NVFP4 -- the previous production target -- fails
+  identically, so this is not the group-32 work in Phase 46.
+- **Only the first pass.** r2 and r3 are healthy with caching still enabled.
+- **The 8-question warmup does not prevent it**, and may be causing it: the
+  warmup shares the same five-shot prefix, so a wrong first forward would be
+  cached and inherited by all 256 of r1's questions. r2 recovers because 256
+  unique suffixes evict those blocks and the prefix is recomputed warm.
+- **Degraded runs ramble.** 26.7k-37.3k output tokens against 23.5k-24.3k when
+  healthy -- off-distribution continuation, not random wrong answers.
+
+Two hypotheses remain, with different fixes:
+
+1. **MTP draft metadata against cached tokens.** The fork patches exactly this
+   code (`llm_base_proposer.py` invalidates `_num_computed_tokens_cpu` at line
+   678 and increments it at 815), and prefix caching is what makes that value
+   jump. `acc-nospec-pc` tests it by removing the speculator.
+2. **Cold-tier first touch poisoning the cache.** Fix would be warming before
+   anything is cacheable, and disabling caching would be the *wrong* remedy.
+
+`repro_prefix_cache.py` separates them: it sends a long shared prefix cold, then
+re-sends identical prompts warm, and diffs the greedy output. Any difference is
+a cache-correctness bug.
+
+**Production impact is not yet established.** This eval is 256 independent
+requests sharing one static prefix; a Claude Code session is a single
+conversation extending its own prefix. Those exercise the cache differently.
+What is certain is that prod runs with prefix caching enabled and starts a
+fresh server per session, so it lands in the affected window.
