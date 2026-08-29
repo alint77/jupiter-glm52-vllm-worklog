@@ -25,9 +25,13 @@
 # over hidden states, and DCP shards attention KV without altering the math. So
 # a ranking derived here transfers to the prod DCP4/V2 host.
 #
-# What it costs: dropping DCP quarters the KV token capacity for the same pin,
-# so 400k-token context runs at 1.00x concurrency instead of 4.00x. Requests
-# past that queue rather than fail, and queuing does not perturb routing.
+# What it costs is concurrency, and the fork enforces it: config/vllm.py:2325
+# rejects max_num_seqs > 1 under DCP1 outright ("the replicated 400K MLA cache
+# does not fit more than one sequence per rank"), and :2337 pins max_model_len
+# to 400000, so the context cannot be shortened to buy headroom either. The
+# capture host therefore serves ONE request at a time -- Claude Code's parallel
+# calls (subagents, title/summary requests) queue behind the foreground turn.
+# c=1 with MTP3 verifies 4 tokens per step, so the graph shapes are [4].
 #
 # MTP3 verifies 4 tokens per step, so VLLM_ROUTING_TRACE_VERIFICATION_SIZE=4
 # trims the ragged prefix rows. Traces begin at the last prompt token
@@ -93,7 +97,7 @@ echo "routes: ${VLLM_ROUTING_TRACE_DIR}"
 # host's decode speed usable, not because the data depends on it.
 export TIERED_MOE_PLACEMENT_PROFILE="${repo_dir}/agent_space/profiles/glm53-w4a16-2496.json"
 export TIERED_MOE_HBM_RESERVE_GB=6
-export TIERED_MOE_COMPILATION_CONFIG='{"mode":3,"cudagraph_mode":"FULL_AND_PIECEWISE","cudagraph_capture_sizes":[4,8,12,16],"compile_sizes":[4,8,12,16],"cudagraph_num_of_warmups":1,"pass_config":{"fuse_allreduce_rms":false}}'
+export TIERED_MOE_COMPILATION_CONFIG='{"mode":3,"cudagraph_mode":"FULL_AND_PIECEWISE","cudagraph_capture_sizes":[4],"compile_sizes":[4],"cudagraph_num_of_warmups":1,"pass_config":{"fuse_allreduce_rms":false}}'
 
 mkdir -p "${run_dir}" "${log_dir}" "${VLLM_CACHE_ROOT}" "${TRTLLM_DG_CACHE_DIR}" \
   "${TRITON_CACHE_DIR}" "${TORCHINDUCTOR_CACHE_DIR}" "${FLASHINFER_CACHE_DIR}" \
@@ -111,7 +115,7 @@ printf '%s\n' "${VLLM_ROUTING_TRACE_DIR}" >"${run_dir}/routes-${SLURM_JOB_ID}"
 
 agent_space/experiments/2026-07-17-end-to-end-tuning/run-server.sh \
   --speculative-config '{"method":"mtp","num_speculative_tokens":3}' \
-  --max-num-seqs 4 \
+  --max-num-seqs 1 \
   --enable-return-routed-experts \
   --host 0.0.0.0 \
   --port "${port}" \

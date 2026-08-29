@@ -31,6 +31,7 @@ Two deviations from prod are forced by the implementation, not chosen:
 | --- | --- | --- |
 | model runner | V2 (`VLLM_USE_V2_MODEL_RUNNER=1`) | V1 |
 | decode context parallel | 4 | 1 |
+| `--max-num-seqs` | 4 | 1 |
 
 `vllm/v1/worker/gpu/model_runner.py` — the V2 runner — contains no
 `routed_experts` support, so `gpu_worker.py`'s `init_routed_experts_capturer()`
@@ -39,13 +40,18 @@ when `enable_return_routed_experts` is set.
 
 Neither deviation changes which experts the router picks: routing is the gate's
 top-k over hidden states, and DCP shards attention KV without altering the math.
-The cost is capacity, not fidelity — dropping DCP quarters KV token capacity for
-the same pin, so a 400k-token context runs at 1.00x concurrency instead of
-4.00x. Overflow queues rather than fails, and queuing does not perturb routing.
+The cost is concurrency, and it cascades: `config/vllm.py:2325` rejects
+`max_num_seqs > 1` under DCP1 outright — *"the replicated 400K MLA cache does not
+fit more than one sequence per rank"* — and `:2337` pins `max_model_len` to
+exactly 400000, so the context cannot be shortened to buy headroom. **The capture
+host serves one request at a time.** Claude Code's parallel calls (subagents,
+title/summary requests) queue behind the foreground turn, so live capture is
+appreciably laggier than prod. This is why Phase 44's capture also ran at c=1.
 
 Everything else matches prod: GLM-5.3-W4A16 (int4 group 32), the 2496-slot
-profile, MTP3, prefix caching, `--max-num-seqs 4`, `--gpu-memory-utilization
-0.94`, KV pinned at 21,689,598,771 bytes.
+profile, MTP3, prefix caching, `--gpu-memory-utilization 0.94`, KV pinned at
+21,689,598,771 bytes. c=1 with MTP3 verifies 4 tokens per step, so the graph
+shapes are `[4]` rather than prod's `[4,8,12,16]`.
 
 ## What is recorded
 
@@ -75,4 +81,5 @@ they are many small files.
 
 ## Status
 
-- 2026-08-30: capture host submitted as job 1535646 (12h, jpbo-005-19).
+- 2026-08-30: job 1535646 failed config validation at 81 s — submitted with
+  `--max-num-seqs 4`, which DCP1 forbids. Resubmitted at c=1 as job 1535650.
