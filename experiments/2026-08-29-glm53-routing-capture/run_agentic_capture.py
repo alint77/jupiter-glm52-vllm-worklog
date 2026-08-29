@@ -86,9 +86,10 @@ TOOLS = [
     },
 ]
 
-SYSTEM_PROMPT = """You are a coding agent working inside the vLLM repository at \
-/e/project1/profound/alint77/vllm. You have tools to list directories, read \
-files, search with regular expressions, and write files into a scratch sandbox.
+SYSTEM_PROMPT = """You are a coding agent working inside the vLLM repository. All tool paths are \
+relative to the repository root, so use "vllm/model_executor", never an absolute \
+path. You have tools to list directories, read files, search with regular \
+expressions, and write files into a scratch sandbox.
 
 Work the way an engineer does: search before you read, read before you answer, \
 and ground every claim in code you have actually opened. Cite files as \
