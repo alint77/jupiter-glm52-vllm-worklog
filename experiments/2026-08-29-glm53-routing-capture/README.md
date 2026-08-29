@@ -111,3 +111,36 @@ ran, so only the capture itself was untested when it started:
 | fingerprints | `config_sha256` and `index_sha256` match the shipped NVFP4 profile |
 | `load_tiered_moe_placement_profile` | version 1 accepted by the runtime validator |
 | `oracle.py --budgets 985` | version 2 profile, 3940 replicas, accepted by the validator |
+
+## Reading the throughput numbers
+
+Neither headline from `vllm bench serve` is decode throughput, and both misled
+this experiment before the numbers below were trusted:
+
+- `output_throughput` is end to end. On the 16K-in/512-out suite it folds in
+  7.7 s of prefill and reads 68 tok/s where decode is ~185 tok/s aggregate.
+- `itls` entries are **per streaming chunk, not per token**. MTP3 puts every
+  token accepted in one verification step into a single chunk, ~2.78 of them,
+  so an ITL of 60 ms is a 21.6 ms per-token decode.
+
+The 16K prompts also exceed `max_num_batched_tokens=8192`, so each takes two
+chunked prefill passes; at c4 those chunks land inside other requests' decode
+steps as ~2.2 s ITL stalls worth 44-49% of wall time. `perf-c4-s2400` shows
+1.7% only because it served its prompts from prefix cache, which is why its
+TPOT looked twice as good while its steady-state ITL matched every other run.
+`arm-decode-only.sh` avoids all of this with 256-token prompts and 1024-token
+generations.
+
+Steady-state decode at c4/DCP4/MTP3, ITLs above 0.5 s filtered:
+
+| run | profile | per-request | aggregate |
+| --- | --- | --- | --- |
+| glm53-rank-new | re-derived | 46.4 tok/s | 185.4 tok/s |
+| perf-c4-s2400 | GLM-5.2 | 45.7 tok/s | 182.7 tok/s |
+| mtp3-c4-reset | GLM-5.2 | 45.0 tok/s | 180.1 tok/s |
+| glm53-rank-old | GLM-5.2 | 44.5 tok/s | 177.9 tok/s |
+
+The re-derived ranking beats every GLM-5.2 run, but the three GLM-5.2 runs
+span 2.7% between themselves -- wider than any within-run bootstrap CI, which
+is ±0.05 ms. A single A/B pair cannot size an effect that small, so the
+honest range is +1.5% to +4.3% pending the paired replicates.
