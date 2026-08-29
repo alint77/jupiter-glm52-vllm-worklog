@@ -1,0 +1,11 @@
+{
+  "traces_recorded": 389,
+  "traces_kept": 377,
+  "train_requests": 288,
+  "heldout_requests": 89,
+  "routed_positions": 129392,
+  "dropped_identity": 12,
+  "dropped_short": 0,
+  "dropped_missing": 0,
+  "domains": 16
+}

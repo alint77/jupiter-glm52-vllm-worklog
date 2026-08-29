@@ -29,3 +29,4 @@ core.*
 experiments/2026-07-27-green-context-marlin/green_context_probe
 experiments/2026-07-29-marlin-smem-monopoly/analysis/smem_monopoly
 experiments/2026-07-29-marlin-smem-monopoly/analysis/tier_union
+experiments/*/traces-*/

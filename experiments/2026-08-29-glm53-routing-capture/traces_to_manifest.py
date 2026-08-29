@@ -26,6 +26,13 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--trace-dir", type=Path, required=True)
     parser.add_argument("--holdout-fraction", type=float, default=0.25)
+    parser.add_argument(
+        "--split-by",
+        choices=("request", "domain"),
+        default="request",
+        help="domain holds out whole task families, so no conversation "
+        "spans the split",
+    )
     parser.add_argument("--min-positions", type=int, default=16)
     parser.add_argument(
         "--attribution",
@@ -65,6 +72,7 @@ def main() -> None:
                 domains[entry["request_id"]] = entry["domain"]
 
     kept, dropped_identity, dropped_short, dropped_missing = [], 0, 0, 0
+    dropped_unattributed = 0
     for record in records:
         path = args.trace_dir / record["file"]
         if not path.is_file():
@@ -92,7 +100,17 @@ def main() -> None:
     entries = []
     for record, positions in kept:
         request_hash = hashlib.sha256(record["file"].encode()).hexdigest()[:16]
-        bucket = int(request_hash[:8], 16) / 0xFFFFFFFF
+        domain = domains.get(record["request_id"])
+        if args.split_by == "domain":
+            if domain is None:
+                # Hand-issued smoke requests carry no task; a family split has
+                # nowhere to put them.
+                dropped_unattributed += 1
+                continue
+            key = hashlib.sha256(domain.encode()).hexdigest()[:8]
+        else:
+            key = request_hash[:8]
+        bucket = int(key, 16) / 0xFFFFFFFF
         entries.append(
             {
                 "file": record["file"],
@@ -100,11 +118,7 @@ def main() -> None:
                 "split": "heldout" if bucket < args.holdout_fraction else "train",
                 "routed_positions": positions,
                 "output_tokens": record.get("output_tokens"),
-                **(
-                    {"domain": domains[record["request_id"]]}
-                    if record.get("request_id") in domains
-                    else {}
-                ),
+                **({"domain": domain} if domain is not None else {}),
             }
         )
 
@@ -128,6 +142,8 @@ def main() -> None:
                 "dropped_short": dropped_short,
                 "dropped_missing": dropped_missing,
                 "domains": len({e["domain"] for e in entries if "domain" in e}),
+                "split_by": args.split_by,
+                "dropped_unattributed": dropped_unattributed,
             },
             indent=2,
         )

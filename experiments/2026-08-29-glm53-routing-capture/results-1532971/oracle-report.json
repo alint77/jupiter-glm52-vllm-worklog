@@ -1,0 +1,113 @@
+{
+  "trace_dir": "/e/scratch/profound/naeimitabiei1/claude-glm53-capture/routes-1532971",
+  "profile": "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-08-29-glm53-routing-capture/results-1532971/tail-profile.json",
+  "hot_slots_per_rank": 2400,
+  "cost_model_us": {
+    "m4": {
+      "hbm_per_task": 17.066666666666666,
+      "grace_per_task": 46.22666666666667
+    },
+    "m16": {
+      "hbm_chain": 167.0,
+      "grace_chain_base": 24.0,
+      "grace_per_task": 46.0
+    }
+  },
+  "samples": {
+    "train_c4": 300,
+    "heldout_c1": 300,
+    "heldout_c4": 150
+  },
+  "control": {
+    "c1": {
+      "span_ms": 11.174203911111109,
+      "rank_skew_ms": 3.4312773,
+      "secondary_task_percent": 0.0,
+      "hbm_task_percent": 74.64316163932499,
+      "grace_task_percent": 25.356838360675017
+    },
+    "c4": {
+      "span_ms": 28.316846666666667,
+      "rank_skew_ms": 7.02375,
+      "secondary_task_percent": 0.0,
+      "hbm_task_percent": 71.55468024091775,
+      "grace_task_percent": 28.44531975908225
+    }
+  },
+  "budgets": [
+    {
+      "copies_per_rank": 985,
+      "grace_gb_per_rank": 19.75321364,
+      "copy_factor": 1.2052083333333332,
+      "placement": "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-08-29-glm53-routing-capture/results-1532971/replicas-985.json",
+      "workloads": {
+        "c1": {
+          "hash": {
+            "span_ms": 11.353107599999998,
+            "rank_skew_ms": 3.5767947111111114,
+            "secondary_task_percent": 7.172965543599695,
+            "hbm_task_percent": 74.64316163932499,
+            "grace_task_percent": 25.356838360675017
+          },
+          "least_loaded": {
+            "span_ms": 11.130171155555551,
+            "rank_skew_ms": 3.2121995222222224,
+            "secondary_task_percent": 6.994178867525137,
+            "hbm_task_percent": 74.64316163932499,
+            "grace_task_percent": 25.356838360675017
+          },
+          "greedy": {
+            "span_ms": 10.272876977777775,
+            "rank_skew_ms": 2.707482222222222,
+            "secondary_task_percent": 6.996016346210384,
+            "hbm_task_percent": 74.64316163932499,
+            "grace_task_percent": 25.356838360675017
+          },
+          "runtime_greedy": {
+            "span_ms": 9.880856844444441,
+            "rank_skew_ms": 2.522270688888889,
+            "secondary_task_percent": 6.801059857705651,
+            "hbm_task_percent": 74.64316163932499,
+            "grace_task_percent": 25.356838360675017
+          }
+        },
+        "c4": {
+          "hash": {
+            "span_ms": 29.821126666666668,
+            "rank_skew_ms": 8.38828,
+            "secondary_task_percent": 7.9961825283073775,
+            "hbm_task_percent": 71.55468024091775,
+            "grace_task_percent": 28.44531975908225
+          },
+          "least_loaded": {
+            "span_ms": 30.55458,
+            "rank_skew_ms": 8.93632,
+            "secondary_task_percent": 7.566086828004111,
+            "hbm_task_percent": 71.55468024091775,
+            "grace_task_percent": 28.44531975908225
+          },
+          "greedy": {
+            "span_ms": 25.707240000000002,
+            "rank_skew_ms": 4.504465,
+            "secondary_task_percent": 7.5475264914433415,
+            "hbm_task_percent": 71.55468024091775,
+            "grace_task_percent": 28.44531975908225
+          },
+          "runtime_greedy": {
+            "span_ms": 23.694206666666666,
+            "rank_skew_ms": 2.6964583333333336,
+            "secondary_task_percent": 7.181360839293837,
+            "hbm_task_percent": 71.55468024091775,
+            "grace_task_percent": 28.44531975908225
+          }
+        }
+      },
+      "oracle": {
+        "completed_cases": 24,
+        "mean_greedy_gap_us": 5.6322222222222225,
+        "max_greedy_gap_us": 46.22666666666666,
+        "mean_search_nodes": 18.083333333333332
+      }
+    }
+  ]
+}

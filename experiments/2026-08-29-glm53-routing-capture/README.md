@@ -49,9 +49,55 @@ costs throughput, not accuracy.
    W4G64 figure, 20,054,024; NVFP4 is 21,233,680. That affects only the
    reported `grace_gb_per_rank`, not the placement.
 
-## Status
+## Result
 
-Capture job `1532971` on `jpbo-006-08`.
+Capture job `1532971`: 389 traces, 377 usable, **129,392 routed positions**
+across all 16 task families, no driver aborts. The shippable artefact is
+`results-1532971/replicas-985.json` -- schema version 2, 9600 hot experts, 3940
+replicas, NVFP4 fingerprints, accepted by the runtime validator. It is a
+drop-in replacement for `nvfp4-profile-2400.json`.
+
+Held-out split (89 requests, 20,500 positions):
+
+| profile | cold-hit | cold-critical/token | tail |
+| --- | --- | --- | --- |
+| GLM-5.2 ranking (shipped) | 0.4047 | 138.4 | 179.40 |
+| re-derived | 0.2290 | 87.6 | 115.75 |
+
+For scale, a linear/even placement scores 0.4977, so the GLM-5.2 ranking was
+recovering only about a tenth of the gap between no ranking and a correct one.
+Hot-set overlap with the shipped profile is 0.629: 37% of the resident set sat
+on the wrong experts.
+
+Three things the evidence settles:
+
+- **The ranking is the whole story, not the residency strategy.** Frequency,
+  tail-aware, and layer-concentrated residency all converge to the same hot set
+  (overlap 0.999-1.000). At `--mixed-layer-penalty 0.0` the layer-concentrated
+  optimiser reproduces the frequency solution exactly.
+- **It generalises past this task list.** A strict split by task family -- train
+  on 9 families, evaluate on 163 requests from 7 unseen ones, no conversation
+  crossing the split -- gives 0.4126 -> 0.2742 cold-hit and 140.2 -> 86.2
+  cold-critical. That last figure matches the request-split profile (87.2) on a
+  third less training data, and the two hot sets overlap 0.918.
+- **Replicas still pay on top.** The oracle replay puts the routed span at
+  11.174 -> 10.273 ms at c1 (-8.1%) and 28.317 -> 25.707 ms at c4 (-9.2%).
+
+## Known limitation: capped generations
+
+12 of 389 traces came back as the identity fallback -- experts 0..7 on every
+routed layer, every position. The correlation is exact and one-directional:
+
+| | identity | good |
+| --- | --- | --- |
+| ran to the `max_tokens` cap | 12 | 16 |
+| finished naturally | 0 | 354 |
+
+Every affected trace hit the cap, no trace that finished naturally was ever
+affected, and only 43% of capped requests were hit. `traces_to_manifest.py`
+drops them, so they cannot corrupt the ranking, but the corpus is mildly biased
+against the longest generations. `build_claude_routing_grid.py` carries the
+same `is_default_route_trace` guard, so the GLM-5.2 capture saw this too.
 
 ## Pipeline validation
 
