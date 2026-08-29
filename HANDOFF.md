@@ -1,15 +1,27 @@
 # GLM-5.2 on JUPITER: agent handoff
 
-Last updated: 2026-08-28 (Phase 42: DFlash2 measured and refuted -- 26.4%
-slower than MTP3, because a GLM-5.3-trained drafter does not transfer to a 5.2
-target, not because width 8 is too wide.
+Last updated: 2026-08-30 (Phases 43-47: GLM-5.3 brought up and promoted to
+the Claude Code host on the `JANGQ-AI/GLM-5.3-W4A16` int4 group-32 checkpoint,
+which beats NVFP4 by 9.77% on decode; the 5.3 hot-expert ranking re-derived
+from agentic-coding routing traces, worth +8.3%; hot-slot count found
+non-monotonic; **prefix caching under MTP found to degrade the first pass and
+left open**, along with the non-reproducible greedy decoding that blocks
+diagnosing it.
+Phase 42: DFlash2 measured and refuted -- 26.4% slower than MTP3, because a
+GLM-5.3-trained drafter does not transfer to a 5.2 target, not because width 8
+is too wide.
 Phases 35-39: prefill priced and two of its levers retired; KV-on-Grace
 refuted; the open lever is prefill/decode co-scheduling)
 
 ## Start here
 
-We are optimizing serving of `lowbitcoffee/GLM-5.2-W4A16` at up to 400K
-context on one JUPITER Booster node. The implementation keeps the most
+We are optimizing serving of GLM-5.x W4A16 at up to 400K context on one
+JUPITER Booster node. The original and still-referenced target is
+`lowbitcoffee/GLM-5.2-W4A16`; **the Claude Code host now serves GLM-5.3 on
+`JANGQ-AI/GLM-5.3-W4A16` (int4 group 32)**, which Phase 46 measured 9.77%
+faster on decode than the NVFP4 5.3 checkpoint. Quality comparisons still use
+5.2 AutoRound W4G64 as the reference, because 5.3 scores about 4pp lower on
+GSM8K for reasons Phase 43 traced to post-training rather than to this stack. The implementation keeps the most
 useful routed experts in HBM, runs the rest directly from NUMA-local Grace
 memory through CUDA UVA, and uses the official GLM-5.2 MTP head for
 speculative decoding.
@@ -51,6 +63,9 @@ Read these before changing anything:
 - [Production profile](experiments/2026-08-05-prod-profile/README.md): where every millisecond of the c1, c4 and prefill steps goes, and the mixed-step lever.
 - [Prefill collectives](experiments/2026-08-05-prefill-comms-ab/README.md): why prefill's comms are not a bandwidth problem, and the per-layer skew that is priced but unfixed.
 - [MTP roofline](experiments/2026-07-18-mtp-prompt-profile/roofline-analysis.md): kernel, communication, and transfer analysis.
+- [GLM-5.3 W4A16](experiments/2026-08-29-glm53-w4a16/README.md): the checkpoint the Claude Code host now serves, the four blockers that had to clear first, the hot-slot sweep, and the open prefix-cache defect.
+- [GLM-5.3 routing capture](experiments/2026-08-29-glm53-routing-capture/README.md): how the 5.3 hot-expert ranking was derived, and the capture constraints that bind any repeat.
+- [Real-usage routing capture](experiments/2026-08-30-glm53-cc-capture/README.md): the live capture host, and the open question of live versus transcript replay.
 
 Keep changes minimal, measure every optimization against a matched control,
 and update this worklog with commands, correctness evidence, and results. Log
@@ -210,6 +225,8 @@ caches back into home.
 ../models/GLM-5.2-AutoRound-W4G64-MTP-e1ba887
 ../models/GLM-5.2-FP8-DFlash
 ../models/GLM-5.3-DFlash2
+/e/fscratch/profound/naeimitabiei1/models/GLM-5.3-NVFP4
+/e/fscratch/profound/naeimitabiei1/models/GLM-5.3-W4A16
 /e/scratch/profound/naeimitabiei1/glm52-fp8-mtp-layer78
 ```
 
@@ -225,6 +242,17 @@ for reference. `GLM-5.3-DFlash2` is the Phase 42 draft: 4,918,859,112 bytes,
 tokenizer, no `embed_tokens` and no `lm_head` - it borrows all three from the
 target - and is licensed CC BY-NC-ND 4.0, research and evaluation only, which
 is stricter than the model it drafts for.
+
+`GLM-5.3-W4A16` is `JANGQ-AI/GLM-5.3-W4A16`, the checkpoint the Claude Code
+host now serves: compressed-tensors pack-quantized int4 at **group 32**, 282
+shards, 420 GB, 176,321 tensors. It **exists only on fscratch** -- there is no
+project1 copy to fall back to, and its launcher fails loudly on a shard-count
+mismatch rather than silently serving the wrong checkpoint, because the
+placement profile is fingerprinted to it. Its published `index.json` overstates
+`total_size` by 21,739,848 bytes; the corrected copy is in use and the
+publisher's original is kept at
+`experiments/2026-08-29-glm53-w4a16/index-original.json`. `GLM-5.3-NVFP4` is
+the incoai checkpoint it replaced, kept for rollback.
 
 The Booster runtime is offline, so serving must use these local paths rather
 than Hugging Face identifiers. Anything new must be staged from the login node
@@ -293,6 +321,9 @@ synthetic test, and are not additive with the rows above:
 | Marlin shared-memory fix | no-MTP step time, c1/c2/c4 | -5.3% / -6.4% / -6.7% |
 | Exact replica assignment | acceptance-free batch 4 | -5.96% step time |
 | Exact replica assignment | MTP3 batch 16 | -6.50% step, -5.11% corrected |
+| GLM-5.3 ranking re-derived from routing traces | real-code decode, c4 | +8.30% +/- 1.81% |
+| W4A16 g32 in place of NVFP4 g16 | real-code decode, c4 | +9.77% +/- 3.32% (194.2 -> 213.1 tok/s) |
+| 2496 hot slots in place of 2400 | real-code decode, c4 | 213.1 -> 214.8 tok/s (3000 regresses to 205.2) |
 
 The overlap result is about 18% faster than its matched serial MTP3 control.
 Its exact-400K draft acceptance is about 60-61%. Across 18 Python, PyTorch,
@@ -340,7 +371,34 @@ reduce-scatter/all-gather pair.
 
 - `fuse_allreduce_rms=true` caused an illegal memory access on this stack.
 - `gpu-memory-utilization=0.94` left too little transient HBM for prefill;
-  qualified runs use 0.90 plus the explicit tiered reserve.
+  qualified runs use 0.90 plus the explicit tiered reserve. **Qualified 2026-08-30
+  (Phase 46):** 0.94 does work when KV is pinned explicitly (`--kv-cache-memory`)
+  and the tiered reserve is dropped to 6 GB, which is what the Claude Code host
+  runs. At 0.94 the reserve check demands 4.66 GiB physically free after KV, so
+  a 7 GB reserve demands 5.59 GiB and refuses to start. Do not raise utilization
+  without pinning KV -- vLLM's own "fully utilize gpu memory" suggestion ignores
+  the tiered reserve floor and overstates the available slots.
+- **`jupiter-env.sh` points `XDG_CACHE_HOME` at GPFS and sets neither
+  `TRITON_CACHE_DIR` nor `TORCHINDUCTOR_CACHE_DIR`**, so torch.compile artefacts
+  land on the filesystem worst at small files. Launchers must pin both to
+  fscratch alongside `VLLM_CACHE_ROOT` and `TRTLLM_DG_CACHE_DIR`; the c4 and
+  capture launchers now do. Symptom is a startup minutes longer than it should
+  be, with `du` on the cache path hanging.
+- **Routed-expert capture runs on neither the V2 model runner nor DCP.**
+  `vllm/v1/worker/gpu/model_runner.py` has no `routed_experts` support at all,
+  `Scheduler.__init__` asserts `dcp_world_size == 1`, and dropping DCP then
+  forces `max_num_seqs` to 1 (`config/vllm.py:2325`) with `max_model_len` pinned
+  to exactly 400000 (`:2337`), so the context cannot be shortened to buy KV
+  headroom. A capture host is single-request by construction. None of this
+  changes routing, so the ranking still transfers to the prod DCP4/V2 host.
+- A checkpoint's `group_size` is **not** 128. Three call sites hardcoded that
+  (`tiered_moe_manifest.py`, `tiered_moe_conversion.py` twice,
+  `compressed_tensors_moe_wna16_marlin.py`) against Marlin's actual
+  `SUPPORTED_GROUP_SIZES` of `[-1, 32, 64, 128]`. They now read it from the
+  checkpoint. The group tables for 32/64/128 share identical `weight_packed`
+  and `weight_shape` entries, so a stager that requires a unique table match
+  is ambiguous -- narrow progressively and require uniqueness only at
+  completion.
 - Ordinary pageable Grace allocations migrated into HBM. The implementation
   therefore uses NUMA-bound pinned Grace memory and validates locality.
 - Host-UVA main KV cache improves expert residency and decode but badly hurts
@@ -393,6 +451,44 @@ reduce-scatter/all-gather pair.
   are in. Phase 37 read `*-server.err` where registrations go to `*-server.out`,
   producing three byte-identical result files that silently hid an arm that never
   ran the code path.
+
+## Open defect: prefix caching degrades the first pass under MTP (2026-08-30, Phase 46)
+
+**Not diagnosed. Do not assume the served model is producing its best output.**
+
+GSM8K, 256 questions, five-shot, temperature 0, seed 42, identical questions in
+every arm:
+
+| arm | first-pass score |
+| --- | ---: |
+| MTP3 + prefix caching | 58.6%, 56.3% |
+| MTP3 + prefix caching, no warmup | 58.2% |
+| MTP3, prefix caching off | **91.4%** |
+| no speculator + prefix caching | **90.6%** |
+
+Neither feature alone hurts; together they cost about 33 points on the first
+pass. It reproduces on both the NVFP4 and W4A16 checkpoints and predates the
+group-32 work, so it is pre-existing and not introduced by any recent change.
+
+**The obvious test is blocked, and that is the more important finding.**
+Speculative decoding at temperature 0 must reproduce greedy output exactly, so
+the natural check is to diff MTP completions against no-speculator completions:
+63 of 64 differ. But the control -- two passes of the *same* server, same seed,
+same questions -- differs on 60 of 64. **Greedy decoding is not reproducible on
+this server**, so the diff cannot separate a speculator bug from ambient
+nondeterminism. That is a second defect, and it is very likely the same
+run-to-run spread Phase 43 attributed to DFlash2 (3.52 against 0.39); that
+attribution should be treated as unsafe until this is closed.
+
+Closing it needs logit-level instrumentation rather than another benchmark:
+assert inside the engine that the target's argmax equals each accepted token,
+on every step, and fail loudly on the first mismatch. That is an engine patch
+of a few hours. Two upstream reports are worth filing once it is understood --
+the MTP x prefix-cache first-pass degradation, and non-reproducible greedy
+decoding.
+
+What is **not** the cause, already tested: warmup (58.2% without it), the
+checkpoint (both), and the group-32 loader work (predates it).
 
 ## Settled: DFlash2 loses to MTP3 on this target (2026-08-28, Phase 42)
 
@@ -458,6 +554,28 @@ note that a srun step gets **one CPU** by default even when the allocation
 holds the node, and vLLM's GPU-to-NUMA detection fails hard rather than
 degrading.
 
+## Current thread: rank the experts on real usage (2026-08-30, open)
+
+Phase 44 derived the GLM-5.3 hot-expert ranking from a synthetic agentic-coding
+driver and it was worth +8.30% +/- 1.81% decode. Phase 47 stands up a capture
+host to redo it on **real Claude Code turns**, which differ in context length,
+system prompt, tool schemas and tool-result spans. The host is verified and
+writes one trace per request; see its README for the constraints that force it
+to c1/DCP1/V1.
+
+**The open decision is where the traffic comes from.** Live capture is exact but
+serializes the day's work at one request at a time. Replaying the 41 Claude Code
+transcripts already on disk keeps DCP4 for real work and draws on a larger
+corpus, at the cost that their assistant turns were authored by whichever model
+ran the session -- which matters less than it appears, because traces record
+only generation positions. The recommendation on the table is replay, with an
+hour of live capture as a cross-check on the ranking it produces. No extractor
+has been written yet.
+
+Tooling note: `cc-plugins/vllm-tps` renders the backing server's live decode
+throughput and MTP acceptance in the Claude Code status line, and adds a `/tps`
+snapshot. Useful for noticing a degraded host before a benchmark does.
+
 ## Current thread: prefill is the workload (2026-08-06, open)
 
 On the shape the production server actually serves - 16K in, 512 out - the
@@ -495,7 +613,24 @@ Closed by 35-39, do not reopen: prefill shared memory and CTAs/SM, NCCL
 protocol, chunk size, ungating the existing replica assignment, and putting the
 KV cache on Grace. Reasons are in the lever ledger.
 
-## Earlier thread: buy HBM residency (2026-08-01, open)
+## Earlier thread: buy HBM residency (2026-08-01, partly answered 2026-08-30)
+
+**Phase 46 put three points on this and they are not monotonic.** At a fixed
+checkpoint, ranking and concurrency, hot slots per rank of 2400 / 2496 / 3000
+measure 213.1 / 214.8 / 205.2 tok/s on the real-code decode suite. Buying
+residency pays, then stops paying, then costs. Production sits at 2496.
+
+The source already contains a mechanism that predicts an interior optimum:
+`_TIER_BLOCKS_PER_SM = {"hot": 2, "cold": 1}` splits SM shared memory so the
+tiers overlap, cutting the two-tier union 41-48%. Cold work hidden under hot
+compute is close to free until the hot tier stops having spare occupancy to
+hide it behind -- past that, added hot experts buy less than the cold traffic
+they displace costs. That is a hypothesis fitted to three points, not a
+measurement. **The cheap next step is a 2200 / 2600 / 2800 sweep on the same
+suite**; the harness (`arm-quant-ab-*.sh`) and the restamping tool
+(`restamp_profile.py`) already exist in `2026-08-29-glm53-w4a16/`.
+
+Everything below is the original 2026-08-01 analysis and still stands.
 
 The tier-balance work closed the last cheap lever and named the next one.
 
