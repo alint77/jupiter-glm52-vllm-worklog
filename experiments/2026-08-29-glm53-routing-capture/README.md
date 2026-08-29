@@ -144,3 +144,27 @@ The re-derived ranking beats every GLM-5.2 run, but the three GLM-5.2 runs
 span 2.7% between themselves -- wider than any within-run bootstrap CI, which
 is ±0.05 ms. A single A/B pair cannot size an effect that small, so the
 honest range is +1.5% to +4.3% pending the paired replicates.
+
+## Retracted: the random-prompt decode A/B
+
+A paired three-run A/B on `arm-decode-only.sh` put the re-derived ranking 2.43%
++/- 1.42% *behind* the GLM-5.2 placeholder, same sign in all three pairs. That
+result is withdrawn: the arm used `--dataset-name random`, and vLLM's
+`RandomDataset` synthesises token ids as
+`(offset + index + arange(input_len)) % vocab_size` -- near-uniform ids, not
+text. Expert routing is content-dependent, so a ranking derived from agentic
+coding traffic has no reason to help on that input, and near-uniform routing
+leaves residency close to irrelevant. Fixing the prefill contamination traded it
+for a worse confound.
+
+`arm-realcode-short.sh` is clean on both axes: `prompts-short.jsonl` is the
+2026-08-05 PyTorch suite truncated to exactly 512 tokens with the target
+tokenizer, which keeps real code content while sitting far below the 8192-token
+chunk limit, so no prefill stall reaches TPOT. Generations are 1024 tokens.
+
+One explanation was tested and rejected. The shipped profile's optimizer string
+says `layer-concentrated-residency-v1`, which would save a second-tier kernel
+launch on any layer that is wholly hot or wholly cold, and the re-derived
+profile uses per-expert residency. Both profiles in fact have 75 mixed layers
+and zero fully-hot layers, so that mechanism is absent from both and cannot
+explain the difference.
