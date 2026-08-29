@@ -70,7 +70,7 @@ Lever status, so that settled questions are not reopened:
 | `blocks_per_sm` and SM-budget partitioning | Refuted (21, 23, 26) |
 | Target sequence parallelism | Refuted (13) |
 | Wider or deeper speculation: MTP6, DSpark, DFlash1 | Refuted (11, 28): throughput is inverse to verify-batch width |
-| DFlash2 at verify width 8 | Refuted (42) **for the GLM-5.3 checkpoint**: 2.68 acceptance against 3.65 break-even, 26.4% slower than MTP3. The drafter does not transfer to a 5.2 target; width 8 itself is survivable at 32.85 ms |
+| DFlash2 at verify width 8 | Refuted (42) **against a GLM-5.2 target**: 2.68 acceptance against 3.65 break-even, 26.4% slower than MTP3, because a 5.3-trained drafter does not transfer to a 5.2 target. Width 8 itself is survivable at 32.85 ms. **Reopened (43)** now that the served model is 5.3: three missing upstream fixes took acceptance 2.815 -> 4.029, a 32% gap to the card remains, and the matched throughput comparison has never been run |
 | Capturing the draft path in CUDA graphs | Refuted (26): the drafts are already graphed |
 | Graph-node fusion | Priced (24) at about 1.2%; not started |
 | Grace-to-HBM cold-weight staging | Open (30), but its control predates the shared-memory fix and it must be re-measured before it means anything |
@@ -981,6 +981,66 @@ Phase 46 later found the spread itself is not DFlash2's -- greedy decoding is
 not reproducible on this server at all. See the
 [GLM-5.3 FP8 attempt](experiments/2026-08-29-glm53-fp8/README.md) and the
 [NVFP4 tiered bring-up](experiments/2026-08-28-nvfp4-tiered/README.md).
+
+Phase 43 also reopens DFlash2, and this is the part the index previously
+buried inside an NVFP4 bring-up report. Phase 42 refuted DFlash2 **on the 5.2
+target**, and its own diagnosis was transfer: a drafter trained on GLM-5.3
+hidden states, already worse than MTP3 at position 0 (42% against 87%). On a
+5.3 target that objection disappears, so `incoai/GLM-5.3-DFlash2` was rerun
+against the 5.3 NVFP4 checkpoint -- and gave 3.323 acceptance at width 8 where
+the card claims 5.94.
+
+Replicating the card's own protocol (GSM8K, chat template, T=1.0, top_p 0.95,
+natural EOS, 4096 max tokens, 64 samples) localised the fault rather than
+arguing about it. **MTP reproduced the card to within 3%** -- 4.967 against
+5.12 -- which validated sampling, chat template, EOS handling, prompt
+distribution, target model and the whole tiered stack in one measurement, and
+left the problem specific to DFlash2, which managed 2.815 on the same
+protocol. Normalised for width the diagnosis sharpened: our MTP3 sat at 68.8%
+of ceiling against the card's MTP7 at 64.0%, while DFlash2 at the *same* width
+8 managed 41.5% against the card's 74.2%. The per-position profile then named
+the mechanism -- acceptance fell geometrically at a near-constant 0.714 ratio
+(stdev 0.020), the signature of plain autoregressive decay, when DFlash2's
+entire premise is that its two-tap convolutions and candidate selector prevent
+exactly that.
+
+**Root cause: the backport sat on a base predating its own prerequisites.**
+DFlash2 landed upstream 2026-08-20; this fork's base is 2026-07-16, and
+cherry-picking DFlash2 alone left it running on a DFlash core missing five
+weeks of its own bugfixes. Auditing all 1,704 upstream commits since the base
+-- by message, by path, and by content presence, since cherry-picks change
+hashes and ancestry is useless -- found five candidates, of which three were
+missing and applied:
+
+| PR | was present | effect |
+| --- | ---: | --- |
+| #53336 / #53002 | 50% | FlashAttention metadata built from the **target's** head geometry, not the draft's |
+| #51256 | 0% | DFlash needs K extra scheduling slots; the budget reserved none |
+| #44492 | 28% | draft `seq_lens_cpu_upper_bound` not populated |
+| #50065 | 0% | ruled out on inspection: `max_query_tokens` equals the cudagraph capture size, so the fix's `max()` is a no-op |
+| #48524 | 50% | `fc` sizing; ours is verified correct at 36,864 |
+
+#53336 is the substantive one: the target is MLA with head_dim 192 and
+effective head size 576 while the DFlash2 draft is dense with head_dim 128, 64
+query heads and 8 KV heads, so describing draft attention with target geometry
+degrades the draft without touching output -- verification rejects every bad
+token -- and it also explains the separate c4 failure `scheduler_metadata must
+have shape (metadata_size)`. The three fixes are on this branch as
+`dcf5ceb2b9` and `c8a723e0c9`, and they **recovered 2.815 to 4.029, +43%,
+while leaving MTP unchanged at 4.912 against its pre-fix 4.967** -- surgical,
+by the only test that could show it.
+
+**A 32% gap to the card remains and DFlash2 is still not qualified.** Two audit
+entries deserve re-examination before it is blamed on the card's
+GB300/FlashAttention-4 configuration: #48524, because DFlash2 has 6 hidden and
+6 target layers so a wrong code path still yields a right-sized tensor, and
+#50487, which changes which hidden state is tapped as the aux input and was
+dismissed on its Kimi-K3 title alone. What has **never been measured is the
+comparison that decides it**: matched MTP3-against-DFlash2 throughput on a 5.3
+target. Phase 42 priced break-even at 3.65 acceptance at DFlash2's achieved
+32.85 ms/step, and DFlash2 now measures 4.029 -- but on the card's GSM8K
+protocol rather than Phase 42's harness, so those two numbers **cannot be
+subtracted**. They are a reason to run the matched experiment, not a result.
 
 Phase 44 re-derives the GLM-5.3 hot-expert ranking. Every 5.3 placement
 profile shipped so far carried GLM-5.2's ranking as an acknowledged placeholder:

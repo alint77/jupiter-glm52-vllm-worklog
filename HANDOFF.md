@@ -4,7 +4,8 @@ Last updated: 2026-08-30 (Phases 43-47: GLM-5.3 brought up and promoted to
 the Claude Code host on the `JANGQ-AI/GLM-5.3-W4A16` int4 group-32 checkpoint,
 which beats NVFP4 by 9.77% on decode; the 5.3 hot-expert ranking re-derived
 from agentic-coding routing traces, worth +8.3%; hot-slot count found
-non-monotonic; **prefix caching under MTP found to degrade the first pass and
+non-monotonic; **DFlash2 reopened** on a 5.3 target, three missing upstream
+fixes recovering 43% of its acceptance with a 32% gap to the card still open; **prefix caching under MTP found to degrade the first pass and
 left open**, along with the non-reproducible greedy decoding that blocks
 diagnosing it.
 Phase 42: DFlash2 measured and refuted -- 26.4% slower than MTP3, because a
@@ -490,7 +491,65 @@ decoding.
 What is **not** the cause, already tested: warmup (58.2% without it), the
 checkpoint (both), and the group-32 loader work (predates it).
 
-## Settled: DFlash2 loses to MTP3 on this target (2026-08-28, Phase 42)
+## Reopened: DFlash2 on a GLM-5.3 target (2026-08-29, Phase 43)
+
+**Read this before acting on the Phase 42 section below.** That section is
+correct and still stands *for the GLM-5.2 target*. Its own diagnosis was
+transfer failure -- a drafter trained on GLM-5.3 hidden states, already worse
+than MTP3 at position 0 -- which is an argument that says nothing about a 5.3
+target, and the served model is now 5.3.
+
+On the 5.3 NVFP4 target, DFlash2 first gave 3.323 acceptance at width 8
+against the card's 5.94. Replicating the card's protocol localised the fault:
+**MTP reproduced the card to within 3%** (4.967 against 5.12), validating the
+harness, the sampling, the target and the tiered stack in one measurement,
+while DFlash2 managed 2.815. Per-position acceptance decayed geometrically at
+a constant 0.714 ratio -- plain autoregressive decay, exactly what DFlash2's
+two-tap convolutions are supposed to prevent.
+
+The cause was that the backport sat on a base predating its own prerequisites.
+DFlash2 landed upstream 2026-08-20; this fork's base is 2026-07-16. Auditing
+all 1,704 intervening commits by content -- ancestry is useless, cherry-picks
+change hashes -- found three missing fixes, now on this branch as `dcf5ceb2b9`
+and `c8a723e0c9`:
+
+| PR | effect |
+| --- | --- |
+| #53336 / #53002 | FlashAttention metadata built from the target's head geometry, not the draft's. The substantive one |
+| #51256 | DFlash needs K extra scheduling slots; the budget reserved none |
+| #44492 | draft `seq_lens_cpu_upper_bound` not populated |
+
+**They recovered acceptance 2.815 -> 4.029, +43%, with MTP unchanged at 4.912
+against its pre-fix 4.967.**
+
+### What is still open
+
+- **A 32% gap to the card remains.** Two audit entries were not applied and
+  deserve re-examination before blaming the card's GB300/FlashAttention-4
+  setup: **#48524** (`fc` sizing -- DFlash2 has 6 hidden and 6 target layers,
+  so a wrong code path still yields a right-sized tensor) and **#50487**
+  (changes which hidden state is tapped as the aux input; dismissed on its
+  Kimi-K3 title alone).
+- **The deciding measurement has never been run.** No matched
+  MTP3-against-DFlash2 throughput comparison exists on a 5.3 target. Phase 42
+  priced break-even at 3.65 acceptance at DFlash2's achieved 32.85 ms/step and
+  DFlash2 now measures 4.029 -- but on the card's GSM8K protocol, not Phase
+  42's harness, so **those numbers cannot be subtracted.** They are a reason to
+  run the experiment, not a result. Production is also on W4A16 now, not the
+  NVFP4 checkpoint all of the above was measured against.
+- **Output-losslessness is unresolved, not refuted.** Phase 43 read DFlash2 at
+  88.93% GSM8K against 91.21% target-only with 9x the run-to-run spread and
+  called it not lossless. Phase 46 later showed greedy decoding is not
+  reproducible on this server at all, so that spread is at least partly
+  ambient and the verdict is unsafe in both directions. See the open-defect
+  section above.
+
+Harness and scripts: `replicate_dflash2_eval.py` and the `rep*-dflash2-*` runs
+in [NVFP4 tiered bring-up](experiments/2026-08-28-nvfp4-tiered/README.md);
+acceptance capture in
+[DFlash2 backport](experiments/2026-08-28-dflash2-backport/README.md).
+
+## Settled for the GLM-5.2 target: DFlash2 loses to MTP3 (2026-08-28, Phase 42)
 
 **Measured and refuted.** DFlash2 gets **2.6823** acceptance at 32.85 ms
 against MTP3's pooled 3.0721 at 27.69 ms: **26.4% slower**, with break-even at
@@ -884,6 +943,12 @@ cost grows nearly linearly with block width while acceptance grows sublinearly.
 The consequence generalizes: **any wider speculative block loses here unless it
 also cuts per-token routed-MoE cost.** Do not evaluate another wide-block
 speculator on acceptance figures from its model card.
+
+**Reopened 2026-08-29 (Phase 43).** DFlash2 was rerun against a GLM-5.3
+target, where Phase 42's transfer objection does not apply, and three missing
+upstream fixes recovered its acceptance by 43%. It is still not qualified and
+the deciding measurement has not been run. See the DFlash2 section above
+before treating any of this as closed.
 
 **Qualification added 2026-08-28 (Phase 42).** The rule above is about width,
 and it is stated as a comparison, not a prohibition. The three points in the
