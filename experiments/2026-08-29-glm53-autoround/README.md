@@ -84,8 +84,17 @@ those regexes at save time, not recipe information.
 
 ## Status
 
-Stage 1 submitted as job `1534301`, 12 h (the QOS ceiling; 24 h and 48 h are
-both rejected with `QOSMaxWallDurationPerJobLimit`).
+Submitted as job `1534346`, 12 h (the QOS ceiling; 24 h and 48 h are both
+rejected with `QOSMaxWallDurationPerJobLimit`).
+
+`1534301` failed after 36 s: `--layer_config` takes the JSON itself, not a
+path -- the parser runs `json.loads` on the argument value. Pass
+`"$(cat layer-config.json)"`.
+
+The 5.2 `extra_config` contains one malformed regex, `.*layers\\\.[0-2]\\\..*`,
+whose triple escaping means it matches no real module name. It is redundant
+with the `layers.0/1/2` rules beside it, so it is inert; kept verbatim for
+fidelity rather than cleaned up.
 
 auto-round has no native resume, so if 75 blocks do not fit in 12 h the
 fallback is chunking by block range: `--to_quant_block_names` scopes cleanly and

@@ -54,6 +54,8 @@ echo "output: ${out}"
 # Layers 3..77: every routed-expert block. The MTP head (78) is deliberately
 # left BF16 -- it is also absent from the HF graph, so this needs no exclusion.
 blocks="$(seq -s, -f 'model.layers.%g' 3 77)"
+# --layer_config takes the JSON itself, not a path: the parser runs
+# json.loads on the argument. Passing a filename fails in ~30 s.
 
 exec "${venv}/bin/auto-round" \
   --model_name "${src}" \
@@ -67,5 +69,5 @@ exec "${venv}/bin/auto-round" \
   --low_gpu_mem_usage \
   --device_map auto \
   --format "auto_round:auto_gptq" \
-  --layer_config "${here}/layer-config.json" \
+  --layer_config "$(cat "${here}/layer-config.json")" \
   --to_quant_block_names "${blocks}"
