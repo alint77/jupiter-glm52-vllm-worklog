@@ -48,9 +48,15 @@ Only routed expert MLPs carry `qweight`/`qzeros`/`scales`:
 | `layers.{0,1,2}.*` (dense) | BF16 |
 | `eh_proj`, `weights_proj` | BF16 |
 
-Layer 78 is the MTP block and **is** quantized. That is a concrete win over the
-NVFP4 checkpoint, which leaves it BF16 at 4.50 GiB per rank against W4G64's
-1.21 -- 3.29 GiB per rank the placement profile currently has to work around.
+**The MTP head (layer 78) is deliberately left BF16 here**, unlike the 5.2
+checkpoint which quantizes it. This is the one intentional departure from the
+recipe. It is also moot mechanically: transformers builds
+`range(num_hidden_layers)` = layers 0..77 and never reads
+`num_nextn_predict_layers`, so `model.layers.78` and `eh_proj` are absent from
+the model graph entirely (confirmed by meta-device instantiation, not inferred).
+5.2's own `block_name_to_quantize` lists only layers 3..77, so whatever produced
+its layer-78 weights ran outside the block-tuning loop -- which is also why
+`model.layers.78.mlp.gate` is the single explicit BF16 entry no regex covers.
 
 `layer-config.json` carries the ten generic BF16 regexes from the 5.2
 `extra_config` plus `model.layers.78.mlp.gate`, the one explicit entry no
@@ -64,6 +70,24 @@ those regexes at save time, not recipe information.
 - `quantize.sbatch` -- the Booster job
 - `glm52-recipe.json` -- the reference `quantization_config`, for diffing
 
+## Pre-flight
+
+- Download validated against the hub manifest: 282/282 shards, 59,585 tensors,
+  zero size mismatches, 1.507 TB.
+- `glm_moe_dsa` is native to transformers 5.12.1; `auto_map` is null and the
+  repo ships no `.py`, so no remote code is involved.
+- `NeelNanda/pile-10k` (auto-round's default calibration set) is pre-cached
+  under `HF_HOME`. `jupiter-env.sh` exports `HF_HUB_OFFLINE=1`, so an
+  un-cached fetch would fail in the first minute on the compute node.
+- The job unsets `VIRTUAL_ENV`/`PYTHONPATH` after sourcing `jupiter-env.sh`,
+  which activates the vLLM venv and would otherwise shadow the isolated one.
+
 ## Status
 
-BF16 download in progress. Quantization not yet launched.
+Stage 1 submitted as job `1534301`, 12 h (the QOS ceiling; 24 h and 48 h are
+both rejected with `QOSMaxWallDurationPerJobLimit`).
+
+auto-round has no native resume, so if 75 blocks do not fit in 12 h the
+fallback is chunking by block range: `--to_quant_block_names` scopes cleanly and
+per-run outputs cover disjoint tensors, so they can be merged. Extrapolate from
+the first blocks rather than discovering the wall at hour 12.

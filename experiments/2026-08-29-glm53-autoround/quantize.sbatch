@@ -5,7 +5,7 @@
 #SBATCH --ntasks=1
 #SBATCH --gres=gpu:4
 #SBATCH --cpus-per-task=288
-#SBATCH --time=24:00:00
+#SBATCH --time=12:00:00
 #SBATCH --job-name=glm53-autoround
 #SBATCH --output=agent_space/experiments/2026-08-29-glm53-autoround/slurm-%j.out
 #SBATCH --error=agent_space/experiments/2026-08-29-glm53-autoround/slurm-%j.err
@@ -22,8 +22,8 @@
 # Structure confirmed against the 5.2 weight index: only routed expert MLPs in
 # layers 3-78 carry qweight/qzeros/scales. Router gates, shared experts, all
 # attention including the DSA indexer, eh_proj and dense layers 0-2 stay BF16.
-# Layer 78 is the MTP block and IS quantized there -- worth 1.21 GiB per rank
-# against the 4.50 GiB the NVFP4 checkpoint spends leaving it BF16.
+# The 5.2 checkpoint quantizes the MTP block (78); this one does not, by
+# instruction. Layer 78 is also absent from the transformers graph anyway.
 
 set -euo pipefail
 
@@ -35,6 +35,10 @@ out=/e/fscratch/profound/naeimitabiei1/models/GLM-5.3-AutoRound-W4G64-MTP
 
 cd "${repo_dir}"
 source agent_space/jupiter-env.sh
+# jupiter-env.sh activates the vLLM venv and sets HF_HUB_OFFLINE=1. Drop the
+# venv vars so the isolated auto-round env wins; keep the offline flags -- the
+# calibration set (NeelNanda/pile-10k) is pre-cached under HF_HOME.
+unset VIRTUAL_ENV PYTHONPATH
 
 export HF_HOME=/e/fscratch/profound/naeimitabiei1/caches/hf
 export HF_DATASETS_CACHE="${HF_HOME}/datasets"
@@ -43,12 +47,13 @@ export CUDA_VISIBLE_DEVICES=0,1,2,3
 mkdir -p "${out}" "${HF_HOME}" "${TRITON_CACHE_DIR}"
 
 echo "node:   $(hostname)"
-echo "source: ${src}  ($(du -sh "${src}" 2>/dev/null | cut -f1))"
+echo "source: ${src}"
 echo "output: ${out}"
 "${venv}/bin/python" -c "import auto_round;print('auto_round', auto_round.__version__)"
 
-# Layers 3..78: the routed-expert blocks plus the MTP block.
-blocks="$(seq -s, -f 'model.layers.%g' 3 78)"
+# Layers 3..77: every routed-expert block. The MTP head (78) is deliberately
+# left BF16 -- it is also absent from the HF graph, so this needs no exclusion.
+blocks="$(seq -s, -f 'model.layers.%g' 3 77)"
 
 exec "${venv}/bin/auto-round" \
   --model_name "${src}" \
