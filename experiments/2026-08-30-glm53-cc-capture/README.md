@@ -82,4 +82,10 @@ they are many small files.
 ## Status
 
 - 2026-08-30: job 1535646 failed config validation at 81 s — submitted with
-  `--max-num-seqs 4`, which DCP1 forbids. Resubmitted at c=1 as job 1535650.
+  `--max-num-seqs 4`, which DCP1 forbids. Resubmitted at c=1 as job 1535650
+  (jpbo-003-41, ready in 8m31s).
+- 2026-08-30: capture verified end to end against a streaming request. One
+  `.npy` per request even when streaming — 300 output tokens produced a
+  single `[400, 78, 8]` uint8 trace (400 > 300 because rejected MTP draft
+  positions are recorded too), routes are real rather than the 0..7 identity
+  fallback, 217 distinct experts on layer 40 alone.
