@@ -1,0 +1,11 @@
+{
+  "name": "alint77-local",
+  "owner": { "name": "alint77" },
+  "plugins": [
+    {
+      "name": "vllm-tps",
+      "source": "./vllm-tps",
+      "description": "Live throughput readout for a self-hosted vLLM backend."
+    }
+  ]
+}

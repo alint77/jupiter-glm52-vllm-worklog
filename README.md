@@ -983,5 +983,6 @@ recorded in the result JSON files. Do not run model downloads from Booster.
 - `run-batch1-baseline.sh`: batch-one benchmark cases
 - `benchmarks/`: focused hardware and kernel microbenchmarks
 - `profiles/`: versioned physical machine profiles used by plan-only
+- `cc-plugins/`: Claude Code plugins for this work (see `cc-plugins/vllm-tps`)
 - `experiments/`: dated raw results and experiment notes
 - `gh200-vllm-w4a16-tiered-moe-plan-v2.md`: implementation plan beyond baseline

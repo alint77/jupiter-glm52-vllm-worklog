@@ -1,0 +1,7 @@
+{
+  "name": "vllm-tps",
+  "description": "Live throughput readout for a self-hosted vLLM backend: status line renderer plus a /tps snapshot command.",
+  "version": "0.1.0",
+  "author": { "name": "alint77" },
+  "keywords": ["vllm", "throughput", "statusline", "metrics"]
+}
