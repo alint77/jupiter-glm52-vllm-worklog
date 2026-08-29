@@ -1,0 +1,46 @@
+{
+  ".*eh_proj.*": {
+    "bits": 16,
+    "data_type": "float"
+  },
+  ".*layers\\.0\\..*": {
+    "bits": 16,
+    "data_type": "float"
+  },
+  ".*layers\\.1\\..*": {
+    "bits": 16,
+    "data_type": "float"
+  },
+  ".*layers\\.2\\..*": {
+    "bits": 16,
+    "data_type": "float"
+  },
+  ".*layers\\.[0-2]\\.mlp.*": {
+    "bits": 16,
+    "data_type": "float"
+  },
+  ".*layers\\\\\\.[0-2]\\\\\\..*": {
+    "bits": 16,
+    "data_type": "float"
+  },
+  ".*self_attn.*": {
+    "bits": 16,
+    "data_type": "float"
+  },
+  ".*self_attn\\.indexer.*": {
+    "bits": 16,
+    "data_type": "float"
+  },
+  ".*shared_experts.*": {
+    "bits": 16,
+    "data_type": "float"
+  },
+  ".*weights_proj.*": {
+    "bits": 16,
+    "data_type": "float"
+  },
+  "model.layers.78.mlp.gate": {
+    "bits": 16,
+    "data_type": "float"
+  }
+}
