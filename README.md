@@ -942,6 +942,25 @@ selector. Committed as `4349240546` on `dflash2-backport`, off the known-good
 base, with the production branch untouched. See the
 [DFlash2 backport](experiments/2026-08-28-dflash2-backport/README.md).
 
+Phase 44 re-derives the GLM-5.3 hot-expert ranking. Every 5.3 placement
+profile shipped so far carried GLM-5.2's ranking as an acknowledged placeholder:
+5.3 shares 5.2's base model but its post-training moved the router, and
+placement is quality-neutral, so the stale ranking cost throughput silently.
+A capture host on the NVFP4 checkpoint (V1 runner, no DCP, verification size 4
+-- the same three constraints the 2026-07-26 GLM-5.2 capture established)
+recorded **129,392 routed positions from 377 agentic coding traces** driven by a
+real tool-calling agent loop over 16 tasks against this tree. On the held-out
+split the shipped ranking scores 0.4047 cold-hit against the re-derived 0.2290,
+with a linear/even placement at 0.4977 -- **the GLM-5.2 ranking was recovering
+about a tenth of the gap between no ranking and a correct one**, and 37% of the
+resident set sat on the wrong experts. The residency strategy is not the cause:
+frequency, tail-aware, and layer-concentrated residency all converge to the same
+hot set. A strict task-family split (train 9, evaluate 7 unseen, no conversation
+crossing the split) reproduces the win on a third less data with 0.918 hot-set
+overlap, so this is GLM-5.3's router under coding traffic rather than an
+artefact of the task list. See the
+[GLM-5.3 routing capture](experiments/2026-08-29-glm53-routing-capture/README.md).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout
