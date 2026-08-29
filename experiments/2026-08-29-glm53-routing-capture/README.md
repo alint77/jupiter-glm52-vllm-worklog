@@ -168,3 +168,20 @@ launch on any layer that is wholly hot or wholly cold, and the re-derived
 profile uses per-expert residency. Both profiles in fact have 75 mixed layers
 and zero fully-hot layers, so that mechanism is absent from both and cannot
 explain the difference.
+
+## Resolved: +8.3% decode on real coding traffic
+
+`arm-realcode-short.sh`, three paired runs, c4/DCP4/MTP3, 512-token real code
+prompts and 1024-token generations (no prefill stalls, real content):
+
+| pair | re-derived | GLM-5.2 | delta |
+| --- | --- | --- | --- |
+| 1 | 197.6 | 184.5 | +7.07% |
+| 2 | 191.2 | 177.9 | +7.44% |
+| 3 | 203.2 | 184.1 | +10.38% |
+
+**197.3 +/- 6.0 against 182.2 +/- 3.7 tok/s aggregate, paired delta +8.30%
++/- 1.81%**, same sign in all three pairs. The routing improvement does convert
+to throughput; the earlier null and negative results were the 16K prefill
+contamination and the synthetic-token dataset respectively. `replicas-985.json`
+is worth shipping.
