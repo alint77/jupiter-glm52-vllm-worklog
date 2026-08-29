@@ -100,3 +100,27 @@ auto-round has no native resume, so if 75 blocks do not fit in 12 h the
 fallback is chunking by block range: `--to_quant_block_names` scopes cleanly and
 per-run outputs cover disjoint tensors, so they can be merged. Extrapolate from
 the first blocks rather than discovering the wall at hour 12.
+
+## Halted 2026-08-29
+
+Cancelled at 39 min: Intel is expected to publish an official GLM-5.3 AutoRound
+release within a day or two, which makes producing one locally redundant.
+
+State at cancellation, if this is ever resumed:
+
+- `zai-org/GLM-5.3-BF16` is downloaded and validated on fscratch (1.507 TB,
+  282/282 shards, zero size mismatches against the hub manifest). Keep it.
+- Job `1534346` ran 39 min without tuning a single block. It loaded 58,794
+  weights in 25 s, then sat in `cache block inputs` with ~182 CPU cores
+  saturated, RSS climbing 26 -> 55 GB, and **all four GPUs at 3 MiB / 0%**.
+  That idle-GPU signal was unexplained when the job was stopped and is the
+  first thing to chase on any resume: with `--device_map auto` and a 1.5 TB
+  model against 380 GB of HBM, the calibration forward may have been running
+  on CPU, which would not have finished inside the 12 h QOS ceiling.
+- Everything else is ready and verified: recipe, layer keep-list (the four
+  load-bearing regexes confirmed matching in the live log), pre-cached
+  pile-10k, isolated venv, and `verify_output.py` self-tested against the 5.2
+  checkpoint.
+
+When the Intel release lands, prefer it and use `verify_output.py` to confirm
+its structure matches the 5.2 recipe before adopting it.
