@@ -73,6 +73,53 @@ size a small effect.
 This run therefore isolates format and kernel speed. If W4A16 holds up, the
 follow-up is to spend those 3.5 GB per rank on more hot slots.
 
-## Status
+## Four things blocked the load
 
-Jobs `1534564`-`1534569` submitted.
+Each was found by a job failing on the cluster, so they are listed in the order
+they surfaced. Only the last is a genuine bug; the rest were guards stricter
+than the kernel.
+
+1. **`group_size == 128` in four places** (manifest, both conversion gates,
+   Marlin construction). Marlin supports `[-1, 32, 64, 128]`,
+   `_w2_scale_sharding` branches only on `actorder`, and `runtime_expert_bytes`
+   derives from stored sizes. Widened to Marlin's set.
+2. **`total_size` truncation guard.** The published index overstates it by
+   21,739,848 bytes. The checkpoint is complete -- 176,321 tensors in the index
+   and on disk, no missing or extra, every shard byte-exact against the hub --
+   so the local metadata was corrected rather than the guard weakened.
+   `index-original.json` keeps the published version.
+3. **Pinned per-component `(shape, dtype)` tables.** `weight_scale` exists in
+   both the compressed-tensors and NVFP4 layouts, so shape is the
+   discriminator, and group 32 moves `down_proj.weight_scale` from (6144, 16)
+   to (6144, 64). Adding one table per group was not enough on its own: the
+   group tables share identical `weight_packed` and `weight_shape` entries, so
+   those components matched three tables at once and tripped the ambiguity
+   guard (three tests caught this). The stager now narrows candidates as
+   components arrive and requires a unique survivor at completion; every expert
+   carries three `weight_scale` tensors, so uniqueness is always reached.
+4. **`allocate_layer_expert_storage(group_size: int = 128)`** -- a real latent
+   bug. AutoRound and ModelOpt pass the group size explicitly from their quant
+   config; the compressed-tensors path alone took the default. Invisible while
+   every such checkpoint was group 128, but it sized the final Marlin storage
+   for 128 against group-32 weights. The default is removed so every call site
+   must be explicit.
+
+Storage layouts now agree with the manifests at every group size: g16
+21,233,680, g32 21,233,672, g64 20,054,024, g128 19,464,200.
+
+## Results
+
+NVFP4 baseline, three runs, c4/DCP4/MTP3 on the real-code decode suite:
+
+| run | aggregate | per-request |
+| --- | --- | --- |
+| nvfp4-r1 | 189.0 | 47.2 |
+| nvfp4-r2 | 196.1 | 49.0 |
+| nvfp4-r3 | 197.6 | 49.4 |
+
+**194.2 +/- 4.7 tok/s aggregate.** This reproduces the 197.3 +/- 6.0 measured
+for the same checkpoint in the routing-capture experiment, so the baseline is
+stable across sessions and nodes.
+
+W4A16 pending: `1534564`-`1534569` failed on issue 3, `1534577`-`1534579` on
+issue 4, `1534697`-`1534699` are the third attempt.
