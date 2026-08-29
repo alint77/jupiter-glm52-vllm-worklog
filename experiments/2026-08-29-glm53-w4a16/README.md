@@ -169,3 +169,43 @@ requests sharing one static prefix; a Claude Code session is a single
 conversation extending its own prefix. Those exercise the cache differently.
 What is certain is that prod runs with prefix caching enabled and starts a
 fresh server per session, so it lands in the affected window.
+
+## Root cause narrowed, not closed
+
+| speculator | prefix cache | warmup | first-pass GSM8K |
+| --- | --- | --- | --- |
+| MTP3 | on | yes | 0.586 / 0.563 (NVFP4) |
+| MTP3 | on | **no** | 0.582 |
+| MTP3 | off | yes | 0.914 |
+| none | on | yes | 0.906 / 0.914 / 0.906 |
+
+Both MTP and prefix caching are required. The 8-question warmup is irrelevant
+(0.582 without it), which kills the cache-poisoning hypothesis. The tiered path
+is equally cold in the no-speculator arm, so cold-tier first touch is out too.
+
+### The losslessness test is blocked by nondeterminism
+
+MTP is lossless by construction at temperature 0, so an accuracy drop implies
+the verifier accepts tokens the target would not emit. Comparing completions
+between an MTP server and a no-speculator server gave 63/64 differing -- but
+**the control gives 60/64 differing between two passes on the same MTP
+server**. This build is not reproducible run to run at temperature 0, so text
+diffing cannot see the effect.
+
+That also retracts `repro_prefix_cache.py`'s finding: what it labelled "prefix
+cache changes greedy output" was this same nondeterminism, and its verdict
+string fires on the arm where caching is disabled.
+
+Accuracy over 256 questions is a statistical measure and survives per-token
+jitter -- a 33pp gap is not formatting noise -- so the effect is real even
+though the token-level test cannot resolve it.
+
+Closing it needs logit-level instrumentation: capture the target's argmax at
+each accepted position and assert it equals the accepted token. That is an
+engine patch, not another benchmark.
+
+### Separately
+
+Greedy decoding is not reproducible across identical requests (60/64 differ on
+one server, temperature 0). That is a defect in its own right and independent
+of everything above.

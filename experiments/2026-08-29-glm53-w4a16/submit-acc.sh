@@ -12,5 +12,5 @@ cp "${here}/${ACC_ARM:-arm-gsm8k-3rep.sh}" "${snap}"
 sbatch --account=profound --partition=booster --nodes=1 --ntasks=1 --gres=gpu:4 \
   --cpus-per-task=288 --time=03:00:00 --job-name="${label}" \
   --output="${here}/slurm-${label}-%j.out" --error="${here}/slurm-${label}-%j.err" \
-  --wrap "DISABLE_PREFIX_CACHE=${nopc} srun --nodes=1 --ntasks=1 --cpus-per-task=288 \
+  --wrap "DISABLE_PREFIX_CACHE=${nopc} SKIP_WARMUP=${SKIP_WARMUP:-0} MODE=${MODE:-mtp3} srun --nodes=1 --ntasks=1 --cpus-per-task=288 \
             --gres=gpu:4 --mem=0 bash ${snap} ${label} ${MODE:-mtp3} ${profile} ${model}"
