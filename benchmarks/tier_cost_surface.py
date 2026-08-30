@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+
 """Measure the tiered-MoE cost surface t(hot, cold, tokens) under graph replay.
 
 The placement optimiser prices a layer as a linear cost in cold experts, and
@@ -34,6 +37,7 @@ from pathlib import Path
 
 import torch
 
+from vllm import _custom_ops as ops
 from vllm.model_executor.layers.fused_moe.activation import MoEActivation
 from vllm.model_executor.layers.fused_moe.experts.marlin_moe import (
     MarlinLaunchPolicy,
@@ -43,7 +47,6 @@ from vllm.model_executor.layers.quantization.utils.marlin_utils import (
     marlin_make_workspace_new,
 )
 from vllm.model_executor.offloader.grace import GraceAllocation
-from vllm import _custom_ops as ops
 from vllm.scalar_type import scalar_types
 
 HIDDEN = 6144
@@ -57,7 +60,9 @@ GROUP_SIZE = 32
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--hot", type=int, nargs="+", default=[2, 4, 8, 12, 16, 20, 24])
-    parser.add_argument("--cold", type=int, nargs="+", default=[0, 1, 2, 3, 4, 6, 8, 12])
+    parser.add_argument(
+        "--cold", type=int, nargs="+", default=[0, 1, 2, 3, 4, 6, 8, 12]
+    )
     parser.add_argument("--tokens", type=int, nargs="+", default=[4, 16])
     parser.add_argument("--warmups", type=int, default=10)
     parser.add_argument("--iterations", type=int, default=60)
@@ -108,7 +113,11 @@ def to_grace(tensors, numa_node: int):
 
 
 def make_tier(
-    weights, ids: list[int], blocks_per_sm: int, m: int, device: torch.device,
+    weights,
+    ids: list[int],
+    blocks_per_sm: int,
+    m: int,
+    device: torch.device,
     overlap_max_tokens: int,
 ) -> Tier:
     expert_map = torch.full((NUM_EXPERTS,), -1, dtype=torch.int32, device=device)
@@ -124,7 +133,9 @@ def make_tier(
         # launch policy shrinks the grid but not the workspace the GEMM asserts on.
         workspace=marlin_make_workspace_new(device, 4),
         cache13=torch.empty(m * TOPK * HIDDEN, dtype=torch.bfloat16, device=device),
-        cache2=torch.empty((m * TOPK, INTERMEDIATE), dtype=torch.bfloat16, device=device),
+        cache2=torch.empty(
+            (m * TOPK, INTERMEDIATE), dtype=torch.bfloat16, device=device
+        ),
         output=torch.empty((m, HIDDEN), dtype=torch.bfloat16, device=device),
         policy=MarlinLaunchPolicy(
             smem_mode=ops.MARLIN_SMEM_TIGHT,
@@ -209,17 +220,25 @@ def main() -> None:
                 cold_ids = list(range(128, 128 + c))
                 targets = hot_ids + cold_ids
                 flat = [targets[i % len(targets)] for i in range(m * TOPK)]
-                topk_ids = torch.tensor(
-                    flat, dtype=torch.int32, device=device
-                ).view(m, TOPK)
+                topk_ids = torch.tensor(flat, dtype=torch.int32, device=device).view(
+                    m, TOPK
+                )
 
                 hot_tier = make_tier(
-                    tuple(t[:h] for t in hot_weights_all), hot_ids, 2, m, device,
+                    tuple(t[:h] for t in hot_weights_all),
+                    hot_ids,
+                    2,
+                    m,
+                    device,
                     args.overlap_max_tokens,
                 )
                 cold_tier = (
                     make_tier(
-                        tuple(t[:c] for t in cold_weights_all), cold_ids, 1, m, device,
+                        tuple(t[:c] for t in cold_weights_all),
+                        cold_ids,
+                        1,
+                        m,
+                        device,
                         args.overlap_max_tokens,
                     )
                     if c
@@ -228,12 +247,14 @@ def main() -> None:
 
                 hot_us = graph_time_us(
                     lambda: call(hot_tier, hidden, topk_ids, topk_weights),
-                    args.warmups, args.iterations,
+                    args.warmups,
+                    args.iterations,
                 )
                 cold_us = (
                     graph_time_us(
                         lambda: call(cold_tier, hidden, topk_ids, topk_weights),
-                        args.warmups, args.iterations,
+                        args.warmups,
+                        args.iterations,
                     )
                     if c
                     else 0.0
@@ -242,16 +263,23 @@ def main() -> None:
                 if c:
                     side = torch.cuda.Stream()
 
-                    def union():
+                    def union(
+                        s=side,
+                        ht=hot_tier,
+                        ct=cold_tier,
+                        h=hidden,
+                        i=topk_ids,
+                        w=topk_weights,
+                    ):
                         main_stream = torch.cuda.current_stream()
                         fork = torch.cuda.Event()
                         fork.record(main_stream)
-                        side.wait_event(fork)
-                        with torch.cuda.stream(side):
-                            call(cold_tier, hidden, topk_ids, topk_weights)
+                        s.wait_event(fork)
+                        with torch.cuda.stream(s):
+                            call(ct, h, i, w)
                             join = torch.cuda.Event()
-                            join.record(side)
-                        call(hot_tier, hidden, topk_ids, topk_weights)
+                            join.record(s)
+                        call(ht, h, i, w)
                         main_stream.wait_event(join)
 
                     union_us = graph_time_us(union, args.warmups, args.iterations)
