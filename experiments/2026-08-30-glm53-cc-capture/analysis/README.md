@@ -152,3 +152,91 @@ prices it at 1.205x: routed span 10.884 -> 10.044 ms at c1 (-0.840) and 26.504
 
 Ship it only on the A/B. `submit-profile-ab.sh` runs three pairs, both arms in
 one allocation, alternating which goes first.
+
+## 7. What the planner optimises, and what it should
+
+The planner's objective is the **cold critical path**: per token, per layer, the
+max over EP ranks of that rank's cold expert count, summed over layers
+(`_route_state` -> `cold_counts.max(axis=2).sum(axis=1)` -> `_tail_objective`).
+Hot never enters it. It already takes a max across EP *ranks*; it does not take
+one across *tiers*.
+
+But the tiers overlap -- `_TIER_BLOCKS_PER_SM = {"hot": 2, "cold": 1}` splits SM
+shared memory so hot and cold Marlin run concurrently -- so the real per-layer
+cost is closer to `max(t_hot * H, t_cold * C)`. With the Phase 32 per-expert
+costs of 9.75 us hot and 45.32 us cold, the two tiers balance at a **cold
+fraction of 17.7%**. Below it, cold is hidden entirely and a cold expert is
+free; above it, cold sets the step and hot is free.
+
+`tier_balance.py` scores placements under that model, over the distinct experts
+in a simulated step rather than per-token sums, since an expert activated by
+several tokens in one step is staged and executed once.
+
+### At today's operating point the two objectives agree
+
+c4/MTP3, 300 sampled steps, held-out and training traces:
+
+| | shipped | real usage | change |
+| --- | ---: | ---: | ---: |
+| planner objective (cold only) | 611.9 | 518.7 | **-15.2%** |
+| max(hot, cold) step model | 27,748 us | 23,664 us | **-14.7%** |
+| layers cold-bound | 75 / 75 | 74 / 75 | |
+| mean cold/hot ratio | 2.42 | 1.93 | |
+| hot work hidden under cold | 16 us/step | 156 us/step | |
+
+The two agree to half a percentage point, because at 2496 slots **every layer is
+cold-bound by roughly 2x**. While cold dominates, `max(hot, cold)` reduces to the
+cold term and the planner's objective is a faithful proxy. The new profile is
+not misdirected by the simpler objective.
+
+### The objectives diverge sharply on the slot-budget question
+
+| slots/rank | cold-only | max-model (c4) | cold/hot | cold-bound layers |
+| ---: | ---: | ---: | ---: | ---: |
+| 1200 | 1014.6 | 45,981 us | 6.33 | 75/75 |
+| 2400 | 548.4 | 24,911 us | 2.08 | 75/75 |
+| 2496 | 516.4 | 23,552 us | 1.92 | 74/75 |
+| 3000 | 360.2 | 18,197 us | 1.22 | 61/75 |
+| **3600** | 203.3 | **15,732 us** | 0.63 | 0/75 |
+| 4200 | 78.7 | 16,118 us | 0.23 | 0/75 |
+| 4800 | 0.0 | 16,476 us | 0.00 | 0/75 |
+
+**The cold-only objective falls monotonically to zero; the max model has an
+interior minimum near 3600 and rises after it.** That is the whole difference.
+Past balance, converting a cold expert to hot adds 9.75 us to the tier that
+*is* the critical path and removes 45.32 us from one that is already hidden --
+strictly harmful. An optimiser told to minimise cold hits will happily spend
+HBM to make the step slower, and will report that it succeeded.
+
+### Where the model is wrong, and it matters
+
+The measured sweep is 2400 -> 213.1, 2496 -> 214.8, **3000 -> 205.2 tok/s**. The
+model gets 2400 -> 2496 right (-5.5% step time) but predicts 3000 should be
+*better* still, and it measured worse. So the interior optimum is real but the
+model does not locate it: something at 3000 costs throughput that
+`max(t_hot*H, t_cold*C)` does not capture -- most likely HBM pressure against the
+KV pin and the tiered reserve, which is a capacity effect rather than a
+scheduling one.
+
+Absolute times are also uncalibrated. The model puts the c1 routed span at 8,865
+us where 2026-08-01 measured about 23 ms, though that measurement was at a much
+lower residency (its own row here is between the 1200 and 1800 slot entries), so
+the discrepancy is consistent rather than damning. **Only the ratio matters for
+the balance point**, and the ratio is a direct measurement.
+
+### What would actually change
+
+1. **Objective**: `max(t_hot*H, t_cold*C)` per layer per rank, over the distinct
+   experts in a step, replacing the per-token cold sum.
+2. **Slot budget becomes a decision variable** with an interior optimum, instead
+   of "as many as fit". This is the same non-monotonicity Phase 46 measured and
+   could not explain.
+3. **Per-layer allocation stops being uniform in value.** A slot in a hot-bound
+   layer is worth nothing; the current optimiser cannot see that and keeps
+   feeding it. At 3000 slots, 14 of 75 layers have already crossed over.
+4. **Replicas only pay on cold-bound ranks**, so the replica oracle inherits the
+   same correction.
+
+None of this changes the profile just built -- at 2496 slots the objectives
+agree to 0.5pp. It changes what to do next, and it is the missing half of the
+Phase 46 hot-slot question.

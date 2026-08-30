@@ -1,0 +1,36 @@
+{
+  "balance_cold_fraction": 0.17704739422553115,
+  "concurrency": 4,
+  "profiles": {
+    "realusage": {
+      "layers_cold_bound": 74,
+      "layers_hot_bound": 1,
+      "max_cold_over_hot_ratio": 2.6694380745605373,
+      "mean_cold_over_hot_ratio": 1.9346183286755085,
+      "median_cold_over_hot_ratio": 1.972438776333843,
+      "min_cold_over_hot_ratio": 0.8809348933166056,
+      "planner_objective_cold_only": 518.7133333333334,
+      "step_us_if_cold_free": 12425.985,
+      "step_us_if_serial": 35934.07326666666,
+      "step_us_max_model": 23663.61283333334,
+      "wasted_hot_us_per_step": 155.52456666666666
+    },
+    "shipped": {
+      "layers_cold_bound": 75,
+      "layers_hot_bound": 0,
+      "max_cold_over_hot_ratio": 3.4224321906076662,
+      "mean_cold_over_hot_ratio": 2.417071960964724,
+      "median_cold_over_hot_ratio": 2.452433444816055,
+      "min_cold_over_hot_ratio": 1.3999102910915344,
+      "planner_objective_cold_only": 611.9166666666666,
+      "step_us_if_cold_free": 11702.665,
+      "step_us_if_serial": 39434.728333333325,
+      "step_us_max_model": 27748.42563333335,
+      "wasted_hot_us_per_step": 16.3623
+    }
+  },
+  "steps": 300,
+  "t_cold_us": 45.32,
+  "t_hot_us": 9.75,
+  "tokens_per_step": 4
+}
