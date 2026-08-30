@@ -1,0 +1,15 @@
+{
+  "label": "rope-neox",
+  "requests": 64,
+  "wall_s": 178.87,
+  "acceptance_length_mean": 3.9381,
+  "acceptance_length_median": 3.9271,
+  "acceptance_length_pooled": 3.8652,
+  "mean_completion_tokens": 253.2,
+  "total_completion_tokens": 16204,
+  "tokens_per_second": 90.59,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "max_tokens": 4096,
+  "protocol": "DFlash2 card: chat template, natural EOS, T=1.0 top_p=0.95"
+}

@@ -251,3 +251,65 @@ DCP/tiered; never piecemeal).
 - This audit's transcript: gh census of 40 merged + 30 open dflash-matching
   PRs, 2026-08-30; direct git diffs `HEAD..origin/main` over the DFlash
   pathspec.
+
+---
+
+# Results (2026-08-30, same day)
+
+## P1: the RoPE hypothesis is refuted
+
+Job 1537299, both arms on one node (jpbo-002-16), Phase 43's harness unchanged:
+GLM-5.3-NVFP4, DFlash2 width 7, GSM8K, T=1.0, top-p 0.95, 64 samples.
+
+| arm | acceptance (mean) | median | pooled |
+| --- | ---: | ---: | ---: |
+| `rope-neox` — this fork's behaviour | **3.9381** | 3.9271 | 3.8652 |
+| `rope-interleaved` — copied from the target | **1.9174** | 1.9126 | 1.9029 |
+| Phase 43 post-fix (reproduction gate) | 4.0293 | | |
+| our MTP7 control, same width | 4.9121 | | |
+| card, SGLang/GB300 | 5.94 | | |
+
+The NeoX arm reproduces Phase 43 to within 2.3%, so the pair is valid rather
+than two unrelated runs. **Copying the target's layout halves acceptance.**
+
+The audit was right that this fork diverges from upstream #51655, and wrong
+about the direction: the draft was trained NeoX, as its own config says
+(`model_type: qwen3`, `rope_type: default`), even though every rotary in the
+DeepseekV2-derived target is interleaved. Upstream's copy is correct for a
+draft trained against its target's layout and wrong for this checkpoint.
+
+This was the audit's own stated decisive outcome — *"if it collapses, NeoX was
+right and the gap is elsewhere"* — so hypothesis 1 of 4 is retired with
+evidence. **The 32% gap is elsewhere.** The next candidate is unchanged:
+aux-tap semantics at layers [5, 19, 33, 47, 61, 75], pre-norm versus
+post-residual, never diffed against what training consumed.
+
+Committed as `be382fe44d` (the port) then `21644f8b9c` (NeoX restored as the
+default, upstream's behaviour kept behind `VLLM_DFLASH_DRAFT_ROPE=target`).
+Keeping the plumbing is deliberate: the question is real for other targets, and
+the measurement is recorded beside the code so upstream's copy is not
+re-adopted on parity grounds alone.
+
+## P2: shipped
+
+`num_speculative_tokens` added to `SpeculativeConfig.compute_hash()` for
+dflash/dspark (`8a0f60ddd8`). The test is verified to fail without the fix:
+widths 7 and 8 both hashed to `c3d9d001b44d…` before it.
+
+## Two harness defects found on the way, both caught before they produced a number
+
+1. **`RESULT_DIR` also redirected the harness.** `arm-replicate.sh` resolved
+   `replicate_dflash2_eval.py` relative to the results directory, so redirecting
+   output moved the script. Split into `script_dir` and `result_dir`.
+2. **A dying server answers `/health`.** Two arms in one allocation share port
+   8027, and the second arm declared readiness against the first arm's
+   shutting-down server — its own server log was still zero bytes. With defect 1
+   fixed and this one left, the interleaved arm would have been measured against
+   the NeoX server and returned a plausible number for a run that never
+   happened. The arm now waits for the port to go quiet before trusting
+   `/health`.
+
+Both were caught only because `load_dflash_model` logs the layout it chose and
+its source, which made "this arm did not run my code" visible instead of
+inferable. Any future arm that selects behaviour by environment should log the
+selection the same way.
