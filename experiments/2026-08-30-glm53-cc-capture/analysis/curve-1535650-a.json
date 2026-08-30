@@ -1,0 +1,54 @@
+{
+  "shipped_profile_heldout": 0.2791368731705748,
+  "curve": [
+    {
+      "train_requests": 15,
+      "mean_routed_positions": 14984.0,
+      "heldout_cold_hit_mean": 0.2166244732863714,
+      "heldout_cold_hit_stdev": 0.011561247375364852,
+      "hot_set_overlap_with_full": 0.9242788461538461
+    },
+    {
+      "train_requests": 25,
+      "mean_routed_positions": 16559.2,
+      "heldout_cold_hit_mean": 0.2169562304995336,
+      "heldout_cold_hit_stdev": 0.0040683505320468025,
+      "hot_set_overlap_with_full": 0.9287259615384617
+    },
+    {
+      "train_requests": 40,
+      "mean_routed_positions": 30895.2,
+      "heldout_cold_hit_mean": 0.21230677249187818,
+      "heldout_cold_hit_stdev": 0.004602698535757272,
+      "hot_set_overlap_with_full": 0.9519030448717949
+    },
+    {
+      "train_requests": 55,
+      "mean_routed_positions": 41068.0,
+      "heldout_cold_hit_mean": 0.2127941152819325,
+      "heldout_cold_hit_stdev": 0.003654368662581325,
+      "hot_set_overlap_with_full": 0.968369391025641
+    },
+    {
+      "train_requests": 70,
+      "mean_routed_positions": 53848.8,
+      "heldout_cold_hit_mean": 0.21073135996654768,
+      "heldout_cold_hit_stdev": 0.0013213755632343145,
+      "hot_set_overlap_with_full": 0.9686298076923077
+    },
+    {
+      "train_requests": 85,
+      "mean_routed_positions": 64300.0,
+      "heldout_cold_hit_mean": 0.2110368538711441,
+      "heldout_cold_hit_stdev": 0.0013445340127201386,
+      "hot_set_overlap_with_full": 0.9833733974358975
+    },
+    {
+      "train_requests": 105,
+      "mean_routed_positions": 78892.0,
+      "heldout_cold_hit_mean": 0.21031417864839655,
+      "heldout_cold_hit_stdev": 0.0,
+      "hot_set_overlap_with_full": 1.0
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "concentration": {
+    "top_128_share": {
+      "max_layer": 0.8546126105165193,
+      "mean": 0.7795789292915863,
+      "min_layer": 0.6010966479425647
+    },
+    "top_160_share": {
+      "max_layer": 0.9233416289968757,
+      "mean": 0.8670183529437833,
+      "min_layer": 0.7187437678654524
+    },
+    "top_16_share": {
+      "max_layer": 0.2978700641494383,
+      "mean": 0.21303362305834386,
+      "min_layer": 0.09762015555407831
+    },
+    "top_192_share": {
+      "max_layer": 0.9704866881606062,
+      "mean": 0.9332585477187619,
+      "min_layer": 0.8263851957721199
+    },
+    "top_32_share": {
+      "max_layer": 0.43227747124908594,
+      "mean": 0.34106616588003275,
+      "min_layer": 0.18203026324536328
+    },
+    "top_64_share": {
+      "max_layer": 0.6183742022867779,
+      "mean": 0.5282925751733918,
+      "min_layer": 0.33561602572625143
+    }
+  },
+  "corpus": {
+    "expert_activations": 72206400,
+    "positions_per_request": {
+      "max": 11812,
+      "mean": 859.6,
+      "median": 526.0,
+      "min": 16,
+      "p90": 1943.200000000004
+    },
+    "requests": 140,
+    "routed_positions": 120344
+  },
+  "dead_experts": {
+    "layers_with_any": 2,
+    "max_per_layer": 1,
+    "mean_per_layer": 0.02666666666666667
+  },
+  "gini": {
+    "argmax_layer": 32,
+    "argmin_layer": 3,
+    "max": 0.523397648420881,
+    "mean": 0.4115302886283279,
+    "min": 0.14470170050282938
+  },
+  "profiles": {
+    "shipped-2496": {
+      "even_placement_heldout": 0.4748650648139213,
+      "frequency_reranked_heldout": 0.21031417864839655,
+      "heldout": 0.2791368731705748,
+      "hot_experts": 9984,
+      "hot_set_overlap": 0.7957732371794872,
+      "train": 0.26538273842721694
+    }
+  },
+  "split": {
+    "heldout": 35,
+    "train": 105
+  }
+}

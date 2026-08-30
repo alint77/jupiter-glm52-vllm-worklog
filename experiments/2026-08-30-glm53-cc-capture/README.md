@@ -89,3 +89,9 @@ they are many small files.
   single `[400, 78, 8]` uint8 trace (400 > 300 because rejected MTP draft
   positions are recorded too), routes are real rather than the 0..7 identity
   fallback, 217 distinct experts on layer 40 alone.
+- 2026-08-30: 43 minutes of real use gave 140 usable traces and 120,344
+  routed positions, 93% of the entire Phase 44 synthetic corpus. Analysis in
+  [`analysis/`](analysis/README.md): re-ranking on real usage cuts held-out
+  cold-hit 0.2791 -> 0.2103 (-24.6%), the shipped ranking degrades 22% when
+  moved from its own synthetic split to real traffic, and the learning curve
+  has converged — 15 requests recover 92% of the win. **Capture can stop.**
