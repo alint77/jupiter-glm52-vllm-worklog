@@ -191,6 +191,14 @@ not misdirected by the simpler objective.
 
 ### The objectives diverge sharply on the slot-budget question
 
+**Withdrawn 2026-08-30.** The table below treats hot slots per rank as a
+decision variable. It is not one in the shipped configuration:
+`tiered_moe_planner.py:368` sets residency from available HBM and only honours
+the profile's count when `VLLM_TIERED_MOE_PROFILE_CAP=1`, which nothing sets.
+The sweep and the interior optimum near 3600 describe a knob the system does
+not expose. Kept for the shape of the argument, which still holds if the count
+is ever made binding.
+
 | slots/rank | cold-only | max-model (c4) | cold/hot | cold-bound layers |
 | ---: | ---: | ---: | ---: | ---: |
 | 1200 | 1014.6 | 45,981 us | 6.33 | 75/75 |
@@ -228,9 +236,10 @@ the balance point**, and the ratio is a direct measurement.
 
 1. **Objective**: `max(t_hot*H, t_cold*C)` per layer per rank, over the distinct
    experts in a step, replacing the per-token cold sum.
-2. **Slot budget becomes a decision variable** with an interior optimum, instead
-   of "as many as fit". This is the same non-monotonicity Phase 46 measured and
-   could not explain.
+2. **Slot budget would become a decision variable** with an interior optimum,
+   instead of "as many as fit" -- but only once `VLLM_TIERED_MOE_PROFILE_CAP=1`
+   makes the count binding. Today it is not, and the Phase 46 non-monotonicity
+   this pointed at has itself been withdrawn.
 3. **Per-layer allocation stops being uniform in value.** A slot in a hot-bound
    layer is worth nothing; the current optimiser cannot see that and keeps
    feeding it. At 3000 slots, 14 of 75 layers have already crossed over.

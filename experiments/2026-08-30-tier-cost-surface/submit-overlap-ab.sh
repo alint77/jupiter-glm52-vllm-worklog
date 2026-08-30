@@ -14,12 +14,14 @@ repo=/e/project1/profound/alint77/vllm
 here="${repo}/agent_space/experiments/2026-08-30-tier-cost-surface"
 arm="${here}/arm-overlap-ab.sh"
 model="${TIERED_MODEL_DIR:-/e/fscratch/profound/${USER:-$(id -un)}/models/GLM-5.3-W4A16}"
-# 2400, not the shipped 2496: overlapping at prefill scale needs both tiers'
-# workspaces live at once (`get_simultaneous`), about 1.6 GB per rank more
-# than reusing one sequentially, and the 2496 profile is sized to fit
-# exactly -- the new arm cannot boot under it. 96 fewer slots frees ~2.0 GB.
-# Both arms use the same profile, so the comparison stays fair.
-profile="${PROFILE:-${repo}/agent_space/profiles/glm53-w4a16-2400.json}"
+# The shipped profile. Its slot count is NOT what sets residency: the planner
+# computes hot_slots = min(all owned, available_hbm / expert_bytes) and then
+# pads or trims the profile's list to match (_promote_underfilled_residency /
+# _demote_overfilled_residency). VLLM_TIERED_MOE_PROFILE_CAP would make the
+# count binding, and nothing sets it -- not the arms, not prod. So swapping
+# 2496 for 2400 frees no HBM, which is why the previous attempt failed
+# identically.
+profile="${PROFILE:-${repo}/agent_space/profiles/glm53-w4a16-2496.json}"
 pairs="${1:-3}"
 
 [[ -s "${arm}" ]] || { printf 'missing arm: %s\n' "${arm}" >&2; exit 1; }
@@ -30,19 +32,19 @@ cp "${arm}" "${snap}"
 
 for ((i = 1; i <= pairs; i++)); do
   if (( i % 2 == 1 )); then
-    first="old-r${i}"; first_env="VLLM_TIERED_MOE_OVERLAP_MAX_TOKENS=16"
-    second="new-r${i}"; second_env="env -u VLLM_TIERED_MOE_OVERLAP_MAX_TOKENS"
+    first="old${NEW_CAP:-8192}-r${i}"; first_env="VLLM_TIERED_MOE_OVERLAP_MAX_TOKENS=16"
+    second="new${NEW_CAP:-8192}-r${i}"; second_env="VLLM_TIERED_MOE_OVERLAP_MAX_TOKENS=${NEW_CAP:-8192}"
   else
-    first="new-r${i}"; first_env="env -u VLLM_TIERED_MOE_OVERLAP_MAX_TOKENS"
-    second="old-r${i}"; second_env="VLLM_TIERED_MOE_OVERLAP_MAX_TOKENS=16"
+    first="new${NEW_CAP:-8192}-r${i}"; first_env="VLLM_TIERED_MOE_OVERLAP_MAX_TOKENS=${NEW_CAP:-8192}"
+    second="old${NEW_CAP:-8192}-r${i}"; second_env="VLLM_TIERED_MOE_OVERLAP_MAX_TOKENS=16"
   fi
   sbatch --account=profound --partition=booster --nodes=1 --ntasks=1 \
     --gres=gpu:4 --cpus-per-task=288 --time=04:00:00 \
-    --job-name="tier-overlap-ab-r${i}" \
-    --output="${here}/slurm-overlap-ab-r${i}-%j.out" \
-    --error="${here}/slurm-overlap-ab-r${i}-%j.err" \
-    --wrap "TIERED_MODEL_DIR=${model} RESULT_DIR=${here}/ab ${first_env} \
+    --job-name="tier-ab-${NEW_CAP:-8192}-r${i}" \
+    --output="${here}/slurm-ab-${NEW_CAP:-8192}-r${i}-%j.out" \
+    --error="${here}/slurm-ab-${NEW_CAP:-8192}-r${i}-%j.err" \
+    --wrap "TIERED_MODEL_DIR=${model} RESULT_DIR=${here}/ab TIERED_MOE_HBM_RESERVE_GB=${RESERVE_GB:-9} ${first_env} \
               bash ${snap} ${first} 4 ${profile} mtp3
-            TIERED_MODEL_DIR=${model} RESULT_DIR=${here}/ab ${second_env} \
+            TIERED_MODEL_DIR=${model} RESULT_DIR=${here}/ab TIERED_MOE_HBM_RESERVE_GB=${RESERVE_GB:-9} ${second_env} \
               bash ${snap} ${second} 4 ${profile} mtp3"
 done

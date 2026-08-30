@@ -47,7 +47,7 @@ matters more than the number: do not compare rows.
 | 16K-in / 512-out PyTorch coding, c4 | 265.2 tok/s decode aggregate, 70.98 end to end | 33 |
 | Real-code decode suite, c4/DCP4/MTP3, GLM-5.3 NVFP4 | 194.2 +/- 4.6 tok/s aggregate, 20.60 ms TPOT | 46 |
 | Real-code decode suite, c4/DCP4/MTP3, GLM-5.3 W4A16 g32 | **213.1 +/- 1.4 tok/s aggregate, 18.77 ms TPOT** | 46 |
-| Same suite, W4A16 hot-slot sweep | 2400 -> 213.1, 2496 -> 214.8, 3000 -> 205.2 tok/s | 46 |
+| Same suite, three W4A16 *rankings* (mislabelled a hot-slot sweep) | 213.1 / 214.8 / 205.2 tok/s; residency was identical in all three, see 46 | 46 |
 
 The Phase 27 aggregate is the most recent full-suite number, but it predates
 both the replica work and its own retracted per-domain table; no post-replica
@@ -74,8 +74,8 @@ Lever status, so that settled questions are not reopened:
 | Capturing the draft path in CUDA graphs | Refuted (26): the drafts are already graphed |
 | Graph-node fusion | Priced (24) at about 1.2%; not started |
 | Grace-to-HBM cold-weight staging | Open (30), but its control predates the shared-memory fix and it must be re-measured before it means anything |
-| Buying more HBM residency | **Partly answered (46)**: worth doing to a point, but non-monotonic -- 2400/2496/3000 hot slots measure 213.1/214.8/205.2 tok/s. The KV-cache route to it is still closed (38) |
-| Hot-slot count as a tuning knob | **Open (46)**: three points show an interior optimum; `_TIER_BLOCKS_PER_SM = {"hot": 2, "cold": 1}` predicts one, but a 2200/2600/2800 sweep has not been run |
+| Buying more HBM residency | **Still open (32).** Phase 46 appeared to answer it and did not: `VLLM_TIERED_MOE_PROFILE_CAP` defaults off, so a profile's slot count never bound residency and all three arms ran identical. Needs that flag set, or a lever that moves `available_hbm`. The KV-cache route is still closed (38) |
+| Hot-slot count as a tuning knob | **Untested (46, corrected 2026-08-30)**: the profile slot count is not a knob at all unless `VLLM_TIERED_MOE_PROFILE_CAP=1`; the sweep that appeared to test it varied only the ranking |
 | Prefix caching under MTP | **Open defect (46)**: first-pass GSM8K drops to 56-59% against 91% without prefix caching or without MTP. Pre-existing, both checkpoints. The losslessness diff test is blocked because greedy decoding is not reproducible on this server, which is a second defect |
 | Checkpoint format at fixed placement | Settled (46): W4A16 int4 g32 beats NVFP4 g16 by 9.77% +/- 3.32% on decode, TTFT unchanged; mechanism unattributed |
 | Per-layer EP skew in prefill | **Open (36)**: priced at 185-232 ms/chunk, 7-9% of prefill; needs a token-weighted min-max and a new kernel |
@@ -1111,18 +1111,37 @@ claim that this 3.5 GB per rank *caused* the speedup is **retracted**: measured
 HBM was identical at 63.97 GiB on both arms, so the saving showed up as spare
 capacity, not throughput, and the mechanism behind the 9.77% is unattributed.
 
-Spending that capacity is where the phase gets interesting. Raising
-`gpu-memory-utilization` from 0.90 to 0.94 with KV pinned at 21,689,598,771
-bytes buys 96 more hot experts per rank, taking held-out cold-hit from 0.2290
-to 0.2131. But **more hot experts is not monotonically better**: 2400 slots
-measures 213.1 tok/s, 2496 measures 214.8, and 3000 measures 205.2. Production
-is on 2496. A plausible mechanism is already in the source --
-`_TIER_BLOCKS_PER_SM = {"hot": 2, "cold": 1}` splits SM shared memory so the
-tiers overlap, cutting the two-tier union 41-48%, which means cold work hidden
-under hot compute is close to free up to the point where the hot tier stops
-having spare occupancy to hide it behind. That predicts an interior optimum,
-which is what the three points show, but it is a hypothesis with three data
-points and no sweep: 2200, 2600 and 2800 would test it.
+Spending that capacity is where the phase went wrong, and the correction is
+**2026-08-30**. This entry originally read that raising `gpu-memory-utilization`
+from 0.90 to 0.94 "buys 96 more hot experts per rank, taking held-out cold-hit
+from 0.2290 to 0.2131", and that "more hot experts is not monotonically better"
+because 2400 / 2496 / 3000 slots measured 213.1 / 214.8 / 205.2 tok/s.
+
+**Both claims are withdrawn. A profile's slot count does not control
+residency.** `tiered_moe_planner.py:368` computes
+
+```python
+hot_slots = min(primary_slots, available_hbm // manifest.runtime_expert_bytes)
+if hot_expert_ids_by_layer is not None and envs.VLLM_TIERED_MOE_PROFILE_CAP:
+    hot_slots = min(hot_slots, profile_slots)
+```
+
+`VLLM_TIERED_MOE_PROFILE_CAP` defaults to 0 and **nothing sets it -- not the A/B
+arms, not the production launcher**. So the number of resident experts is set by
+whatever HBM is left, and the profile's list is then padded up
+(`_promote_underfilled_residency`) or trimmed down
+(`_demote_overfilled_residency`) to match. Only the *ranking* survives.
+
+The three arms therefore ran at **identical residency** and differed only in the
+ranking their profiles carried, since `optimize_routing_profile.py` builds a
+different greedy top-N and owner assignment for each `--hot-slots-per-rank`.
+The 213.1 / 214.8 / 205.2 spread is a ranking comparison, and the sweep never
+tested the question it was designed for. The 96 extra experts were never
+resident, so the 0.2131 cold-hit was never realised either.
+
+Buying HBM residency remains **untested** on this checkpoint. Testing it needs
+`VLLM_TIERED_MOE_PROFILE_CAP=1`, or a lever that actually moves
+`available_hbm`.
 
 **The open defect: prefix caching degrades the first pass under MTP.** On
 GSM8K at temperature 0 and seed 42, with identical questions, MTP3 with prefix

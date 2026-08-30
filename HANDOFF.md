@@ -3,8 +3,9 @@
 Last updated: 2026-08-30 (Phases 43-47: GLM-5.3 brought up and promoted to
 the Claude Code host on the `JANGQ-AI/GLM-5.3-W4A16` int4 group-32 checkpoint,
 which beats NVFP4 by 9.77% on decode; the 5.3 hot-expert ranking re-derived
-from agentic-coding routing traces, worth +8.3%; hot-slot count found
-non-monotonic; **DFlash2 reopened** on a 5.3 target, three missing upstream
+from agentic-coding routing traces, worth +8.3%; **the "hot-slot sweep"
+withdrawn** -- a profile's slot count never bound residency, so it compared
+rankings; **DFlash2 reopened** on a 5.3 target, three missing upstream
 fixes recovering 43% of its acceptance with a 32% gap to the card still open; **prefix caching under MTP found to degrade the first pass and
 left open**, along with the non-reproducible greedy decoding that blocks
 diagnosing it.
@@ -672,22 +673,43 @@ Closed by 35-39, do not reopen: prefill shared memory and CTAs/SM, NCCL
 protocol, chunk size, ungating the existing replica assignment, and putting the
 KV cache on Grace. Reasons are in the lever ledger.
 
-## Earlier thread: buy HBM residency (2026-08-01, partly answered 2026-08-30)
+## Earlier thread: buy HBM residency (2026-08-01, still open)
 
-**Phase 46 put three points on this and they are not monotonic.** At a fixed
-checkpoint, ranking and concurrency, hot slots per rank of 2400 / 2496 / 3000
-measure 213.1 / 214.8 / 205.2 tok/s on the real-code decode suite. Buying
-residency pays, then stops paying, then costs. Production sits at 2496.
+**Read this before trusting any "hot slots" number in this worklog.**
 
-The source already contains a mechanism that predicts an interior optimum:
-`_TIER_BLOCKS_PER_SM = {"hot": 2, "cold": 1}` splits SM shared memory so the
-tiers overlap, cutting the two-tier union 41-48%. Cold work hidden under hot
-compute is close to free until the hot tier stops having spare occupancy to
-hide it behind -- past that, added hot experts buy less than the cold traffic
-they displace costs. That is a hypothesis fitted to three points, not a
-measurement. **The cheap next step is a 2200 / 2600 / 2800 sweep on the same
-suite**; the harness (`arm-quant-ab-*.sh`) and the restamping tool
-(`restamp_profile.py`) already exist in `2026-08-29-glm53-w4a16/`.
+A placement profile's slot count does **not** control how many experts are
+resident. `tiered_moe_planner.py:368`:
+
+```python
+hot_slots = min(primary_slots, available_hbm // manifest.runtime_expert_bytes)
+if hot_expert_ids_by_layer is not None and envs.VLLM_TIERED_MOE_PROFILE_CAP:
+    hot_slots = min(hot_slots, profile_slots)
+```
+
+`VLLM_TIERED_MOE_PROFILE_CAP` defaults to 0 and **nothing sets it -- not any A/B
+arm, not the production launcher**. Residency is therefore whatever HBM allows,
+and the profile's hot list is padded up (`_promote_underfilled_residency`) or
+trimmed down (`_demote_overfilled_residency`) to that number. A profile
+contributes a *ranking*, not a *count*.
+
+Consequences, all found 2026-08-30:
+
+- **Phase 46's "hot-slot sweep" never varied hot slots.** 2400 / 2496 / 3000
+  measuring 213.1 / 214.8 / 205.2 tok/s was three rankings at identical
+  residency, because `optimize_routing_profile.py` builds a different greedy
+  top-N per `--hot-slots-per-rank`. Do not cite it as a residency curve, and do
+  not cite "more hot experts is not monotonically better" at all.
+- **The production launcher's comment is wrong.** `2026-08-29-glm53-c4/server.sbatch`
+  claims 0.94 utilization "buys 96 more experts per rank, taking held-out
+  cold-hit from 0.2290 to 0.2131". Those experts were never resident.
+- Any model that treats the slot budget as a decision variable -- including
+  `2026-08-30-glm53-cc-capture/analysis/tier_balance.py` -- is modelling a knob
+  the system does not expose in its current configuration.
+
+**To actually test it**: set `VLLM_TIERED_MOE_PROFILE_CAP=1` so the count binds,
+or move `available_hbm`. Note that lowering the KV pin does *not* free HBM --
+the planner converts it straight into more resident experts. The only lever that
+leaves HBM physically free is `TIERED_MOE_HBM_RESERVE_GB`.
 
 Everything below is the original 2026-08-01 analysis and still stands.
 
