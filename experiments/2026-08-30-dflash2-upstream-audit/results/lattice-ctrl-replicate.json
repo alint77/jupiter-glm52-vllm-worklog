@@ -1,0 +1,24 @@
+{
+  "label": "lattice-ctrl",
+  "requests": 64,
+  "wall_s": 172.68,
+  "acceptance_length_mean": 3.988,
+  "acceptance_length_median": 4.0077,
+  "acceptance_length_pooled": 3.9596,
+  "per_position_accepted": {
+    "0": 43,
+    "1": 38,
+    "2": 34,
+    "3": 30,
+    "4": 26,
+    "5": 22,
+    "6": 19
+  },
+  "mean_completion_tokens": 249.5,
+  "total_completion_tokens": 15971,
+  "tokens_per_second": 92.49,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "max_tokens": 4096,
+  "protocol": "DFlash2 card: chat template, natural EOS, T=1.0 top_p=0.95"
+}

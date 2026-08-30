@@ -1,0 +1,24 @@
+{
+  "label": "unary-gsm8k",
+  "requests": 64,
+  "wall_s": 170.13,
+  "acceptance_length_mean": 3.8732,
+  "acceptance_length_median": 3.9078,
+  "acceptance_length_pooled": 3.8317,
+  "per_position_accepted": {
+    "0": 44,
+    "1": 41,
+    "2": 32,
+    "3": 30,
+    "4": 25,
+    "5": 21,
+    "6": 17
+  },
+  "mean_completion_tokens": 239.5,
+  "total_completion_tokens": 15326,
+  "tokens_per_second": 90.08,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "max_tokens": 4096,
+  "protocol": "DFlash2 card: chat template, natural EOS, T=1.0 top_p=0.95"
+}

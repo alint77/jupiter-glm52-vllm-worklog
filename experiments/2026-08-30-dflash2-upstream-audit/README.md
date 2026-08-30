@@ -429,3 +429,97 @@ The one comparison that would still be decisive and has never been run:
 **matched MTP3-vs-DFlash2 end-to-end throughput on a 5.3 target**, since
 acceptance is not throughput and DFlash2's cheaper draft could still win on
 tok/s. That is a benchmark run, not an implementation question.
+
+---
+
+# Per-position decomposition (2026-08-30, jobs 1542631-33): the fault is at position 0
+
+The user's challenge -- acceptance is hardware-invariant, so if MTP reproduces
+the card and DFlash2 does not, the fault is DFlash2-specific -- was accepted,
+and the hardware explanation retracted. The per-position survival curve is the
+diagnostic that localises a draft-accuracy fault, so `replicate_dflash2_eval.py`
+was extended to capture `vllm:spec_decode_num_accepted_tokens_per_pos` and three
+arms were run: DFlash2 greedy, DFlash2 probabilistic, and MTP7 as the control at
+the same width.
+
+**Measurement caveat**: the JSON capture of the per-pos counter proved
+unreliable (counts ~55x too small -- the summed per-pos series does not match
+the scalar accepted counter). The server's own 10-second
+`Per-position acceptance rate` log lines are the trustworthy source; the numbers
+below are the mean of the last six steady-state windows of each run.
+
+| position | 0 | 1 | 2 | 3 | 4 | 5 | 6 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| MTP7 | **0.915** | 0.784 | 0.656 | 0.520 | 0.422 | 0.314 | 0.241 |
+| DFlash2 greedy | **0.615** | 0.552 | 0.491 | 0.436 | 0.381 | 0.332 | 0.288 |
+| DFlash2 prob | **0.619** | 0.547 | 0.486 | 0.413 | 0.355 | 0.314 | 0.257 |
+
+Reading:
+
+- **Position 0 is the fault line.** It is the identical next-token task for
+  both drafters -- predict the token after the just-committed bonus, same
+  conditioning. MTP lands 0.915, DFlash2 0.615. That is the "draft inputs are
+  wrong" signature, not the lattice-walk signature.
+- **Greedy ~= probabilistic at every position**, so the sampling path is not
+  the differentiator.
+- **Away from position 0 the DFlash2 curve is a clean geometric decay**
+  (ratio ~0.87) -- no structural break. The flatness is why the headline
+  number looked "plausible" while the first prediction was 30% under control.
+
+While the arms ran, the SGLang `dflash_worker_v2.py` / `dflash.py` /
+`dflash_utils.py` input-construction diff was completed (the subsystem audit
+had compared math but not runtime input construction). Cleared, line by line:
+`_score_edges` lattice math, grouped conv, context-KV pipeline (fc ->
+hidden_norm -> fused kv_proj -> k_norm -> RoPE, same order both stacks), query
+block (bonus at offset 0, masks after, positions prefix+off), aux taps (server
+log confirms `(6, 20, 34, 48, 62, 76)` = after layers 5/19/33/47/61/75 =
+SGLang's documented +1 convention), `noise_embed_scale` (retired: no SGLang
+model defines the hook, defaults 1.0), checkpoint weight shapes (all 96 keys),
+and the non-causal SWA window (FA symmetrises `(2047, 0) -> (2047, 2047)`).
+
+## Unary-walk A/B: separating lattice from hidden states
+
+Position 0's score is `unary + pairwise(anchor, h)`. Two distinct suspects
+remain: the **unary/candidates** (draft hidden -> lm_head top-16) are weak, or
+the **lattice walk** drags the choice off the unary argmax. These separate with
+one diagnostic: force the walk to take the top-1 candidate at every position
+(candidates are sorted), ignoring the codebook scores.
+
+- unary ~= lattice -> the draft's hidden states are the bottleneck (input problem);
+- unary >> lattice -> the trained lattice is hurting us in this run (selector problem).
+
+Implemented as `VLLM_DFLASH2_SELECTOR_WALK=lattice|unary` (envs.py + a
+`UNARY_WALK` constexpr in the walk kernel), submitted as `submit-unary-walk.sh`:
+unary on GSM8K and HumanEval plus a same-build lattice control on GSM8K.
+
+## Unary-walk result (2026-08-30, jobs 1543475-77): the lattice is NOT the fault
+
+| arm | acceptance (mean) | per-position (steady-state mean) |
+| --- | ---: | --- |
+| GSM8K lattice control | 3.9880 | 0.618 0.538 0.476 0.430 0.377 0.335 0.292 |
+| GSM8K unary walk | 3.8732 | 0.618 0.545 0.470 0.397 0.348 0.305 0.265 |
+| HumanEval lattice (validation run) | 4.8780 | 0.877 0.755 0.665 0.580 0.508 0.445 0.405 |
+| HumanEval unary walk | 4.7382 | 0.853 0.704 0.596 0.506 0.428 0.374 0.325 |
+
+Reading: **ignoring the trained lattice does not help -- it hurts slightly**
+(-2.9% GSM8K, -2.9% HumanEval). The codebook scores are doing their job
+(path coherence is worth a few percent), and position 0 is *identical*
+between the two walks (0.618 both ways on GSM8K), which is expected: at
+position 0 the lattice can only choose among the same 16 candidates and the
+walk's first pick is dominated by the unary term.
+
+So the bottleneck is upstream of the lattice: **the draft's hidden states
+themselves, or the candidate/unary computation over them**. Position 0 on
+HumanEval is 0.85-0.88 -- nearly MTP-class -- while GSM8K sits at 0.62, so
+the drafter's first-prediction quality is also task-dependent, which points
+at the draft forward (context KV, attention, conv) rather than a constant
+plumbing error: a wrong aux tap or a wrong mask embedding would depress
+position 0 uniformly across tasks, not just on GSM8K.
+
+Next diagnostic in the queue: candidate recall -- is the target's sampled
+token inside the 16 candidates at each position? Recall bounds everything:
+if recall is ~0.62 on GSM8K, the draft's hidden states are placing the true
+token outside the top-16, and the fault is in the draft forward or the
+unary head application; if recall is high (~0.95) while acceptance is 0.62,
+the fault is in how the target's distribution compares to the proposal
+(i.e. the verify side), not the draft at all.
