@@ -1,0 +1,24 @@
+{
+  "label": "perpos-prob",
+  "requests": 64,
+  "wall_s": 203.12,
+  "acceptance_length_mean": 4.0761,
+  "acceptance_length_median": 3.9927,
+  "acceptance_length_pooled": 4.36,
+  "per_position_accepted": {
+    "0": 46,
+    "1": 41,
+    "2": 38,
+    "3": 35,
+    "4": 32,
+    "5": 26,
+    "6": 19
+  },
+  "mean_completion_tokens": 339.1,
+  "total_completion_tokens": 21704,
+  "tokens_per_second": 106.85,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "max_tokens": 4096,
+  "protocol": "DFlash2 card: chat template, natural EOS, T=1.0 top_p=0.95"
+}

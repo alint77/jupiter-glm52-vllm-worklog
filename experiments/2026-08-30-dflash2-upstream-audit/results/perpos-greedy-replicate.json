@@ -1,0 +1,24 @@
+{
+  "label": "perpos-greedy",
+  "requests": 64,
+  "wall_s": 176.01,
+  "acceptance_length_mean": 3.9418,
+  "acceptance_length_median": 3.9703,
+  "acceptance_length_pooled": 3.9277,
+  "per_position_accepted": {
+    "0": 38,
+    "1": 35,
+    "2": 30,
+    "3": 26,
+    "4": 20,
+    "5": 15,
+    "6": 14
+  },
+  "mean_completion_tokens": 255.7,
+  "total_completion_tokens": 16364,
+  "tokens_per_second": 92.97,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "max_tokens": 4096,
+  "protocol": "DFlash2 card: chat template, natural EOS, T=1.0 top_p=0.95"
+}

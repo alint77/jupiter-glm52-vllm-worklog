@@ -1,0 +1,24 @@
+{
+  "label": "perpos-mtp7",
+  "requests": 64,
+  "wall_s": 168.01,
+  "acceptance_length_mean": 4.9348,
+  "acceptance_length_median": 4.906,
+  "acceptance_length_pooled": 4.7565,
+  "per_position_accepted": {
+    "0": 47,
+    "1": 37,
+    "2": 33,
+    "3": 30,
+    "4": 18,
+    "5": 10,
+    "6": 9
+  },
+  "mean_completion_tokens": 238.7,
+  "total_completion_tokens": 15278,
+  "tokens_per_second": 90.94,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "max_tokens": 4096,
+  "protocol": "DFlash2 card: chat template, natural EOS, T=1.0 top_p=0.95"
+}
