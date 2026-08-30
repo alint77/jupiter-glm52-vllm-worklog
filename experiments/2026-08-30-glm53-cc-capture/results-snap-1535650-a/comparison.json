@@ -1,0 +1,769 @@
+{
+  "split": "heldout",
+  "requests": 35,
+  "routed_positions": 41452,
+  "profiles": {
+    "shipped-synthetic": {
+      "routing_cold_hit_rate": 0.2791368731705748,
+      "mean_token_cold_critical_count": 99.44840629365692,
+      "cvar95_request_cold_critical_count": 114.43484719864176,
+      "tail_objective": 128.05711809331734,
+      "mean_token_owner_max_count": 262.55816031063966,
+      "requests": [
+        {
+          "request_hash": "058678646aa8700e",
+          "mean_token_cold_critical_count": 95.44945652173914,
+          "mean_token_owner_max_count": 261.5608695652174
+        },
+        {
+          "request_hash": "0c7833768ddb5f06",
+          "mean_token_cold_critical_count": 97.05737704918033,
+          "mean_token_owner_max_count": 263.83811475409834
+        },
+        {
+          "request_hash": "0024c309693fdf3e",
+          "mean_token_cold_critical_count": 106.9040404040404,
+          "mean_token_owner_max_count": 261.32323232323233
+        },
+        {
+          "request_hash": "1ad79b5f16ddd08e",
+          "mean_token_cold_critical_count": 100.19140625,
+          "mean_token_owner_max_count": 261.9375
+        },
+        {
+          "request_hash": "09d53fd293063ab3",
+          "mean_token_cold_critical_count": 94.23466257668711,
+          "mean_token_owner_max_count": 261.77914110429447
+        },
+        {
+          "request_hash": "39468100b27d0013",
+          "mean_token_cold_critical_count": 103.4319526627219,
+          "mean_token_owner_max_count": 263.0931952662722
+        },
+        {
+          "request_hash": "0f497df8114d791f",
+          "mean_token_cold_critical_count": 108.65111750761938,
+          "mean_token_owner_max_count": 262.84608872333223
+        },
+        {
+          "request_hash": "288935cee0964289",
+          "mean_token_cold_critical_count": 106.61497890295358,
+          "mean_token_owner_max_count": 262.92194092827003
+        },
+        {
+          "request_hash": "1c4875068ca95eea",
+          "mean_token_cold_critical_count": 116.68548387096774,
+          "mean_token_owner_max_count": 262.69354838709677
+        },
+        {
+          "request_hash": "13802e9445035c98",
+          "mean_token_cold_critical_count": 102.13659793814433,
+          "mean_token_owner_max_count": 263.9020618556701
+        },
+        {
+          "request_hash": "31be242557992be2",
+          "mean_token_cold_critical_count": 104.48484848484848,
+          "mean_token_owner_max_count": 261.6136363636364
+        },
+        {
+          "request_hash": "1caeb444e6685eda",
+          "mean_token_cold_critical_count": 96.66538461538461,
+          "mean_token_owner_max_count": 263.3980769230769
+        },
+        {
+          "request_hash": "1bba0ea0e3b5817d",
+          "mean_token_cold_critical_count": 97.07792207792208,
+          "mean_token_owner_max_count": 263.34253246753246
+        },
+        {
+          "request_hash": "005e2904ff3fe977",
+          "mean_token_cold_critical_count": 97.0208102108768,
+          "mean_token_owner_max_count": 262.12014428412874
+        },
+        {
+          "request_hash": "045a14a8cb56c61e",
+          "mean_token_cold_critical_count": 101.45370370370371,
+          "mean_token_owner_max_count": 263.4274691358025
+        },
+        {
+          "request_hash": "0126f30a750c844e",
+          "mean_token_cold_critical_count": 94.67805755395683,
+          "mean_token_owner_max_count": 261.97769784172664
+        },
+        {
+          "request_hash": "2b372effce544d0f",
+          "mean_token_cold_critical_count": 97.22888888888889,
+          "mean_token_owner_max_count": 264.08444444444444
+        },
+        {
+          "request_hash": "091d83231305772b",
+          "mean_token_cold_critical_count": 96.1975982532751,
+          "mean_token_owner_max_count": 262.9061135371179
+        },
+        {
+          "request_hash": "1b6d6ee0974c1c0b",
+          "mean_token_cold_critical_count": 107.31388888888888,
+          "mean_token_owner_max_count": 262.0083333333333
+        },
+        {
+          "request_hash": "32a4103137696181",
+          "mean_token_cold_critical_count": 112.1842105263158,
+          "mean_token_owner_max_count": 262.9407894736842
+        },
+        {
+          "request_hash": "365bb7b7315042d8",
+          "mean_token_cold_critical_count": 83.8125,
+          "mean_token_owner_max_count": 260.75
+        },
+        {
+          "request_hash": "30c7e14528389150",
+          "mean_token_cold_critical_count": 91.75,
+          "mean_token_owner_max_count": 260.5416666666667
+        },
+        {
+          "request_hash": "0fe302d089e6b4fb",
+          "mean_token_cold_critical_count": 104.05381944444444,
+          "mean_token_owner_max_count": 263.8645833333333
+        },
+        {
+          "request_hash": "0ea5efad5ac669db",
+          "mean_token_cold_critical_count": 102.22383720930233,
+          "mean_token_owner_max_count": 263.6686046511628
+        },
+        {
+          "request_hash": "27a9a7fb9f2d32c0",
+          "mean_token_cold_critical_count": 96.27314814814815,
+          "mean_token_owner_max_count": 262.08101851851853
+        },
+        {
+          "request_hash": "22e40a71da6f7330",
+          "mean_token_cold_critical_count": 102.41004184100419,
+          "mean_token_owner_max_count": 262.9728033472803
+        },
+        {
+          "request_hash": "269375436b3ec0e0",
+          "mean_token_cold_critical_count": 99.59375,
+          "mean_token_owner_max_count": 263.67788461538464
+        },
+        {
+          "request_hash": "3aaf59f42ef8cf19",
+          "mean_token_cold_critical_count": 106.08100558659218,
+          "mean_token_owner_max_count": 263.79888268156424
+        },
+        {
+          "request_hash": "3f1ecb856c5651d3",
+          "mean_token_cold_critical_count": 100.0,
+          "mean_token_owner_max_count": 261.19485294117646
+        },
+        {
+          "request_hash": "07215e794c36636c",
+          "mean_token_cold_critical_count": 94.92532467532467,
+          "mean_token_owner_max_count": 261.6363636363636
+        },
+        {
+          "request_hash": "207cbf00d76bbaec",
+          "mean_token_cold_critical_count": 105.14814814814815,
+          "mean_token_owner_max_count": 263.37345679012344
+        },
+        {
+          "request_hash": "3b3e6fc7a7ad4e86",
+          "mean_token_cold_critical_count": 86.7685676392573,
+          "mean_token_owner_max_count": 261.71949602122015
+        },
+        {
+          "request_hash": "061545989484e519",
+          "mean_token_cold_critical_count": 98.15368852459017,
+          "mean_token_owner_max_count": 263.0983606557377
+        },
+        {
+          "request_hash": "37b05a91b6539d9c",
+          "mean_token_cold_critical_count": 90.34945255474453,
+          "mean_token_owner_max_count": 261.6259124087591
+        },
+        {
+          "request_hash": "198f77d02b08f739",
+          "mean_token_cold_critical_count": 83.4885496183206,
+          "mean_token_owner_max_count": 261.8167938931298
+        }
+      ]
+    },
+    "realusage-frequency": {
+      "routing_cold_hit_rate": 0.2097577519379845,
+      "mean_token_cold_critical_count": 79.30104408218764,
+      "cvar95_request_cold_critical_count": 99.12414467253177,
+      "tail_objective": 104.08208025032059,
+      "mean_token_owner_max_count": 261.2677791120332,
+      "requests": [
+        {
+          "request_hash": "058678646aa8700e",
+          "mean_token_cold_critical_count": 79.4679347826087,
+          "mean_token_owner_max_count": 262.22663043478263
+        },
+        {
+          "request_hash": "0c7833768ddb5f06",
+          "mean_token_cold_critical_count": 70.80122950819673,
+          "mean_token_owner_max_count": 260.79303278688525
+        },
+        {
+          "request_hash": "0024c309693fdf3e",
+          "mean_token_cold_critical_count": 97.40151515151516,
+          "mean_token_owner_max_count": 262.20454545454544
+        },
+        {
+          "request_hash": "1ad79b5f16ddd08e",
+          "mean_token_cold_critical_count": 82.25390625,
+          "mean_token_owner_max_count": 261.92578125
+        },
+        {
+          "request_hash": "09d53fd293063ab3",
+          "mean_token_cold_critical_count": 81.43865030674847,
+          "mean_token_owner_max_count": 261.31134969325154
+        },
+        {
+          "request_hash": "39468100b27d0013",
+          "mean_token_cold_critical_count": 78.55177514792899,
+          "mean_token_owner_max_count": 261.1301775147929
+        },
+        {
+          "request_hash": "0f497df8114d791f",
+          "mean_token_cold_critical_count": 89.75440230274297,
+          "mean_token_owner_max_count": 262.1959024720623
+        },
+        {
+          "request_hash": "288935cee0964289",
+          "mean_token_cold_critical_count": 85.28111814345992,
+          "mean_token_owner_max_count": 262.09440928270044
+        },
+        {
+          "request_hash": "1c4875068ca95eea",
+          "mean_token_cold_critical_count": 100.84677419354838,
+          "mean_token_owner_max_count": 262.508064516129
+        },
+        {
+          "request_hash": "13802e9445035c98",
+          "mean_token_cold_critical_count": 76.5,
+          "mean_token_owner_max_count": 261.6546391752577
+        },
+        {
+          "request_hash": "31be242557992be2",
+          "mean_token_cold_critical_count": 94.53030303030303,
+          "mean_token_owner_max_count": 260.3787878787879
+        },
+        {
+          "request_hash": "1caeb444e6685eda",
+          "mean_token_cold_critical_count": 74.52692307692308,
+          "mean_token_owner_max_count": 261.2269230769231
+        },
+        {
+          "request_hash": "1bba0ea0e3b5817d",
+          "mean_token_cold_critical_count": 66.11363636363636,
+          "mean_token_owner_max_count": 260.90909090909093
+        },
+        {
+          "request_hash": "005e2904ff3fe977",
+          "mean_token_cold_critical_count": 78.57769145394006,
+          "mean_token_owner_max_count": 261.76997780244176
+        },
+        {
+          "request_hash": "045a14a8cb56c61e",
+          "mean_token_cold_critical_count": 70.30092592592592,
+          "mean_token_owner_max_count": 260.80864197530866
+        },
+        {
+          "request_hash": "0126f30a750c844e",
+          "mean_token_cold_critical_count": 78.67122302158273,
+          "mean_token_owner_max_count": 261.6305755395683
+        },
+        {
+          "request_hash": "2b372effce544d0f",
+          "mean_token_cold_critical_count": 67.98222222222222,
+          "mean_token_owner_max_count": 260.77555555555557
+        },
+        {
+          "request_hash": "091d83231305772b",
+          "mean_token_cold_critical_count": 64.83296943231441,
+          "mean_token_owner_max_count": 260.15393013100436
+        },
+        {
+          "request_hash": "1b6d6ee0974c1c0b",
+          "mean_token_cold_critical_count": 92.51388888888889,
+          "mean_token_owner_max_count": 261.90555555555557
+        },
+        {
+          "request_hash": "32a4103137696181",
+          "mean_token_cold_critical_count": 95.69736842105263,
+          "mean_token_owner_max_count": 261.5592105263158
+        },
+        {
+          "request_hash": "365bb7b7315042d8",
+          "mean_token_cold_critical_count": 79.1875,
+          "mean_token_owner_max_count": 261.375
+        },
+        {
+          "request_hash": "30c7e14528389150",
+          "mean_token_cold_critical_count": 83.08333333333333,
+          "mean_token_owner_max_count": 259.5416666666667
+        },
+        {
+          "request_hash": "0fe302d089e6b4fb",
+          "mean_token_cold_critical_count": 71.81076388888889,
+          "mean_token_owner_max_count": 260.90625
+        },
+        {
+          "request_hash": "0ea5efad5ac669db",
+          "mean_token_cold_critical_count": 68.55813953488372,
+          "mean_token_owner_max_count": 260.73837209302326
+        },
+        {
+          "request_hash": "27a9a7fb9f2d32c0",
+          "mean_token_cold_critical_count": 78.0300925925926,
+          "mean_token_owner_max_count": 261.6404320987654
+        },
+        {
+          "request_hash": "22e40a71da6f7330",
+          "mean_token_cold_critical_count": 73.5428870292887,
+          "mean_token_owner_max_count": 261.43305439330544
+        },
+        {
+          "request_hash": "269375436b3ec0e0",
+          "mean_token_cold_critical_count": 69.43149038461539,
+          "mean_token_owner_max_count": 260.5192307692308
+        },
+        {
+          "request_hash": "3aaf59f42ef8cf19",
+          "mean_token_cold_critical_count": 76.61312849162012,
+          "mean_token_owner_max_count": 261.1801675977654
+        },
+        {
+          "request_hash": "3f1ecb856c5651d3",
+          "mean_token_cold_critical_count": 82.53308823529412,
+          "mean_token_owner_max_count": 261.1507352941176
+        },
+        {
+          "request_hash": "07215e794c36636c",
+          "mean_token_cold_critical_count": 76.67532467532467,
+          "mean_token_owner_max_count": 261.18506493506493
+        },
+        {
+          "request_hash": "207cbf00d76bbaec",
+          "mean_token_cold_critical_count": 72.64814814814815,
+          "mean_token_owner_max_count": 260.7283950617284
+        },
+        {
+          "request_hash": "3b3e6fc7a7ad4e86",
+          "mean_token_cold_critical_count": 76.31962864721486,
+          "mean_token_owner_max_count": 261.0366931918656
+        },
+        {
+          "request_hash": "061545989484e519",
+          "mean_token_cold_critical_count": 72.38319672131148,
+          "mean_token_owner_max_count": 260.82581967213116
+        },
+        {
+          "request_hash": "37b05a91b6539d9c",
+          "mean_token_cold_critical_count": 85.87956204379562,
+          "mean_token_owner_max_count": 261.35127737226276
+        },
+        {
+          "request_hash": "198f77d02b08f739",
+          "mean_token_cold_critical_count": 82.79580152671755,
+          "mean_token_owner_max_count": 261.5973282442748
+        }
+      ]
+    },
+    "realusage-tail": {
+      "routing_cold_hit_rate": 0.20981774100164044,
+      "mean_token_cold_critical_count": 79.2323648172826,
+      "cvar95_request_cold_critical_count": 98.99169110459432,
+      "tail_objective": 103.98028759343119,
+      "mean_token_owner_max_count": 261.2677791120332,
+      "requests": [
+        {
+          "request_hash": "058678646aa8700e",
+          "mean_token_cold_critical_count": 79.46847826086956,
+          "mean_token_owner_max_count": 262.22663043478263
+        },
+        {
+          "request_hash": "0c7833768ddb5f06",
+          "mean_token_cold_critical_count": 70.75819672131148,
+          "mean_token_owner_max_count": 260.79303278688525
+        },
+        {
+          "request_hash": "0024c309693fdf3e",
+          "mean_token_cold_critical_count": 97.25757575757575,
+          "mean_token_owner_max_count": 262.20454545454544
+        },
+        {
+          "request_hash": "1ad79b5f16ddd08e",
+          "mean_token_cold_critical_count": 82.234375,
+          "mean_token_owner_max_count": 261.92578125
+        },
+        {
+          "request_hash": "09d53fd293063ab3",
+          "mean_token_cold_critical_count": 81.40030674846626,
+          "mean_token_owner_max_count": 261.31134969325154
+        },
+        {
+          "request_hash": "39468100b27d0013",
+          "mean_token_cold_critical_count": 78.48372781065089,
+          "mean_token_owner_max_count": 261.1301775147929
+        },
+        {
+          "request_hash": "0f497df8114d791f",
+          "mean_token_cold_critical_count": 89.80392820860142,
+          "mean_token_owner_max_count": 262.1959024720623
+        },
+        {
+          "request_hash": "288935cee0964289",
+          "mean_token_cold_critical_count": 85.27848101265823,
+          "mean_token_owner_max_count": 262.09440928270044
+        },
+        {
+          "request_hash": "1c4875068ca95eea",
+          "mean_token_cold_critical_count": 100.7258064516129,
+          "mean_token_owner_max_count": 262.508064516129
+        },
+        {
+          "request_hash": "13802e9445035c98",
+          "mean_token_cold_critical_count": 76.48195876288659,
+          "mean_token_owner_max_count": 261.6546391752577
+        },
+        {
+          "request_hash": "31be242557992be2",
+          "mean_token_cold_critical_count": 94.53787878787878,
+          "mean_token_owner_max_count": 260.3787878787879
+        },
+        {
+          "request_hash": "1caeb444e6685eda",
+          "mean_token_cold_critical_count": 74.4826923076923,
+          "mean_token_owner_max_count": 261.2269230769231
+        },
+        {
+          "request_hash": "1bba0ea0e3b5817d",
+          "mean_token_cold_critical_count": 66.0487012987013,
+          "mean_token_owner_max_count": 260.90909090909093
+        },
+        {
+          "request_hash": "005e2904ff3fe977",
+          "mean_token_cold_critical_count": 78.61514983351832,
+          "mean_token_owner_max_count": 261.76997780244176
+        },
+        {
+          "request_hash": "045a14a8cb56c61e",
+          "mean_token_cold_critical_count": 70.24845679012346,
+          "mean_token_owner_max_count": 260.80864197530866
+        },
+        {
+          "request_hash": "0126f30a750c844e",
+          "mean_token_cold_critical_count": 78.70647482014388,
+          "mean_token_owner_max_count": 261.6305755395683
+        },
+        {
+          "request_hash": "2b372effce544d0f",
+          "mean_token_cold_critical_count": 67.91555555555556,
+          "mean_token_owner_max_count": 260.77555555555557
+        },
+        {
+          "request_hash": "091d83231305772b",
+          "mean_token_cold_critical_count": 64.76419213973799,
+          "mean_token_owner_max_count": 260.15393013100436
+        },
+        {
+          "request_hash": "1b6d6ee0974c1c0b",
+          "mean_token_cold_critical_count": 92.375,
+          "mean_token_owner_max_count": 261.90555555555557
+        },
+        {
+          "request_hash": "32a4103137696181",
+          "mean_token_cold_critical_count": 95.57894736842105,
+          "mean_token_owner_max_count": 261.5592105263158
+        },
+        {
+          "request_hash": "365bb7b7315042d8",
+          "mean_token_cold_critical_count": 78.6875,
+          "mean_token_owner_max_count": 261.375
+        },
+        {
+          "request_hash": "30c7e14528389150",
+          "mean_token_cold_critical_count": 82.54166666666667,
+          "mean_token_owner_max_count": 259.5416666666667
+        },
+        {
+          "request_hash": "0fe302d089e6b4fb",
+          "mean_token_cold_critical_count": 71.77256944444444,
+          "mean_token_owner_max_count": 260.90625
+        },
+        {
+          "request_hash": "0ea5efad5ac669db",
+          "mean_token_cold_critical_count": 68.55232558139535,
+          "mean_token_owner_max_count": 260.73837209302326
+        },
+        {
+          "request_hash": "27a9a7fb9f2d32c0",
+          "mean_token_cold_critical_count": 78.01697530864197,
+          "mean_token_owner_max_count": 261.6404320987654
+        },
+        {
+          "request_hash": "22e40a71da6f7330",
+          "mean_token_cold_critical_count": 73.51778242677824,
+          "mean_token_owner_max_count": 261.43305439330544
+        },
+        {
+          "request_hash": "269375436b3ec0e0",
+          "mean_token_cold_critical_count": 69.38461538461539,
+          "mean_token_owner_max_count": 260.5192307692308
+        },
+        {
+          "request_hash": "3aaf59f42ef8cf19",
+          "mean_token_cold_critical_count": 76.58938547486034,
+          "mean_token_owner_max_count": 261.1801675977654
+        },
+        {
+          "request_hash": "3f1ecb856c5651d3",
+          "mean_token_cold_critical_count": 82.38602941176471,
+          "mean_token_owner_max_count": 261.1507352941176
+        },
+        {
+          "request_hash": "07215e794c36636c",
+          "mean_token_cold_critical_count": 76.62337662337663,
+          "mean_token_owner_max_count": 261.18506493506493
+        },
+        {
+          "request_hash": "207cbf00d76bbaec",
+          "mean_token_cold_critical_count": 72.58641975308642,
+          "mean_token_owner_max_count": 260.7283950617284
+        },
+        {
+          "request_hash": "3b3e6fc7a7ad4e86",
+          "mean_token_cold_critical_count": 76.33797524314765,
+          "mean_token_owner_max_count": 261.0366931918656
+        },
+        {
+          "request_hash": "061545989484e519",
+          "mean_token_cold_critical_count": 72.37090163934427,
+          "mean_token_owner_max_count": 260.82581967213116
+        },
+        {
+          "request_hash": "37b05a91b6539d9c",
+          "mean_token_cold_critical_count": 85.87226277372262,
+          "mean_token_owner_max_count": 261.35127737226276
+        },
+        {
+          "request_hash": "198f77d02b08f739",
+          "mean_token_cold_critical_count": 82.72709923664122,
+          "mean_token_owner_max_count": 261.5973282442748
+        }
+      ]
+    },
+    "realusage-replicas": {
+      "routing_cold_hit_rate": 0.20981774100164044,
+      "mean_token_cold_critical_count": 79.2323648172826,
+      "cvar95_request_cold_critical_count": 98.99169110459432,
+      "tail_objective": 103.98028759343119,
+      "mean_token_owner_max_count": 261.2677791120332,
+      "requests": [
+        {
+          "request_hash": "058678646aa8700e",
+          "mean_token_cold_critical_count": 79.46847826086956,
+          "mean_token_owner_max_count": 262.22663043478263
+        },
+        {
+          "request_hash": "0c7833768ddb5f06",
+          "mean_token_cold_critical_count": 70.75819672131148,
+          "mean_token_owner_max_count": 260.79303278688525
+        },
+        {
+          "request_hash": "0024c309693fdf3e",
+          "mean_token_cold_critical_count": 97.25757575757575,
+          "mean_token_owner_max_count": 262.20454545454544
+        },
+        {
+          "request_hash": "1ad79b5f16ddd08e",
+          "mean_token_cold_critical_count": 82.234375,
+          "mean_token_owner_max_count": 261.92578125
+        },
+        {
+          "request_hash": "09d53fd293063ab3",
+          "mean_token_cold_critical_count": 81.40030674846626,
+          "mean_token_owner_max_count": 261.31134969325154
+        },
+        {
+          "request_hash": "39468100b27d0013",
+          "mean_token_cold_critical_count": 78.48372781065089,
+          "mean_token_owner_max_count": 261.1301775147929
+        },
+        {
+          "request_hash": "0f497df8114d791f",
+          "mean_token_cold_critical_count": 89.80392820860142,
+          "mean_token_owner_max_count": 262.1959024720623
+        },
+        {
+          "request_hash": "288935cee0964289",
+          "mean_token_cold_critical_count": 85.27848101265823,
+          "mean_token_owner_max_count": 262.09440928270044
+        },
+        {
+          "request_hash": "1c4875068ca95eea",
+          "mean_token_cold_critical_count": 100.7258064516129,
+          "mean_token_owner_max_count": 262.508064516129
+        },
+        {
+          "request_hash": "13802e9445035c98",
+          "mean_token_cold_critical_count": 76.48195876288659,
+          "mean_token_owner_max_count": 261.6546391752577
+        },
+        {
+          "request_hash": "31be242557992be2",
+          "mean_token_cold_critical_count": 94.53787878787878,
+          "mean_token_owner_max_count": 260.3787878787879
+        },
+        {
+          "request_hash": "1caeb444e6685eda",
+          "mean_token_cold_critical_count": 74.4826923076923,
+          "mean_token_owner_max_count": 261.2269230769231
+        },
+        {
+          "request_hash": "1bba0ea0e3b5817d",
+          "mean_token_cold_critical_count": 66.0487012987013,
+          "mean_token_owner_max_count": 260.90909090909093
+        },
+        {
+          "request_hash": "005e2904ff3fe977",
+          "mean_token_cold_critical_count": 78.61514983351832,
+          "mean_token_owner_max_count": 261.76997780244176
+        },
+        {
+          "request_hash": "045a14a8cb56c61e",
+          "mean_token_cold_critical_count": 70.24845679012346,
+          "mean_token_owner_max_count": 260.80864197530866
+        },
+        {
+          "request_hash": "0126f30a750c844e",
+          "mean_token_cold_critical_count": 78.70647482014388,
+          "mean_token_owner_max_count": 261.6305755395683
+        },
+        {
+          "request_hash": "2b372effce544d0f",
+          "mean_token_cold_critical_count": 67.91555555555556,
+          "mean_token_owner_max_count": 260.77555555555557
+        },
+        {
+          "request_hash": "091d83231305772b",
+          "mean_token_cold_critical_count": 64.76419213973799,
+          "mean_token_owner_max_count": 260.15393013100436
+        },
+        {
+          "request_hash": "1b6d6ee0974c1c0b",
+          "mean_token_cold_critical_count": 92.375,
+          "mean_token_owner_max_count": 261.90555555555557
+        },
+        {
+          "request_hash": "32a4103137696181",
+          "mean_token_cold_critical_count": 95.57894736842105,
+          "mean_token_owner_max_count": 261.5592105263158
+        },
+        {
+          "request_hash": "365bb7b7315042d8",
+          "mean_token_cold_critical_count": 78.6875,
+          "mean_token_owner_max_count": 261.375
+        },
+        {
+          "request_hash": "30c7e14528389150",
+          "mean_token_cold_critical_count": 82.54166666666667,
+          "mean_token_owner_max_count": 259.5416666666667
+        },
+        {
+          "request_hash": "0fe302d089e6b4fb",
+          "mean_token_cold_critical_count": 71.77256944444444,
+          "mean_token_owner_max_count": 260.90625
+        },
+        {
+          "request_hash": "0ea5efad5ac669db",
+          "mean_token_cold_critical_count": 68.55232558139535,
+          "mean_token_owner_max_count": 260.73837209302326
+        },
+        {
+          "request_hash": "27a9a7fb9f2d32c0",
+          "mean_token_cold_critical_count": 78.01697530864197,
+          "mean_token_owner_max_count": 261.6404320987654
+        },
+        {
+          "request_hash": "22e40a71da6f7330",
+          "mean_token_cold_critical_count": 73.51778242677824,
+          "mean_token_owner_max_count": 261.43305439330544
+        },
+        {
+          "request_hash": "269375436b3ec0e0",
+          "mean_token_cold_critical_count": 69.38461538461539,
+          "mean_token_owner_max_count": 260.5192307692308
+        },
+        {
+          "request_hash": "3aaf59f42ef8cf19",
+          "mean_token_cold_critical_count": 76.58938547486034,
+          "mean_token_owner_max_count": 261.1801675977654
+        },
+        {
+          "request_hash": "3f1ecb856c5651d3",
+          "mean_token_cold_critical_count": 82.38602941176471,
+          "mean_token_owner_max_count": 261.1507352941176
+        },
+        {
+          "request_hash": "07215e794c36636c",
+          "mean_token_cold_critical_count": 76.62337662337663,
+          "mean_token_owner_max_count": 261.18506493506493
+        },
+        {
+          "request_hash": "207cbf00d76bbaec",
+          "mean_token_cold_critical_count": 72.58641975308642,
+          "mean_token_owner_max_count": 260.7283950617284
+        },
+        {
+          "request_hash": "3b3e6fc7a7ad4e86",
+          "mean_token_cold_critical_count": 76.33797524314765,
+          "mean_token_owner_max_count": 261.0366931918656
+        },
+        {
+          "request_hash": "061545989484e519",
+          "mean_token_cold_critical_count": 72.37090163934427,
+          "mean_token_owner_max_count": 260.82581967213116
+        },
+        {
+          "request_hash": "37b05a91b6539d9c",
+          "mean_token_cold_critical_count": 85.87226277372262,
+          "mean_token_owner_max_count": 261.35127737226276
+        },
+        {
+          "request_hash": "198f77d02b08f739",
+          "mean_token_cold_critical_count": 82.72709923664122,
+          "mean_token_owner_max_count": 261.5973282442748
+        }
+      ]
+    }
+  },
+  "hot_set_overlap": {
+    "shipped-synthetic vs realusage-frequency": {
+      "shared_hot_experts": 7942,
+      "hot_expert_overlap": 0.7954727564102564
+    },
+    "shipped-synthetic vs realusage-tail": {
+      "shared_hot_experts": 7942,
+      "hot_expert_overlap": 0.7954727564102564
+    },
+    "shipped-synthetic vs realusage-replicas": {
+      "shared_hot_experts": 7942,
+      "hot_expert_overlap": 0.7954727564102564
+    },
+    "realusage-frequency vs realusage-tail": {
+      "shared_hot_experts": 9976,
+      "hot_expert_overlap": 0.999198717948718
+    },
+    "realusage-frequency vs realusage-replicas": {
+      "shared_hot_experts": 9976,
+      "hot_expert_overlap": 0.999198717948718
+    },
+    "realusage-tail vs realusage-replicas": {
+      "shared_hot_experts": 9984,
+      "hot_expert_overlap": 1.0
+    }
+  }
+}

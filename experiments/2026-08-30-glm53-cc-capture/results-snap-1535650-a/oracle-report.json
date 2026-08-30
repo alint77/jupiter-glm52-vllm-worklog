@@ -1,0 +1,113 @@
+{
+  "trace_dir": "/e/fscratch/profound/naeimitabiei1/caches/routes/snap-1535650-a",
+  "profile": "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-08-30-glm53-cc-capture/results-snap-1535650-a/tail-profile.json",
+  "hot_slots_per_rank": 2496,
+  "cost_model_us": {
+    "m4": {
+      "hbm_per_task": 17.066666666666666,
+      "grace_per_task": 46.22666666666667
+    },
+    "m16": {
+      "hbm_chain": 167.0,
+      "grace_chain_base": 24.0,
+      "grace_per_task": 46.0
+    }
+  },
+  "samples": {
+    "train_c4": 300,
+    "heldout_c1": 300,
+    "heldout_c4": 150
+  },
+  "control": {
+    "c1": {
+      "span_ms": 10.884499066666663,
+      "rank_skew_ms": 3.3058816111111113,
+      "secondary_task_percent": 0.0,
+      "hbm_task_percent": 76.89546783223328,
+      "grace_task_percent": 23.104532167766724
+    },
+    "c4": {
+      "span_ms": 26.504053333333335,
+      "rank_skew_ms": 6.622143333333334,
+      "secondary_task_percent": 0.0,
+      "hbm_task_percent": 74.16969479630768,
+      "grace_task_percent": 25.830305203692312
+    }
+  },
+  "budgets": [
+    {
+      "copies_per_rank": 985,
+      "grace_gb_per_rank": 19.75321364,
+      "copy_factor": 1.2052083333333332,
+      "placement": "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-08-30-glm53-cc-capture/results-snap-1535650-a/replicas-985.json",
+      "workloads": {
+        "c1": {
+          "hash": {
+            "span_ms": 11.062639466666663,
+            "rank_skew_ms": 3.4474740222222224,
+            "secondary_task_percent": 7.137260514779686,
+            "hbm_task_percent": 76.89546783223328,
+            "grace_task_percent": 23.104532167766724
+          },
+          "least_loaded": {
+            "span_ms": 10.854926711111107,
+            "rank_skew_ms": 3.0893536,
+            "secondary_task_percent": 7.000555992887695,
+            "hbm_task_percent": 76.89546783223328,
+            "grace_task_percent": 23.104532167766724
+          },
+          "greedy": {
+            "span_ms": 10.044440177777776,
+            "rank_skew_ms": 2.640898111111111,
+            "secondary_task_percent": 6.930644015920113,
+            "hbm_task_percent": 76.89546783223328,
+            "grace_task_percent": 23.104532167766724
+          },
+          "runtime_greedy": {
+            "span_ms": 9.741936355555552,
+            "rank_skew_ms": 2.541505877777778,
+            "secondary_task_percent": 6.8223813744217585,
+            "hbm_task_percent": 76.89546783223328,
+            "grace_task_percent": 23.104532167766724
+          }
+        },
+        "c4": {
+          "hash": {
+            "span_ms": 27.871486666666666,
+            "rank_skew_ms": 7.830778333333334,
+            "secondary_task_percent": 7.806559825325529,
+            "hbm_task_percent": 74.16969479630768,
+            "grace_task_percent": 25.830305203692312
+          },
+          "least_loaded": {
+            "span_ms": 28.812866666666665,
+            "rank_skew_ms": 8.537628333333334,
+            "secondary_task_percent": 7.444432591677996,
+            "hbm_task_percent": 74.16969479630768,
+            "grace_task_percent": 25.830305203692312
+          },
+          "greedy": {
+            "span_ms": 23.855506666666667,
+            "rank_skew_ms": 4.089006666666666,
+            "secondary_task_percent": 7.388144560374588,
+            "hbm_task_percent": 74.16969479630768,
+            "grace_task_percent": 25.830305203692312
+          },
+          "runtime_greedy": {
+            "span_ms": 22.023173333333332,
+            "rank_skew_ms": 2.510585,
+            "secondary_task_percent": 7.160268820743047,
+            "hbm_task_percent": 74.16969479630768,
+            "grace_task_percent": 25.830305203692312
+          }
+        }
+      },
+      "oracle": {
+        "completed_cases": 24,
+        "mean_greedy_gap_us": 2.3122222222222226,
+        "max_greedy_gap_us": 36.28,
+        "mean_search_nodes": 6.833333333333333
+      }
+    }
+  ]
+}

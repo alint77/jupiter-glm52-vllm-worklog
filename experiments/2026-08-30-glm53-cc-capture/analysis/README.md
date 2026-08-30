@@ -122,3 +122,33 @@ number that decides whether to ship this is a paired A/B on the real-code decode
 suite**, using `2026-08-29-glm53-w4a16/arm-quant-ab-2496.sh` with the profile as
 the only variable, three pairs, because between-run spread on this configuration
 is about 2.7%.
+
+## 6. The profile, built
+
+`finalize.sh` produced `results-snap-1535650-a/replicas-985.json`, installed as
+`agent_space/profiles/glm53-w4a16-2496-realusage.json`. It validates against the
+W4A16 checkpoint and matches the shipped profile's budget exactly -- 9,984 hot
+experts, 3,940 replicas, same `config_sha256` and `index_sha256` -- so the
+ranking is the only difference between the two.
+
+Scored on the same 35-request held-out split (41,452 routed positions):
+
+| profile | cold-hit | tail objective |
+| --- | ---: | ---: |
+| shipped, synthetic ranking | 0.2791 | 128.06 |
+| real usage, frequency residency | 0.2098 | 104.08 |
+| real usage, tail residency | 0.2098 | 103.98 |
+| **real usage + replicas (shipped artefact)** | **0.2098** | **103.98** |
+
+The tail objective improves 18.8%, more than cold-hit's 24.6% might suggest is
+possible on the worst requests, and the three real-usage variants are within
+0.1% of each other with hot-set overlap 0.999-1.000. **Residency strategy does
+not matter here; the ranking does** -- the same conclusion Phase 44 reached, now
+on real traffic. Overlap against the shipped profile is 0.795.
+
+Replica placement was re-solved at the same 985 copies per rank, and the oracle
+prices it at 1.205x: routed span 10.884 -> 10.044 ms at c1 (-0.840) and 26.504
+-> 23.856 ms at c4 (-2.649).
+
+Ship it only on the A/B. `submit-profile-ab.sh` runs three pairs, both arms in
+one allocation, alternating which goes first.
