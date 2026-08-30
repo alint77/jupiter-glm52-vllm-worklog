@@ -370,3 +370,62 @@ default on an unmeasured hypothesis is the exact mistake made this morning with
 the RoPE port. The lever exists (`DRAFT_SAMPLE_METHOD=probabilistic` in
 `arm-replicate.sh`) and its prerequisite has landed; the arm was cancelled
 before running. Run it across all three benchmarks before touching the default.
+
+---
+
+# Validation (2026-08-30, jobs 1541340-42): all fixes together, both sampling modes
+
+Every arm verified from its own log: rope neox, null-block guard 1, and the
+stated draft_sample_method. Six arms, two per benchmark on one allocation.
+
+| benchmark | pre-fix | fixed + greedy | fixed + probabilistic | card |
+| --- | ---: | ---: | ---: | ---: |
+| GSM8K | 4.0226 | 3.9951 | **4.0736** | 5.94 |
+| HumanEval | 4.9510 | 4.8780 | **5.1276** | 5.48 |
+| 16K code | 2.8395 | 2.8455 | **3.1564** | — |
+
+Three conclusions, each cross-checked across benchmarks:
+
+1. **The six fixes do not move acceptance, and were not expected to.** Greedy
+   arms land within 0.7% of pre-fix everywhere. They are correctness and
+   landmine fixes; the implementation is now clean against upstream, which is
+   what the audit was for.
+
+2. **Probabilistic drafting helps on every benchmark: +2.0%, +5.1%, +11.0%.**
+   The gain *grows with context length*, which is mechanistically sensible --
+   the longer the sequence, the more the argmax walk's early mistakes compound
+   through the lattice. This is a real effect, not noise: all three pairs move
+   the same direction.
+
+3. **And it is still nowhere near the card.** Even at its best (HumanEval,
+   5.13) DFlash2 only matches our own MTP7 control (4.91) plus a little; on
+   GSM8K it remains 31% under 5.94. **Sampling was a real but minor effect. The
+   dominant residual is not in our implementation.**
+
+## Where that leaves the goal
+
+The implementation has been audited twice -- once by name, once by subsystem
+against both upstream vLLM and SGLang -- and every divergence found is either
+fixed or measured-and-refuted (RoPE, aux tap, null block, sampling). The
+remaining gap to the card is most plausibly one of:
+
+- **The card's stack itself**: SGLang on 4x GB300 with FA4 draft attention.
+  GB300 is Blackwell-Ultra; this is GH200. The card's MTP baseline (5.12) also
+  exceeds what any MTP measurement here has produced on 5.3, which suggests a
+  hardware/stack difference in the *baseline*, not just the drafter.
+- **The checkpoint's training protocol**: acceptance is a property of the
+  drafter against the exact hidden states it was distilled from. Our aux tap
+  matches SGLang's code, but "what SGLang's code does" and "what training
+  consumed" are only the same thing if SGLang's serving stack matches the
+  training-time capture, which is unverifiable from here.
+
+**DFlash2 is now working as well as this implementation can make it work**, and
+the honest verdict on the goal's premise is: on this hardware, at this
+protocol, DFlash2 does not beat MTP3 on acceptance (4.07 vs 4.91 at matched
+width), and the card's 5.94 is not reachable by fixing fork defects, because
+there are none left that we can find.
+
+The one comparison that would still be decisive and has never been run:
+**matched MTP3-vs-DFlash2 end-to-end throughput on a 5.3 target**, since
+acceptance is not throughput and DFlash2's cheaper draft could still win on
+tok/s. That is a benchmark run, not an implementation question.

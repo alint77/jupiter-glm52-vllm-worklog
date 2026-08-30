@@ -1,0 +1,15 @@
+{
+  "label": "fixedprob-gsm8k",
+  "requests": 64,
+  "wall_s": 196.85,
+  "acceptance_length_mean": 4.0736,
+  "acceptance_length_median": 4.035,
+  "acceptance_length_pooled": 4.3848,
+  "mean_completion_tokens": 326.7,
+  "total_completion_tokens": 20907,
+  "tokens_per_second": 106.21,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "max_tokens": 4096,
+  "protocol": "DFlash2 card: chat template, natural EOS, T=1.0 top_p=0.95"
+}

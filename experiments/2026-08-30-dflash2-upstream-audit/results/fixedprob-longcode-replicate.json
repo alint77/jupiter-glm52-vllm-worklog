@@ -1,0 +1,15 @@
+{
+  "label": "fixedprob-longcode",
+  "requests": 16,
+  "wall_s": 820.92,
+  "acceptance_length_mean": 3.1564,
+  "acceptance_length_median": 3.1061,
+  "acceptance_length_pooled": 3.1439,
+  "mean_completion_tokens": 4096,
+  "total_completion_tokens": 65536,
+  "tokens_per_second": 79.83,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "max_tokens": 4096,
+  "protocol": "DFlash2 card: chat template, natural EOS, T=1.0 top_p=0.95"
+}

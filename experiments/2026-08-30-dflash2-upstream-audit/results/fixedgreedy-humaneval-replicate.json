@@ -1,0 +1,15 @@
+{
+  "label": "fixedgreedy-humaneval",
+  "requests": 64,
+  "wall_s": 1461.71,
+  "acceptance_length_mean": 4.878,
+  "acceptance_length_median": 4.8889,
+  "acceptance_length_pooled": 4.7807,
+  "mean_completion_tokens": 2837.3,
+  "total_completion_tokens": 181590,
+  "tokens_per_second": 124.23,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "max_tokens": 4096,
+  "protocol": "DFlash2 card: chat template, natural EOS, T=1.0 top_p=0.95"
+}

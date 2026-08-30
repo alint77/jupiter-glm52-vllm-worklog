@@ -1,0 +1,15 @@
+{
+  "label": "fixedgreedy-longcode",
+  "requests": 16,
+  "wall_s": 903.02,
+  "acceptance_length_mean": 2.8455,
+  "acceptance_length_median": 2.8071,
+  "acceptance_length_pooled": 2.8253,
+  "mean_completion_tokens": 4096,
+  "total_completion_tokens": 65536,
+  "tokens_per_second": 72.57,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "max_tokens": 4096,
+  "protocol": "DFlash2 card: chat template, natural EOS, T=1.0 top_p=0.95"
+}

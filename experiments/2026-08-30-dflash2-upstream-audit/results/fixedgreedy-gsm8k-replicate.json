@@ -1,0 +1,15 @@
+{
+  "label": "fixedgreedy-gsm8k",
+  "requests": 64,
+  "wall_s": 168.24,
+  "acceptance_length_mean": 3.9951,
+  "acceptance_length_median": 4.079,
+  "acceptance_length_pooled": 3.9523,
+  "mean_completion_tokens": 242.2,
+  "total_completion_tokens": 15498,
+  "tokens_per_second": 92.12,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "max_tokens": 4096,
+  "protocol": "DFlash2 card: chat template, natural EOS, T=1.0 top_p=0.95"
+}
