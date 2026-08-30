@@ -26,9 +26,9 @@ cp "${arm}" "${snap}"
 for ((i = 1; i <= pairs; i++)); do
   if (( i % 2 == 1 )); then
     first="old-r${i}"; first_env="VLLM_TIERED_MOE_OVERLAP_MAX_TOKENS=16"
-    second="new-r${i}"; second_env="VLLM_TIERED_MOE_OVERLAP_MAX_TOKENS="
+    second="new-r${i}"; second_env="env -u VLLM_TIERED_MOE_OVERLAP_MAX_TOKENS"
   else
-    first="new-r${i}"; first_env="VLLM_TIERED_MOE_OVERLAP_MAX_TOKENS="
+    first="new-r${i}"; first_env="env -u VLLM_TIERED_MOE_OVERLAP_MAX_TOKENS"
     second="old-r${i}"; second_env="VLLM_TIERED_MOE_OVERLAP_MAX_TOKENS=16"
   fi
   sbatch --account=profound --partition=booster --nodes=1 --ntasks=1 \
