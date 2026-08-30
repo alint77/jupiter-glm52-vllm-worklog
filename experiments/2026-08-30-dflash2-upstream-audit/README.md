@@ -574,3 +574,81 @@ right. If the draft's unary ranking tracks the target's argmax when fed
 HumanEval-style hidden states but not GSM8K-style ones, the checkpoint
 itself is the limitation on math; if it fails on both, the capture path
 still differs from training.
+
+---
+
+# Ops-graph audit against the z-lab reference (2026-08-30)
+
+The user directed: treat the diagnosis as a bad implementation, extract the
+draft's op graph and check it meticulously against the reference. Done, with
+the **original z-lab/dflash implementation** (github.com/z-lab/dflash, linked
+from the inco.ai blog) as the reference rather than SGLang's port -- that is
+the intended behaviour, one layer closer to training than any serving port.
+
+Harness in `offline/` -- runs on CPU with the REAL checkpoint weights, no
+server, no GPU, no scheduler, so any layout/reshape/slice/norm bug in the
+draft's own math is exposed directly:
+
+- `zlab_dflash_model_reference.py` -- the fetched reference implementation
+- `probe_offline.py` -- reference forward (z-lab semantics) on real weights
+- `probe_vllm_side.py` -- our production ops on identical inputs, diffed
+- `probe_selector.py` -- reference `CandidateSelector.select` vs our
+  `_score_edges` + walk, real codebooks
+
+## Result: the draft's math is correct
+
+| stage | check | result |
+| --- | --- | ---: |
+| RMSNorm | ours vs vLLM IR reference | maxdiff **0.0** |
+| RoPE (NeoX) | probe ref vs `ApplyRotaryEmb.forward_static` | **7.8e-3** (bf16 ulp) |
+| grouped dynamic conv | production `_grouped_conv` vs z-lab `_grouped_dynamic_convolve`, applied block-wise | maxdiff **0.06** on values ~3 (bf16 rounding) |
+| **full 6-layer draft forward** | ours vs z-lab reference, fp32, real weights | maxdiff **1.6e-4**, rel **2.0e-5** |
+| **selector path** | z-lab `select()` vs our `_score_edges`+walk, real codebooks | **paths identical**, score maxdiff **4.8e-7** |
+
+The conv comparison is worth stating precisely: a naive whole-tensor diff shows
+3.6, but that is because z-lab computes per block ([batch, block_size, H]) while
+we compute over a flat token stream and mask at block boundaries. Applied
+block-wise the two agree to bf16 rounding -- **our block-boundary masking is
+correct**, not an approximation.
+
+So the forward, the conv, the norms, the residual flow, the attention math and
+the selector are all faithful to the reference. The fault is not in the draft's
+computation. It is in an **input**.
+
+## The anomaly: the mask token's embedding row is untrained
+
+The draft embeds its 7 mask query slots by looking up `mask_token_id=154856`
+in the **target's** embedding table (both z-lab and our fork do this; z-lab via
+`_raw_input_embeddings(target, ...)`, ours by borrowing the target's
+`embed_tokens`). Inspecting that row in the GLM-5.3 checkpoint:
+
+| | row-norm |
+| --- | ---: |
+| vocabulary median | 0.7195 |
+| **row 154856 (mask token)** | **0.003306** |
+| ratio | **217x smaller** |
+| percentile | **0.13th** |
+
+Rows 154851-154879 all sit at the same ~0.0033 level: that is the untouched
+initialization-noise tail of the embedding table. Identical in all four
+GLM-5.3 checkpoints on disk (NVFP4, NVFP4-Inferact, Int4-Int8Mix, FP8), so it
+is a property of the released GLM-5.3 weights, not of the requant.
+
+**Every mask position in every draft step is therefore fed a near-zero vector.**
+That is the input the drafter's first prediction is conditioned on, and it is
+consistent with everything measured so far: position 0 depressed (0.615 vs
+MTP's 0.915), recall 64% on GSM8K, and the whole curve flattened rather than
+structurally broken.
+
+Our loader already anticipates exactly this: `_read_mask_embedding()` looks for
+a `mask_embedding.pt` shipped beside the draft checkpoint and substitutes it for
+`embed_tokens[mask_token_id]` when present (`has_separate_mask_embedding`).
+**`incoai/GLM-5.3-DFlash2` ships no such file** -- the HF repo contains only
+`.gitattributes`, `README.md`, `assets/`, `config.json`, `model.safetensors`.
+
+Open question this raises, and the next thing to settle: if the card's own
+serving stack reads the same untrained row from the same released weights, it
+cannot be the whole story for the 5.94 -- so either the card's target
+checkpoint differs in that row, or the drafter was trained against precisely
+this near-zero mask input and something else supplies the signal. That is now
+a checkpoint question with a measurable answer, not a code question.
