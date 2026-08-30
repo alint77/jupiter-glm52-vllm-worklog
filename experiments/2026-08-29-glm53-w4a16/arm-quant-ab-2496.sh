@@ -22,7 +22,7 @@ profile="${3:?placement profile}"
 mode="${4:-mtp3}"   # mtp3 | dflash2
 
 repo_dir=/e/project1/profound/alint77/vllm
-result_dir="${repo_dir}/agent_space/experiments/2026-08-28-nvfp4-tiered"
+result_dir="${RESULT_DIR:-${repo_dir}/agent_space/experiments/2026-08-28-nvfp4-tiered}"
 bench_dir="${repo_dir}/agent_space/experiments/2026-08-05-pytorch-16k-c1-c4"
 
 cd "${repo_dir}"
