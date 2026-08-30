@@ -32,21 +32,28 @@ for ((i = 1; i <= pairs; i++)); do
   # Alternate which arm runs first, so a warm-cache or thermal drift within an
   # allocation cannot favour one side systematically.
   if (( i % 2 == 1 )); then
-    first_label="old-r${i}"; first="${shipped}"
-    second_label="new-r${i}"; second="${candidate}"
+    first_label="capold-r${i}"; first="${shipped}"
+    second_label="capnew-r${i}"; second="${candidate}"
   else
-    first_label="new-r${i}"; first="${candidate}"
-    second_label="old-r${i}"; second="${shipped}"
+    first_label="capnew-r${i}"; first="${candidate}"
+    second_label="capold-r${i}"; second="${shipped}"
   fi
+  # PROFILE_CAP=1 makes the profile's count bind, so residency is exactly the
+  # 2496 both profiles list. Without it residency is ~2730 and roughly 9% of the
+  # resident set is chosen by _promote_underfilled_residency rather than by
+  # either ranking, which dilutes the very difference this A/B is measuring --
+  # and is why the first run of it came out null.
   sbatch --account=profound --partition=booster --nodes=1 --ntasks=1 \
     --gres=gpu:4 --cpus-per-task=288 --time=04:00:00 \
     --job-name="glm53-prof-ab-r${i}" \
     --output="${here}/slurm-prof-ab-r${i}-%j.out" \
     --error="${here}/slurm-prof-ab-r${i}-%j.err" \
     --wrap "TIERED_MODEL_DIR=${model} RESULT_DIR=${here}/ab \
+              VLLM_TIERED_MOE_PROFILE_CAP=${PROFILE_CAP:-1} \
               srun --nodes=1 --ntasks=1 --cpus-per-task=288 --gres=gpu:4 --mem=0 \
                 bash ${snap} ${first_label} 4 ${first} mtp3
             TIERED_MODEL_DIR=${model} RESULT_DIR=${here}/ab \
+              VLLM_TIERED_MOE_PROFILE_CAP=${PROFILE_CAP:-1} \
               srun --nodes=1 --ntasks=1 --cpus-per-task=288 --gres=gpu:4 --mem=0 \
                 bash ${snap} ${second_label} 4 ${second} mtp3"
 done
