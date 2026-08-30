@@ -153,3 +153,35 @@ step above 16 tokens, which is every prefill and every mixed prefill-decode step
    prefill wall clock, so 20.9% here is not 20.9% end to end. It needs a paired
    server A/B, and the exact-400K golden SHA re-established, which the worklog
    requires after any Marlin grid change.
+
+## The change is not free: overlap costs HBM at prefill scale
+
+The first end-to-end attempt failed to boot on the `new` arm:
+
+```
+Tiered MoE observed free HBM is below the runtime reserve:
+4,360,503,296 bytes available, 6,000,000,000 required
+```
+
+This is a real consequence of the change, not a harness fault.
+`_allocate_tiered_buffers` requests both tiers' workspaces from
+`get_simultaneous(...)`, so with overlap enabled the two tiers hold concurrent
+buffers instead of reusing one sequentially. At 16 tokens that is noise. At a
+full 8192-token prefill chunk each tier's workspace13 is 8192 x 8 x 4096
+bfloat16 (~536 MB) plus a workspace2 of ~268 MB, so raising the threshold costs
+on the order of **1.6 GB per rank**.
+
+The shipped 2496-slot profile is sized to fit almost exactly, so it cannot
+absorb that. The A/B therefore runs both arms on the 2400-slot profile, which
+frees about 2.0 GB per rank (96 experts x 21.2 MB).
+
+**The real trade is HBM against prefill MoE time.** 1.6 GB per rank is roughly
+75 hot expert slots, 3% of a 2496 budget, against a measured 17-21% of routed
+MoE time on every step above 16 tokens. That looks favourable, but it is exactly
+what the A/B has to decide, because cold-hit rises as slots fall and the
+microbenchmark cannot see the KV or scheduling consequences.
+
+A cheaper variant worth measuring if the HBM cost bites: the boundary sweep is
+flat from 64 tokens upward (+20.2% at 64, +21.9% at 1024, +20.9% at 8192), so
+capping the overlap at ~1024 would capture the win on mixed prefill-decode steps
+for a workspace cost near 200 MB, giving up only the full prefill chunks.

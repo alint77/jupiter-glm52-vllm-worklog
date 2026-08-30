@@ -14,7 +14,12 @@ repo=/e/project1/profound/alint77/vllm
 here="${repo}/agent_space/experiments/2026-08-30-tier-cost-surface"
 arm="${here}/arm-overlap-ab.sh"
 model="${TIERED_MODEL_DIR:-/e/fscratch/profound/${USER:-$(id -un)}/models/GLM-5.3-W4A16}"
-profile="${repo}/agent_space/profiles/glm53-w4a16-2496.json"
+# 2400, not the shipped 2496: overlapping at prefill scale needs both tiers'
+# workspaces live at once (`get_simultaneous`), about 1.6 GB per rank more
+# than reusing one sequentially, and the 2496 profile is sized to fit
+# exactly -- the new arm cannot boot under it. 96 fewer slots frees ~2.0 GB.
+# Both arms use the same profile, so the comparison stays fair.
+profile="${PROFILE:-${repo}/agent_space/profiles/glm53-w4a16-2400.json}"
 pairs="${1:-3}"
 
 [[ -s "${arm}" ]] || { printf 'missing arm: %s\n' "${arm}" >&2; exit 1; }
