@@ -1,0 +1,24 @@
+{
+  "label": "recall-humaneval",
+  "requests": 64,
+  "wall_s": 1409.28,
+  "acceptance_length_mean": 4.8788,
+  "acceptance_length_median": 4.8883,
+  "acceptance_length_pooled": 4.7867,
+  "per_position_accepted": {
+    "0": 552,
+    "1": 486,
+    "2": 438,
+    "3": 388,
+    "4": 360,
+    "5": 324,
+    "6": 300
+  },
+  "mean_completion_tokens": 2705.7,
+  "total_completion_tokens": 173162,
+  "tokens_per_second": 122.87,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "max_tokens": 4096,
+  "protocol": "DFlash2 card: chat template, natural EOS, T=1.0 top_p=0.95"
+}

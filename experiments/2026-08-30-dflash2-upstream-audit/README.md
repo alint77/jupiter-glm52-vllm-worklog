@@ -523,3 +523,54 @@ token outside the top-16, and the fault is in the draft forward or the
 unary head application; if recall is high (~0.95) while acceptance is 0.62,
 the fault is in how the target's distribution compares to the proposal
 (i.e. the verify side), not the draft at all.
+
+## Recall result (2026-08-30, jobs 1544741-43): on GSM8K the target's token is not in the candidate set
+
+The direct measurement, accumulated at verify time over ~4k comparisons per
+position (GSM8K) and ~17k (HumanEval), checkpoint top-16, lattice walk:
+
+| | pos0 | pos1 | pos2 | pos3 | pos4 | pos5 | pos6 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| GSM8K target-argmax in candidates | **64.1%** | 63.6 | 71.2 | 73.9 | 74.9 | 72.9 | 74.3 |
+| GSM8K picked == target-argmax | 58.4 | 57.0 | 62.7 | 65.4 | 65.4 | 62.6 | 63.1 |
+| HumanEval target-argmax in candidates | **98.4%** | 97.3 | 96.3 | 94.1 | 90.9 | 87.3 | 84.5 |
+| HumanEval picked == target-argmax | 86.5 | 82.6 | 79.8 | 77.5 | 73.6 | 70.0 | 67.6 |
+
+The topk64 arm confirms the bound independently: widening the candidate set
+to 64 leaves GSM8K acceptance at 3.9420 (vs 3.9711 same-build control) and
+position 0 at 0.624 (vs 0.618) -- the true token is essentially never sitting
+in ranks 17-64, so the miss is not a width problem.
+
+**This is the fault, and it is task-dependent, not constant.** On HumanEval
+the draft's hidden states are excellent: 98.4% of the time the target's argmax
+is inside the 16 candidates at position 0, and the whole pipeline (recall ->
+ranking -> acceptance 0.877) is nearly MTP-class. On GSM8K the draft's hidden
+states are placing the target's argmax outside the top-16 **36% of the time
+at position 0** -- and no selector, walk, or sampling mode can recover a
+token that is not a candidate. Recall also caps the verify side: with one-hot
+drafts, acceptance at a position is the target's mass on the picked token,
+and 58.4% picked==argmax with recall 64.1% means ranking loses only ~6pp on
+top of the recall loss.
+
+So the question is no longer "which stage is broken" but **why the draft's
+hidden states are target-aligned on code and misaligned on math**. The draft
+is a fixed trained artifact; the same checkpoint, the same head, the same
+plumbing. What differs between the tasks is the *content of the context KV*
+(the target's hidden states at layers 5/19/33/47/61/75) and the *bonus/mask
+embedding path*. A misaligned aux tap, a wrong hidden_norm, or a wrong RoPE
+phase would depress all tasks; a task-dependent depression points at
+something about the *distribution of hidden states the draft sees* -- e.g.
+the aux taps interacting with the target's layer structure (GSM8K CoT
+activations vs code activations exercising different layers), or the draft
+having been distilled on a data mix where math-style hidden states are
+underrepresented.
+
+The decisive next experiment is a **hidden-state probe**: run the target on
+a fixed GSM8K prompt, capture the aux hidden states at the six taps, and
+feed them (with the same bonus/mask query block) to the draft both as-is and
+perturbed -- e.g. swap in the hidden states from a HumanEval prompt -- to see
+whether the candidate ranking tracks the target's logits when the inputs are
+right. If the draft's unary ranking tracks the target's argmax when fed
+HumanEval-style hidden states but not GSM8K-style ones, the checkpoint
+itself is the limitation on math; if it fails on both, the capture path
+still differs from training.
