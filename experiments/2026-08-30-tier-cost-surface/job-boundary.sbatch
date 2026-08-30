@@ -6,7 +6,7 @@
 #SBATCH --gres=gpu:4
 #SBATCH --cpus-per-task=288
 #SBATCH --time=02:00:00
-#SBATCH --job-name=tier-cost-surface
+#SBATCH --job-name=tier-overlap-boundary
 #SBATCH --output=agent_space/experiments/2026-08-30-tier-cost-surface/slurm-%j.out
 #SBATCH --error=agent_space/experiments/2026-08-30-tier-cost-surface/slurm-%j.err
 
@@ -42,6 +42,6 @@ nvidia-smi -i 0 --query-gpu=name,memory.total --format=csv,noheader
 # inner srun exited 13 without launching a step.
 numactl --cpunodebind=0 --membind=0 \
   "${repo_dir}/.venv/bin/python" -u \
-  "${repo_dir}/agent_space/benchmarks/tier_cost_surface.py" \
+  "${repo_dir}/agent_space/benchmarks/tier_overlap_boundary.py" \
   --numa-node 0 \
-  --output "${here}/surface-${SLURM_JOB_ID}.json"
+  --output "${here}/boundary-${SLURM_JOB_ID}.json"

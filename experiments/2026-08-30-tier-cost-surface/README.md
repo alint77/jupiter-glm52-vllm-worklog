@@ -82,3 +82,74 @@ trustworthy as stated.
 ## Status
 
 - 2026-08-30: submitted as job 1535786.
+
+## Result: the threshold is wrong, and there is no regime where it is right
+
+`boundary-decode-1535798.json`, at the decode-realistic split Phase 32 measured
+(13.85 hot / 6.77 cold active per layer per rank, rounded to 14 / 7):
+
+| tokens | policy on | policy off (today, above 16) | gain |
+| ---: | ---: | ---: | ---: |
+| 4 | 386.8 | 463.8 | +16.6% |
+| 8 | 387.7 | 463.8 | +16.4% |
+| 16 | 387.7 | 468.2 | +17.2% |
+| 24 | 741.9 | 897.0 | **+17.3%** |
+| 32 | 743.9 | 896.4 | +17.0% |
+| 64 | 1096.0 | 1374.3 | +20.2% |
+| 256 | 2519.3 | 3148.4 | +20.0% |
+| 1024 | 3902.2 | 4994.8 | +21.9% |
+| 4096 | 12110.8 | 15438.6 | +21.6% |
+| **8192** | **23877.9** | **30199.1** | **+20.9%** |
+
+**The overlap policy wins at every token count from 4 to 8192, by 16-22%.**
+There is no crossover. The comment's claim that above the threshold "the default
+heuristic's grid is the right one" does not hold anywhere it was checked, and
+8192 is exactly `max_num_batched_tokens`, the prefill chunk size.
+
+At the prefill-realistic split (33 hot / 31 cold) the same shape holds, +8.9% to
++24.3% for m >= 8.
+
+### A retraction
+
+The first run reported **-24.8% at m=4**, i.e. the policy hurting. That was an
+artifact of this benchmark, not a finding: 4 tokens x 8 = 32 routing slots
+cycling over 64 targets only reach the first 32, which were all hot, so the cold
+tier had no work and the policy only slowed the hot kernel down. It does put a
+number on the cost of the tight-smem launch when there is nothing to overlap
+with -- about 25% on the hot tier alone -- but it says nothing about the
+threshold. The decode-realistic rerun above is the valid measurement.
+
+### The cost surface run is confounded; discard it
+
+`surface-1535795.json` conflates two variables. As H grows at fixed C, the
+tokens routed to each cold expert fall, because the benchmark cycles `m * TOPK`
+slots over `H + C` targets. Cold time at C=4 reads 433.9 us when H=8 and 231.8
+us when H=16 -- that is tokens-per-expert moving, not cold expert count. A
+redesign must hold tokens-per-expert fixed.
+
+Two things it does show cleanly:
+
+- **H1 holds, and more strongly than "staircase".** Hot cost is not monotonic in
+  H: 8 -> 148.4 us, 12 -> 207.9, 16 -> **158.0**, 20 -> 191.7, 24 -> 220.8.
+  Twelve experts cost more than sixteen. There is no per-expert cost.
+- **H3 holds and is occasionally severe.** Union is usually within ~4% of
+  `max(hot, cold)`, but H=8/C=2 gives 376.9 against a max of 231.2 (+63%) and
+  H=24/C=8 gives 651.7 against 436.1 (+49%) -- worst exactly where the tiers are
+  closest in size, which is the regime the balance-point argument lives in. The
+  interior optimum near 3600 slots that `tier_balance.py` reported should not be
+  trusted as a number.
+
+## What to change, and the two cautions
+
+Raising `tiered_overlap_max_tokens` is worth 17-21% of routed-MoE time in every
+step above 16 tokens, which is every prefill and every mixed prefill-decode step.
+
+1. **The threshold gates two unrelated things.** Besides the launch policy,
+   `prepare_replica_routing` returns False above it, so raising one value would
+   silently enable replica assignment at token counts where it has never been
+   exercised. Replica assignment is only safe when every EP rank derives the same
+   routes. **Separate the two values before raising either.**
+2. **This is a single-layer microbenchmark.** The routed MoE is a fraction of
+   prefill wall clock, so 20.9% here is not 20.9% end to end. It needs a paired
+   server A/B, and the exact-400K golden SHA re-established, which the worklog
+   requires after any Marlin grid change.

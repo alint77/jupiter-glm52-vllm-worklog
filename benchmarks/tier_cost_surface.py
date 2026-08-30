@@ -120,7 +120,9 @@ def make_tier(
     return Tier(
         *weights,
         expert_map=expert_map,
-        workspace=marlin_make_workspace_new(device, blocks_per_sm),
+        # Sized at the kernel's minimum (SMs x 4), not the tier's grid: the
+        # launch policy shrinks the grid but not the workspace the GEMM asserts on.
+        workspace=marlin_make_workspace_new(device, 4),
         cache13=torch.empty(m * TOPK * HIDDEN, dtype=torch.bfloat16, device=device),
         cache2=torch.empty((m * TOPK, INTERMEDIATE), dtype=torch.bfloat16, device=device),
         output=torch.empty((m, HIDDEN), dtype=torch.bfloat16, device=device),
