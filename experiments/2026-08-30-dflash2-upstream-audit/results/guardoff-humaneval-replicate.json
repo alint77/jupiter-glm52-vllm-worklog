@@ -1,0 +1,15 @@
+{
+  "label": "guardoff-humaneval",
+  "requests": 64,
+  "wall_s": 1421.47,
+  "acceptance_length_mean": 4.951,
+  "acceptance_length_median": 4.899,
+  "acceptance_length_pooled": 4.8359,
+  "mean_completion_tokens": 2778.2,
+  "total_completion_tokens": 177806,
+  "tokens_per_second": 125.09,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "max_tokens": 4096,
+  "protocol": "DFlash2 card: chat template, natural EOS, T=1.0 top_p=0.95"
+}

@@ -1,0 +1,15 @@
+{
+  "label": "guardon-gsm8k",
+  "requests": 64,
+  "wall_s": 171.57,
+  "acceptance_length_mean": 4.0033,
+  "acceptance_length_median": 4.0962,
+  "acceptance_length_pooled": 3.9585,
+  "mean_completion_tokens": 250.7,
+  "total_completion_tokens": 16043,
+  "tokens_per_second": 93.51,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "max_tokens": 4096,
+  "protocol": "DFlash2 card: chat template, natural EOS, T=1.0 top_p=0.95"
+}

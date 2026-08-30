@@ -313,3 +313,60 @@ Both were caught only because `load_dflash_model` logs the layout it chose and
 its source, which made "this arm did not run my code" visible instead of
 inferable. Any future arm that selects behaviour by environment should log the
 selection the same way.
+
+---
+
+# Fixes implemented (2026-08-30)
+
+| # | Defect | Commit | Effect |
+| --- | --- | --- | --- |
+| P2 | `num_speculative_tokens` missing from the DFlash/DSpark config hash | `8a0f60ddd8` | a width sweep on a warm shared cache could replay a narrower run's plan |
+| — | Draft RoPE layout ported, then reverted to NeoX by measurement | `be382fe44d`, `21644f8b9c` | upstream's target-copy **halves** acceptance here; now opt-in |
+| #51538 | Draft KV written into the null block | `6fea8f2850` | correctness; not the acceptance gap |
+| #54282 | Draft and verifier shared one Gumbel stream | `7c1b93ebf5` | prerequisite for probabilistic drafting |
+| #52188 | DFlash slot math is CP1-only | `45e14de4b6` | now fails closed at `cp_size > 1` |
+| — | `seq_lens` unclamped, `sample_from_anchor` unguarded, aux `layer_ids` fallback missing, `hc_mult` ungated | `45e14de4b6` | latent acceptance losses that raise nothing |
+
+## What the three benchmarks showed
+
+Acceptance length, card protocol, guard off (i.e. the state before today's work):
+
+| benchmark | measured | card | gap |
+| --- | ---: | ---: | ---: |
+| HumanEval | **4.9510** | 5.48 | **−10%** |
+| GSM8K | 4.0226 | 5.94 | −32% |
+| 16K code | **2.8395** | — | — |
+
+**The gap is not uniform, and that is the most important result here.** A
+single-benchmark reading -- "DFlash2 is 32% down" -- is wrong. DFlash2 is close
+to the card on code, far off on math, and collapses on long context. Any fix
+evaluated on GSM8K alone would have been measuring the least representative
+shape of the three.
+
+The null-block guard moved GSM8K 4.0226 -> 4.0033, i.e. not at all, which is
+what its own mechanism predicts: short answers never evict. It is kept as a
+correctness fix, not an acceptance one.
+
+`guardoff-gsm8k` at 4.0226 against Phase 43's 4.0293 (0.17% apart) is a tight
+reproduction, so these numbers are comparable to the historical record.
+
+## The open hypothesis, unmeasured
+
+`draft_sample_method` defaults to `"greedy"`
+(`vllm/config/speculative.py:282`), so `SAMPLE_PROBABILISTIC` is False
+(`dflash2/speculator.py:156`), the candidate selector takes an **argmax walk**,
+and the 16-candidate lattice's proposal distribution `q` never reaches the
+verifier: the ratio test degenerates from `sum(min(p, q))` to `p(argmax q)`.
+SGLang -- the stack that produces 5.94 -- samples the path per request and hands
+`q` to verification.
+
+This would hit DFlash2 and not MTP, because MTP's next-token head is near-peaked
+so argmax approximates sampling, while DFlash2's lattice is not and ships an
+fp32 logits cache whose only consumer is the ratio test.
+
+**Not changed, deliberately.** Upstream vLLM also defaults to greedy, so this is
+a divergence from SGLang rather than a fork defect, and flipping a shipped
+default on an unmeasured hypothesis is the exact mistake made this morning with
+the RoPE port. The lever exists (`DRAFT_SAMPLE_METHOD=probabilistic` in
+`arm-replicate.sh`) and its prerequisite has landed; the arm was cancelled
+before running. Run it across all three benchmarks before touching the default.
