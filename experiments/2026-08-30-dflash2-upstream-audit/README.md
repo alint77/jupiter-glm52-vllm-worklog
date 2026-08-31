@@ -652,3 +652,60 @@ cannot be the whole story for the 5.94 -- so either the card's target
 checkpoint differs in that row, or the drafter was trained against precisely
 this near-zero mask input and something else supplies the signal. That is now
 a checkpoint question with a measurable answer, not a code question.
+
+---
+
+# Draft-checkpoint revision A/B (2026-08-31, jobs 1553383-84): the newer checkpoint does not help
+
+A reviewer's second point -- verify the exact revisions before trusting any
+checkpoint-level explanation -- surfaced a real discrepancy.
+`incoai/GLM-5.3-DFlash2` has two commits:
+
+| commit | date | sha256 |
+| --- | --- | --- |
+| `bae18bbff1` "Release" | 2026-08-28 15:06Z | `8ed9d14a...` <- what we had been running |
+| `425aa615ce` "Checkpoint update" | 2026-08-28 21:12Z | `3105f140...` <- current HEAD |
+
+We downloaded six hours before the weights were replaced. Diffing the two:
+**all 96 tensors differ** -- same config, same shapes, same keys, every weight
+retrained. The selector moved most (`predecessor_codebook` rel 27%,
+`successor_codebook` 25%, `hidden_projection` 20%), i.e. exactly the stage that
+sets candidate quality and exactly where the recall measurement had found the
+fault.
+
+Result, greedy, card protocol, 64 requests, directly comparable to every prior
+arm:
+
+| benchmark | v1 (Release) | v2 (Checkpoint update) | card |
+| --- | ---: | ---: | ---: |
+| GSM8K | 3.9880 | **3.8894** | 5.94 |
+| HumanEval | 4.8780 | **4.7630** | 5.48 |
+
+**The newer checkpoint does not close the gap; it is 2-3% lower on both, which
+is within the run-to-run spread.** The hypothesis was reasonable and is now
+refuted by measurement.
+
+## The more interesting result: recall rose sharply and acceptance did not follow
+
+Recall logging was on for both v2 arms. Steady-state, target-argmax-in-candidates:
+
+| position | 0 | 1 | 2 | 3 | 4 | 5 | 6 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| GSM8K v1 | 64.1 | 63.6 | 71.2 | 73.9 | 74.9 | 72.9 | 74.3 |
+| GSM8K v2 | **76.6** | 75.4 | 79.5 | 80.0 | 79.1 | 75.7 | 74.2 |
+| HumanEval v1 | 98.4 | 97.3 | 96.3 | 94.1 | 90.9 | 87.3 | 84.5 |
+| HumanEval v2 | **98.7** | 97.4 | 95.4 | 92.3 | 88.5 | 84.8 | 81.0 |
+
+GSM8K position-0 recall improved by **12.5 points** (64.1 -> 76.6) while GSM8K
+acceptance went *down* (3.99 -> 3.89). That breaks the causal story the recall
+measurement suggested: **recall was not the binding constraint.** Getting the
+target's token into the candidate set more often did not translate into
+accepting more tokens, because acceptance is decided by the *proposal
+distribution* at the verify step, not by set membership.
+
+This also retires the last live implementation hypothesis. What remains is
+consistent across every measurement made: the drafter proposes well on code
+(HumanEval within 11-13% of the card) and much less well on math-style
+continuations (GSM8K 33-35% under), on both released checkpoints, with the
+math verified faithful to z-lab and the serving path verified numerically
+correct in-flight.
