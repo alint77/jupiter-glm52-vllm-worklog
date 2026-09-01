@@ -709,3 +709,176 @@ consistent across every measurement made: the drafter proposes well on code
 continuations (GSM8K 33-35% under), on both released checkpoints, with the
 math verified faithful to z-lab and the serving path verified numerically
 correct in-flight.
+
+---
+
+# Input-side audit (2026-09-02): the deficit is entirely position-0 candidate
+# recall, and every instrument built so far is blind to its cause
+
+Third audit, no cluster time. Phases 48-49e each measured one link of the
+chain and cleared it. This phase puts the surviving numbers side by side and
+recomputes the per-position series over **every** steady-state window rather
+than the last six, which is what the earlier readings used.
+
+## The arithmetic closes
+
+Position-0 acceptance, mean over all `Per-position acceptance rate` log lines
+in each run (n = windows), against the recall measurement from 49c:
+
+| run | n | pos-0 mean | min | max | recall@16 pos-0 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| MTP7, GSM8K | 17 | **0.899** | 0.824 | 0.951 | - |
+| DFlash2 greedy, GSM8K | 18 | **0.578** | 0.265 | 0.806 | 64.1% |
+| DFlash2 lattice-ctrl, GSM8K | 17 | 0.579 | 0.374 | 0.758 | 64.1% |
+| DFlash2 v2 checkpoint, GSM8K | 23 | 0.623 | 0.293 | 0.795 | 76.6% |
+| DFlash2, HumanEval | 141 | **0.839** | 0.695 | 0.946 | 98.4% |
+| DFlash2, 16K code | 90 | 0.669 | 0.545 | 0.799 | - |
+
+MTP7's 0.899 is not just a control, it is a *measurement of the target*: MTP
+proposes the mode, so 0.899 is the rate at which the target's own sample at
+T=1.0/top-p 0.95 equals its mode on this text. Then, on GSM8K:
+
+```
+recall x mode-agreement = 0.641 x 0.899 = 0.576    measured 0.578
+```
+
+**Position-0 acceptance is recall times the target's mode-agreement rate, to
+within 0.3%.** Whenever the target's token is inside the 16 candidates,
+DFlash2 proposes it and it is accepted at exactly the rate MTP's proposal is.
+Selector, lattice walk, Gumbel keying, verify coupling and the rejection test
+are all at ceiling; there is no loss left in them to recover. The whole GSM8K
+deficit is that the draft's own top-16 does not contain the target's mode 36%
+of the time, against 2% on HumanEval.
+
+This is consistent with, and explains, all four earlier results at once:
+the unary walk matching the lattice at position 0 (49b), the lattice being
+worth only a few percent (49b), sampling being worth 2-11% (48 validation),
+and probabilistic drafting not moving position 0 (49).
+
+## Corrections to the record
+
+1. **`topk64` was misread as a null result.** Widening the candidate set to 64
+   moved acceptance 3.988 -> 3.942, and that was taken as "the draft ranks the
+   true token low regardless of width". That reading is right, but it is not
+   what the arm measured: it measured whether the *walk* picks a candidate
+   ranked 17-64, and the walk is unary-dominated at position 0, so a
+   low-ranked true token could be present and still never chosen. The arm
+   bounds recall@64 only under an assumption it does not test. Measuring
+   recall@64 directly costs one flag on top of an existing arm
+   (`VLLM_DFLASH2_SELECTOR_TOPK=64 VLLM_DFLASH2_RECALL_LOG=1`) and separates
+   "the true token is outside 64" from "it is inside 64 but ranked low".
+
+2. **49e's refutation compared unlike quantities.** It set a *position-0
+   recall* delta (64.1 -> 76.6) against an *aggregate acceptance-length*
+   delta (3.988 -> 3.889), across two arms whose completions differ in length
+   (252 vs 334 mean tokens at T=1.0), i.e. which generated different text.
+   The conclusion survives the right comparison -- position-0 acceptance over
+   all windows is 0.579 (v1) vs 0.623 (v2), a rise well inside the
+   window spread -- but the published inference does not support it.
+
+3. **Window spread was under-reported.** DFlash2's position-0 ranges 0.27-0.81
+   across windows on GSM8K while MTP7's ranges 0.82-0.95 on the same prompts
+   and server. Six-window means cannot resolve the 12-point effect 49e was
+   asked to adjudicate. Any future per-position claim should quote all windows.
+
+4. **The 16K-code collapse is a different fault.** Its position 0 is 0.669,
+   *higher* than GSM8K's, while its acceptance length is the lowest of the
+   three (2.86). Long context loses at depth, not at the first prediction.
+   The two shortfalls should stop being discussed as one number.
+
+## The blind spot both audits and the probe share
+
+The subsystem audit (48), the ops-graph audit (49d) and the in-serving probe
+(`dflash2/probe.py`, `a2482bb3a4`) all compare **the serving path against a
+reference given the same inputs and the same loaded weights**. The probe's own
+docstring says so: it recomputes the context-KV and selector chains "with plain
+torch ops from the same live weights".
+
+That design cannot see anything in the hypothesis space that survives today:
+
+- wrong *inputs* to a correct chain -- the six aux taps, the mask row, the
+  shared embedding and lm_head;
+- a wrong *weight-to-module assignment* -- both sides read the same
+  `self.fc`, so a mis-mapped tensor is identical in both.
+
+So the probe should not be run to close this: it will report bf16 rounding
+noise and that will mean nothing. (Checked today: the checkpoint's six
+non-layer tensors are named `fc`, `hidden_norm`, `norm`,
+`candidate_selector.{hidden_projection,predecessor_codebook,successor_codebook}`
+and map to identically named modules, so a silent mis-assignment is unlikely
+-- but it is unlikely by inspection, not by measurement.)
+
+## Ruled out today at zero cost
+
+- **Thinking mode / protocol mismatch.** The chat template appends `<think>`
+  unconditionally at the generation prompt (`chat_template.jinja:250`) and
+  defaults `Reasoning Effort: Max`, so our GSM8K completions are CoT-shaped
+  like the card's. The 250-token mean is short reasoning, not absent
+  reasoning. The rank inversion against the card (they measure math above
+  code, we measure math below it) is not a text artefact.
+- **The candidate/unary head's TP reduction.** `get_top_k_tokens` takes a
+  per-shard top-k, all-gathers values and ids, and re-reduces globally
+  (`logits_processor.py:241-286`); the candidate set is the true global
+  top-k, not a per-shard artefact.
+- **Draft quantisation.** `get_draft_quant_config` reads the *draft's* config,
+  which carries none, so the drafter runs BF16 as trained.
+
+## The one variable never moved: the target
+
+Every DFlash2 acceptance number on record -- Phase 42 through 49e -- was
+measured on `GLM-5.3-NVFP4` through this fork's tiered MoE path
+(`arm-replicate.sh` hardcodes both). The drafter was distilled against a BF16
+target, and it is the only consumer in this stack of the target's
+**intermediate** residual stream: it conditions on layers 5/19/33/47/61/75
+through `fc`, while MTP reads only the final layer. Every quality gate we run
+-- exact-text smoke, GSM8K score, KL against a same-fork control -- scores the
+target's *output*, which is robust to perturbation the drafter is not.
+
+That gives a mechanism for the task asymmetry that no drafter-side hypothesis
+gives: digit and arithmetic continuations cannot be pattern-matched from
+surface form, so drafting them requires reading the target's computation out
+of its intermediate states, while code continuations are largely predictable
+from surface structure. Noisier taps therefore cost math heavily and code
+little -- which is the measured shape (recall 64% vs 98%).
+
+Supporting datum, recorded in
+[GLM-5.3 FP8](../2026-08-29-glm53-fp8/README.md) and never connected to this
+investigation: **enabling DFlash2 costs 2.3pp of GSM8K accuracy** (88.93%
+across three runs vs 91.21% target-only). Speculative decoding is supposed to
+be quality-neutral. The spread is wide (86.72-90.23) and this server's greedy
+non-reproducibility is a known confound, so it is a signal to chase, not a
+finding -- but it points at the same coupling.
+
+`GLM-5.3-BF16`, `GLM-5.3-FP8` and `GLM-5.3-W4A16` are all on fscratch. FP8
+serving was blocked in Phase 45 (documented there); W4A16 g32 is what
+production serves today and **DFlash2 has never been measured on it**, so the
+NVFP4 answer does not transfer to the deployed configuration either way.
+
+## Plan, ranked, all independent and parallelisable
+
+- **P5 - target-side A/B (decides the remaining question).** DFlash2 and MTP7,
+  GSM8K and HumanEval, on `GLM-5.3-W4A16` g32 and on `GLM-5.3-NVFP4`, plus a
+  tiered-MoE-off arm on one of them to split the quantiser from this fork's
+  kernels. Gate: DFlash2 GSM8K position-0 recall and acceptance against
+  64.1% / 0.578. Prediction under the tap-perturbation story: GSM8K recovers
+  substantially and HumanEval barely moves. A null result across both
+  checkpoints and the tiered-off arm retires the goal with evidence: the
+  drafter is weak on math against this target and the card's 5.94 is not
+  reachable here.
+- **P6 - measure recall@64 directly.** `VLLM_DFLASH2_SELECTOR_TOPK=64
+  VLLM_DFLASH2_RECALL_LOG=1` on GSM8K. Separates "the mode is outside 64"
+  (hidden states are wrong) from "inside 64 but ranked low" (the head's
+  calibration on this hidden state is wrong). One arm.
+- **P7 - mask-embedding sensitivity.** The loader already substitutes a
+  `mask_embedding.pt` shipped beside the checkpoint. Copy the checkpoint dir,
+  drop in a unit-RMS random row, and measure. Insensitive retires 49d's
+  anomaly for good; sensitive makes it the first thing to fix. Note
+  RMSNorm(exact 0) = 0 while RMSNorm(noise) = a unit direction, so the arm
+  must use a realistic row, not zeros. One arm.
+- **P8 - MTP7 on HumanEval.** The missing cell of the 2x2: it pins the
+  target's mode-agreement rate on code and closes the arithmetic above on
+  both benchmarks rather than one. Cheap, and it makes every future
+  position-0 claim quotable.
+
+P5 is the only one that can still move the number. P6-P8 are diagnostics that
+make P5's result interpretable whichever way it lands.
