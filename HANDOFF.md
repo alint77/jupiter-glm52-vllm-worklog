@@ -1,6 +1,35 @@
 # GLM-5.2 on JUPITER: agent handoff
 
-**Last updated: 2026-09-02 (Phase 52). READ THIS FIRST: the fork's DFlash2
+**Last updated: 2026-09-02 (Phase 53). DFlash now supports DCP, and three
+missed upstream fixes landed.** The `NotImplementedError` that refused
+`--decode-context-parallel-size > 1` under DFlash is gone: upstream #52188 is
+ported (`cp_local_slot`, CP parameters through the prepare kernel,
+`cudagraph.py`'s DCP block restored, `VLLM_DFLASH_NULL_BLOCK_GUARD` dropped in
+favour of upstream's always-on `ctx_resident`/`q_resident`). Two on-GPU gates
+in
+[gates/](experiments/2026-09-02-dflash-upstream-divergence/gates/README.md)
+back it with no allocation: bit-identical to the pre-port kernel at
+`cp_size=1` over 72 configs, and matching an independent torch reference of
+the DCP round-robin mapping at `cp_size>1` over 72 more.
+
+Two other divergences from upstream landed alongside, both **missed fixes, not
+fork decisions** (merge-base `d08eebad16` already has the fork's values): the
+`sample_idx_mapping` `-1` sentinel, and masking rejected suffix rows to
+`PAD_SLOT_ID` so they stop racing the query rows for identical KV slots.
+
+**Do not re-raise either as the graph defect.** `prepare_dflash_inputs` runs
+*outside* the captured region (`propose()` line 81 vs
+`dispatch_cg_and_sync_dp` at 146), so its outputs are graph inputs, recomputed
+eagerly in both modes. Phase 52's 44% graph-vs-eager acceptance gap is still
+open; the suspect is DFlash2's `_generate_draft` body and replay-only padding
+rows. The `out_query_slot_mapping_ptr` padding fill is identical in fork and
+upstream, so it is not the mechanism. The Gumbel `-2`/`-1` divergence is a
+no-op refactor -- the fork's `sample_draft` adds `+1`, upstream's does not.
+Four arms in flight (1621605-1621608): a DCP1 regression pair and the
+DCP4/c=4/400K prod config. See
+[Phase 53](experiments/2026-09-02-dflash-upstream-divergence/README.md).
+
+Previously (Phase 52). READ THIS TOO: the fork's DFlash2
 port is NOT broken -- its draft CUDA graph is.** Disabling the draft's CUDA
 graph takes GSM8K acceptance from **3.9951 to 5.7386** and throughput from
 92.1 to 116.2 tok/s, matching upstream sglang (5.7236) to 0.26%. Position-0

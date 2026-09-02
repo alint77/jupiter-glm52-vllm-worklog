@@ -1230,6 +1230,54 @@ and draws on a larger corpus, at the cost that the assistant turns in those
 transcripts were authored by whichever model ran the session. See the
 [real-usage routing capture](experiments/2026-08-30-glm53-cc-capture/README.md).
 
+Scoping the DCP port for DFlash turned up three divergences between the fork's
+base speculator and upstream that are **missed fixes rather than fork
+decisions**: the merge-base `d08eebad16` already carries the fork's values for
+every one of them. (A) `sample_idx_mapping` is initialized to `0` where
+upstream uses a `-1` sentinel, so padding rows address request slot 0 instead
+of being masked; `_cache_draft_logits_kernel` scatters keyed by `req_state`
+under `mask = (req_state >= 0)`, so at 0 every padding row clobbers request
+0's draft logits. The guard was already written -- only the sentinel was
+missing to make it fire -- but it is inert under greedy drafting, which is what
+every arm has measured, so it explains none of the acceptance gap. (B) the
+kernel computes `valid_ctx_end` but uses it only for `last_valid_pos`, leaving
+the rejected suffix rows resident with real positions and real KV slots; those
+are the same slots the query rows write (`last_valid_pos+1+off`), so the two
+race inside one forward. (C) is the port itself. A fourth candidate, the
+Gumbel `-2` vs `-1` offset, is a no-op: the fork's `sample_draft` adds `+1`
+internally and upstream's does not, so both land on `Q-1`.
+
+One correction worth recording, because it kills the tempting story: **neither
+A nor B can be the graph-vs-eager defect.** `prepare_dflash_inputs` runs
+outside the captured region -- `propose()` calls it at line 81,
+`dispatch_cg_and_sync_dp` at 146, `_generate_draft` only at 206/221 -- so its
+outputs are graph *inputs*, recomputed eagerly in both modes. The 44%
+acceptance gap from Phase 52 remains open, with the suspect narrowed to
+DFlash2's `_generate_draft` body and replay-only padding rows; the
+`out_query_slot_mapping_ptr` padding fill was checked and is identical in fork
+and upstream, so it is not the mechanism.
+
+The port itself (#52188) was narrower than first scoped: the fork's base
+speculator already re-runs `prepare_dcp_local_seq_lens` after the draft rewinds
+its sequence lengths, and `query_start_loc_np` / `dp_sync` turned out to belong
+to multi-module MTP and a DP refactor rather than DCP. What was missing was
+`cp_local_slot` (added byte-identical to upstream, and the same math the fork
+already runs inline at `block_table.py:283-300` under DCP4 in production), the
+CP parameters through the prepare kernel, and `cudagraph.py`'s DCP block -- a
+pure 13-line deletion with no fork additions on top, so taken back wholesale.
+`VLLM_DFLASH_NULL_BLOCK_GUARD` is gone: upstream's `ctx_resident`/`q_resident`
+is the same guard, unconditionally on, and Phase 48 measured the flag
+acceptance-neutral. Two on-GPU gates back the change without an allocation --
+at `cp_size=1` the ported kernel is bit-identical to the pre-port kernel across
+all ten output tensors over 72 configs, and at `cp_size>1` its ctx and query
+slots match an independent torch reference of the DCP round-robin mapping over
+72 more, covering every rank of cp_size 2/4/8. Four arms are in flight: a DCP1
+regression pair against Phase 52's paired 5.7190/3.9626, and the DCP4 / c=4 /
+400K prod config that the `NotImplementedError` previously refused outright.
+See the [fork/upstream divergence
+audit](experiments/2026-09-02-dflash-upstream-divergence/README.md) and the
+[DCP port arms](experiments/2026-09-02-dflash-dcp-port/README.md).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout
