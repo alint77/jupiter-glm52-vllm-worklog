@@ -841,11 +841,26 @@ and map to identically named modules, so a silent mis-assignment is unlikely
 
 Every DFlash2 acceptance number on record -- Phase 42 through 49e -- was
 measured on `GLM-5.3-NVFP4` through this fork's tiered MoE path
-(`arm-replicate.sh` hardcodes both). **The card's 5.94 was not.** Its serving
-command is `--model-path zai-org/GLM-5.3`, the BF16 release; the NVFP4
-checkpoint appears in the card only as a separate vLLM serving example, not in
-the evaluation section. So the comparison that has driven eight phases puts a
-BF16 target on one side and NVFP4 on the other, and that was never stated.
+(`arm-replicate.sh` hardcodes both).
+
+**RETRACTED 2026-09-02, same day.** This section first claimed the card's 5.94
+was measured against the BF16 `zai-org/GLM-5.3`, inferred from the card's
+SGLang serving command. The inference does not hold: the card's *evaluation*
+section names the runtime (SGLang, 4x GB300, FA4) but never the checkpoint,
+and incoai publishes the NVFP4 target itself. Checked on disk: our
+`GLM-5.3-NVFP4` README references `incoai/GLM-5.3-NVFP4` and
+`incoai/GLM-5.3-DFlash2`, its recorded commit is
+`54e52520606f96b3d9fc84088ad22882a61648ac`, and the HF API reports that same
+sha as current HEAD (`lastModified` 2026-08-28T15:03Z). **Every DFlash2
+measurement from Phase 43 on already ran incoai's own published pair -- their
+NVFP4 target with their drafter -- at the current revision of both.** The
+target's precision is therefore not the untested variable, and P5/P5b below
+are void as written; what survives is the execution path (see
+[tiered-off control](../2026-09-02-dflash2-tiered-off/README.md)). The
+mechanism argument -- that the drafter is the only consumer of the target's
+intermediate states, so it is exposed to perturbation every output-level gate
+here is blind to -- is unaffected by the retraction and still motivates that
+control.
 
 The drafter is the only consumer in this stack of the target's
 **intermediate** residual stream: it conditions on layers 5/19/33/47/61/75
