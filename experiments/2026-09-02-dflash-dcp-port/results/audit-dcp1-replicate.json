@@ -1,0 +1,24 @@
+{
+  "label": "audit-dcp1",
+  "requests": 64,
+  "wall_s": 136.53,
+  "acceptance_length_mean": 5.5959,
+  "acceptance_length_median": 5.6252,
+  "acceptance_length_pooled": 5.4328,
+  "per_position_accepted": {
+    "0": 44,
+    "1": 41,
+    "2": 37,
+    "3": 32,
+    "4": 27,
+    "5": 22,
+    "6": 18
+  },
+  "mean_completion_tokens": 247.1,
+  "total_completion_tokens": 15812,
+  "tokens_per_second": 115.82,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "max_tokens": 4096,
+  "protocol": "DFlash2 card: chat template, natural EOS, T=1.0 top_p=0.95"
+}
