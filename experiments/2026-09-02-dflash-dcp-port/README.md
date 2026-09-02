@@ -219,17 +219,31 @@ verified separately against `draft_parallel_config`.
 
 - `fix-eager-dcp1` should sit within noise of 5.7675 (the fix must not perturb
   the unsharded path).
-- `fix-eager-dcp4` should be **materially below** 5.7 without crashing: the
-  draft's attention is numerically wrong, the target rejects its tokens, and
-  acceptance falls. A number near 5.7 would falsify the head-math argument
-  above and mean the constraint is over-conservative for this case.
+- `fix-eager-dcp4` should be **materially below** 5.7 without crashing.
+
+  **Two independent defects both push it down, and the number cannot
+  distinguish them.** Besides the head math, `cp_local_slot` PADs 3/4 of the
+  draft's context slots on each rank, so the draft attends over a quarter of
+  its own sliding window regardless of whether the head math is sound. A low
+  number therefore confirms **that per-model block tables are needed** -- which
+  fixes both -- and not the head-math story specifically.
 - `fix-graph-dcp4` will be ~40% below its eager twin regardless, because the
   Phase 52 graph defect is still open. Compare eager-to-eager only.
 
-If the prediction holds, the real fix for the prod config is to keep the draft
-at `cp_size=1` (replicated draft KV, which is cheap -- 6 layers, SWA 2048)
-while the target runs DCP4. That needs per-model block tables, since
-`cp_local_slot` currently PADs 3/4 of the draft's context slots per rank.
+Realistic outcomes, stated so the result is not read to fit a preferred story:
+
+| outcome | reading |
+| --- | --- |
+| **low, no crash** | per-model block tables are the fix; do not attribute it to the head math alone |
+| **crash at a new site** | progress; report the new site |
+| **~5.7** | *both* defects would have to be benign -- very unlikely, so treat it as evidence this analysis is wrong and stop to re-examine, not as a clean falsification of one hypothesis |
+
+Either way the fix for the prod config is to keep the draft at `cp_size=1`
+(replicated draft KV is cheap -- 6 layers, SWA 2048) while the target runs
+DCP4. That needs per-model block tables, a real chunk of work in
+`BlockTables`/`InputBuffers`, and it addresses both defects at once. Whether
+that is worth doing versus DCP4-with-MTP (which already works today) plus the
+qrep cherry-pick is a call for the user, not an obvious yes.
 
 ## Status
 
