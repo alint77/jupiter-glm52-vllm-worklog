@@ -730,25 +730,34 @@ in each run (n = windows), against the recall measurement from 49c:
 | MTP7, GSM8K | 17 | **0.899** | 0.824 | 0.951 | - |
 | DFlash2 greedy, GSM8K | 18 | **0.578** | 0.265 | 0.806 | 64.1% |
 | DFlash2 lattice-ctrl, GSM8K | 17 | 0.579 | 0.374 | 0.758 | 64.1% |
+| DFlash2 recall arm, GSM8K | 18 | 0.575 | 0.304 | 0.788 | 64.1% |
 | DFlash2 v2 checkpoint, GSM8K | 23 | 0.623 | 0.293 | 0.795 | 76.6% |
 | DFlash2, HumanEval | 141 | **0.839** | 0.695 | 0.946 | 98.4% |
 | DFlash2, 16K code | 90 | 0.669 | 0.545 | 0.799 | - |
 
-MTP7's 0.899 is not just a control, it is a *measurement of the target*: MTP
-proposes the mode, so 0.899 is the rate at which the target's own sample at
-T=1.0/top-p 0.95 equals its mode on this text. Then, on GSM8K:
+MTP7 proposes the mode nearly always, so its 0.899 is a *lower bound* on the
+rate at which the target's own sample at T=1.0 / top-p 0.95 equals its mode.
+Taking it as an estimate, and using `recall-gsm8k` -- the one arm where recall
+and position-0 acceptance were measured on the same run:
 
 ```
-recall x mode-agreement = 0.641 x 0.899 = 0.576    measured 0.578
+recall x mode-agreement = 0.641 x 0.899 = 0.576    measured 0.575
+in-set conversion       = 0.575 / 0.641 = 0.90     mode-agreement 0.899
 ```
 
-**Position-0 acceptance is recall times the target's mode-agreement rate, to
-within 0.3%.** Whenever the target's token is inside the 16 candidates,
-DFlash2 proposes it and it is accepted at exactly the rate MTP's proposal is.
-Selector, lattice walk, Gumbel keying, verify coupling and the rejection test
-are all at ceiling; there is no loss left in them to recover. The whole GSM8K
-deficit is that the draft's own top-16 does not contain the target's mode 36%
-of the time, against 2% on HumanEval.
+**To first order, position-0 acceptance is candidate recall times the target's
+mode-agreement rate.** Whenever the target's token is inside the 16 candidates,
+DFlash2 proposes it and it is accepted at about the rate MTP's proposal is.
+Selector, lattice walk, Gumbel keying and the verify coupling have little left
+in them to give; the dominant loss at position 0 is that the draft's own top-16
+does not contain the target's mode 36% of the time, against 2% on HumanEval.
+
+Do not read that closure as tighter than the data supports, or this phase
+commits 49e's error in the other direction. The arms are separate T=1.0 runs
+over different generated text on a server whose window spread is 0.27-0.81,
+and the formula misses on the v2 checkpoint: `0.766 x 0.899 = 0.689` against
+0.623 measured, an in-set conversion of 0.81 rather than 0.90. Either v2 drew
+harder text or its conversion is genuinely lower. Undetermined; P8 settles it.
 
 This is consistent with, and explains, all four earlier results at once:
 the unary walk matching the lattice at position 0 (49b), the lattice being
@@ -822,13 +831,23 @@ and map to identically named modules, so a silent mis-assignment is unlikely
   top-k, not a per-shard artefact.
 - **Draft quantisation.** `get_draft_quant_config` reads the *draft's* config,
   which carries none, so the drafter runs BF16 as trained.
+- **The borrowed head and embeddings.** The drafter shares the target's
+  `lm_head` and `embed_tokens` (`dflash/utils.py:92-111`), so a quantised head
+  would corrupt the candidate ranking at exactly the stage that is failing.
+  `GLM-5.3-NVFP4/hf_quant_config.json` lists both in `exclude_modules`: they
+  are BF16 in the served checkpoint. Dead as a suspect.
 
 ## The one variable never moved: the target
 
 Every DFlash2 acceptance number on record -- Phase 42 through 49e -- was
 measured on `GLM-5.3-NVFP4` through this fork's tiered MoE path
-(`arm-replicate.sh` hardcodes both). The drafter was distilled against a BF16
-target, and it is the only consumer in this stack of the target's
+(`arm-replicate.sh` hardcodes both). **The card's 5.94 was not.** Its serving
+command is `--model-path zai-org/GLM-5.3`, the BF16 release; the NVFP4
+checkpoint appears in the card only as a separate vLLM serving example, not in
+the evaluation section. So the comparison that has driven eight phases puts a
+BF16 target on one side and NVFP4 on the other, and that was never stated.
+
+The drafter is the only consumer in this stack of the target's
 **intermediate** residual stream: it conditions on layers 5/19/33/47/61/75
 through `fc`, while MTP reads only the final layer. Every quality gate we run
 -- exact-text smoke, GSM8K score, KL against a same-fork control -- scores the
@@ -865,6 +884,16 @@ NVFP4 answer does not transfer to the deployed configuration either way.
   checkpoints and the tiered-off arm retires the goal with evidence: the
   drafter is weak on math against this target and the card's 5.94 is not
   reachable here.
+- **P5b - offline tap capture, the only near-lossless arm.** W4A16 and NVFP4
+  are both quantised, so if both land near 64% recall, P5 cannot separate
+  "quantisation hurts equally" from "quantisation is irrelevant", and FP8
+  serving is blocked (45). Route around the serving stack instead: run a BF16
+  HF-transformers forward of `GLM-5.3-BF16` (`device_map="auto"` across the
+  four Grace domains -- slow, but a few hundred GSM8K tokens is enough),
+  capture the six taps, run the drafter offline in torch, and measure
+  position-0 recall; then repeat against taps captured from the NVFP4 target
+  on the same prompts. This measures the one quantity every gate in this
+  project is blind to, needs no serving stack, and makes P5's null readable.
 - **P6 - measure recall@64 directly.** `VLLM_DFLASH2_SELECTOR_TOPK=64
   VLLM_DFLASH2_RECALL_LOG=1` on GSM8K. Separates "the mode is outside 64"
   (hidden states are wrong) from "inside 64 but ranked low" (the head's
@@ -882,3 +911,6 @@ NVFP4 answer does not transfer to the deployed configuration either way.
 
 P5 is the only one that can still move the number. P6-P8 are diagnostics that
 make P5's result interpretable whichever way it lands.
+
+Not done in this phase, and owed: `HANDOFF.md` and the `README.md` index are
+still current only through Phase 47, so phases 48-49f exist only in this file.
