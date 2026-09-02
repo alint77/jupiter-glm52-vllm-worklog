@@ -1,6 +1,42 @@
 # GLM-5.2 on JUPITER: agent handoff
 
-**Last updated: 2026-09-02 (Phase 53). DFlash now supports DCP, and three
+**Last updated: 2026-09-02 (Phase 53, second half). DFlash2 runs under DCP4
+now; it is still 38% down on acceptance there, and the production shape has a
+real load number for the first time.**
+
+**Where things stand.** MTP3 / DCP4 / c=4 at 350K context measures **209.3
+tok/s output, 477 ms median TTFT, 18.26 ms TPOT** under real concurrent load
+(`vllm bench serve --max-concurrency 4`), reproducing an earlier campaign's
+213.1 / 477 / 18.77. That is the production choice today. DFlash2's acceptance
+edge (5.7046 against ~4.9) exists **only at DCP1**, where c=4 caps context near
+100K -- so it currently trades 3.5x the context for acceptance. Fixing the DCP4
+deficit is what would let it keep both. Every other tok/s figure in this
+worklog, DFlash2's 136.2 included, came from a **sequential** harness and is
+single-stream, not aggregate.
+
+**Do not re-run these four; they are dead by measurement.** The DCP4
+acceptance deficit is NOT: the target's hidden states (MTP is flat at DCP4,
+4.9920 vs 4.8762), the drafter's slot mapping (0% PAD at both DCP sizes),
+`seq_lens` substitution (global and local are separate fields and the builder
+reads global), or concurrency (a 32K 2x2 puts DCP1 c=4 at 5.7046, clean). The
+remaining surface is what differs for a *non-DCP drafter inside a DCP target*.
+
+**The trap that cost three launcher revisions.** The tiered-MoE planner takes
+the MLA cache as a *fixed* allocation sized from
+`max_model_len x max_num_seqs / dcp_world_size`
+(`tiered_moe_physical.py:227`) -- **not** from `--kv-cache-memory`. At DCP 1
+that is `max_num_seqs x max_model_len` of replicated cache per rank, so c=4 at
+350K asks 1.4M tokens (~78 GiB) of a 95 GiB profile and dies in
+`tiered_moe_planner.py:328`. Context and concurrency are **not independent at
+DCP1**. `VLLM_TIERED_MOE_RELAX_SHAPE` lifts the validator's assertion, not the
+memory. Only proven DCP1 capacity: 400K tokens.
+
+**Launchers.** `claude-glm53-c4.sh` (MTP3, DCP4) is production.
+`claude-glm53-c4-df2.sh` runs DFlash2 at DCP1 c=4 and **currently cannot start
+at 350K context** for the reason above -- it needs `max_model_len` near 100K,
+which is an open decision, not a bug.
+
+Previously (Phase 53, first half). DFlash now supports DCP, and three
 missed upstream fixes landed.** The `NotImplementedError` that refused
 `--decode-context-parallel-size > 1` under DFlash is gone: upstream #52188 is
 ported (`cp_local_slot`, CP parameters through the prepare kernel,

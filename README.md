@@ -1278,6 +1278,58 @@ See the [fork/upstream divergence
 audit](experiments/2026-09-02-dflash-upstream-divergence/README.md) and the
 [DCP port arms](experiments/2026-09-02-dflash-dcp-port/README.md).
 
+Continuing Phase 53, DFlash2 was taken from "refuses to start under DCP" to
+"runs, with a measured deficit", and the production shape was priced under real
+load for the first time. Five defects were fixed to get DCP4 running at all,
+each verified in isolation before an arm: `_forward_with_dcp` passed the raw
+sliding window where the metadata builder plans against a symmetrized one;
+the AOT scheduler metadata was scheduled with the *global* KV dtype, so an
+fp8 target had fp8 tiles planned for a bf16 drafter; the drafter's KV was
+DCP-sharded despite GQA head math that cannot support it (8 KV heads at TP4,
+where DCP requires `tensor_parallel_size > total_num_kv_heads`); and the new
+`KVCacheSpec.dcp_shardable` flag was silently dropped by three places that
+rebuild specs from an explicit field list -- `merge()`, the
+sliding-window-to-full-attention promotion, and `UniformTypeKVCacheSpecs`.
+The block table was also sized by the global `dcp_size` for every group, so a
+replicated group addressed 1/dcp of its context and the kernel *clamped*
+rather than padded, which is invisible to a PAD audit. DCP1 acceptance never
+regressed across any of it (5.6265-5.7675 against a 5.7190 baseline), and
+three GPU-free tests now cover the flag.
+
+DCP4 with DFlash2 nonetheless still loses ~38% of its acceptance (3.5098
+against 5.7046 at DCP1 c=4) and the cause is **not found**. Four hypotheses
+died by measurement, and they are recorded so nobody re-runs them: the
+target's hidden states (an MTP control is *flat* at DCP4, 4.9920 vs 4.8762),
+the drafter's slot mapping (0% PAD at both DCP sizes, context and query),
+`seq_lens` substitution (global and local are separate fields; the builder
+reads global), and concurrency (a 2x2 at 32K shows DCP1 c=4 at 5.7046, clean).
+That 2x2 needed `VLLM_TIERED_MOE_RELAX_SHAPE`, added because the production
+shape makes DCP and concurrency inseparable -- `max_num_seqs > 1` is
+unreachable without DCP.
+
+The last of those is the structural finding worth carrying forward. The
+tiered-MoE planner takes the MLA cache as a *fixed* allocation sized from
+`max_model_len x max_num_seqs / dcp_world_size`
+(`tiered_moe_physical.py:227`), not from `--kv-cache-memory`. At DCP 1 that
+means `max_num_seqs x max_model_len` of replicated cache per rank, so
+c=4 at 350K asks for 1.4M tokens (~78 GiB) against a 95 GiB profile and dies
+in the planner. Context and concurrency are therefore **not independent at
+DCP1**: a 450K total budget at c=4 means ~112K context, and the only proven
+DCP1 capacity is 400K tokens. The validator's "max_num_seqs > 1 requires DCP"
+was stating this all along; `RELAX_SHAPE` lifts the assertion, not the memory.
+Three launcher revisions chased `--kv-cache-memory` before this was found.
+
+Finally, the production shape has a real aggregate number: MTP3 / DCP4 / c=4
+at 350K context delivers **209.3 tok/s output, 477 ms median TTFT, 18.26 ms
+TPOT** under `vllm bench serve --max-concurrency 4`, reproducing the 213.1 /
+477 / 18.77 recorded from an earlier campaign. Every tok/s figure in this
+worklog before it -- including DFlash2's 136.2 -- came from a *sequential*
+harness and is single-stream. The trade that leaves: DFlash2's acceptance
+edge exists only at DCP1, where c=4 caps context near 100K, against MTP3's
+350K x 4 at 209.3 tok/s. Fixing the DCP4 deficit is what would let DFlash2
+keep both. See the [DCP port](experiments/2026-09-02-dflash-dcp-port/README.md)
+and the [c=4 performance run](experiments/2026-09-02-df2-c4-perf/README.md).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout
