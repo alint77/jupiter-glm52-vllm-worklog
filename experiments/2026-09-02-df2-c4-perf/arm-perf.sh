@@ -51,7 +51,7 @@ if [[ "${mode}" == dflash2 ]]; then
   # second compiled unit in the captured region, and inductor autotuning at
   # these shapes also exceeds an SM's shared memory.
   compile_sizes=""
-  kv_bytes="${KV_BYTES:-35877000000}"
+  kv_bytes="${KV_BYTES:-26262900000}"
 else
   width=4
   spec_config='{"method":"mtp","num_speculative_tokens":3}'
@@ -68,6 +68,7 @@ agent_space/experiments/2026-07-17-end-to-end-tuning/run-server.sh \
   --speculative-config "${spec_config}" \
   --decode-context-parallel-size "${dcp}" \
   --max-num-seqs "${concurrency}" \
+  --max-model-len "${MAX_MODEL_LEN:-350000}" \
   --kv-cache-memory "${kv_bytes}" \
   >"${result_dir}/${label}-server.out" 2>"${result_dir}/${label}-server.err" &
 pid=$!
