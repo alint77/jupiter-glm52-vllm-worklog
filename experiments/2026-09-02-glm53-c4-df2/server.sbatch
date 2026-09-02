@@ -30,28 +30,33 @@
 #   * dcp         1, not 4. See above.
 #   * shape pin   VLLM_TIERED_MOE_RELAX_SHAPE=1, because the validator rejects
 #                 max_num_seqs > 1 without DCP.
-#   * kv budget   35,877,000,000 bytes per rank for ~600K tokens.
+#   * kv budget   23,921,000,000 bytes per rank (22.28 GiB).
 #
-#     ESTIMATED, and the first launch settles it. --kv-cache-memory is per GPU
-#     (config/cache.py:171) while the reported "GPU KV cache size: N tokens" is
-#     global, so bytes/token below are per-rank-bytes over global-tokens.
+#     **600K tokens is not reachable on this shape.** A first attempt set
+#     35,877,000,000 for ~600K and job 1626547 died in under three minutes
+#     with "Fixed allocations and reserve exceed HBM capacity"
+#     (tiered_moe_planner.py:328 -- hbm_capacity - reserve - weights - KV < 0).
 #
-#     At DCP1 the target's MLA cache is replicated rather than sharded, so a
-#     rank pays for the whole sequence. The bound comes from a measured DCP1
-#     run (repl2-eager-dcp1): 22.28 GiB of KV served 400K tokens, so the cost
-#     is at most 59,795 bytes/token/rank, and 600,000 x 59,795 ~= 35.9e9. It is
-#     an upper bound, not a fit: that run's figure was capped by max_num_seqs,
-#     so the true cost may be lower and this budget may buy more than 600K.
+#     At DCP 1 the target's MLA cache is replicated rather than sharded, so a
+#     rank pays for whole sequences and KV is roughly 4x its DCP4 cost per
+#     token. 22.28 GiB is the value a working DCP1 run (repl2-eager-dcp1)
+#     auto-sized to, and it served 400K tokens; 33.4 GiB does not fit beside
+#     the weights and the 6 GiB tiered reserve.
 #
-#     Check the first launch's "Available KV cache memory" and "GPU KV cache
-#     size" lines and retune. An earlier version of this file asserted a budget
-#     from a single extrapolated data point and was wrong by 1.5x.
+#     So the real choice on this node is:
+#       DCP1 c=4  ~400K tokens  -- four concurrent sequences up to ~100K each,
+#                                  or one at the full 400K. DFlash2 healthy.
+#       DCP4 c=4  ~1.6M tokens  -- four full-length 400K sequences, but
+#                                  DFlash2 loses ~38% acceptance there.
+#     The tiered-MoE validator's "max_num_seqs > 1 requires DCP" is stating
+#     exactly this memory fact. VLLM_TIERED_MOE_RELAX_SHAPE lifts the
+#     assertion; it does not create the memory.
 #
-#     This trades directly against expert residency, which is HBM-bound:
-#     a DCP4 run logged "2528 hot / 2272 cold experts per rank (50.0 GiB
-#     available / 20.3 MiB per expert)". Every GiB given to KV costs about 50
-#     resident experts per rank, so this budget is expensive -- lower it if
-#     cold-hit rate matters more than concurrency.
+#     This trades against expert residency, which is HBM-bound: a DCP4 run
+#     logged "2528 hot / 2272 cold experts per rank (50.0 GiB available /
+#     20.3 MiB per expert)", so every GiB given to KV costs about 50 resident
+#     experts per rank. Lower the budget if cold-hit rate matters more than
+#     concurrency.
 
 set -euo pipefail
 
@@ -157,7 +162,7 @@ agent_space/experiments/2026-07-17-end-to-end-tuning/run-server.sh \
   --host 0.0.0.0 \
   --port "${port}" \
   --gpu-memory-utilization 0.94 \
-  --kv-cache-memory 35877000000 \
+  --kv-cache-memory 23921000000 \
   --enable-prefix-caching \
   --enable-auto-tool-choice \
   --tool-call-parser glm47 \
