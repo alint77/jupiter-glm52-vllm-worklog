@@ -89,12 +89,33 @@ built at 601 (`batch_size=num_reqs`, `causal=False`,
 `seqlens=dcp_context_kv_lens`) is then handed to the plain varlen call at
 1239 alongside `num_splits=attn_metadata.max_num_splits`.
 
-**Not yet root-caused, and not attributable to this port.** Next session
-should bisect by forcing the draft's attention backend away from FLASH_ATTN
-(`flashinfer` and `triton` both worked in Phase 52's DCP1 arms) to establish
-whether this is FA-specific, then decide whether the fix belongs in
-`_forward_with_dcp` or in the draft's metadata build.
+**Not attributable to this port**, and the backend bisect (1621784-1621788)
+now says there is no way around it:
+
+| arm | DCP | outcome |
+| --- | --- | --- |
+| `tri-dcp1` | 1 | **5.7650** AL, 117.39 tok/s -- works |
+| `tri-dcp4` | 4 | `AssertionError: DCP requires attention implementations to return the softmax LSE during decode, but TritonAttentionImpl does not` |
+| `fi-dcp1` | 1 | `NotImplementedError: FlashInfer backend on SM90 currently crashes with sliding-window attention layers` |
+| `fi-dcp4` | 4 | same NotImplementedError |
+
+The DCP1 controls earned their place: FlashInfer fails **identically at DCP1
+and DCP4**, so its failure has nothing to do with DCP -- it cannot serve this
+all-SWA draft on SM90 at all. Triton serves the draft fine at DCP1 but is
+structurally incapable of DCP, since the DCP combine needs the softmax LSE
+and `TritonAttentionImpl` does not return it.
+
+**So FlashAttention is the only backend that can serve DFlash2 under DCP on
+GH200.** There is no backend workaround; the fix has to land in FA's
+`_forward_with_dcp` or in the draft's attention-metadata build.
+
+`tri-dcp1` is also a free cross-check on commits B and C: 5.7650 / 117.39 on
+a completely independent draft-attention backend, against `bc-eager-dcp1`'s
+5.7675 / 117.6 -- agreement to 0.04%. The eager acceptance is real and
+backend-independent.
 
 ## Status
 
-Port validated at DCP1 and shipped. DCP4 blocked on the FA issue above.
+Port validated at DCP1 on two independent draft-attention backends and
+shipped. DCP4 blocked in FlashAttention, which the bisect establishes is the
+only backend capable of DCP here -- so that is where the next fix goes.

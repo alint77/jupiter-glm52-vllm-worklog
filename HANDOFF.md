@@ -35,10 +35,22 @@ must have shape (metadata_size)` from `qwen3_dflash.py:647` ->
 `_forward_with_dcp` at all is the port working; the FA DCP context path then
 rejects the draft's shape. Prime suspect is the draft's `max_query_len == 8`
 (the same DCP4 topology runs in production under MTP, where it is 1), which
-gates `split_dcp_context_queries` at `flash_attn.py:574`. **Next step: bisect
-by moving the draft's attention backend off FLASH_ATTN** -- `flashinfer` and
-`triton` both worked in Phase 52 -- to establish whether this is FA-specific
-before touching `_forward_with_dcp`. See
+gates `split_dcp_context_queries` at `flash_attn.py:574`.
+
+**The backend bisect is done (1621784-1621788) and there is no way around
+it.** Triton serves the draft at DCP1 (5.7650 AL, 117.39 tok/s) but cannot do
+DCP at all -- `TritonAttentionImpl` does not return the softmax LSE the DCP
+combine requires, and asserts. FlashInfer fails identically at DCP1 *and*
+DCP4 (`FlashInfer backend on SM90 currently crashes with sliding-window
+attention layers`), so its failure is unrelated to DCP -- it cannot serve this
+all-SWA draft on this hardware. **FlashAttention is therefore the only backend
+that can serve DFlash2 under DCP on GH200, so the fix must land in
+`_forward_with_dcp` or in the draft's attention-metadata build.** Do not spend
+another arm looking for a backend workaround.
+
+Incidental but useful: `tri-dcp1`'s 5.7650 / 117.39 against `bc-eager-dcp1`'s
+5.7675 / 117.6 confirms the eager acceptance on an independent draft-attention
+backend, agreeing to 0.04%. See
 [Phase 53](experiments/2026-09-02-dflash-upstream-divergence/README.md) and
 its [arms](experiments/2026-09-02-dflash-dcp-port/README.md).
 
