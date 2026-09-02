@@ -114,6 +114,74 @@ a completely independent draft-attention backend, against `bc-eager-dcp1`'s
 5.7675 / 117.6 -- agreement to 0.04%. The eager acceptance is real and
 backend-independent.
 
+## Root-cause investigation (in progress)
+
+### Correction: `model.layers.80/81` are DRAFT layers
+
+The GLM-5.3 target has **78** hidden layers (0-77) and is **MLA**
+(`kv_lora_rank: 512`, `fp8_ds_mla`), so it never instantiates
+`FlashAttentionMetadataBuilder` at all. The draft has 6 layers, occupying
+indices 78-83. So every line in the instrumented log -- build *and* call --
+belongs to the draft. An earlier reading of this file claimed the builds were
+target layers and that the draft's metadata was "never built by the DCP
+branch". That was wrong.
+
+### What the instrumented arm showed
+
+```
+build: layers=['model.layers.80.self_attn.attn'] batch=4 causal=False num_splits=0 shape=(5,)
+build: layers=['model.layers.81.self_attn.attn'] batch=4 causal=False num_splits=0 shape=(5,)
+call:  batch=4 causal=False num_splits=0 max_q=8 q_shape=(32,64,128) shape=(5,)
+```
+
+Build and call agree on batch, `causal`, `num_splits` **and** the passed
+shape. FA3 still rejects it.
+
+### Why that leaves exactly one explanation
+
+`metadata_size` also depends on the `cache_seqlens` **values**, which the
+first probe missed by holding them constant:
+
+| cache_seqlens | size |
+| --- | ---: |
+| all 0 / 1 / 64 | 5 |
+| all 4096 | 9 |
+| mixed [0,0,0,4096] | 9 |
+
+and `dcp_context_kv_lens` reaches the forward as a **live view of a mutable
+persistent buffer** -- `self._dcp_context_kv_lens[:num_reqs]`
+(`flash_attn.py:558-560`), stored into the metadata at 686. `scheduler_metadata`
+is baked at build time from those values; `seqused_k` is read at call time from
+the same view. If the values change in between, the two desync -- built for
+near-empty context (5), called against real lengths (FA3 wants 9).
+
+This is DFlash-specific for a reason the fork already documents: the draft
+"advance[s] and rewind[s] its own global sequence lengths", and the draft
+builds metadata per layer/group, each build overwriting the shared buffer that
+earlier layers' metadata still points at.
+
+Not yet confirmed end-to-end: an arm logging the actual `kvlens` values and
+`id()` of the buffer at both ends is running (1623176).
+
+### Two candidate fixes, deliberately not chosen yet
+
+1. **Stale view** -- snapshot the lengths into the metadata rather than storing
+   a view, or rebuild the schedule at call time. Small, in the FA builder, and
+   would mean the draft *can* be DCP-sharded.
+2. **The GQA constraint** -- upstream's own rule is
+   `tensor_parallel_size // total_num_kv_heads >= dcp_size`; the draft is
+   64 heads / **8 KV heads** at TP4, giving `4 // 8 = 0`. `model.py:1247`
+   never checks it here: the check is gated on `not self.use_mla` and the
+   target *is* MLA, and it validates the target's config, while the draft's is
+   verified separately against `draft_parallel_config`. If this is operative,
+   the draft cannot shard at TP4 and needs `cp_size=1` block tables of its own
+   -- a far larger change, because `cp_local_slot` now PADs 3/4 of the draft's
+   context slots per rank, so an unsharded draft would read unwritten entries.
+
+The vLLM DCP blog also lists "better support for MTP and speculative decoding"
+as **future work**, so incomplete draft support here is expected rather than
+surprising.
+
 ## Status
 
 Port validated at DCP1 on two independent draft-attention backends and
