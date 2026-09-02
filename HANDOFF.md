@@ -25,9 +25,22 @@ open; the suspect is DFlash2's `_generate_draft` body and replay-only padding
 rows. The `out_query_slot_mapping_ptr` padding fill is identical in fork and
 upstream, so it is not the mechanism. The Gumbel `-2`/`-1` divergence is a
 no-op refactor -- the fork's `sample_draft` adds `+1`, upstream's does not.
-Four arms in flight (1621605-1621608): a DCP1 regression pair and the
-DCP4/c=4/400K prod config. See
-[Phase 53](experiments/2026-09-02-dflash-upstream-divergence/README.md).
+Arms are in (1621605-1621608). **DCP1 is clean**: eager 5.7675 / 117.6 tok/s
+against Phase 52's 5.7190 / 114.1, graph 3.9699 against 3.9626 -- so neither
+B nor C regressed CP1, which the gates could not show for B (B sits on both
+sides of the `gate_cp1` diff). **DCP4 is blocked one layer below the port**:
+both prod arms died at engine init with `RuntimeError: scheduler_metadata
+must have shape (metadata_size)` from `qwen3_dflash.py:647` ->
+`flash_attn.py:1223` `_forward_with_dcp`. That the draft reaches
+`_forward_with_dcp` at all is the port working; the FA DCP context path then
+rejects the draft's shape. Prime suspect is the draft's `max_query_len == 8`
+(the same DCP4 topology runs in production under MTP, where it is 1), which
+gates `split_dcp_context_queries` at `flash_attn.py:574`. **Next step: bisect
+by moving the draft's attention backend off FLASH_ATTN** -- `flashinfer` and
+`triton` both worked in Phase 52 -- to establish whether this is FA-specific
+before touching `_forward_with_dcp`. See
+[Phase 53](experiments/2026-09-02-dflash-upstream-divergence/README.md) and
+its [arms](experiments/2026-09-02-dflash-dcp-port/README.md).
 
 Previously (Phase 52). READ THIS TOO: the fork's DFlash2
 port is NOT broken -- its draft CUDA graph is.** Disabling the draft's CUDA
