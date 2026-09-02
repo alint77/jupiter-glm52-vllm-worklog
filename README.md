@@ -10,8 +10,21 @@ qualified path stands now.
 
 ## Current state
 
-Last indexed 2026-08-30, covering source commit `cdd0cd85ba` on
-`dflash2-backport`, through Phase 47. Phases 40 and 41 remain reserved for the
+Last indexed 2026-09-02, covering source commit `567bdc9721` on
+`dflash2-backport`, through Phase 51. **Phases 48-50 are written up in
+[the DFlash2 upstream audit](experiments/2026-08-30-dflash2-upstream-audit/README.md)
+and [the tiered-off control](experiments/2026-09-02-dflash2-tiered-off/README.md)
+rather than here.**
+
+**Phase 51 overturns Phase 48's verdict.** Stock upstream sglang, on this
+hardware with incoai's own published checkpoint pair, reaches **5.71** GSM8K
+acceptance where this fork reaches **3.995** -- 96% of the card's 5.94 against
+our 67%. MTP7 agrees across the two engines to 0.29% (4.9348 fork / 4.9489
+sglang), so the divergence is DFlash2-specific: **there is a defect in the
+fork's DFlash2 port worth ~43% acceptance, and a working reference to diff
+against.** Phase 48's "there are no fork defects left that we can find" is
+withdrawn. See
+[the sglang control](experiments/2026-09-02-sglang-dflash2-control/README.md). Phases 40 and 41 remain reserved for the
 two 2026-08-28 experiment directories that are on disk but not yet written up:
 `2026-08-28-mtp-acceptance-zero` and `2026-08-28-decode-comms`. The qualified
 production branch is unchanged at `cec73c66b3` (`known-good-1238882`).
@@ -70,6 +83,8 @@ Lever status, so that settled questions are not reopened:
 | `blocks_per_sm` and SM-budget partitioning | Refuted (21, 23, 26) |
 | Target sequence parallelism | Refuted (13) |
 | Wider or deeper speculation: MTP6, DSpark, DFlash1 | Refuted (11, 28): throughput is inverse to verify-batch width |
+| **DFlash2 port correctness** | **Open defect (51)**: upstream sglang gets 5.7236/5.7063 (two draft-attention backends, 0.30% apart) where this fork gets 3.9951, same checkpoint pair, same hardware, same protocol. MTP7 agrees across stacks to 0.29%, so it is DFlash2-specific. Phase 49f localised the fork's deficit to position-0 candidate recall; sglang is the reference for the diff |
+| DFlash2 vs MTP3 throughput | **Answered (51)** on sglang: DFlash2 73.8 tok/s vs MTP3 50.9, +45% at c1 -- but step times are identical to MTP7's (77.5 ms), so the win is *all* acceptance and the draft is not cheaper here. At the fork's 3.995 acceptance the same step time puts DFlash2 *below* MTP3 |
 | DFlash2 at verify width 8 | Refuted (42) **against a GLM-5.2 target**: 2.68 acceptance against 3.65 break-even, 26.4% slower than MTP3, because a 5.3-trained drafter does not transfer to a 5.2 target. Width 8 itself is survivable at 32.85 ms. **Reopened (43)** now that the served model is 5.3: three missing upstream fixes took acceptance 2.815 -> 4.029, a 32% gap to the card remains, and the matched throughput comparison has never been run |
 | Capturing the draft path in CUDA graphs | Refuted (26): the drafts are already graphed |
 | Graph-node fusion | Priced (24) at about 1.2%; not started |

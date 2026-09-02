@@ -419,11 +419,23 @@ remaining gap to the card is most plausibly one of:
   consumed" are only the same thing if SGLang's serving stack matches the
   training-time capture, which is unverifiable from here.
 
-**DFlash2 is now working as well as this implementation can make it work**, and
+**WITHDRAWN 2026-09-02 by Phase 51.** The paragraph below stood for three days
+and was wrong. Upstream sglang, on this same GH200 hardware with incoai's own
+published checkpoint pair and this same protocol, measures **5.7236**
+(`triton` draft attention) and **5.7063** (`flashinfer`) -- 96% of the card's
+5.94 -- against this fork's 3.9951. MTP7 agrees across the two engines to
+0.29%, so the gap is DFlash2-specific and is a fork defect. The audits were
+thorough and still missed it, because every one of them compared the serving
+path against a reference *given the same inputs and the same loaded weights*
+(see "The blind spot" in the 2026-09-02 section above); an independent
+implementation was the control that could see it. See
+[the sglang control](../2026-09-02-sglang-dflash2-control/README.md).
+
+~~**DFlash2 is now working as well as this implementation can make it work**, and
 the honest verdict on the goal's premise is: on this hardware, at this
 protocol, DFlash2 does not beat MTP3 on acceptance (4.07 vs 4.91 at matched
 width), and the card's 5.94 is not reachable by fixing fork defects, because
-there are none left that we can find.
+there are none left that we can find.~~
 
 The one comparison that would still be decisive and has never been run:
 **matched MTP3-vs-DFlash2 end-to-end throughput on a 5.3 target**, since

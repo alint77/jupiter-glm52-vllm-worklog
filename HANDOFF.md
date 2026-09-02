@@ -1,6 +1,21 @@
 # GLM-5.2 on JUPITER: agent handoff
 
-Last updated: 2026-08-30 (Phases 43-47: GLM-5.3 brought up and promoted to
+**Last updated: 2026-09-02 (Phase 51). READ THIS FIRST: upstream sglang reaches
+5.71 GSM8K acceptance on DFlash2 where this fork reaches 3.995** -- same
+incoai checkpoint pair, same GH200 hardware, same card protocol, two
+independent draft-attention backends agreeing to 0.30%. MTP7 agrees across the
+two engines to 0.29%, so the gap is DFlash2-specific. **Phase 48's verdict
+("DFlash2 is working as well as this implementation can make it work... there
+are no fork defects left that we can find") is withdrawn by measurement.**
+There is a defect in the fork's DFlash2 port worth ~43% acceptance; Phase 49f
+localised it to position-0 candidate recall (64.1% GSM8K vs 98.4% HumanEval);
+`srt/models/dflash.py` and `srt/speculative/dflash_*.py` in upstream sglang are
+the reference to diff against. Full detail:
+[sglang control](experiments/2026-09-02-sglang-dflash2-control/README.md).
+Do not re-run the multi-node topology or capture-flag arms -- both are closed
+there.
+
+Previously updated: 2026-08-30 (Phases 43-47: GLM-5.3 brought up and promoted to
 the Claude Code host on the `JANGQ-AI/GLM-5.3-W4A16` int4 group-32 checkpoint,
 which beats NVFP4 by 9.77% on decode; the 5.3 hot-expert ranking re-derived
 from agentic-coding routing traces, worth +8.3%; **the "hot-slot sweep"
