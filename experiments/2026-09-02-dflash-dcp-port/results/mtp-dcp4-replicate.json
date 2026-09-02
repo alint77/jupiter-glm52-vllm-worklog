@@ -1,0 +1,24 @@
+{
+  "label": "mtp-dcp4",
+  "requests": 64,
+  "wall_s": 181.36,
+  "acceptance_length_mean": 4.992,
+  "acceptance_length_median": 5.0211,
+  "acceptance_length_pooled": 4.8801,
+  "per_position_accepted": {
+    "0": 55,
+    "1": 46,
+    "2": 36,
+    "3": 31,
+    "4": 23,
+    "5": 17,
+    "6": 14
+  },
+  "mean_completion_tokens": 234.0,
+  "total_completion_tokens": 14975,
+  "tokens_per_second": 82.57,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "max_tokens": 4096,
+  "protocol": "DFlash2 card: chat template, natural EOS, T=1.0 top_p=0.95"
+}

@@ -245,6 +245,70 @@ DCP4. That needs per-model block tables, a real chunk of work in
 that is worth doing versus DCP4-with-MTP (which already works today) plus the
 qrep cherry-pick is a call for the user, not an obvious yes.
 
+## Replicated drafter KV — where it stands
+
+Five defects fixed; DCP4 runs end to end for the first time; acceptance is
+still 39% short of DCP1 and the cause is not yet found.
+
+| commit | defect |
+| --- | --- |
+| `4bfece3f59` | `_forward_with_dcp` passed the raw, not the planned, sliding window |
+| `796ac4a99f` | AOT metadata scheduled with the global KV dtype, not the group's |
+| `e796779f6c` | drafter's KV sharded under DCP despite invalid GQA head math |
+| `2b08ee712e` | `dcp_shardable` dropped by spec merge / promotion / projection |
+| `b3985ea97a` | tests for the above (74 pass in the file) |
+
+### Results
+
+| arm | AL | median | tok/s | pos0 | pos1 | pos2 | pos3 | pos6 |
+| --- | ---: | ---: | ---: | --- | --- | --- | --- | --- |
+| `repl2-eager-dcp1` | 5.6265 | 5.6557 | 116.7 | 77% | 67% | 59% | 50% | 31% |
+| `repl2-eager-dcp4` | **3.4434** | 2.5458 | 43.9 | 62% | 47% | 36% | 30% | 16% |
+| `fix-eager-dcp4` (before) | 1.7630 | 1.7451 | 35.8 | — | 48% | 20% | 8% | 0% |
+| `mtp-dcp1` | 4.8762 | 4.8877 | 92.6 | 92% | 70% | 56% | 47% | 19% |
+| `mtp-dcp4` | 4.9920 | 5.0211 | 82.6 | 86% | 72% | 56% | 48% | 22% |
+
+The failure signature changed: from a collapse past position 1 (wrong context
+slots, deepening with position) to a roughly uniform ~20% deficit at *every*
+position including position 0.
+
+### Two hypotheses raised and killed
+
+- **The target's hidden states under DCP.** Refuted by the MTP control: MTP
+  shares the target and its hidden states but none of the DFlash KV plumbing,
+  and its acceptance is *flat* at DCP4 (4.9920 vs 4.8762), 11% slower where
+  DFlash2 is 62% slower. The target's DCP path costs nothing.
+- **The drafter overwriting the target's `dcp_local_seq_lens`.** Refuted by
+  construction: the speculator builds its own `InputBuffers`
+  (`speculator.py:126`), separate from the model runner's
+  (`model_runner.py:221`).
+
+### A real cost of replication, which is *not* the acceptance cause
+
+`max_concurrency` falls from **4.00x to 1.00x** (and "GPU KV cache size"
+with it -- the log line is literally `max_concurrency * max_model_len`, so
+they are one number). DCP4 normally quadruples effective capacity by giving
+each rank a quarter of the context; an unsharded drafter group forfeits that.
+
+Do not over-explain this. Per-token arithmetic says unsharding the drafter
+should cost ~1.4x, not 4x: the target's MLA is ~45 KB/token at fp8 (~11 KB
+sharded 4 ways) against the drafter's ~6 KB/token replicated. Promotion to
+`FullAttentionSpec` changes how many blocks are *held*, not their size, so it
+is at most a minor contributor. The remaining ~3x is unexplained and lives in
+`get_kv_cache_capacity`. An earlier note in this file blamed the promotion;
+that was wrong and the arithmetic is above.
+
+It also cannot explain the acceptance deficit: GSM8K prompts are a few hundred
+tokens against a 400K limit, and all arms logged **zero preemptions**.
+
+### Next
+
+Test whether the drafter's KV is actually dense at DCP4: count `PAD_SLOT_ID`
+entries among valid rows of `_context_slot_mappings` after
+`prepare_dflash_inputs`. At `CP_SIZE=1` it should be zero; 3/4 PAD would mean
+the CP1 slot math is not reaching the context path. That is the one direct
+measurement of the drafter's own KV that has not been taken.
+
 ## Status
 
 Port validated at DCP1 on two independent draft-attention backends and

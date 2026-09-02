@@ -1,0 +1,24 @@
+{
+  "label": "fix-eager-dcp1",
+  "requests": 64,
+  "wall_s": 136.51,
+  "acceptance_length_mean": 5.6503,
+  "acceptance_length_median": 5.7511,
+  "acceptance_length_pooled": 5.4655,
+  "per_position_accepted": {
+    "0": 44,
+    "1": 41,
+    "2": 33,
+    "3": 30,
+    "4": 27,
+    "5": 25,
+    "6": 19
+  },
+  "mean_completion_tokens": 248.0,
+  "total_completion_tokens": 15870,
+  "tokens_per_second": 116.25,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "max_tokens": 4096,
+  "protocol": "DFlash2 card: chat template, natural EOS, T=1.0 top_p=0.95"
+}
