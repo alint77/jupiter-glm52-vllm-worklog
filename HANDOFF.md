@@ -1,6 +1,20 @@
 # GLM-5.2 on JUPITER: agent handoff
 
-**Last updated: 2026-09-02 (Phase 51). READ THIS FIRST: upstream sglang reaches
+**Last updated: 2026-09-02 (Phase 52). READ THIS FIRST: the fork's DFlash2
+port is NOT broken -- its draft CUDA graph is.** Disabling the draft's CUDA
+graph takes GSM8K acceptance from **3.9951 to 5.7386** and throughput from
+92.1 to 116.2 tok/s, matching upstream sglang (5.7236) to 0.26%. Position-0
+acceptance goes 0.57 -> 0.911, i.e. MTP-class, so candidate recall under eager
+is ~100% and the graph path was starving it. Five phases of audits missed this
+because every one of them compared the serving path against a reference *given
+the same inputs* -- graph replay corrupts inputs, not math. The causality
+hypothesis (attn_type=DECODER vs sglang's ENCODER_ONLY) was probed and
+**refuted**: the draft's block attention is genuinely non-causal. See
+[Phase 52](experiments/2026-09-02-dflash2-causality-probe/README.md). Next step
+is a PIECEWISE-vs-FULL bisect to localise the fault to the DFlash2 head or the
+transformer body; do not ship the eager workaround before that.
+
+Previously (Phase 51): upstream sglang reaches
 5.71 GSM8K acceptance on DFlash2 where this fork reaches 3.995** -- same
 incoai checkpoint pair, same GH200 hardware, same card protocol, two
 independent draft-attention backends agreeing to 0.30%. MTP7 agrees across the

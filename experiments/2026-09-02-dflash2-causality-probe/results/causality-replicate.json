@@ -1,0 +1,24 @@
+{
+  "label": "causality",
+  "requests": 64,
+  "wall_s": 138.69,
+  "acceptance_length_mean": 5.7386,
+  "acceptance_length_median": 5.7703,
+  "acceptance_length_pooled": 5.518,
+  "per_position_accepted": {
+    "0": 48,
+    "1": 41,
+    "2": 32,
+    "3": 27,
+    "4": 25,
+    "5": 23,
+    "6": 19
+  },
+  "mean_completion_tokens": 251.9,
+  "total_completion_tokens": 16122,
+  "tokens_per_second": 116.24,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "max_tokens": 4096,
+  "protocol": "DFlash2 card: chat template, natural EOS, T=1.0 top_p=0.95"
+}
