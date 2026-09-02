@@ -48,9 +48,36 @@ that can serve DFlash2 under DCP on GH200, so the fix must land in
 `_forward_with_dcp` or in the draft's attention-metadata build.** Do not spend
 another arm looking for a backend workaround.
 
+Two facts already established for whoever fixes the FA path, so nobody
+re-derives them:
+
+1. **Only the context call carries `scheduler_metadata`.** `_forward_with_dcp`
+   makes two varlen calls -- the context call at `flash_attn.py:1223`, which is
+   the one that throws, and the query-vs-query call at 1255, which omits the
+   argument entirely. So the mismatch is contained in the context call's own
+   build-vs-use; it is not a buffer shared between the two.
+2. **The draft feeds that branch from two different sources.** The fork's
+   `_build_draft_attn_metadata` passes
+   `seq_lens = self.input_buffers.seq_lens[:num_reqs_padded]` -- the draft's own
+   GPU lengths, written by `prepare_dflash_inputs` -- but
+   `seq_lens_cpu_upper_bound = draft_seq_lens_cpu_upper_bound`, derived from the
+   *target's* upper bound plus `step`. In FA's DCP branch the
+   `scheduler_metadata` is built at `flash_attn.py:601` from the first (via
+   `context_kv_lens = seq_lens - query_lens` -> `dcp_context_kv_lens`), while
+   `split_dcp_context_queries` at 574 -- which sets the counts
+   `should_split_fa2_dcp_context_attention` uses at call time to choose the
+   split or plain path -- reads the second. Under MTP `max_query_len == 1` and
+   the two cannot disagree; at the draft's `max_query_len == 8` they can. Start
+   there.
+
 Incidental but useful: `tri-dcp1`'s 5.7650 / 117.39 against `bc-eager-dcp1`'s
 5.7675 / 117.6 confirms the eager acceptance on an independent draft-attention
-backend, agreeing to 0.04%. See
+backend, agreeing to 0.04%.
+
+Correction to an earlier note of mine: I had said flashinfer and triton both
+worked as DFlash2 draft backends. Phase 52 records no such claim, and the
+bisect shows flashinfer cannot serve this all-SWA draft on SM90 at any DCP
+size. Triton does work at DCP1. See
 [Phase 53](experiments/2026-09-02-dflash-upstream-divergence/README.md) and
 its [arms](experiments/2026-09-02-dflash-dcp-port/README.md).
 

@@ -5,7 +5,8 @@
 # _forward_with_dcp. The draft reaching that path at all is the #52188 port
 # working; the question is whether FA's DCP context path simply rejects the
 # draft's max_query_len == 8 shape. flashinfer and triton both drove the
-# draft successfully in Phase 52 (at DCP1), so they isolate the backend.
+# draft at DCP1 in earlier phases, so they isolate the backend. (Result: this
+# turned out to be wrong for flashinfer -- see the experiment README.)
 #
 # A DCP1 control on the same backend runs alongside each, so a failure that
 # has nothing to do with DCP is not misread as one that does.
