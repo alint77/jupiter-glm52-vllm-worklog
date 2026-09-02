@@ -6,7 +6,24 @@ the DCP4 investigation from guessing. Both call the real FA3 ops.
 ```bash
 .venv/bin/python gates/fa3_meta.py      # what changes metadata_size
 .venv/bin/python gates/fa3_mismatch.py  # which disagreement raises
+.venv/bin/python gates/fa3_k0.py        # cache_seqlens VALUES change it too
+.venv/bin/python gates/fa3_window.py    # window_size changes it too
+.venv/bin/python gates/gate_window.py   # the real bug, reproduced and fixed
 ```
+
+**Read `fa3_k0.py` and `fa3_window.py` before re-deriving anything here.**
+`fa3_meta.py`'s table is incomplete on its own: it holds `cache_seqlens` and
+`window_size` constant, and both of those change `metadata_size`. Chasing the
+incomplete table cost real time.
+
+| also varies size | result |
+| --- | --- |
+| `cache_seqlens` all 0/1/64 vs all 4096 | 5 vs 9 |
+| `window_size` (2047,0) vs (2047,2047) | 13 vs 9 |
+
+`gate_window.py` is the one that matters: it reproduces
+`scheduler_metadata must have shape (metadata_size)` exactly and shows the fix
+(commit `4bfece3f59`) resolving it.
 
 ## `fa3_meta.py` — the size formula, measured
 

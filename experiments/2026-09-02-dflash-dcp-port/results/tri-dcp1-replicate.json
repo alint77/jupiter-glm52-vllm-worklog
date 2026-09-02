@@ -1,0 +1,24 @@
+{
+  "label": "tri-dcp1",
+  "requests": 64,
+  "wall_s": 134.92,
+  "acceptance_length_mean": 5.765,
+  "acceptance_length_median": 5.7665,
+  "acceptance_length_pooled": 5.5344,
+  "per_position_accepted": {
+    "0": 52,
+    "1": 44,
+    "2": 38,
+    "3": 34,
+    "4": 29,
+    "5": 23,
+    "6": 21
+  },
+  "mean_completion_tokens": 247.5,
+  "total_completion_tokens": 15838,
+  "tokens_per_second": 117.39,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "max_tokens": 4096,
+  "protocol": "DFlash2 card: chat template, natural EOS, T=1.0 top_p=0.95"
+}

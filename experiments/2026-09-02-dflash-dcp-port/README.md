@@ -182,6 +182,55 @@ The vLLM DCP blog also lists "better support for MTP and speculative decoding"
 as **future work**, so incomplete draft support here is expected rather than
 surprising.
 
+## The crash is fixed; a second, structural problem remains
+
+**Fixed (`4bfece3f59`).** `_forward_with_dcp` passed the layer's *raw* window
+while the builder plans the AOT `scheduler_metadata` against a *symmetrized*
+one -- `_maybe_symmetrize_window` turns a causal `(w, 0)` into `(w, w)` for a
+non-causal layer. FA3's `metadata_size` depends on the window ((2047,0) -> 13,
+(2047,2047) -> 9), so build and call disagreed. The non-DCP path already
+prefers `attn_metadata.sliding_window` (`flash_attn.py:956`); the DCP path did
+not. Reproduced and fixed in isolation by `gates/gate_window.py`.
+
+It needs DCP **and** a non-causal layer **and** a sliding window at once, which
+is why only the DFlash2 draft hits it -- the GLM-5.3 target is MLA and never
+builds FlashAttention metadata. Beyond the crash it was a correctness bug: the
+raw causal window would make a bidirectional layer attend backwards only. This
+is a genuine upstream bug and worth a PR.
+
+**Not fixed: the draft cannot legally be DCP-sharded at TP4.**
+
+`get_num_kv_heads` is `max(1, total_num_kv_heads // tensor_parallel_size)` and
+**DCP does not enter it**. The draft has 8 KV heads at TP4, so each rank holds
+**2 distinct** KV heads *and* a context shard. `_forward_with_dcp` all-gathers
+the query to 64 heads and pairs them against those 2 kv heads -- a GQA ratio of
+32, where the true ratio is 64/8 = 8. Each rank can only correctly serve the 16
+q heads that map to its own kv heads, so the LSE combine is wrong.
+
+That is precisely what upstream's rule guards:
+`tensor_parallel_size > total_num_kv_heads` forces the `max(1, ...)`
+*replication* branch, where every rank holds the same kv head and context
+sharding is coherent. `4 > 8` is false, so `max_dcp_size = 4 // 8 = 0`.
+`model.py:1247` never checks it here -- the check is gated on `not use_mla`,
+our target *is* MLA, and it validates the target's config while the draft's is
+verified separately against `draft_parallel_config`.
+
+### Prediction, recorded before the arms land
+
+- `fix-eager-dcp1` should sit within noise of 5.7675 (the fix must not perturb
+  the unsharded path).
+- `fix-eager-dcp4` should be **materially below** 5.7 without crashing: the
+  draft's attention is numerically wrong, the target rejects its tokens, and
+  acceptance falls. A number near 5.7 would falsify the head-math argument
+  above and mean the constraint is over-conservative for this case.
+- `fix-graph-dcp4` will be ~40% below its eager twin regardless, because the
+  Phase 52 graph defect is still open. Compare eager-to-eager only.
+
+If the prediction holds, the real fix for the prod config is to keep the draft
+at `cp_size=1` (replicated draft KV, which is cheap -- 6 layers, SWA 2048)
+while the target runs DCP4. That needs per-model block tables, since
+`cp_local_slot` currently PADs 3/4 of the draft's context slots per rank.
+
 ## Status
 
 Port validated at DCP1 on two independent draft-attention backends and

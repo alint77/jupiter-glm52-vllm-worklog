@@ -1,0 +1,24 @@
+{
+  "label": "bc-eager-dcp1",
+  "requests": 64,
+  "wall_s": 137.96,
+  "acceptance_length_mean": 5.7675,
+  "acceptance_length_median": 5.862,
+  "acceptance_length_pooled": 5.5679,
+  "per_position_accepted": {
+    "0": 40,
+    "1": 35,
+    "2": 30,
+    "3": 29,
+    "4": 26,
+    "5": 20,
+    "6": 17
+  },
+  "mean_completion_tokens": 253.5,
+  "total_completion_tokens": 16224,
+  "tokens_per_second": 117.6,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "max_tokens": 4096,
+  "protocol": "DFlash2 card: chat template, natural EOS, T=1.0 top_p=0.95"
+}
