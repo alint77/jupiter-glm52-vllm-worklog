@@ -37,7 +37,7 @@ if [[ "${mode}" == dflash2 ]]; then
   # and the ratio test degenerates to p(argmax q). SGLang samples the path and
   # passes q. DRAFT_SAMPLE_METHOD selects between them.
   dsm="${DRAFT_SAMPLE_METHOD:-greedy}"
-  spec="{\"method\":\"dflash\",\"model\":\"/e/fscratch/profound/naeimitabiei1/models/GLM-5.3-DFlash2\",\"num_speculative_tokens\":7,\"kv_cache_dtype\":\"auto\",\"attention_backend\":\"FLASH_ATTN\",\"draft_sample_method\":\"${dsm}\"}"
+  spec="{\"method\":\"dflash\",\"model\":\"/e/fscratch/profound/naeimitabiei1/models/GLM-5.3-DFlash2\",\"num_speculative_tokens\":7,\"kv_cache_dtype\":\"auto\",\"attention_backend\":\"${DRAFT_ATTN:-FLASH_ATTN}\",\"draft_sample_method\":\"${dsm}\"}"
 else
   # The card's MTP baseline also proposes seven tokens, not three.
   width=8; compile_sizes="8"
