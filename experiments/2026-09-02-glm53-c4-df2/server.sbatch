@@ -16,16 +16,28 @@
 #   * speculator  DFlash2 (GLM-5.3-DFlash2), 7 speculative tokens, greedy draft
 #                 sampling, FLASH_ATTN draft attention. Verifies 8 tokens per
 #                 step against MTP3's 4, so the graph shapes are 8*1..8*4.
-#   * kv budget   11,773,200,000 bytes, sized for ~600K tokens.
+#   * kv budget   17,646,600,000 bytes per rank, for ~600K tokens.
 #
-#     Derived, not guessed. The MTP3 launcher's 21,689,598,771 bytes yielded
-#     "GPU KV cache size: 1,600,255 tokens" -> 13,554 bytes/token. A DFlash2
-#     DCP4 server reported needing 7.31 GiB for one 400K sequence ->
-#     19,622 bytes/token. The 6,068 bytes/token difference is the drafter's
-#     replicated KV (6 layers x 2 kv heads x 128 x 2 x bf16 = 6,144
-#     bytes/token), which is the arithmetic agreeing with itself.
-#     600,000 x 19,622 ~= 11.77e9. At 400K max_model_len that is 1.5
-#     concurrent full-length sequences, or four shorter ones.
+#     MEASURED, after an estimate missed. --kv-cache-memory is per GPU
+#     ("Size of KV Cache per GPU in bytes", config/cache.py:171), and the
+#     reported "GPU KV cache size: N tokens" is global (max_concurrency x
+#     max_model_len), so bytes/token below are per-rank-bytes over
+#     global-tokens.
+#
+#     A first attempt set 11,773,200,000 from an estimate of 19,622
+#     bytes/token, and job 1626092 reported only "GPU KV cache size: 400,192
+#     tokens" -> the real cost is 29,411 bytes/token/rank, about 1.5x the
+#     estimate. Where the extra ~10 KB/token goes is not yet explained; the
+#     drafter's promoted FullAttentionSpec (block size, page padding, or a
+#     spec num_kv_heads that is not TP-sharded) is the suspect. So
+#     600,000 x 29,411 ~= 17.65e9.
+#
+#     This trades against expert residency, which is HBM-bound on this shape:
+#     job 1626092 logged "2528 hot / 2272 cold experts per rank (50.0 GiB
+#     available / 20.3 MiB per expert)". At 20.3 MiB each, the extra 5.5 GiB
+#     per rank this budget costs is about 276 fewer resident experts per rank.
+#     Halve the budget to buy them back if cold-hit rate matters more than
+#     concurrency.
 #
 # **KNOWN DEFICIT -- READ BEFORE TRUSTING THIS.** DFlash2 acceptance under DCP4
 # is materially worse than at DCP1 and the cause is not yet found. Measured on
@@ -107,8 +119,20 @@ export TIERED_MOE_PLACEMENT_PROFILE="${repo_dir}/agent_space/profiles/glm53-w4a1
 # physically free after KV, and 7 GB would demand 5.59 GiB and refuse to start.
 export TIERED_MOE_HBM_RESERVE_GB=6
 # DFlash2 verifies 8 tokens per step (7 drafted plus the bonus) where MTP3
-# verifies 4, so the graph shapes are 8*1..8*4 at c=4.
-export TIERED_MOE_COMPILATION_CONFIG='{"mode":3,"cudagraph_mode":"FULL_AND_PIECEWISE","cudagraph_capture_sizes":[8,16,24,32],"compile_sizes":[8,16,24,32],"cudagraph_num_of_warmups":1,"pass_config":{"fuse_allreduce_rms":false}}'
+# verifies 4, so the capture shapes are 8*1..8*4 at c=4.
+#
+# compile_sizes is EMPTY, unlike the MTP3 launcher's [4,8,12,16]. Every working
+# DFlash2 arm runs it empty (2026-09-02-dflash-dcp-port/arm-dcp.sh:34), for two
+# measured reasons. Inductor autotuning at these shapes asks for more shared
+# memory than an SM has -- the first attempt at this file set
+# compile_sizes=[8,16,24,32] and died at startup with
+#   No valid triton configs. OutOfMemoryError: out of resource: triton_mm
+#   Required: 262144  Hardware limit: 232448
+# -- and separately a non-empty compile_sizes makes the DFlash2 selector a
+# second compiled unit inside the draft's captured region, which aborts with
+# "Expected exactly one compiled range_entry ... found 2" (see
+# VLLM_DFLASH2_NO_SELECTOR_COMPILE).
+export TIERED_MOE_COMPILATION_CONFIG='{"mode":3,"cudagraph_mode":"FULL_AND_PIECEWISE","cudagraph_capture_sizes":[8,16,24,32],"compile_sizes":[],"cudagraph_num_of_warmups":1,"pass_config":{"fuse_allreduce_rms":false}}'
 
 # The DFlash2 drafter, a sibling of the target checkpoint on fscratch.
 drafter="/e/fscratch/profound/${USER:-$(id -un)}/models/GLM-5.3-DFlash2"
@@ -138,7 +162,7 @@ agent_space/experiments/2026-07-17-end-to-end-tuning/run-server.sh \
   --host 0.0.0.0 \
   --port "${port}" \
   --gpu-memory-utilization 0.94 \
-  --kv-cache-memory 11773200000 \
+  --kv-cache-memory 17646600000 \
   --enable-prefix-caching \
   --enable-auto-tool-choice \
   --tool-call-parser glm47 \
