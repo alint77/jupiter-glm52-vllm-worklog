@@ -225,6 +225,17 @@ overhead in many small M=4 GEMMs (`nvjet_..._64x8_...` at 214x and 161x per
 step). Quantizing `self_attn` would move the floor to ~0.9 ms, but the larger
 share of this bucket is launch and tail inefficiency, not bytes.
 
+## The prefill chunk, kernel by kernel
+
+A complete per-kernel breakdown of one 8192-token chunk -- launch-order
+sequence, roofline with arithmetic intensity, the communication latency and
+bandwidth split, and the per-rank delta -- is in **[PREFILL.md](PREFILL.md)**.
+Headline: prefill is single-stream, so shares are additive; sparse MLA launches
+64 query heads for the 16 the rank owns and is **10.2% useful**; the cold
+expert tier costs 2.1x hot for fewer experts; and 56% of all communication time
+is arrival skew, of which 78.8 of 100.2 ms reproduces the per-layer
+routed-expert imbalance to within 0.7%.
+
 ## Ranked candidates
 
 1. **Rank-1 arrival skew -- 6.54 ms/step (19.9% of decode) and 100.2 ms/chunk

@@ -1,0 +1,9 @@
+rank0, 6 chunks: all-reduce by role
+  post-MoE                   n/chunk  77.0  median  1362.4 us  sum  115.99 ms/chunk
+  post-attention (o_proj)    n/chunk  82.0  median   895.3 us  sum   79.16 ms/chunk
+  ?                          n/chunk   1.0  median   484.0 us  sum    0.48 ms/chunk
+
+cross-rank split (ms/chunk):
+  post-MoE                   transfer  36.87  total 115.66  wait  78.78  (68.1% wait)
+  post-attention (o_proj)    transfer  40.13  total  61.57  wait  21.45  (34.8% wait)
+  ?                          transfer   0.48  total   0.49  wait   0.01  ( 2.2% wait)

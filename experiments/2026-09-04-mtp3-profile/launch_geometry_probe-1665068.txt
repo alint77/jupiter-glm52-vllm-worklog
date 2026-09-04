@@ -1,0 +1,18 @@
+=== Marlin launch geometry (rank0, chunk 3) ===
+  w13  E=64  grid=(264, 1, 1) block=(128, 1, 1) smem=115200 occ=0%      3631us
+  w13  E=46  grid=(264, 1, 1) block=(128, 1, 1) smem=115200 occ=0%      2518us
+  w13  E=44  grid=(264, 1, 1) block=(128, 1, 1) smem=115200 occ=0%      2476us
+  w13  E=42  grid=(264, 1, 1) block=(128, 1, 1) smem=115200 occ=0%      2343us
+  w13  E=41  grid=(264, 1, 1) block=(128, 1, 1) smem=115200 occ=0%      4874us
+  w13  E=40  grid=(264, 1, 1) block=(128, 1, 1) smem=115200 occ=0%      2400us
+  w13  E=39  grid=(264, 1, 1) block=(128, 1, 1) smem=115200 occ=0%      4329us
+  w13  E=38  grid=(264, 1, 1) block=(128, 1, 1) smem=115200 occ=0%      4411us
+  w13  E=37  grid=(264, 1, 1) block=(128, 1, 1) smem=115200 occ=0%      6381us
+  w13  E=36  grid=(264, 1, 1) block=(128, 1, 1) smem=115200 occ=0%      2431us
+
+=== prefill all-reduce: even/odd ordinal split, cross-rank ===
+  rank0 even ordinals: n=80 mean-of-medians   1440.4 us  sum  115.24 ms/chunk
+  rank0 odd ordinals: n=80 mean-of-medians    962.6 us  sum   77.01 ms/chunk
+  cross-rank: sum-of-minima 77.5 ms  sum-of-means 177.7 ms
+  even: transfer  38.37 ms  total 117.68 ms  -> wait  79.31
+  odd : transfer  39.11 ms  total  60.04 ms  -> wait  20.93

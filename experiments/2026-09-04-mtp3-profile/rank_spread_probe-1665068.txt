@@ -1,0 +1,2 @@
+routed MoE Marlin (4/layer)    mean-rank  783.07 ms  slowest-rank  861.31 ms  per-layer excess  78.24 ms/chunk (10.0%)
+sparse MLA (1/layer)           mean-rank  550.71 ms  slowest-rank  562.90 ms  per-layer excess  12.20 ms/chunk ( 2.2%)

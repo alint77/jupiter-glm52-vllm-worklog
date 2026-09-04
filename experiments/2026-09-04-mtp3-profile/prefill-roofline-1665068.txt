@@ -1,0 +1,22 @@
+role                                       ms     %        AI   achieved    effBW      roof   eff%
+----------------------------------------------------------------------------------------------------
+routed MoE Marlin W4 hot w13            127.7   6.5       664     294 TF     443G      989T   29.8
+routed MoE Marlin W4 hot w2              70.0   3.6       572     269 TF     470G      989T   27.2
+routed MoE Marlin W4 cold w13           385.3  19.6       664      63 TF      95G      248T   25.4
+routed MoE Marlin W4 cold w2            195.1   9.9       572      62 TF     109G      213T   29.2
+sparse MLA FP8, 64 heads launched       543.8  27.7       212     348 TF    1639G      849T   41.0 b
+  the 16 real TP heads only             543.8  27.7        53      87 TF    1639G      849T   10.2 u
+DSA indexer FP8 scan                     95.1   4.8      1970     486 TF     247G     1979T   24.5 b
+BF16 dense GEMM 4096x6144                53.6   2.7      1890     623 TF     329G      989T   63.0
+BF16 dense GEMM 6144x2624                33.6   1.7      1502     637 TF     424G      989T   64.4
+BF16 dense GEMM 2048x4096                21.7   1.1      1170     664 TF     567G      989T   67.1
+BF16 dense GEMM 6144x1024                10.8   0.5       793     745 TF     940G      989T   75.3
+BF16 dense GEMM 512x6144                  7.0   0.4       447     571 TF    1277G      989T   57.7
+BF16 MLA W_UK/W_UV bmm                   10.8   0.5       137     388 TF    2824G      549T   70.6
+MoE activation silu_and_mul              32.8   1.7         --         --    3752G     4000G   93.8
+DSA top-k per row                        33.7   1.7         --         --    1364G     4000G   34.1
+TP all-reduce (NCCL ring, bus bytes)    195.6  10.0         --         --     123G      450G   27.4
+----------------------------------------------------------------------------------------------------
+spec ceilings: HBM 4.0 TB/s | C2C 373 GB/s measured (450 spec) | NVLink 1-way 450 GB/s | BF16 989 TF/s | FP8 1979 TF/s
+(b) byte model is a bound, so AI/roof indicative; ms and achieved FLOP/s unaffected
+(u) useful-work row: real-head FLOPs against the *full* kernel's roof
