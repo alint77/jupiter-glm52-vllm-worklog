@@ -103,6 +103,44 @@ Lever status, so that settled questions are not reopened:
 | Dense GEMMs and elementwise glue | Open (34): 10.5 ms/step at c1, 37% of the step, batch-one fixed cost |
 | The sampling/logits boundary | Largely closed (34) by the V2 runner: between-graph idle 2.0 -> 0.642 ms |
 
+**Phase 54 profiles where the time actually goes.** With MTP3/c=1 chosen for
+Claude Code traffic, job 1665068 captured torch-profiler traces of *both*
+phases at a real 96K context -- prefill had never been profiled at this context
+length on this fork. Two findings overturn earlier readings, and both are in
+[the MTP3 profile](experiments/2026-09-04-mtp3-profile/README.md).
+
+**Decode's "21.7% communication" is 89% not communication.** Every ordinal of
+`cross_device_reduce_1stage` floors at ~4.0 us across 60 steps, so the
+collective itself costs 0.67 ms/step; the measured 5.9 ms is **5.24 ms/step of
+rank-skew wait absorbed at the barrier** -- about 16% of the step. The pattern
+is structural, not jitter: there are two all-reduces per layer and the first of
+each pair carries it (even ordinals 5.415 ms/step, odd 0.490 ms). Per-rank
+totals are balanced (6.6-7.5 ms), so this is per-layer routed-expert imbalance,
+not a slow GPU. That is now the largest addressable item in decode.
+
+**The hot/cold overlap item is closed.** A first pass put 6.8 ms/step of
+unrealised Marlin overlap on the table by treating three observed streams as
+collapsible to one. Marlin actually forks 2+2 *per layer*, so the floor is
+`max(hot, cold)` per layer: measured union 12.287 ms against a 12.166 ms floor,
+22.0% realised of a possible 22.8%, **0.121 ms/step left**. That confirms
+[the Marlin shared-memory monopoly](experiments/2026-07-29-marlin-smem-monopoly/README.md)
+result rather than contradicting it. Prefill never forks at all -- the
+`tiered_overlap_max_tokens` gate keeps large-M chunks on one stream.
+
+Prefill is GPU-bound (busy is 99.5% of span) and splits 39.7% routed experts,
+33.0% attention, 9.0% communication. Its all-reduce is a single
+`ncclDevKernel_AllReduce_Sum_bf16_RING_LL`, 160x per chunk over a 100.7 MB
+operand at 152 GB/s algorithmic, **100% exposed** -- no comm/compute overlap
+exists in either phase. Whether `_LL` is the right protocol for a 100 MB
+operand is open and needs an `all_reduce_perf` ceiling; no `NCCL_*` variable is
+set anywhere in the launch path. `fuse_allreduce_rms` is not the route -- it
+faults with an illegal memory access on this stack, which is why every launcher
+sets it false.
+
+Profiler distortion had to be re-measured per phase rather than inherited: it
+is small for prefill but **at least +12.8% for decode**, against the +4.3% the
+GLM-5.2 DCP4 campaign reported. Decode is therefore reported as shares only.
+
 ## Platform
 
 - One Booster node with four NVIDIA GH200 Superchips

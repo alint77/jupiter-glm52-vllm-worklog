@@ -1,8 +1,30 @@
 # GLM-5.2 on JUPITER: agent handoff
 
-**Last updated: 2026-09-02 (Phase 53, second half). DFlash2 runs under DCP4
-now; it is still 38% down on acceptance there, and the production shape has a
-real load number for the first time.**
+**Last updated: 2026-09-04 (Phase 54). MTP3/c=1 is the Claude Code serving
+choice, and both its phases are now profiled at a real 96K context.**
+
+**The two numbers that matter next.** Decode spends **5.24 ms/step (~16%)
+waiting on routed-expert rank skew** inside `cross_device_reduce_1stage` -- the
+collective itself is only 0.67 ms/step, since every ordinal floors at ~4.0 us
+across 60 steps. Prefill spends **177.7 ms/chunk (9.0%, ~2.1 s of a 23.2 s
+TTFT) in a fully exposed NCCL all-reduce**. Neither phase has any
+communication/compute overlap at all.
+
+**Do not re-open the hot/cold Marlin overlap.** Measured union 12.287 ms
+against a `max(hot, cold)` floor of 12.166 ms -- 0.121 ms/step, 0.4% of the
+step. Marlin forks 2+2 per layer, so the floor is per layer, not the max over
+the step; a first pass that ignored this claimed 6.8 ms of headroom and was
+wrong. `2026-07-29-marlin-smem-monopoly` already settled this.
+
+**Do not propose `fuse_allreduce_rms` for the prefill all-reduce.** It faults
+with an illegal memory access on this stack. The live question there is the
+`RING_LL` protocol choice for a 100.7 MB operand, which needs an
+`all_reduce_perf -b 100M -e 100M` ceiling first; no `NCCL_*` variable is set
+anywhere in the launch path.
+
+**Profiler distortion is per-phase and must be measured, not inherited.** Small
+for prefill, **>= +12.8% for decode** against the +4.3% carried over from the
+GLM-5.2 DCP4 campaign. Quote decode as shares, not absolutes.
 
 **Where things stand.** MTP3 / DCP4 / c=4 at 350K context measures **209.3
 tok/s output, 477 ms median TTFT, 18.26 ms TPOT** under real concurrent load
