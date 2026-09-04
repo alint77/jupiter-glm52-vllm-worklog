@@ -1,0 +1,40 @@
+
+########## decode: 60 aligned steps x 166 ordinals, 4 ranks ##########
+  cross-rank MIN per (step,ordinal): p50      3.8 us  p5      3.6  mean      3.8
+  cross-rank MEAN per (step,ordinal): p50      6.9 us  mean     43.2
+  => per-step: sum of minima   0.632 ms vs sum of means   7.174 ms  -> skew   6.543 ms/step (91.2%)
+  ALL FOUR ranks slow (min > 3x p5-floor): 1/9960 = 0.0%   <- high => collective itself, low => arrival skew
+  argmin rank histogram (who waits LEAST = arrives LAST): r0  24.4%, r1  43.1%, r2  18.0%, r3  14.5%
+  rank0 kernel context around first ordinals (decode):
+    ord  0 [even] prev=triton_poi_fused_add_bitwise_and_bitwise_not_bitwise_or_em
+    ord  1 [odd ] prev=triton_tem_fused_mm_t_0
+    ord  2 [even] prev=nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+    ord  3 [odd ] prev=triton_tem_fused_mm_t_0
+    ord  4 [even] prev=nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+    ord  5 [odd ] prev=triton_tem_fused_mm_t_0
+    ord  6 [even] prev=triton_tem_fused_mm_mul_silu_slice_t_4
+    ord  7 [odd ] prev=triton_tem_fused_mm_t_0
+    ord  8 [even] prev=triton_poi_fused_add_mul_2
+    ord  9 [odd ] prev=triton_tem_fused_mm_t_0
+    ord 10 [even] prev=triton_poi_fused_add_mul_2
+    ord 11 [odd ] prev=triton_tem_fused_mm_t_0
+
+########## prefill: 6 aligned steps x 160 ordinals, 4 ranks ##########
+  cross-rank MIN per (step,ordinal): p50    486.9 us  p5    462.9  mean    484.3
+  cross-rank MEAN per (step,ordinal): p50    905.8 us  mean   1110.8
+  => per-step: sum of minima  77.485 ms vs sum of means 177.726 ms  -> skew 100.241 ms/step (56.4%)
+  ALL FOUR ranks slow (min > 3x p5-floor): 0/960 = 0.0%   <- high => collective itself, low => arrival skew
+  argmin rank histogram (who waits LEAST = arrives LAST): r0  12.0%, r1  58.8%, r2  17.4%, r3  11.9%
+  rank0 kernel context around first ordinals (prefill):
+    ord  0 [even] prev=triton_poi_fused_add_bitwise_and_bitwise_not_bitwise_or_em
+    ord  1 [odd ] prev=nvjet_sm90_tst_192x192_64x4_2x1_v_bz_coopB_TNN
+    ord  2 [even] prev=nvjet_sm90_tst_192x192_64x4_2x1_v_bz_coopB_TNN
+    ord  3 [odd ] prev=nvjet_sm90_tst_192x192_64x4_2x1_v_bz_coopB_TNN
+    ord  4 [even] prev=nvjet_sm90_tst_192x192_64x4_2x1_v_bz_coopB_TNN
+    ord  5 [odd ] prev=nvjet_sm90_tst_192x192_64x4_2x1_v_bz_coopB_TNN
+    ord  6 [even] prev=nvjet_sm90_tst_192x192_64x4_2x1_v_bz_coopB_TNN
+    ord  7 [odd ] prev=nvjet_sm90_tst_192x192_64x4_2x1_v_bz_coopB_TNN
+    ord  8 [even] prev=triton_poi_fused_add_mul_1
+    ord  9 [odd ] prev=nvjet_sm90_tst_192x192_64x4_2x1_v_bz_coopB_TNN
+    ord 10 [even] prev=triton_poi_fused_add_mul_1
+    ord 11 [odd ] prev=nvjet_sm90_tst_192x192_64x4_2x1_v_bz_coopB_TNN

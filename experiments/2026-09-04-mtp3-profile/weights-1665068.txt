@@ -1,0 +1,12 @@
+checkpoint total   419.94 GiB
+  routed experts                 384.75 GiB   91.6%   quantized 342.00, BF16 42.75, I64 0.00
+  self_attn                       24.67 GiB    5.9%   BF16 24.67
+  shared experts                   5.34 GiB    1.3%   BF16 5.34
+  embed/lm_head                    3.54 GiB    0.8%   BF16 3.54
+  dense MLP (first 3 layers)       1.27 GiB    0.3%   BF16 1.27
+  norms/other                      0.37 GiB    0.1%   BF16 0.37, F32 0.00
+
+bf16 weights read EVERY step (self_attn + shared experts + dense MLP):
+  31.28 GiB total, 7.82 GiB per GPU at TP4
+  at ~4 TB/s HBM that is 2.10 ms/step of pure weight streaming
+  measured dense/shared GEMM bucket: 5.734 ms/step
