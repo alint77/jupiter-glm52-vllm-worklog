@@ -86,6 +86,22 @@ def wait_for_decode(num_running: int, timeout: float = 600.0) -> None:
     raise SystemExit(f"never reached {num_running} decoding requests")
 
 
+def wait_for_running(num_running: int, timeout: float = 300.0) -> None:
+    """Block until `num_running` requests are scheduled on the engine.
+
+    Prefill is measured by opening the window on the request rather than on
+    the clock: the POST carries a 441K-character prompt, and tokenizing and
+    admitting it is seconds of host work that would otherwise be charged to
+    the window and displace the chunks it is meant to hold.
+    """
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if metrics().get("num_requests_running", 0) >= num_running:
+            return
+        time.sleep(0.1)
+    raise SystemExit(f"never reached {num_running} running requests")
+
+
 def move_traces(trace_root: Path, label: str) -> int:
     target = trace_root / label
     target.mkdir(parents=True, exist_ok=True)
@@ -170,7 +186,15 @@ def main() -> None:
     #    structurally identical, so a window covering a few of them is
     #    representative and keeps the trace to a size that loads; a full 96K
     #    prefill is ~12 chunks and four ranks of that is unwieldy.
-    run_capture("prefill", fire([0], 1), settle=0.0, window=6.0)
+    def prefill_c1():
+        threads = fire([0], 1)()
+        wait_for_running(1)
+        return threads
+
+    # ~1.93 s/chunk measured unprofiled (96K in 23.17 s TTFT), so 10 s is
+    # about five structurally identical chunks -- representative, and four
+    # ranks of it stays near the 14 MB the last prefill capture produced.
+    run_capture("prefill", prefill_c1, settle=0.0, window=10.0)
 
     # 2. Decode at ~96K context. max_tokens is large enough that the request is
     #    still decoding after the window, and wait_for_decode gates on
