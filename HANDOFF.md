@@ -31,6 +31,19 @@ communication time is arrival skew, of which 78.8 of 100.2 ms reproduces the
 per-layer routed-expert imbalance to within 0.7%. Dense BF16 GEMMs run at
 63-75% of peak and `silu_and_mul` at 94% of HBM -- nothing available there.
 
+**Next build: cold-expert H2D prefetch for prefill**, planned in
+[2026-09-05-cold-prefetch](experiments/2026-09-05-cold-prefetch/PLAN.md) and
+not started. Worth up to -373 ms per 8192-token chunk (19.0%). Feasibility is
+measured, not modelled: none of 444 layer transitions fails to hide the next
+layer's cold operands, worst case 7.04x margin. Three things the plan already
+settled -- the all-64-expert layers are **hot**, so the double buffer is
+1.62 GiB not 2.53; tier storage is **component-major**, so slot views must be
+rebuilt per layer rather than prefix-sliced; and the 1.62 GiB must be budgeted
+through the planner as `cold_staging`, not taken from the 1.95 GiB runtime
+margin, or `verify_observed_hbm_reserve` will reject it. Phase 1 is a
+microbenchmark of the copy-engine H2D path, which is a different mechanism from
+the SM-issued UVA loads the project's 373 GB/s figure was measured on.
+
 **Do not propose `fuse_allreduce_rms`.** It faults with an illegal memory access
 on this stack. No comm/compute overlap exists in either phase, but overlap would
 hide only the real transfer, not the waiting -- fix the skew first.
