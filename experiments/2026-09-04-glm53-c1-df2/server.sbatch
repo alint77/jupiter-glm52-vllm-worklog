@@ -116,26 +116,42 @@ export TIERED_MOE_MODEL_PATH="${model_fscratch}"
 echo "model: ${TIERED_MOE_MODEL_PATH} (${actual_shards} shards)"
 
 export TIERED_MOE_PLACEMENT_PROFILE="${repo_dir}/agent_space/profiles/glm53-w4a16-2496.json"
-# 7 GB at utilisation 0.90, which is repl2-eager-dcp1's pair rather than the
-# MTP3 launcher's 6 GB at 0.94. The first two launches of this file used
-# 0.94/6 and both died the same way: KV allocated correctly (400,064 tokens off
-# a self-profiled 21.92 GiB) and the planner then promoted experts to 2528 to
-# fill its budget, leaving 887 MiB free -- and flashinfer's autotuner wants
-# 2.00 GiB. Jobs 1658089 and 1658174.
+# 10 GB reserve at utilisation 0.90. The reserve is doing a job the planner
+# should do itself, so the number is not arbitrary.
 #
-# Utilisation is the knob that shrinks the planner's budget, and it does so
-# without touching KV. Two measurements bracket it: repl2 at 0.90/7 took
-# 45.8 GiB of experts + 22.28 GiB of KV; the 0.94/6 failure took 50.0 + 21.92.
-# The 3.8 GiB difference is 0.04 x 95 GiB, so the planner tracks utilisation
-# almost exactly and spends it on hot experts. Reserve alone cannot substitute:
-# 7 GB at 0.94 fails the reserve check outright and refuses to start.
+# The tiered planner budgets HBM from fixed_hbm_allocations, which holds
+# main_mla_cache (tiered_moe_physical.py:227) and indexer_cache (:222) and
+# nothing else. The KV cache it then allocates is sized by
+# get_tiered_kv_available_memory (tiered_moe_kv.py:140, via
+# kv_cache_utils.py:2201), which sums main *and indexer and draft* specs. For
+# this shape, per rank at 6251 blocks:
 #
-# Costs roughly 200 hot experts against 0.94. Raise it only with a launch to
-# confirm; DFlash2 carries six dense draft layers of KV that MTP3 does not, so
-# the MTP3 launcher's headroom does not transfer.
-# Overridable so a probe at a different pair is one command rather than a
-# forked copy of this file; the defaults are the proven pair.
-export TIERED_MOE_HBM_RESERVE_GB="${CLAUDE_GLM53_HBM_RESERVE_GB:-7}"
+#     main_mla_cache   19.06 GiB   budgeted
+#     indexer_cache     1.03 GiB   budgeted
+#     draft cache       2.18 GiB   NOT budgeted
+#
+# The drafter's six dense layers are invisible to the planner, which spends
+# that 2.18 GiB on hot experts instead and then cannot fit the cache it just
+# promised. MTP3 never trips this: its grafted layer is an MLA layer counted
+# in main_specs, so main_cache_bytes already covers it. That is why the MTP3
+# launcher runs happily at reserve 6 and this one does not.
+#
+# Reserve is the only lever that moves real headroom, and it moves it 1:1 --
+# measured, 6 GB -> 7 GB took experts 50.0 -> 49.1 GiB and free 0.88 -> 1.80
+# GiB. Utilisation does NOT: 0.94 -> 0.90 changed only the *declared* KV budget
+# (21.92 -> 19.06 GiB), which is slack the tiered path ignores because the
+# planner forces the block count either way. Both runs allocated the identical
+# 400,064 tokens. Keep 0.90 anyway: it is the precondition for a reserve above
+# 7, which at 0.94 fails the reserve check and refuses to start.
+#
+# So the reserve carries the unbudgeted 2.18 GiB plus margin. Jobs 1658089 and
+# 1658174 died at 0.94/6 (0.88 GiB free) and 1658456 at 0.90/7 (1.80 GiB free),
+# each short of a 2.00 GiB allocation during KV cache init.
+#
+# The real fix is to add the draft specs to fixed_hbm_allocations; until then
+# every dense-drafter shape needs a reserve inflated by its draft cache.
+#
+export TIERED_MOE_HBM_RESERVE_GB="${CLAUDE_GLM53_HBM_RESERVE_GB:-10}"
 gpu_util="${CLAUDE_GLM53_GPU_UTIL:-0.90}"
 echo "memory: gpu_util=${gpu_util} reserve=${TIERED_MOE_HBM_RESERVE_GB}GB"
 # DFlash2 verifies 8 tokens per step (7 drafted plus the bonus), and c=1

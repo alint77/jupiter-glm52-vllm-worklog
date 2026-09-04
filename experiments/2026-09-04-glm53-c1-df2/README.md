@@ -44,47 +44,66 @@ quantisation, so the cache figures carry over. Expert residency does not —
 W4A16 weights are smaller, so expect more than 2317 hot experts. The
 `Tiered MoE residency` log line reports the actual number.
 
-## Launch 1 and 2: OOM at 0.94 / reserve 6 (jobs 1658089, 1658174)
+## Three OOMs, and the planner defect behind them
 
-Both died identically, and **not** on anything this file got wrong about KV:
+| job | util / reserve | experts | KV declared | free | result |
+|---|---|---|---|---|---|
+| 1658089, 1658174 | 0.94 / 6 | 50.0 GiB | 21.92 GiB | 0.88 GiB | OOM on a 2.00 GiB alloc |
+| 1658456 | 0.90 / 7 | 49.1 GiB | 19.06 GiB | 1.80 GiB | OOM on a 2.00 GiB alloc |
 
-```
-KV cache allocated, 400,064 tokens          <- exactly the planner's 6251 blocks
-Tiered MoE residency: 2528 hot / 2272 cold  <- promoted from the profile's 2496
-CUDA out of memory. Tried to allocate 2.00 GiB.
-  GPU 0 ... 95.00 GiB total, 887.75 MiB free
-```
+All three allocated KV correctly — 400,064 tokens, the planner's 6251 blocks —
+then died during KV cache init. The error arrives as
+`RuntimeError: torch_call_dispatcher("aten::new_empty", ...)`, a wrapper; the
+root cause is `CUDA out of memory` a few hundred lines earlier. flashinfer's
+autotuner is *not* the culprit — it logs "Autotuning process ends" for all four
+workers before the failure.
 
-Surfaced as `RuntimeError: torch_call_dispatcher("aten::new_empty", ...)`, which
-is a wrapper; the OOM is the root cause. flashinfer's autotuner asks for 2.00 GiB
-after the KV cache is up, and there was 0.88 GiB left.
+### The mechanism
 
-The self-profiled KV was right. What was wrong was inheriting the MTP3
-launcher's `0.94` / reserve `6` pair: the planner spends whatever utilisation
-allows on hot experts (it *promoted* 2496 → 2528 to fill the budget), so the
-headroom flashinfer needs was gone. DFlash2 carries six dense draft layers of
-KV that MTP3 does not, so MTP3's headroom does not transfer.
+The planner budgets HBM from `fixed_hbm_allocations`, which holds
+`main_mla_cache` (`tiered_moe_physical.py:227`) and `indexer_cache` (`:222`) and
+nothing else. The cache it then allocates is sized by
+`get_tiered_kv_available_memory` (`tiered_moe_kv.py:140`, via
+`kv_cache_utils.py:2201`), which sums main **and indexer and draft** specs. Per
+rank at 6251 blocks:
 
-Utilisation is the knob, and it shrinks the planner's budget without touching
-KV. Two measurements bracket it:
+| component | bytes | in the planner's budget? |
+|---|---|---|
+| `main_mla_cache` | 19.06 GiB | yes |
+| `indexer_cache` | 1.03 GiB | yes |
+| draft cache (6 dense layers) | **2.18 GiB** | **no** |
 
-| run | util / reserve | experts | KV | outcome |
-|---|---|---|---|---|
-| `repl2-eager-dcp1` | 0.90 / 7 | 45.8 GiB | 22.28 GiB | ran |
-| jobs 1658089, 1658174 | 0.94 / 6 | 50.0 GiB | 21.92 GiB | OOM, 0.88 GiB free |
+The drafter's layers are invisible to the planner, which spends that 2.18 GiB
+on hot experts and then cannot fit the cache it just promised. MTP3 never trips
+this: its grafted layer is an MLA layer counted in `main_specs`, so
+`main_cache_bytes` already covers it — which is why the MTP3 launcher runs at
+reserve 6 and this one cannot.
 
-The 3.8 GiB difference is `0.04 x 95 GiB` — the planner tracks utilisation
-almost exactly and spends it on experts. Reserve alone cannot substitute: 7 GB
-at 0.94 fails the reserve check and refuses to start.
+### Which knob actually moves memory
 
-**Now set to 0.90 / 7**, repl2's pair, proven on this exact shape. Costs roughly
-200 hot experts against 0.94.
+Reserve, 1:1. Measured: 6 → 7 GB took experts 50.0 → 49.1 GiB and free
+0.88 → 1.80 GiB.
 
-Both knobs are overridable, so probing a tighter pair is one command:
+Utilisation does **not**. 0.94 → 0.90 changed only the *declared* KV budget
+(21.92 → 19.06 GiB), which is slack the tiered path ignores because the planner
+forces the block count regardless — both runs allocated the identical 400,064
+tokens. An earlier revision of this file credited utilisation for the gain;
+that was wrong, and the numbers above are why. Keep 0.90 anyway: it is the
+precondition for a reserve above 7, which at 0.94 fails the reserve check.
+
+**Now 0.90 / reserve 10** — the unbudgeted 2.18 GiB plus margin. Predicts
+roughly 4.8 GiB free.
 
 ```bash
-CLAUDE_GLM53_GPU_UTIL=0.92 CLAUDE_GLM53_HBM_RESERVE_GB=6 ./claude-glm53-c1-df2.sh --start
+CLAUDE_GLM53_HBM_RESERVE_GB=9 ./claude-glm53-c1-df2.sh --start   # tighter probe
 ```
+
+### Follow-up
+
+The real fix is to add the draft specs to `fixed_hbm_allocations` so the
+planner stops handing away memory it has already committed. Until then every
+dense-drafter shape (DFlash, DSpark) needs a reserve inflated by its own draft
+cache. Worth a patch; it is a genuine accounting bug, not a tuning quirk.
 
 ## No `--kv-cache-memory`, deliberately
 
@@ -108,5 +127,5 @@ headroom, not on KV sizing.
 
 ## Status
 
-Launched twice at 0.94 / reserve 6; both OOMed on flashinfer's autotuner.
-Now set to 0.90 / 7 and **not yet re-launched**.
+Three launches, three OOMs, all from the draft-cache accounting gap above.
+Now 0.90 / reserve 10 and **not yet re-launched**.
