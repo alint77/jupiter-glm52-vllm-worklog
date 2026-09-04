@@ -106,40 +106,50 @@ Lever status, so that settled questions are not reopened:
 **Phase 54 profiles where the time actually goes.** With MTP3/c=1 chosen for
 Claude Code traffic, job 1665068 captured torch-profiler traces of *both*
 phases at a real 96K context -- prefill had never been profiled at this context
-length on this fork. Two findings overturn earlier readings, and both are in
+length on this fork. Written up in
 [the MTP3 profile](experiments/2026-09-04-mtp3-profile/README.md).
 
-**Decode's "21.7% communication" is 89% not communication.** Every ordinal of
-`cross_device_reduce_1stage` floors at ~4.0 us across 60 steps, so the
-collective itself costs 0.67 ms/step; the measured 5.9 ms is **5.24 ms/step of
-rank-skew wait absorbed at the barrier** -- about 16% of the step. The pattern
-is structural, not jitter: there are two all-reduces per layer and the first of
-each pair carries it (even ordinals 5.415 ms/step, odd 0.490 ms). Per-rank
-totals are balanced (6.6-7.5 ms), so this is per-layer routed-expert imbalance,
-not a slow GPU. That is now the largest addressable item in decode.
+**The dominant cost is rank-1 arrival skew, in both phases.** Aligning the four
+ranks by step index and comparing each (step, ordinal) all-reduce's cross-rank
+minimum against its mean settles it: neither collective is *ever* slow on all
+four ranks at once (1/9960 decode, 0/960 prefill), so both are waiting, not
+communicating. That is **6.54 ms of a 32.9 ms decode step (19.9%)** and
+**100.2 ms of a 1974 ms prefill chunk (5.1%)**. Rank 1 holds the minimum 43.1%
+of the time in decode and 58.8% in prefill against 25% for chance -- in every
+layer, in both phases -- so it is the rank arriving last. Its all-reduce total
+is consequently the *lowest* of the four, which an earlier pass misread as
+"balanced, no laggard". Being rank-specific and layer-independent points at
+NUMA/C2C on one GPU rather than at expert routing; see `numa-bind-uva`.
+
+Prefill is not bandwidth-bound after all. Its 992 us median over an identical
+100.7 MB operand spans 461-3907 us; at the 487 us cross-rank minimum the ring
+reaches **~310 GB/s algorithmic, not the 152 GB/s the median implied**, so
+"already at NVLink peak" was measuring skew and is withdrawn.
 
 **The hot/cold overlap item is closed.** A first pass put 6.8 ms/step of
 unrealised Marlin overlap on the table by treating three observed streams as
-collapsible to one. Marlin actually forks 2+2 *per layer*, so the floor is
-`max(hot, cold)` per layer: measured union 12.287 ms against a 12.166 ms floor,
-22.0% realised of a possible 22.8%, **0.121 ms/step left**. That confirms
+collapsible to one. Marlin forks 2+2 *per layer*, so the floor is
+`max(hot, cold)` per layer: union 12.287 ms against a 12.166 ms floor, 22.0%
+realised of a possible 22.8%, **0.121 ms/step left**. That confirms
 [the Marlin shared-memory monopoly](experiments/2026-07-29-marlin-smem-monopoly/README.md)
-result rather than contradicting it. Prefill never forks at all -- the
-`tiered_overlap_max_tokens` gate keeps large-M chunks on one stream.
+rather than contradicting it. Prefill never forks at all.
 
-Prefill is GPU-bound (busy is 99.5% of span) and splits 39.7% routed experts,
-33.0% attention, 9.0% communication. Its all-reduce is a single
-`ncclDevKernel_AllReduce_Sum_bf16_RING_LL`, 160x per chunk over a 100.7 MB
-operand at 152 GB/s algorithmic, **100% exposed** -- no comm/compute overlap
-exists in either phase. Whether `_LL` is the right protocol for a 100 MB
-operand is open and needs an `all_reduce_perf` ceiling; no `NCCL_*` variable is
-set anywhere in the launch path. `fuse_allreduce_rms` is not the route -- it
-faults with an illegal memory access on this stack, which is why every launcher
-sets it false.
+**Only the routed experts are quantized.** A checkpoint census puts `self_attn`
+at 24.67 GiB, shared experts at 5.34 and the first three dense MLPs at 1.27 --
+all bf16, all read every step. That is 7.82 GiB per GPU at TP4, a **2.10 ms/step
+streaming floor against 5.734 ms/step measured** for the dense/shared GEMM
+bucket (17.2% of decode), so most of that bucket is overhead in many small M=4
+GEMMs rather than bytes.
 
-Profiler distortion had to be re-measured per phase rather than inherited: it
-is small for prefill but **at least +12.8% for decode**, against the +4.3% the
-GLM-5.2 DCP4 campaign reported. Decode is therefore reported as shares only.
+Budget: prefill splits 39.7% routed experts, 33.0% attention, 9.0%
+communication; decode 36.1% / 7.3% / 21.7%. Every all-reduce in both phases is
+**100% exposed** -- no comm/compute overlap exists anywhere.
+`fuse_allreduce_rms` is not the route to fixing that; it faults with an illegal
+memory access on this stack, which is why every launcher sets it false.
+
+Profiler distortion had to be re-measured per phase rather than inherited: small
+for prefill, **at least +12.8% for decode** against the +4.3% the GLM-5.2 DCP4
+campaign reported. Decode is therefore reported as shares only.
 
 ## Platform
 

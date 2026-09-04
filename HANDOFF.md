@@ -3,24 +3,32 @@
 **Last updated: 2026-09-04 (Phase 54). MTP3/c=1 is the Claude Code serving
 choice, and both its phases are now profiled at a real 96K context.**
 
-**The two numbers that matter next.** Decode spends **5.24 ms/step (~16%)
-waiting on routed-expert rank skew** inside `cross_device_reduce_1stage` -- the
-collective itself is only 0.67 ms/step, since every ordinal floors at ~4.0 us
-across 60 steps. Prefill spends **177.7 ms/chunk (9.0%, ~2.1 s of a 23.2 s
-TTFT) in a fully exposed NCCL all-reduce**. Neither phase has any
-communication/compute overlap at all.
+**The one number that matters next: rank 1 arrives last, in both phases.**
+Aligning the four ranks per (step, ordinal) all-reduce, neither collective is
+ever slow on all four at once (1/9960 decode, 0/960 prefill) -- so both are
+arrival skew, **6.54 ms of a 32.9 ms decode step (19.9%)** and **100.2 ms of a
+1974 ms prefill chunk (5.1%)**. Rank 1 holds the cross-rank minimum 43.1%
+(decode) and 58.8% (prefill) of the time against 25% for chance. In a spin-wait
+barrier least-wait means last-arrival, so rank 1's *lowest* all-reduce total is
+the symptom, not evidence of balance. Layer-independent and phase-independent:
+look at NUMA/C2C on that GPU before looking at the router.
 
-**Do not re-open the hot/cold Marlin overlap.** Measured union 12.287 ms
-against a `max(hot, cold)` floor of 12.166 ms -- 0.121 ms/step, 0.4% of the
-step. Marlin forks 2+2 per layer, so the floor is per layer, not the max over
-the step; a first pass that ignored this claimed 6.8 ms of headroom and was
-wrong. `2026-07-29-marlin-smem-monopoly` already settled this.
+**Do not repeat these three misreadings.** (1) Per-rank all-reduce totals
+"looking balanced" is backwards -- compare cross-rank minima instead. (2)
+Prefill's all-reduce is **not** bandwidth-bound; the 992 us median hides a
+461-3907 us spread on an identical operand, and the 487 us minimum puts the ring
+at ~310 GB/s. (3) Hot/cold Marlin overlap is **closed**: union 12.287 ms against
+a `max(hot, cold)` floor of 12.166 -- 0.121 ms/step. Marlin forks 2+2 per layer,
+so the floor is per layer, not the max over the step.
 
-**Do not propose `fuse_allreduce_rms` for the prefill all-reduce.** It faults
-with an illegal memory access on this stack. The live question there is the
-`RING_LL` protocol choice for a 100.7 MB operand, which needs an
-`all_reduce_perf -b 100M -e 100M` ceiling first; no `NCCL_*` variable is set
-anywhere in the launch path.
+**Do not propose `fuse_allreduce_rms`.** It faults with an illegal memory access
+on this stack. No comm/compute overlap exists in either phase, but overlap would
+hide only the real transfer, not the waiting -- fix the skew first.
+
+**Only routed experts are quantized.** `self_attn` (24.67 GiB), shared experts
+(5.34) and the first three dense MLPs (1.27) are bf16 and read every step: 7.82
+GiB per GPU, a 2.10 ms/step floor against 5.734 ms/step measured for that
+bucket, so it is mostly small-GEMM overhead, not bytes.
 
 **Profiler distortion is per-phase and must be measured, not inherited.** Small
 for prefill, **>= +12.8% for decode** against the +4.3% carried over from the
