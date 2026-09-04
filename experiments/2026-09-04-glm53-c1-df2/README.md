@@ -172,6 +172,49 @@ exist, so it needs the drafter's page geometry passed in — and that arithmetic
 should be validated against a measured allocation rather than derived, which is
 what the context probe would provide.
 
+## Launch 5: 200K starts (job 1658968) — diagnosis confirmed
+
+Same reserve (10), same utilisation (0.90), same everything. Only the block
+count changed, 6251 → 3126. It started, in 7m37s:
+
+```
+job 1658968 [RUNNING 3:08]: experts placed, 2848 hot / 1952 cold experts per rank
+job 1658968 [RUNNING 6:44]: model compiled in 73.09 s
+job 1658968 [RUNNING 7:37]: CUDA graphs captured
+API ready at http://jpbo-069-45:8027
+```
+
+| | 400K (job 1658726) | 200K (job 1658968) |
+|---|---|---|
+| blocks | 6251 | 3126 |
+| KV cache | — | 11.36 GiB / 200,064 tokens |
+| experts | — | 2848 hot / 1952 cold (56.3 GiB) |
+| runtime reserve check | fail, gap 1.65e9 | **pass** |
+
+Serves correctly: `17*23` → `391`, `finish_reason: stop`.
+
+This is the confirmation the probe was designed for. The unbudgeted gap scales
+with the block count, so the draft cache — the one component that is
+block-count-proportional and absent from `fixed_hbm_allocations` — is the
+driver. Had the gap stayed at 1.65e9, the diagnosis would have been wrong.
+
+### What this pins, and what it does not
+
+The check passing tells us `gap(3126) <= 1.0e9`, and `gap(6251) = 1.65e9` was
+measured. With `gap = a + b*blocks`:
+
+```
+3125b >= 0.652e9   ->  b >= 208,640 B/block
+a >= 0             ->  b <= 264,278 B/block
+```
+
+So the per-block draft cost is bracketed to **209k–264k bytes** (34.8k–44.0k per
+draft layer per block). That is not tight enough to write the planner patch
+against — a hand-derived page size for 2 KV heads x 128 head_dim x 2 (K+V) lands
+at 512 B/token/layer for fp8 or 1024 for bf16, and the bracket sits between
+them. The patch needs one instrumented read of the actual draft spec's
+`page_size_bytes`, not more inference.
+
 ## No `--kv-cache-memory`, deliberately
 
 Every other W4A16 config here passes `21689598771` (which buys 400,064 tokens
@@ -194,6 +237,11 @@ headroom, not on KV sizing.
 
 ## Status
 
-Four launches. Three OOMed during KV init; the fourth (reserve 10) cleared
-that and stopped at the runtime reserve check, which no reserve value can
-satisfy. Blocked on either a shorter context or the planner fix above.
+**Working at 200K context**, reserve 10 / utilisation 0.90 (job 1658968).
+400K remains blocked on the planner's draft-cache accounting; the fix is
+scoped in "Two ways forward" above and needs one instrumented read of the
+draft spec's page size before it can be written.
+
+```bash
+CLAUDE_GLM53_MAX_MODEL_LEN=200000 ./claude-glm53-c1-df2.sh --start
+```
