@@ -116,6 +116,19 @@ cold runs at hot's rate.
 as arguments, so the swap happens at the call site and the kernel path is
 untouched.
 
+### Naming: this is a residency split, not an execution one
+
+"Hot" and "cold" describe where an expert's weights **permanently live**, and
+after staging that distinction is gone at execution time -- both tiers read HBM
+through the same kernel with the same grid. Nothing about the staged tier is
+slow once it is staged. **New** code on the prefill path should therefore say
+`resident` and `staged`; the existing `hot`/`cold` names are placement terms and
+stay as they are, in the storage, planner and log lines. This is a vocabulary
+rule for the new path, not a refactor of the old one.
+
+This also means the two-call structure has no execution-time justification in
+prefill, which is the follow-on below.
+
 ### Gating
 
 New knob `VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS` (default 1024), a property
@@ -132,6 +145,34 @@ experts does layer L+1 need" is answerable before layer L runs: all of them. At
 decode's M=4 roughly one cold expert per rank per layer fires, and which one is
 unknown until that layer's router runs. Decode's cold path is also already at
 the C2C roofline (379 GB/s). **Hot residency stays.**
+
+## Follow-on: one Marlin call instead of two -- smaller than it looks
+
+Once both tiers execute from HBM, splitting each layer's MoE into two Marlin
+calls is a residency artefact. Merging would remove the duplicated per-tier
+work the sequence shows -- a second `silu_and_mul`, `moe_sum`,
+`moe_align_block_size` and `fill_` per layer, ~640 us/layer or **~48
+ms/chunk**.
+
+**It would not make Marlin itself faster, and there is a measurement that says
+so.** One layer per chunk holds all 64 experts in a single call: 3631 + 1987 =
+5618 us for 64 experts = **88 us/expert, against 85 us/expert for the 31-expert
+resident calls**. A single 64-expert call is no more efficient per expert than
+two smaller ones, so there is no wave-quantisation or load-balance win hiding
+here. The follow-on is capped near that 48 ms of duplicated glue.
+
+**And it is a kernel change, not plumbing.** A merged call needs one contiguous
+64-expert operand. Staging all 64 is the wrong way to get it -- it would copy
+the resident experts, which are *already in HBM*, into a second HBM buffer every
+chunk: 104.7 GB of DMA to deliver 52 GB of new bytes. Laying each layer's
+resident block adjacent to its slot does not work either, because the slot is
+one shared region rotated across layers while the resident blocks are permanent
+and per-layer; they cannot be contiguous with the same slot. That leaves a
+Marlin variant taking two weight base pointers, or a `torch.cat` per layer which
+is itself the copy we are trying to avoid.
+
+So: **after** the two-call version proves the premise, and only if 48 ms is
+worth a kernel change.
 
 ## Correctness
 
@@ -188,16 +229,33 @@ Accept it rather than special-casing the dense layers 0-2.
 
 ## Risks
 
-1. **The 373 ms is an upper bound.** It assumes cold-in-HBM reaches hot's
-   85 us/expert. Cold experts are cold because they take fewer tokens, so
-   Marlin may get worse M-utilisation from them. Against that: hot itself is at
-   neither the HBM roof (250 GB/s of 4000) nor the SM clock, so hot's rate is
-   set by a residency-**independent** kernel limit that cold should converge to.
-   Row counts are not in the trace (shapes, not values); measure with a
-   `topk_ids` histogram over one prefill, or reuse
-   `benchmarks/capture_routing_trace.py`, before trusting the upper bound.
-2. **Copy/compute contention.** The DMA writes at 450 GB/s into the same HBM
-   the compute reads -- 11% of HBM, but not free. Phase 1 measures it.
+1. **The row split, which cuts both ways.** Post-prefetch both tiers execute
+   from HBM through the same kernel, so per-row and per-byte costs are
+   identical and the only thing separating them is how many routed rows each
+   holds. Total rows per layer is fixed at 16384 regardless of the split, so
+   this is not a penalty term -- it is a two-sided uncertainty:
+
+   | model | staged-tier time | saving |
+   | --- | ---: | ---: |
+   | cost ~ rows, resident takes 60% | 131.8 ms | 451 ms |
+   | cost ~ rows, resident takes 50% | 197.7 ms | 386 ms |
+   | **cost ~ experts (headline)** | **210.5 ms** | **373 ms** |
+   | cost ~ rows, resident takes 40% | 296.5 ms | 287 ms |
+
+   Range **287-451 ms, central 373**. The 60% row is unlikely: the resident
+   tier averages 31 experts to the staged tier's 33, so a 60/40 row split would
+   need each resident expert to carry ~2x a staged one, and the placement
+   optimiser here is `replicated-makespan-v1`, which balances time across ranks
+   rather than frequency within one. Nearer 50/50 is the reasonable prior.
+   Row counts are not in the trace (shapes, not values); a `topk_ids` histogram
+   over one prefill settles it and should run in phase 1, since it costs
+   nothing and turns the headline from an estimate into a prediction.
+
+2. **Copy/compute contention -- the one risk that is genuinely new.** The DMA
+   writes at 450 GB/s into the same HBM the compute reads, about 11% of the
+   4 TB/s. This applies to *both* tiers and to attention, not just the staged
+   experts, and it is the only mechanism by which staging could make anything
+   slower than it is today. Phase 1 measures it directly.
 3. **The reserve check**, addressed by planner accounting above; it has blocked
    three launches before.
 4. **NUMA locality of the cold buffers.** C2C is per-superchip, so each rank
