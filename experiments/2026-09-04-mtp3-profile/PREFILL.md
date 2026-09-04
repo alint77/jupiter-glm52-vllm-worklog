@@ -61,8 +61,19 @@ From chunk 3, between two all-reduces. Sub-totals per layer:
 Two things this shows. **Hot and cold tiers are strictly serial** (2.22+1.21
 then 4.87+2.46) -- prefill never forks the tier streams, because the launch
 policy is bypassed at M=8192 (`launch_policy.max_tokens >= M` fails), so every
-Marlin call uses the default legacy launch. And **cold costs 2.1x hot** despite
-owning fewer experts (20 vs 44).
+Marlin call uses the default legacy launch. And **cold costs 2.94x hot's time
+for slightly more experts**: 580.4 ms over 2475 experts against 197.7 ms over
+2325, which is 2.8x per expert.
+
+Those counts are measured two independent ways that agree exactly. The server
+log reports `2325 hot / 2475 cold experts per rank (46.0 GiB available /
+20.3 MiB per expert)`, and summing the expert dimension of every Marlin operand
+across the 75 layer pairs gives the same 2325 / 2475. Note the runtime
+**demotes** the placement profile's 2496 hot experts to 2325 to fit the 46 GiB
+of HBM it actually has, which is why the profile's per-layer hot counts do not
+match the trace. Hot averages 31.0 experts per layer and cold 33.0, and hot
+thins out with depth (33.2 over layers 0-36, 28.9 over 37-74) as the promotion
+budget runs out.
 
 ## Roofline
 
@@ -75,10 +86,10 @@ kernel. A row's roof is `min(compute ceiling, AI x bandwidth)`.
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | sparse MLA FP8, **64 heads launched** | 543.8 | 27.7 | 212 | 348 TF/s | 1639 G | 849 T | 41.0 |
 | &nbsp;&nbsp;*the 16 real TP heads only* | 543.8 | 27.7 | 53 | 87 TF/s | | 849 T | **10.2** |
-| Marlin W4 cold w13 | 385.3 | 19.6 | 664 | 63 TF/s | 95 G | 248 T | 25.4 |
-| Marlin W4 cold w2 | 195.1 | 9.9 | 572 | 62 TF/s | 109 G | 213 T | 29.2 |
-| Marlin W4 hot w13 | 127.7 | 6.5 | 664 | 294 TF/s | 443 G | 989 T | 29.8 |
-| Marlin W4 hot w2 | 70.0 | 3.6 | 572 | 269 TF/s | 470 G | 989 T | 27.2 |
+| Marlin W4 cold w13 | 385.3 | 19.6 | 664 | 83 TF/s | 125 G | 248 T | 33.4 |
+| Marlin W4 cold w2 | 195.1 | 9.9 | 572 | 82 TF/s | 143 G | 213 T | 38.3 |
+| Marlin W4 hot w13 | 127.7 | 6.5 | 664 | 235 TF/s | 353 G | 989 T | 23.7 |
+| Marlin W4 hot w2 | 70.0 | 3.6 | 572 | 214 TF/s | 374 G | 989 T | 21.6 |
 | DSA indexer FP8 scan | 95.1 | 4.8 | 1970 | 486 TF/s | 247 G | 1979 T | 24.5 |
 | BF16 GEMM o_proj 4096x6144 | 53.6 | 2.7 | 1890 | 623 TF/s | 329 G | 989 T | 63.0 |
 | BF16 GEMM QKV-A 6144x2624 | 33.6 | 1.7 | 1502 | 637 TF/s | 424 G | 989 T | 64.4 |
@@ -89,32 +100,59 @@ kernel. A row's roof is `min(compute ceiling, AI x bandwidth)`.
 | DSA top-k per row | 33.7 | 1.7 | -- | -- | 1364 G | 4000 G | 34.1 |
 | TP all-reduce (bus bytes) | 195.6 | 10.0 | -- | -- | 123 G | 450 G | 27.4 |
 
-Spec: HBM 4.0 TB/s | C2C 373 GB/s measured (450 spec) | NVLink one-way
-aggregate 3x150 = 450 GB/s | BF16 989 TF/s | FP8 1979 TF/s.
+Ceilings, from the [JSC JUPITER configuration
+page](https://apps.fz-juelich.de/jsc/hps/jupiter/configuration.html) except
+where noted:
+
+| resource | ceiling | source |
+| --- | ---: | --- |
+| HBM3 | 4.0 TB/s (96 GB) | JSC |
+| Grace LPDDR5X | 512 GB/s (120 GB) | JSC |
+| NVLink-C2C, CPU-GPU | 900 GB/s -> **450 GB/s per direction** | JSC |
+| &nbsp;&nbsp;measured achievable read | 373 GB/s | `2026-07-25-grace-bandwidth` |
+| NVLink-4 GPU-GPU | 300 GB/s per pair, 150 per direction; 3 peers -> **450 GB/s egress** | JSC |
+| BF16 / FP8 tensor cores | 989 / 1979 TF/s dense | H100-SXM spec; 132 SMs confirmed by JSC and the trace |
+
+The JSC page replaces the 421 GB/s C2C figure this project had carried since
+July: the link is 450 GB/s per direction and Grace's own memory is 512 GB/s, so
+a GPU reading Grace is bounded by 450. Cold rows are scored against the 373
+GB/s *measured* rate; against the 450 spec they fall to 27.7% / 31.7%.
+
+The 450 GB/s NVLink egress figure is independently corroborated by the trace:
+310 GB/s of bus bandwidth exceeds any single 150 GB/s pair link, so NCCL is
+running multiple rings, and 3x150 is the right aggregate.
 
 **The dense BF16 GEMMs are fine** (63-75% of peak) and `silu_and_mul` is at
 94% of HBM. Nothing to win there. Everything below 30% is the story.
 
-### Hot and cold Marlin are neither compute- nor bandwidth-bound
+### Hot is bound by neither ceiling; cold plausibly sits on C2C
 
 Every Marlin launch, hot or cold, uses `grid=(264,1,1) block=(128,1,1)
 smem=115200` -- 132 SMs x 2 blocks with the legacy half-SM shared-memory
 request. The grid never changes with expert count or M.
 
-Hot sits at 30% of the BF16 roof and 443 GB/s of a 4 TB/s HBM; cold at 25% of
-its C2C-limited roof and 95 GB/s of 373 GB/s. The rank-1 clock difference
-(below) settles which: **Marlin is clock-insensitive** (+1.2% cold, +1.8% hot,
-against +8.5% for a genuinely compute-bound GEMM), so it is not SM-bound, and
-it is not at either bandwidth ceiling either. `2026-07-29-marlin-smem-monopoly`
-hit the same wall from the other direction -- "whatever holds W4A16 Marlin to
-~11% of peak is not reachable from the launch configuration".
+Weight traffic per chunk, logical (each expert read once):
 
-One caveat on cold's roof: if Marlin re-reads each expert's weights once per
-64-row M-block (~256 rows/cold expert -> ~4 blocks), physical AI is ~166 and
-the C2C roof falls to ~62 TF/s -- exactly the 63 measured. The trace cannot
-confirm the re-read factor because the grid is fixed, so cold being *at* the
-C2C ceiling remains a live alternative to it being 25% below it. That changes
-the fix (fewer cold bytes vs. a better kernel) but not the 580 ms size.
+| tier | experts | weight bytes | ms | logical BW | x4 M-block re-read | vs ceiling |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| hot (HBM) | 2325 | 49.4 GB | 197.7 | 250 GB/s | 999 GB/s | **25% of 4.0 TB/s** |
+| cold (Grace) | 2475 | 52.6 GB | 580.4 | 91 GB/s | **362 GB/s** | **97% of 373 GB/s measured** |
+
+Cold streams essentially the whole cold expert set once per chunk -- at M=8192
+every owned expert is activated. Each cold expert takes ~256 routed rows, so if
+Marlin re-reads an expert's weights once per 64-row M-block, physical traffic is
+~4x logical: **362 GB/s against the 373 GB/s measured C2C read rate, a 97% fit**
+(81% of the 450 GB/s spec). That is a good fit but not a measurement -- the grid
+is fixed, so the trace cannot show the re-read factor, and the alternative is
+that cold is simply 3-4x off its ceiling.
+
+Hot admits no such reading: even at 4x re-read it is at 25% of HBM, and it runs
+at 23.7% of the BF16 roof. The rank-1 clock difference (below) settles that it
+is not SM-bound either -- **Marlin is clock-insensitive** (+1.2% cold, +1.8%
+hot, against +8.5% for a genuinely compute-bound GEMM).
+`2026-07-29-marlin-smem-monopoly` hit the same wall from the other direction:
+"whatever holds W4A16 Marlin to ~11% of peak is not reachable from the launch
+configuration". That dead end stands for hot; cold now has a candidate answer.
 
 ## Communication: latency, bandwidth, and the actual bottleneck
 
@@ -208,11 +246,16 @@ its 6.5% here -- about 13% -- while MLA, Marlin and the all-reduce stay put.
    padding machinery immediately before it -- `fill_` 178 us + `copy_` 187 us
    per layer, ~38 ms/chunk -- and the lever is **~446 ms/chunk, 22.7%**. Needs
    a 16-head kernel, not a flag.
-2. **Cold tier costs 580 ms, 29.5%, for 20 of 64 experts.** 2.1x hot's time
-   for fewer experts. Either it is at the C2C ceiling with M-block weight
-   re-reads (then the fix is fewer cold bytes -- promotion, or an M-tiling
-   change) or it is 25% below it (then the fix is the kernel). Resolve the
-   re-read factor first; the two fixes are unrelated.
+2. **Cold tier costs 580 ms, 29.5%, and it is probably at the C2C ceiling.**
+   2475 experts against hot's 2325 -- *more* experts, 2.94x the time, 2.8x per
+   expert. At a 4x M-block weight re-read it runs at 362 GB/s against the
+   373 GB/s measured C2C read rate, a 97% fit. If that is right the lever is
+   the re-read, not the link: removing it would take cold from 580 ms toward
+   ~145 ms, **~435 ms/chunk, 22%** -- comparable to the MLA lever, and it needs
+   Marlin restructured to loop M inside a resident weight tile. Confirm the
+   re-read factor first; it is inferred, not measured. Promotion is not the
+   answer -- HBM is already full at 46.0 GiB, and the runtime already demotes
+   the profile's 2496 hot experts to 2325.
 3. **Arrival skew -- 100.2 ms/chunk, 5.1%.** 78.8 ms of it is routed-expert
    imbalance across ranks, 21.5 ms is attention. Not a comms fix.
 4. **Rank 1's clock -- worth ~37 ms/chunk** if it is a recoverable power or

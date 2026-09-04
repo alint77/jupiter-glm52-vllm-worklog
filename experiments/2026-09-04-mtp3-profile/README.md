@@ -232,7 +232,8 @@ sequence, roofline with arithmetic intensity, the communication latency and
 bandwidth split, and the per-rank delta -- is in **[PREFILL.md](PREFILL.md)**.
 Headline: prefill is single-stream, so shares are additive; sparse MLA launches
 64 query heads for the 16 the rank owns and is **10.2% useful**; the cold
-expert tier costs 2.1x hot for fewer experts; and 56% of all communication time
+expert tier costs 2.94x hot's time for *more* experts (2475 vs 2325) and
+plausibly sits on the C2C ceiling; and 56% of all communication time
 is arrival skew, of which 78.8 of 100.2 ms reproduces the per-layer
 routed-expert imbalance to within 0.7%.
 

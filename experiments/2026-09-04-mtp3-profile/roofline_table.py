@@ -16,11 +16,12 @@ import json
 from pathlib import Path
 
 HBM, C2C_SPEC, C2C_MEAS = 4.0e12, 450e9, 373e9
+LPDDR = 512e9
 BF16, FP8 = 989e12, 1979e12
 NVL_AGG = 450e9
 L, M, TOPK, EP = 75, 8192, 8, 4
 ROWS = M * TOPK / EP
-E_HOT, E_COLD = 38.9, 25.1
+E_HOT, E_COLD = 31.0, 33.0   # measured: 2325 hot / 2475 cold per rank over 75 layers
 
 blob = json.loads(Path("agent_space/experiments/2026-09-04-mtp3-profile/prefill-roles.json").read_text())
 R = {r["op"] + "|" + r["tag"]: r for r in blob["roles"]}

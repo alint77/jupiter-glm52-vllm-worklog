@@ -1,0 +1,10 @@
+
+w13: 75 layer pairs
+  hot(1st)  mean E  31.0 (range 23-46) total E  2325  time   128.3 ms  weight bytes  32.91 GB  ->    257 GB/s      55 us/expert
+  cold(2nd) mean E  33.0 (range 18-41) total E  2475  time   385.4 ms  weight bytes  35.04 GB  ->     91 GB/s     156 us/expert
+  hot E: layers 0-36 mean 33.2, layers 37-74 mean 28.9
+
+w2: 75 layer pairs
+  hot(1st)  mean E  31.0 (range 23-46) total E  2325  time    70.3 ms  weight bytes  16.46 GB  ->    234 GB/s      30 us/expert
+  cold(2nd) mean E  33.0 (range 18-41) total E  2475  time   195.0 ms  weight bytes  17.52 GB  ->     90 GB/s      79 us/expert
+  hot E: layers 0-36 mean 33.2, layers 37-74 mean 28.9
