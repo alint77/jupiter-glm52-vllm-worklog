@@ -53,7 +53,13 @@ if [[ "${mode}" == "dflash" ]]; then
   compile_sizes=""
   spec="{\"method\":\"dflash\",\"model\":\"${drafter}\",\"num_speculative_tokens\":${width},\"kv_cache_dtype\":\"auto\",\"attention_backend\":\"FLASH_ATTN\",\"draft_sample_method\":\"greedy\"}"
 else
-  compile_sizes="${width}"
+  # K+1, matching cudagraph_capture_sizes: a step verifies the bonus token
+  # plus K drafts. Every proven MTP config compiles the shape it captures --
+  # the production MTP3 launcher is [4,8,12,16]/[4,8,12,16], and arm-dcp.sh
+  # sets width=8 for K=7 and compiles "8". Compiling K instead specialises a
+  # batch that never runs and leaves the real one on the dynamic path, which
+  # would have penalised the MTP arms only.
+  compile_sizes="$((width + 1))"
   spec="{\"method\":\"mtp\",\"num_speculative_tokens\":${width}}"
 fi
 export TIERED_MOE_COMPILATION_CONFIG="{\"mode\":3,\"cudagraph_mode\":\"FULL_AND_PIECEWISE\",\"cudagraph_capture_sizes\":[$((width + 1))],\"compile_sizes\":[${compile_sizes}],\"cudagraph_num_of_warmups\":1,\"pass_config\":{\"fuse_allreduce_rms\":false}}"
