@@ -1,0 +1,7 @@
+512	/e/project1/profound/alint77/traces/mtp3-profile-1665068/capture-report.json
+57M	/e/project1/profound/alint77/traces/mtp3-profile-1665068/decode
+43M	/e/project1/profound/alint77/traces/mtp3-profile-1665068/prefill
+24K	/e/project1/profound/alint77/traces/mtp3-profile-1665068/profiler_out_0.txt
+24K	/e/project1/profound/alint77/traces/mtp3-profile-1665068/profiler_out_1.txt
+24K	/e/project1/profound/alint77/traces/mtp3-profile-1665068/profiler_out_2.txt
+24K	/e/project1/profound/alint77/traces/mtp3-profile-1665068/profiler_out_3.txt

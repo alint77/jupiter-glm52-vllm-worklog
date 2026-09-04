@@ -1,0 +1,14 @@
+{
+  "prefill": {
+    "window_s": 40.476,
+    "trace_files": 4,
+    "generated_tokens": 1.0,
+    "target_steps": 1.0
+  },
+  "decode": {
+    "window_s": 25.1,
+    "trace_files": 4,
+    "generated_tokens": 4096.0,
+    "target_steps": 1048.0
+  }
+}

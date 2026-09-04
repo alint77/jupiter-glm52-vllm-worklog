@@ -1,0 +1,18 @@
+
+===== decode =====
+ step 20: GPU busy(union)  31.603 ms | marlin cum  14.388 union  11.202 -> overlap saves  3.186 ms (22.1%), marlin is 35.4% of busy
+   cross_device_reduce: n=166 total   8.157 ms | p50    6.7us p90   159.4us p99   306.9us max   358.6us | bottom-90%  4.232 ms, top-10%  3.925 ms (48.1%)
+   cross_device_reduce: exposed (no other kernel concurrent)   8.157 ms of   8.157 ms (100.0%)
+ step 30: GPU busy(union)  32.333 ms | marlin cum  15.556 union  11.992 -> overlap saves  3.565 ms (22.9%), marlin is 37.1% of busy
+   cross_device_reduce: n=166 total   8.067 ms | p50    6.4us p90   163.5us p99   294.9us max   303.4us | bottom-90%  4.196 ms, top-10%  3.871 ms (48.0%)
+   cross_device_reduce: exposed (no other kernel concurrent)   8.067 ms of   8.067 ms (100.0%)
+ step 40: GPU busy(union)  33.106 ms | marlin cum  16.214 union  12.526 -> overlap saves  3.688 ms (22.7%), marlin is 37.8% of busy
+   cross_device_reduce: n=166 total   8.300 ms | p50    6.7us p90   156.3us p99   313.1us max   454.1us | bottom-90%  4.173 ms, top-10%  4.127 ms (49.7%)
+   cross_device_reduce: exposed (no other kernel concurrent)   8.300 ms of   8.300 ms (100.0%)
+
+===== prefill =====
+ step 3: GPU busy(union) 1965.777 ms | marlin cum 775.879 union 775.879 -> overlap saves  0.000 ms ( 0.0%), marlin is 39.5% of busy
+   cross_device_reduce: n=6 total   0.063 ms | p50   12.0us p90    12.7us p99    12.7us max    12.7us | bottom-90%  0.050 ms, top-10%  0.013 ms (20.2%)
+   cross_device_reduce: exposed (no other kernel concurrent)   0.063 ms of   0.063 ms (100.0%)
+   ncclDevKernel_AllReduce: n=160 total 194.300 ms | p50  992.5us p90  2386.8us p99  3807.8us max  3907.1us | bottom-90% 148.805 ms, top-10% 45.496 ms (23.4%)
+   ncclDevKernel_AllReduce: exposed (no other kernel concurrent) 194.300 ms of 194.300 ms (100.0%)

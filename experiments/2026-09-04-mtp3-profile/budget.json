@@ -1,0 +1,458 @@
+{
+  "prefill": {
+    "phase_dir": "/e/project1/profound/alint77/traces/mtp3-profile-1665068/prefill",
+    "ranks": {
+      "0": 6,
+      "1": 6,
+      "2": 6,
+      "3": 6
+    },
+    "rank_steps_total": 24,
+    "steps_are_graph_replayed": 0.0,
+    "wall_ms_per_step": 1902.5683127441407,
+    "gpu_span_ms_per_step": 1974.6503033925783,
+    "gpu_busy_ms_per_step": 1964.9725288896086,
+    "gpu_empty_ms_per_step": 9.677774502969717,
+    "lead_in_ms_per_step": 356.15406494140626,
+    "graph_span_ms_per_step": null,
+    "budget_ms_per_step": {
+      "routed experts (W4 Marlin)": 783.1066770657554,
+      "attention (FlashMLA + DSA + KV)": 652.5007600363053,
+      "TP/EP communication and synchronization": 177.84172891666594,
+      "dense/shared compiled GEMMs": 153.56412123198803,
+      "glue, elementwise and uncategorized": 144.00159407503972,
+      "MoE routing, activation and sum": 53.957647563854074,
+      "GPU-empty host/graph gaps": 9.677774502969717
+    },
+    "budget_total_ms_per_step": 1974.6503033925783,
+    "comms_kernels": [
+      {
+        "kernel": "ncclDevKernel_AllReduce_Sum_bf16_RING_LL(ncclDevKernelArgsStorage<4096ul>)",
+        "family": "TP vocabulary NCCL all-gather",
+        "count_per_step": 160.0,
+        "ms_per_step": 177.7259956249999
+      },
+      {
+        "kernel": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)",
+        "family": "TP vocabulary NCCL all-gather",
+        "count_per_step": 4.0,
+        "ms_per_step": 0.06345308333333333
+      },
+      {
+        "kernel": "void vllm::cross_device_reduce_1stage<__nv_bfloat16, 4>(vllm::RankData*, vllm::RankSignals, vllm",
+        "family": "TP custom all-reduce",
+        "count_per_step": 6.0,
+        "ms_per_step": 0.052280208333333335
+      }
+    ],
+    "comms_ms_per_step": 177.84172891666657,
+    "top_kernels": [
+      {
+        "kernel": "void marlin_moe_wna16::Marlin<1125899906909960l, 1125899907892224l, 1125899906909960l, 112589990",
+        "family": "routed W4 Marlin",
+        "count_per_step": 302.0,
+        "ms_per_step": 783.0375365833326
+      },
+      {
+        "kernel": "void sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_sparse_kernel<sm90::decode::sparse_fp8:",
+        "family": "FlashMLA",
+        "count_per_step": 81.0,
+        "ms_per_step": 550.7052789166667
+      },
+      {
+        "kernel": "ncclDevKernel_AllReduce_Sum_bf16_RING_LL(ncclDevKernelArgsStorage<4096ul>)",
+        "family": "TP vocabulary NCCL all-gather",
+        "count_per_step": 160.0,
+        "ms_per_step": 177.7259956249999
+      },
+      {
+        "kernel": "void deep_gemm::sm90_fp8_mqa_logits<32u, 128u, false, 4u, 256u, 3u, 3u, 132u, 128u, 512u, float>",
+        "family": "DSA indexer",
+        "count_per_step": 80.66666666666667,
+        "ms_per_step": 97.60279612500004
+      },
+      {
+        "kernel": "nvjet_sm90_tst_192x192_64x4_2x1_v_bz_coopB_TNN",
+        "family": "dense/shared GEMM",
+        "count_per_step": 165.0,
+        "ms_per_step": 97.29677529166663
+      },
+      {
+        "kernel": "nvjet_sm90_tst_256x128_64x4_1x2_h_bz_coopA_TNT",
+        "family": "dense/shared GEMM",
+        "count_per_step": 253.0,
+        "ms_per_step": 40.547030083333325
+      },
+      {
+        "kernel": "void vllm::topKPerRowPrefill<512, false>(float const*, int const*, int const*, int*, int, int, i",
+        "family": "other",
+        "count_per_step": 80.66666666666667,
+        "ms_per_step": 34.234709666666674
+      },
+      {
+        "kernel": "void vllm::act_and_mul_kernel<c10::BFloat16, __nv_bfloat162, &(c10::BFloat16 vllm::silu_kernel<c",
+        "family": "MoE activation",
+        "count_per_step": 153.0,
+        "ms_per_step": 32.99779416666668
+      },
+      {
+        "kernel": "void at::native::elementwise_kernel<128, 4, at::native::gpu_kernel_impl_nocast<at::native::direc",
+        "family": "memory/glue",
+        "count_per_step": 79.0,
+        "ms_per_step": 14.98274870833333
+      },
+      {
+        "kernel": "void at::native::vectorized_elementwise_kernel<8, at::native::FillFunctor<c10::BFloat16>, std::a",
+        "family": "memory/glue",
+        "count_per_step": 81.0,
+        "ms_per_step": 14.089856041666671
+      },
+      {
+        "kernel": "triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_5",
+        "family": "Triton glue",
+        "count_per_step": 77.0,
+        "ms_per_step": 12.93229604166666
+      },
+      {
+        "kernel": "void vllm::moe::moe_sum_vec_kernel<c10::BFloat16, int, 8, true>(c10::BFloat16*, c10::BFloat16 co",
+        "family": "MoE sum",
+        "count_per_step": 153.0,
+        "ms_per_step": 11.709310916666668
+      },
+      {
+        "kernel": "triton_red_fused_fused_add_rms_norm_2",
+        "family": "Triton glue",
+        "count_per_step": 78.0,
+        "ms_per_step": 11.350811833333333
+      },
+      {
+        "kernel": "triton_red_fused_fused_add_rms_norm_moe_forward_shared_0",
+        "family": "Triton glue",
+        "count_per_step": 78.0,
+        "ms_per_step": 10.681085958333332
+      },
+      {
+        "kernel": "Memcpy DtoD (Device -> Device)",
+        "family": "memory/glue",
+        "count_per_step": 168.0,
+        "ms_per_step": 8.526662375000003
+      },
+      {
+        "kernel": "void vllm::ConcatMLAQKernel<c10::BFloat16, 512>(c10::BFloat16*, c10::BFloat16 const*, c10::BFloa",
+        "family": "other",
+        "count_per_step": 81.0,
+        "ms_per_step": 7.095459125000004
+      },
+      {
+        "kernel": "_convert_req_index_to_global_index_kernel",
+        "family": "other",
+        "count_per_step": 81.0,
+        "ms_per_step": 6.4061967499999986
+      },
+      {
+        "kernel": "triton_poi_fused_add_mul_1",
+        "family": "Triton glue",
+        "count_per_step": 78.0,
+        "ms_per_step": 6.405720041666664
+      },
+      {
+        "kernel": "void at::native::vectorized_elementwise_kernel<8, at::native::CUDAFunctor_add<c10::BFloat16>, st",
+        "family": "memory/glue",
+        "count_per_step": 75.0,
+        "ms_per_step": 6.190529166666665
+      },
+      {
+        "kernel": "nvjet_sm90_tst_128x256_64x4_2x1_v_bz_coopA_TNN",
+        "family": "dense/shared GEMM",
+        "count_per_step": 79.0,
+        "ms_per_step": 5.691912249999999
+      },
+      {
+        "kernel": "nvjet_sm90_tst_256x128_64x4_1x2_h_bz_coopA_NNT",
+        "family": "dense/shared GEMM",
+        "count_per_step": 79.0,
+        "ms_per_step": 4.901834999999999
+      },
+      {
+        "kernel": "void vllm::moe::moe_align_block_size_kernel<int>(int const*, int*, int*, int*, int*, int, int, i",
+        "family": "MoE routing/sort",
+        "count_per_step": 153.0,
+        "ms_per_step": 4.608095166666665
+      },
+      {
+        "kernel": "void vllm::moe::grouped_topk_fused_small_expert_count_kernel<float, float, int, (vllm::moe::Scor",
+        "family": "MoE routing/sort",
+        "count_per_step": 78.0,
+        "ms_per_step": 3.7515149583333347
+      },
+      {
+        "kernel": "nvjet_sm90_tss_128x128_64x6_2x1_v_bz_TNT",
+        "family": "dense/shared GEMM",
+        "count_per_step": 76.0,
+        "ms_per_step": 3.5323474999999998
+      },
+      {
+        "kernel": "_fused_indexer_q_rope_quant_kernel",
+        "family": "other",
+        "count_per_step": 24.0,
+        "ms_per_step": 3.5308249999999997
+      },
+      {
+        "kernel": "void smxx::decode::flash_fwd_mla_combine_kernel<cutlass::bfloat16_t, 512, 8, 32, 256>(CombinePar",
+        "family": "FlashMLA",
+        "count_per_step": 79.0,
+        "ms_per_step": 3.2244028333333357
+      },
+      {
+        "kernel": "triton_red_fused_4",
+        "family": "Triton glue",
+        "count_per_step": 60.0,
+        "ms_per_step": 2.0858617916666664
+      },
+      {
+        "kernel": "triton_poi_fused_mul_silu_slice_0",
+        "family": "Triton glue",
+        "count_per_step": 78.0,
+        "ms_per_step": 1.6624394166666665
+      },
+      {
+        "kernel": "triton_red_fused_3",
+        "family": "Triton glue",
+        "count_per_step": 20.0,
+        "ms_per_step": 0.9692607916666667
+      },
+      {
+        "kernel": "void vllm::moe::count_and_sort_expert_tokens_kernel<int>(int const*, int*, int*, int*, unsigned ",
+        "family": "MoE routing/sort",
+        "count_per_step": 153.0,
+        "ms_per_step": 0.9000934583333331
+      }
+    ],
+    "distinct_kernels": 102
+  },
+  "decode": {
+    "phase_dir": "/e/project1/profound/alint77/traces/mtp3-profile-1665068/decode",
+    "ranks": {
+      "0": 60,
+      "1": 60,
+      "2": 60,
+      "3": 60
+    },
+    "rank_steps_total": 240,
+    "steps_are_graph_replayed": 1.0,
+    "wall_ms_per_step": 32.87225683186849,
+    "gpu_span_ms_per_step": 33.42559379778647,
+    "gpu_busy_ms_per_step": 31.895470948375706,
+    "gpu_empty_ms_per_step": 1.5301228494107568,
+    "lead_in_ms_per_step": 32.54002355957031,
+    "graph_span_ms_per_step": 31.212165460319014,
+    "budget_ms_per_step": {
+      "routed experts (W4 Marlin)": 12.04854429223641,
+      "TP/EP communication and synchronization": 7.239806720833609,
+      "dense/shared compiled GEMMs": 5.734308111827877,
+      "glue, elementwise and uncategorized": 2.899640126434188,
+      "attention (FlashMLA + DSA + KV)": 2.451037574186747,
+      "GPU-empty host/graph gaps": 1.5301228494107564,
+      "MoE routing, activation and sum": 1.5221341228568737
+    },
+    "budget_total_ms_per_step": 33.42559379778646,
+    "comms_kernels": [
+      {
+        "kernel": "void vllm::cross_device_reduce_1stage<__nv_bfloat16, 4>(vllm::RankData*, vllm::RankSignals, vllm",
+        "family": "TP custom all-reduce",
+        "count_per_step": 166.0,
+        "ms_per_step": 7.17434597083333
+      },
+      {
+        "kernel": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)",
+        "family": "TP vocabulary NCCL all-gather",
+        "count_per_step": 4.0,
+        "ms_per_step": 0.06546074999999998
+      }
+    ],
+    "comms_ms_per_step": 7.23980672083333,
+    "top_kernels": [
+      {
+        "kernel": "void marlin_moe_wna16::Marlin<1125899906909960l, 1125899907892224l, 1125899906909960l, 112589990",
+        "family": "routed W4 Marlin",
+        "count_per_step": 306.0,
+        "ms_per_step": 15.81356975416661
+      },
+      {
+        "kernel": "void vllm::cross_device_reduce_1stage<__nv_bfloat16, 4>(vllm::RankData*, vllm::RankSignals, vllm",
+        "family": "TP custom all-reduce",
+        "count_per_step": 166.0,
+        "ms_per_step": 7.17434597083333
+      },
+      {
+        "kernel": "nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT",
+        "family": "dense/shared GEMM",
+        "count_per_step": 214.5,
+        "ms_per_step": 1.6218400458333335
+      },
+      {
+        "kernel": "nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT",
+        "family": "dense/shared GEMM",
+        "count_per_step": 161.0,
+        "ms_per_step": 1.5531455625000057
+      },
+      {
+        "kernel": "void sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_sparse_kernel<sm90::decode::sparse_fp8:",
+        "family": "FlashMLA",
+        "count_per_step": 81.0,
+        "ms_per_step": 1.207319066666672
+      },
+      {
+        "kernel": "triton_tem_fused_mm_t_0",
+        "family": "dense/shared GEMM",
+        "count_per_step": 44.5,
+        "ms_per_step": 0.9326276041666665
+      },
+      {
+        "kernel": "void smxx::decode::flash_fwd_mla_combine_kernel<cutlass::bfloat16_t, 512, 8, 64, 256>(CombinePar",
+        "family": "FlashMLA",
+        "count_per_step": 79.0,
+        "ms_per_step": 0.655239574999998
+      },
+      {
+        "kernel": "void vllm::moe::moe_sum_vec_kernel<c10::BFloat16, int, 8, true>(c10::BFloat16*, c10::BFloat16 co",
+        "family": "MoE sum",
+        "count_per_step": 153.0,
+        "ms_per_step": 0.6541923874999986
+      },
+      {
+        "kernel": "nvjet_sm90_tst_192x8_64x8_2x1_v_bz_TNT",
+        "family": "dense/shared GEMM",
+        "count_per_step": 4.0,
+        "ms_per_step": 0.5586334541666667
+      },
+      {
+        "kernel": "void vllm::moe::moe_align_block_size_kernel<int>(int const*, int*, int*, int*, int*, int, int, i",
+        "family": "MoE routing/sort",
+        "count_per_step": 153.0,
+        "ms_per_step": 0.5143557333333242
+      },
+      {
+        "kernel": "void vllm::act_and_mul_kernel<c10::BFloat16, __nv_bfloat162, &(c10::BFloat16 vllm::silu_kernel<c",
+        "family": "MoE activation",
+        "count_per_step": 153.0,
+        "ms_per_step": 0.4420202625000017
+      },
+      {
+        "kernel": "void vllm::cooperative::cooperative_topk_cs8<2048u>(vllm::cooperative::CooperativeTopKParams<204",
+        "family": "DSA top-k",
+        "count_per_step": 24.0,
+        "ms_per_step": 0.35110877083333375
+      },
+      {
+        "kernel": "void vllm::moe::grouped_topk_fused_small_expert_count_kernel<float, float, int, (vllm::moe::Scor",
+        "family": "MoE routing/sort",
+        "count_per_step": 78.0,
+        "ms_per_step": 0.30391249166667256
+      },
+      {
+        "kernel": "nvjet_sm90_tst_64x8_64x16_2x1_v_bz_NNT",
+        "family": "dense/shared GEMM",
+        "count_per_step": 81.0,
+        "ms_per_step": 0.2963159625000025
+      },
+      {
+        "kernel": "void vllm::moe::count_and_sort_expert_tokens_kernel<int>(int const*, int*, int*, int*, unsigned ",
+        "family": "MoE routing/sort",
+        "count_per_step": 153.0,
+        "ms_per_step": 0.29501092500000176
+      },
+      {
+        "kernel": "void deep_gemm::sm90_fp8_paged_mqa_logits<1u, 32u, 128u, 64u, true, false, 3u, 3u, 256u, 128u, 5",
+        "family": "DSA indexer",
+        "count_per_step": 24.0,
+        "ms_per_step": 0.2883807874999995
+      },
+      {
+        "kernel": "void cublasLt::splitKreduce_kernel<32, 16, int, float, __nv_bfloat16, float, __nv_bfloat16, fals",
+        "family": "other",
+        "count_per_step": 163.5,
+        "ms_per_step": 0.2762565999999944
+      },
+      {
+        "kernel": "kernel_cutlass_kernel_vllmmodel_executorkernelslinearcute_dsl_ll_bf16_dotprodLLBf16Dotprod_objec",
+        "family": "other",
+        "count_per_step": 76.0,
+        "ms_per_step": 0.2665595708333372
+      },
+      {
+        "kernel": "void at::native::vectorized_elementwise_kernel<4, at::native::FillFunctor<int>, std::array<char*",
+        "family": "memory/glue",
+        "count_per_step": 181.0,
+        "ms_per_step": 0.23535202499999705
+      },
+      {
+        "kernel": "triton_tem_fused_mm_rms_norm_split_with_sizes_t_6",
+        "family": "dense/shared GEMM",
+        "count_per_step": 28.5,
+        "ms_per_step": 0.2201114791666681
+      },
+      {
+        "kernel": "triton_tem_fused_mm_t_6",
+        "family": "dense/shared GEMM",
+        "count_per_step": 29.0,
+        "ms_per_step": 0.2195140291666672
+      },
+      {
+        "kernel": "triton_tem_fused_mm_rms_norm_split_with_sizes_t_5",
+        "family": "dense/shared GEMM",
+        "count_per_step": 28.0,
+        "ms_per_step": 0.21628455416666856
+      },
+      {
+        "kernel": "memcpy32_post",
+        "family": "memory/glue",
+        "count_per_step": 80.0,
+        "ms_per_step": 0.20392162500000102
+      },
+      {
+        "kernel": "void at::native::elementwise_kernel<128, 4, at::native::gpu_kernel_impl_nocast<at::native::direc",
+        "family": "memory/glue",
+        "count_per_step": 80.0,
+        "ms_per_step": 0.1998006374999982
+      },
+      {
+        "kernel": "void vllm::concat_and_cache_ds_mla_kernel<__nv_bfloat16, unsigned char, (vllm::Fp8KVCacheDataTyp",
+        "family": "KV cache",
+        "count_per_step": 81.0,
+        "ms_per_step": 0.1515817666666678
+      },
+      {
+        "kernel": "void vllm::ConcatMLAQKernel<c10::BFloat16, 512>(c10::BFloat16*, c10::BFloat16 const*, c10::BFloa",
+        "family": "other",
+        "count_per_step": 81.0,
+        "ms_per_step": 0.1415989416666717
+      },
+      {
+        "kernel": "triton_red_fused_fused_add_rms_norm_moe_forward_shared_1",
+        "family": "Triton glue",
+        "count_per_step": 43.0,
+        "ms_per_step": 0.13264512916666668
+      },
+      {
+        "kernel": "_convert_req_index_to_global_index_kernel",
+        "family": "other",
+        "count_per_step": 81.0,
+        "ms_per_step": 0.1298010125000003
+      },
+      {
+        "kernel": "triton_red_fused_fused_add_rms_norm_3",
+        "family": "Triton glue",
+        "count_per_step": 43.25,
+        "ms_per_step": 0.12732036666666666
+      },
+      {
+        "kernel": "triton_red_fused_fused_add_rms_norm_2",
+        "family": "Triton glue",
+        "count_per_step": 33.5,
+        "ms_per_step": 0.11991673749999965
+      }
+    ],
+    "distinct_kernels": 130
+  }
+}

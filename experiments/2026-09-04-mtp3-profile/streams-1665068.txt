@@ -1,0 +1,18 @@
+
+===== decode  (rank0, step 30 of 60) =====
+marlin: 306 launches, cumulative 15.556 ms, wall span 32.698 ms
+  stream 379:  100 launches     5.239 ms
+  stream 19:  106 launches     5.208 ms
+  stream 380:  100 launches     5.110 ms
+cross_device_reduce: 166 launches, 8.067 ms, per-call min 3.6us med 6.4us max 303.4us
+  all_reduce input dims [[1, 6144], []]  x366 (whole trace)
+  all_reduce input dims [[], [1, 6144], [1, 6144], [], []]  x366 (whole trace)
+
+===== prefill  (rank0, step 3 of 6) =====
+marlin: 306 launches, cumulative 775.879 ms, wall span 1896.647 ms
+  stream 19:  306 launches   775.879 ms
+cross_device_reduce: 6 launches, 0.063 ms, per-call min 7.5us med 12.0us max 12.7us
+ncclDevKernel_AllReduce: 160 launches, 194.300 ms, per-call min 460.9us med 992.5us max 3907.1us
+  all_reduce input dims [[8192, 6144], []]  x1120 (whole trace)
+  all_reduce input dims [[1, 6144], []]  x42 (whole trace)
+  all_reduce input dims [[], [1, 6144], [1, 6144], [], []]  x42 (whole trace)
