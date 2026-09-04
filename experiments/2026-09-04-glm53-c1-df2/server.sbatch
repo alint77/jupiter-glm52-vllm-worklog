@@ -4,7 +4,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --gres=gpu:4
-#SBATCH --time=04:00:00
+#SBATCH --time=12:00:00
 #SBATCH --job-name=glm53-claude-w4a16-c1-df2
 #SBATCH --output=agent_space/experiments/2026-09-04-glm53-c1-df2/slurm-%j.out
 #SBATCH --error=agent_space/experiments/2026-09-04-glm53-c1-df2/slurm-%j.err
