@@ -161,22 +161,16 @@ if [[ "${model_len}" != 400000 ]]; then
   export VLLM_TIERED_MOE_RELAX_SHAPE=1
 fi
 echo "memory: gpu_util=${gpu_util} reserve=${TIERED_MOE_HBM_RESERVE_GB}GB max_model_len=${model_len}"
-# Run the drafter eagerly rather than replaying its captured FULL CUDA graph.
-# The replay costs acceptance (Phase 52, still undiagnosed). On GSM8K at DCP1,
-# same config, the only difference being this mode:
-#
-#     eager     5.7675 AL, 117.6 tok/s   (bc-eager-dcp1)
-#     captured  3.9699 AL,  90.8 tok/s   (bc-graph-dcp1)
-#
-# So eager is both more accurate and faster. Every acceptance number in the
-# worklog at or above 5.6 was measured eager -- the arms set
-# VLLM_DFLASH2_PROBE=999999, a call index so large the probe never fires, and
-# speculator.py forces eager whenever it is armed. This launcher ran captured
-# until now and measured 2.494 AL on live traffic.
-#
-# Overridable so the captured path stays reachable for a controlled comparison.
-export VLLM_DFLASH2_EAGER_DRAFT="${CLAUDE_GLM53_EAGER_DRAFT:-1}"
-echo "draft: eager=${VLLM_DFLASH2_EAGER_DRAFT}"
+# The drafter runs eagerly by default now: DFlash2Speculator sets
+# default_eager_draft, because replaying the captured draft graph costs
+# acceptance (Phase 52, undiagnosed). On GSM8K at DCP1, same config, the mode
+# being the only difference: 5.7675 AL / 117.6 tok/s eager against 3.9699 /
+# 90.8 captured. This launcher ran captured until then and measured 2.494 AL on
+# live traffic. Set CLAUDE_GLM53_EAGER_DRAFT=0 to measure the captured path.
+if [[ -n "${CLAUDE_GLM53_EAGER_DRAFT:-}" ]]; then
+  export VLLM_DFLASH2_EAGER_DRAFT="${CLAUDE_GLM53_EAGER_DRAFT}"
+fi
+echo "draft: eager=${VLLM_DFLASH2_EAGER_DRAFT:-default (DFlash2 -> eager)}"
 # DFlash2 verifies 8 tokens per step (7 drafted plus the bonus), and c=1
 # means that is the only decode shape: capture [8] and nothing else, matching
 # arm-dcp.sh:34,46 at SEQS=1.
