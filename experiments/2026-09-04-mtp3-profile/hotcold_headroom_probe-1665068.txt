@@ -1,0 +1,5 @@
+decode, rank0, mean over 60 steps (ms/step):
+  forked groups: cumulative 15.752  measured union 12.287  floor max(hot,cold) 12.166
+  realised saving 22.0%  of a possible 22.8%
+  remaining headroom = union - floor = 0.121 ms/step
+  non-forked groups: cum 0.119 union 0.119

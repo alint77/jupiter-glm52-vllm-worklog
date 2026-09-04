@@ -114,46 +114,122 @@ recover and every gain must come from a kernel or from overlap.
 
 ### The comms line is two unrelated problems
 
-Splitting it by kernel, which the shared bucket map cannot do, separates them:
+Splitting it by kernel, which the shared bucket map cannot do, separates them.
+The dispatch log explains why the two phases use different kernels at all:
 
-* **Prefill is one `ncclDevKernel_AllReduce_Sum_bf16_RING_LL`, 160x per chunk,
-  177.7 ms.** `record_shapes` gives the operand as `[8192, 6144]` bf16 =
-  100.7 MB, and the ring moves 2*(3/4)*100.7 MB per GPU in a 992 us median =
-  **~151 GB/s, at NVLink peak.** This kernel is bandwidth-bound and already
-  near-optimal; tuning the collective is not a lever.
-* **Decode is one `cross_device_reduce_1stage`, 166x per step, 8.07 ms.** It is
-  bimodal: p50 6.4 us -- about right for 40 KB on NVLink -- but p90 163 us, and
-  **the slowest 10% of calls carry 48% of the time.** That tail is not data
-  movement, it is rank skew being absorbed at the barrier.
+```
+SymmMemCommunicator: symmetric memory multicast operations are not supported.
+Using ['CUSTOM', 'PYNCCL'] all-reduce backends (in dispatch order) for 'tp:0'
+```
 
-Both are **100% exposed**: across every step sampled, no other kernel is ever
-resident while an all-reduce runs. There is no communication/compute overlap in
-either phase.
+Decode's 4-token operand is small enough for CUSTOM; prefill's 8192-token
+operand exceeds the custom all-reduce's size limit and falls through to PYNCCL.
+That is the designed dispatch, not a fallback bug.
 
-### The tiered hot/cold overlap works in decode and is absent in prefill
+#### Decode: 89% of the "communication" is not communication
 
-Marlin launches split across CUDA streams:
+`cross_device_reduce_1stage`, 166x per step, 7.2 ms. It is sharply bimodal, and
+the split is **structural, not jitter** -- across all 60 steps:
 
-| phase | streams | cumulative | union | overlap saves |
+| ordinals | count | mean of per-ordinal medians | total |
+| --- | --- | --- | --- |
+| even | 83 | 65.2 us | 5.415 ms/step |
+| odd | 83 | 5.9 us | 0.490 ms/step |
+
+There are two all-reduces per layer. The **first of each pair absorbs the
+skew**; by the second, the ranks are already in step. Every ordinal, the slow
+ones included, has a floor of ~4.0 us across the 60 steps, which is the actual
+cost of moving 40 KB over NVLink:
+
+```
+166 x 4.01 us floor          = 0.666 ms/step   <- the collective
+sum of per-ordinal medians   = 5.905 ms/step
+=> wait absorbed at barrier  = 5.238 ms/step   <- rank skew
+```
+
+So decode's "21.7% communication" is really **~16% of the step spent waiting on
+rank divergence and ~2% moving data.** Per-rank totals are balanced (6.6, 7.2,
+7.3, 7.5 ms), so no single rank is the laggard -- the divergence is per layer,
+which points at routed-expert load imbalance rather than a slow GPU.
+
+#### Prefill: bandwidth-bound, fully exposed, possibly the wrong protocol
+
+`ncclDevKernel_AllReduce_Sum_bf16_RING_LL`, 160x per chunk, 177.7 ms.
+`record_shapes` gives the operand as `[8192, 6144]` bf16 = 100.7 MB; a ring
+moves 2*(3/4)*100.7 MB per GPU in a 992 us median = **152 GB/s algorithmic**.
+
+The open question is the **`_LL` protocol**. LL is NCCL's low-latency
+small-message protocol and carries flags inline, roughly doubling wire bytes;
+for a 100 MB operand the tuner would normally pick Simple. No `NCCL_PROTO`,
+`NCCL_ALGO` or any other `NCCL_*` variable is set anywhere in the launch path
+(`jupiter-env.sh`, `run-server.sh`, `job-profile.sh` are all clean), so this is
+NCCL's own choice. **Not yet established whether 152 GB/s is near this node's
+achievable peak** -- that needs an `all_reduce_perf -b 100M -e 100M` on a
+Booster node, and until it is run no claim is made either way.
+
+Both collectives are **100% exposed**: across every step sampled, no other
+kernel is ever resident while an all-reduce runs. Neither phase has any
+communication/compute overlap.
+
+### Hot/cold Marlin overlap: already optimal in decode, absent in prefill
+
+Marlin launches in groups of four per layer (w13/w2 x hot/cold):
+
+| phase | fork pattern | cumulative | union | saving |
 | --- | --- | --- | --- | --- |
-| decode | 3 (106 / 100 / 100, balanced) | 15.6 ms | 12.0 ms | 3.6 ms (22.9%) |
-| prefill | **1** (all 306 launches) | 775.9 ms | 775.9 ms | **0** |
+| decode | 75 of 77 groups fork 2+2 across two streams | 15.75 ms | 12.29 ms | 22.0% |
+| prefill | **all 76 groups on one stream** | 775.9 ms | 775.9 ms | 0% |
 
-Decode overlaps three balanced streams but recovers under a quarter of the
-possible saving; perfect three-way overlap would be ~5.2 ms against the 12.0 ms
-actually spent. Prefill serialises everything on one stream.
+The decode floor is `max(hot, cold)` **per layer**, not the max over the step --
+hot carries far more experts than cold, so perfect overlap saves 22.8%, not 50%:
 
-### Ranked candidates
+```
+cumulative 15.752  measured union 12.287  floor max(hot,cold) 12.166
+realised 22.0% of a possible 22.8%;  remaining headroom 0.121 ms/step
+```
 
-1. **Decode Marlin overlap** -- ~6.8 ms/step of unrealised overlap, about 20%
-   of the step. Three balanced streams already exist, so the scheduling is
-   there and only the overlap is missing.
-2. **Prefill all-reduce overlap** -- 177.7 ms/chunk fully exposed, ~2.1 s of a
-   23.2 s TTFT. `fuse_allreduce_rms` is explicitly `false` in this launcher's
-   compilation config and was never A/B'd on this fork.
-3. **Decode all-reduce tail** -- ~3.9 ms/step, 12% of the step, in 17 calls.
-   This is EP rank skew, so it is a load-balance problem, not a comms problem.
-4. **Prefill Marlin single-stream** -- the hot/cold overlap decode benefits
-   from does not exist in prefill at all, against 783 ms/chunk.
-5. **Prefill attention, 33%** -- `flash_fwd_splitkv_mla_fp8_sparse` 550.7 ms,
-   DSA indexer 97.6 ms, `topKPerRowPrefill` 34.2 ms per chunk.
+That is 0.4% of the step. **There is no decode overlap headroom left**, exactly
+as `2026-07-29-marlin-smem-monopoly` concluded when its shared-memory fix landed
+the union on `max(hot, cold)`. An earlier reading of this capture put the
+headroom at ~6.8 ms by treating the three observed streams as collapsible to
+one; that is wrong, and the per-layer measurement above is what settles it.
+
+Prefill never forks at all -- the `tiered_overlap_max_tokens` gate keeps
+large-M chunks on one stream, which is the designed behaviour and a question
+that campaign explicitly parked.
+
+## Ranked candidates
+
+1. **Decode rank skew -- 5.24 ms/step, ~16% of the step.** The largest
+   addressable item in decode by a wide margin, and it is a routed-expert
+   load-balance problem, not a comms problem. The signature is specific enough
+   to chase: even-ordinal all-reduces, uniform across ranks, ~4 us floor.
+2. **Prefill exposed all-reduce -- 177.7 ms/chunk, 9.0%, ~2.1 s of a 23.2 s
+   TTFT.** Two independent angles: the `_LL` protocol choice (test
+   `NCCL_PROTO=Simple`/`LL128` against an `all_reduce_perf` ceiling), and the
+   total absence of comm/compute overlap. Note `fuse_allreduce_rms` is **not**
+   the route -- it is already known to fault with an illegal memory access on
+   this stack (`HANDOFF.md:520`, `README.md:143`), which is why every launcher
+   sets it false.
+3. **Prefill attention -- 33.0%** (`flash_fwd_splitkv_mla_fp8_sparse` 550.7 ms,
+   DSA indexer 97.6 ms, `topKPerRowPrefill` 34.2 ms per chunk). Understated
+   here: see the sampling caveat below.
+4. **Prefill Marlin never forks** -- 775.9 ms/chunk on one stream. Only worth
+   revisiting because the smem monopoly that made forking useless has since been
+   fixed; the gate predates that fix.
+5. **Closed: decode hot/cold overlap.** 0.121 ms/step remains. Do not spend on it.
+
+## Caveats
+
+* **Prefill sampling.** The window opened on first schedule, so these are chunks
+  1-6 of ~12. Marlin and the all-reduce are per-token and unaffected, but the
+  DSA indexer scores against all preceding KV, so **attention's 33.0% is an
+  underestimate** for the full prefill.
+* **Decode workload.** The decode capture is a temperature-0 `ignore_eos`
+  completion, which degenerates: AL 3.908 against the Claude-Code corpus's
+  2.713. A step still verifies 4 tokens and the kernel structure is unchanged,
+  so shares hold, but this is not CC-shaped output.
+* **Prefill distortion.** The 1930 ms baseline is TTFT/12, which includes
+  tokenization and the first decode step and averages all 12 chunks, against a
+  profiled mean of early chunks. The distortion is small -- within that
+  baseline's own uncertainty -- rather than provably nil.

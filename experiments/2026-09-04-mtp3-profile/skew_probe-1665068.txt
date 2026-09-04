@@ -1,0 +1,29 @@
+rank 0: 60 clean steps, all-reduce total/step mean 7.214 ms  median 7.247
+rank 1: 60 clean steps, all-reduce total/step mean 6.668 ms  median 6.604
+rank 2: 60 clean steps, all-reduce total/step mean 7.281 ms  median 7.320
+rank 3: 60 clean steps, all-reduce total/step mean 7.535 ms  median 7.410
+
+rank0: per-ordinal all-reduce duration across steps (top 20 by median)
+  ordinal 156: median   156.0us  mean   139.8  min    3.7  max   307.8  n=60
+  ordinal  40: median   154.0us  mean   154.7  min    3.8  max   298.0  n=60
+  ordinal  94: median   153.9us  mean   159.9  min    3.7  max   454.1  n=60
+  ordinal 144: median   151.0us  mean   154.9  min    3.7  max   406.6  n=60
+  ordinal  78: median   145.6us  mean   135.9  min    3.7  max   405.1  n=60
+  ordinal  24: median   129.3us  mean   132.8  min    3.8  max   280.5  n=60
+  ordinal  48: median   110.7us  mean   134.8  min    3.8  max   356.7  n=60
+  ordinal  66: median   109.2us  mean   120.4  min    3.6  max   261.7  n=60
+  ordinal 136: median   108.5us  mean   126.8  min    3.7  max   409.7  n=60
+  ordinal  68: median   108.3us  mean   125.2  min    3.7  max   397.8  n=60
+  ordinal 132: median   108.2us  mean   125.5  min    3.7  max   363.6  n=60
+  ordinal  56: median   107.4us  mean    94.1  min    3.7  max   257.5  n=60
+  ordinal 128: median   106.7us  mean   109.0  min    3.6  max   407.9  n=60
+  ordinal  26: median   106.5us  mean   111.2  min    3.6  max   300.3  n=60
+  ordinal  36: median   106.0us  mean   109.2  min    3.7  max   300.4  n=60
+  ordinal  74: median   105.9us  mean   101.0  min    3.7  max   313.1  n=60
+  ordinal 154: median   105.3us  mean   110.3  min    3.7  max   289.6  n=60
+  ordinal  20: median   105.2us  mean    96.6  min    3.6  max   281.4  n=60
+  ordinal 120: median   105.1us  mean   118.6  min    3.7  max   354.2  n=60
+  ordinal  86: median   104.5us  mean   103.1  min    3.7  max   306.9  n=60
+
+ordinals with median > 50us: 60  -> [8, 10, 12, 14, 18, 20, 24, 26, 28, 30, 34, 36, 40, 42, 46, 48, 50, 52, 56, 58, 62, 64, 66, 68, 70, 72, 74, 78, 80, 84, 86, 88, 90, 92, 94, 96, 98, 100, 102, 104, 110, 112, 118, 120, 122, 126, 128, 130, 132, 136, 138, 140, 142, 144, 146, 148, 150, 152, 154, 156]
+sum of per-ordinal medians 5.905 ms; those 60 ordinals contribute 5.201 ms (88.1%)

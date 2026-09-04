@@ -1,0 +1,7 @@
+even ordinals: n=83  mean-of-medians    65.2 us  sum  5.415 ms/step
+odd ordinals: n=83  mean-of-medians     5.9 us  sum  0.490 ms/step
+
+floor (mean of per-ordinal MIN over 60 steps): 4.01 us
+166 x floor = 0.666 ms/step  <- hardware cost of the collective
+sum of per-ordinal medians = 5.905 ms/step
+=> wait absorbed at the barrier = 5.238 ms/step
