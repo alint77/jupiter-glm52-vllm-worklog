@@ -1,0 +1,19 @@
+rank0, 6 chunks, 444 layer transitions, 12 single-tier (all-64) groups resynced
+
+prefetch window (end of cold L -> start of cold L+1):
+   min  12.96  p5  13.70  median  16.11  max  26.90 ms
+H2D time needed for next layer's cold experts @450 GB/s:
+   min   0.85  median   1.65  max   1.93 ms
+
+slack (window - need): min  11.12 ms   median  14.53 ms
+window/need ratio:     min   7.04x  median  10.28x
+transitions that CANNOT hide @450 GB/s: 0/444
+transitions that CANNOT hide @373 GB/s measured: 0/444
+
+cold bytes per chunk  52.13 GB ->  115.8 ms @450,  139.8 ms @373
+duty cycle against a 1903 ms chunk: 6.1% @450
+
+buffer sizing: largest layer    830 MiB (41 experts); double-buffered 1.62 GiB
+
+if cold then runs at hot's HBM rate (85 us/expert):
+   cold Marlin  583.3 ms ->  210.3 ms   saving  372.9 ms/chunk (19.0% of the chunk)

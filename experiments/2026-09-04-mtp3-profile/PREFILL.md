@@ -267,3 +267,90 @@ its 6.5% here -- about 13% -- while MLA, Marlin and the all-reduce stay put.
    measured 1.10-1.12x faster on exactly this configuration, is **not in this
    tree**, and the launch policy is bypassed at M=8192 anyway. Worth ~1% of
    prefill; small, but it is a known-good change.
+
+---
+
+# Can a cold-expert H2D prefetch be fully hidden?
+
+**Yes, with 7x margin in the worst case, and the buffer fits.** Measured, not
+modelled: for all 444 layer transitions in the 6 captured chunks, the window
+between "layer L's cold buffer is free" and "layer L+1's cold Marlin starts"
+against the H2D time its operands actually need.
+
+| | min | p5 | median | max |
+| --- | ---: | ---: | ---: | ---: |
+| window (end of cold L -> start of cold L+1) | 12.96 | 13.70 | 16.11 | 26.90 ms |
+| H2D needed @450 GB/s | 0.85 | | 1.65 | 1.93 ms |
+| **slack** | **11.12** | | 14.53 | | ms |
+| **window / need** | **7.04x** | | 10.28x | | |
+
+**0 of 444 transitions fail at 450 GB/s, and 0 of 444 fail even at the 373 GB/s
+measured rate.** Aggregate: 52.13 GB of cold weights per chunk = 115.8 ms of
+DMA against a 1903 ms chunk, a **6.1% duty cycle**.
+
+One structural property makes this robust: the window *excludes* cold Marlin by
+construction, so it is made of attention, the two all-reduces and the hot tier.
+Speeding cold up does not shrink its own prefetch window.
+
+## The buffer, not the bandwidth, is the constraint -- and it fits
+
+| | |
+| --- | ---: |
+| largest single layer | 830 MiB (41 cold experts) |
+| double-buffered | **1.62 GiB** |
+| observed free HBM | 10.33 GiB |
+| planner minimum | 8.38 GiB |
+| **margin** | **1.95 GiB** |
+
+1.62 fits inside 1.95, with 0.33 GiB to spare. If that is too tight, demoting
+16 hot experts (20.3 MiB each) buys another 0.33 GiB and costs nothing once
+cold runs at hot's speed. Single-buffering -- the zero-then-refill scheme --
+halves it to 0.83 GiB, and the windows above are already measured for exactly
+that scheme (the copy starts when the buffer is *consumed*, at the end of cold
+L). Double-buffering would let the copy start a full layer earlier still.
+
+**Drop the zeroing step.** The buffer is entirely overwritten by the incoming
+H2D, so clearing it first buys nothing and costs 0.17-0.21 ms per layer of HBM
+write bandwidth on the same HBM the compute is using.
+
+## What it is worth
+
+The saving rests on cold-in-HBM running at hot's rate. The evidence for that is
+direct: **hot and cold are the same kernel, same grid `(264,1,1)`, same operand
+shapes, same M-tiling -- the only variable is where the weights live, and cold
+is 2.8x slower per expert.** That argument does not depend on the 4x M-block
+re-read hypothesis.
+
+| | now | with prefetch |
+| --- | ---: | ---: |
+| cold Marlin | 583.3 ms | 210.3 ms |
+| **saving** | | **372.9 ms/chunk, 19.0%** |
+
+Treat 373 ms as an **upper bound**. Cold experts are cold precisely because
+they take fewer tokens, so their rows-per-expert is lower than hot's and Marlin
+would get worse M-utilisation from the same weights; the projection assumes
+uniform routing, under which both tiers average ~256 rows per expert. The real
+split is skewed toward hot.
+
+## Why this is prefill-only, and why it does not replace tiering
+
+Not a bandwidth argument -- a **predictability** one. At M=8192 every owned
+expert fires, so "which cold experts does layer L+1 need" has the answer "all
+of them" before layer L even runs. At decode's M=4 roughly one cold expert per
+rank per layer fires, and which one is unknown until the router runs *for that
+layer*. There is nothing to prefetch. Decode's cold path is also already at the
+C2C roofline (53 us/layer for ~20.1 MB = 379 GB/s, `2026-07-29`), so there is
+no headroom there either. **The 46 GiB of hot residency stays; this adds a
+prefill path beside it.**
+
+## It composes with the MLA lever
+
+A 16-head MLA kernel removes ~5.0 ms/layer from attention, which sits inside
+the prefetch window. Window median falls 16.11 -> ~11.1 ms and p5 13.70 -> ~8.7
+ms, against an unchanged 1.65 ms median need: still 5-6.7x margin.
+
+| | ms/chunk | TTFT at 96K |
+| --- | ---: | ---: |
+| today | 1903 | 23.2 s |
+| + cold prefetch | ~1530 | ~18.7 s |
+| + 16-head MLA | ~1084 | **~13.2 s** |
