@@ -141,6 +141,16 @@ streaming floor against 5.734 ms/step measured** for the dense/shared GEMM
 bucket (17.2% of decode), so most of that bucket is overhead in many small M=4
 GEMMs rather than bytes.
 
+Prefill is now broken down kernel by kernel in
+[the prefill report](experiments/2026-09-04-mtp3-profile/PREFILL.md): a
+launch-order layer sequence, a roofline with arithmetic intensity per kernel,
+the communication latency/bandwidth split, and a per-rank delta. Joining every
+kernel to its launching operator through the profiler's `External id` gives
+observed operand shapes, which is what separates the hot and cold expert tiers
+-- they run the same Marlin kernel on the same stream -- and what exposes the
+sparse MLA kernel being handed 64 query heads while every neighbouring op works
+on the 16 the TP rank owns.
+
 Budget: prefill splits 39.7% routed experts, 33.0% attention, 9.0%
 communication; decode 36.1% / 7.3% / 21.7%. Every all-reduce in both phases is
 **100% exposed** -- no comm/compute overlap exists anywhere.

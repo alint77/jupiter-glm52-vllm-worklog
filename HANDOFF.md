@@ -21,6 +21,16 @@ at ~310 GB/s. (3) Hot/cold Marlin overlap is **closed**: union 12.287 ms against
 a `max(hot, cold)` floor of 12.166 -- 0.121 ms/step. Marlin forks 2+2 per layer,
 so the floor is per layer, not the max over the step.
 
+**Prefill is now broken down kernel by kernel** in
+[the prefill report](experiments/2026-09-04-mtp3-profile/PREFILL.md). It is
+single-stream, so shares are additive. The three biggest items: sparse MLA is
+27.7% of a chunk but launches 64 query heads for the 16 the rank owns, making
+it **10.2% useful** (~446 ms/chunk, 22.7%, behind a 16-head kernel); the cold
+expert tier is 29.5% for 20 of 64 experts, 2.1x hot's time; and 56.4% of
+communication time is arrival skew, of which 78.8 of 100.2 ms reproduces the
+per-layer routed-expert imbalance to within 0.7%. Dense BF16 GEMMs run at
+63-75% of peak and `silu_and_mul` at 94% of HBM -- nothing available there.
+
 **Do not propose `fuse_allreduce_rms`.** It faults with an illegal memory access
 on this stack. No comm/compute overlap exists in either phase, but overlap would
 hide only the real transfer, not the waiting -- fix the skew first.
