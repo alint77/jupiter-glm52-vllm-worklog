@@ -49,13 +49,17 @@ def main() -> int:
         return 1
 
     print("## Correctness: temperature-0 probes must match across arms\n")
+    if len(arms) < 2:
+        print("  (only one arm present -- nothing to cross-check yet)\n")
     ref_label = next(iter(arms))
     ref = arms[ref_label][1]["probes"]
     for i, p in enumerate(ref):
         vals = {lbl: d["probes"][i]["content"].strip() for lbl, (_, d) in arms.items()}
         uniq = set(vals.values())
         blank = all(v == "" for v in vals.values())
-        if blank:
+        if len(arms) < 2:
+            verdict = "single arm; comparison pending"
+        elif blank:
             verdict = "VACUOUS (all empty: reasoning consumed the cap; proves nothing)"
         elif len(uniq) == 1:
             verdict = f"match: {next(iter(uniq))[:40]!r}"
