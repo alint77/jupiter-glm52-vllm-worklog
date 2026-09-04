@@ -105,6 +105,73 @@ planner stops handing away memory it has already committed. Until then every
 dense-drafter shape (DFlash, DSpark) needs a reserve inflated by its own draft
 cache. Worth a patch; it is a genuine accounting bug, not a tuning quirk.
 
+## Launch 4: past the OOM, blocked on the runtime reserve check (job 1658726)
+
+Reserve 10 got much further — through KV allocation, compilation and CUDA
+graph capture — then failed a different check:
+
+```
+RuntimeError: Tiered MoE observed free HBM is below the runtime reserve:
+  8348368896 bytes available, 9000000000 required. Replan more experts into Grace memory.
+```
+
+`tiered_moe_physical.py:105-130`: `required_free = max(4e9, reserve - 1e9)`.
+Observed free was `reserve - 1.65e9`.
+
+### Raising the reserve cannot fix this
+
+Both sides move with the reserve, and the gap (1.65e9) exceeds the tolerance
+(1e9), so no value converges:
+
+| reserve | observed free | required | |
+|---|---|---|---|
+| 7 GB | 5.35e9 | 6.00e9 | fail |
+| 9 GB | 7.35e9 | 8.00e9 | fail |
+| 10 GB | 8.35e9 | 9.00e9 | fail (measured) |
+| 15 GB | 13.35e9 | 14.00e9 | fail |
+
+### What the 1.65e9 is
+
+The draft cache is definitely outside the planner's budget — that is a code
+fact (`fixed_hbm_allocations`, `tiered_moe_physical.py:219-229`, holds
+`non_routed_weights`, `indexer_cache`, `tiered_moe_runtime_buffers` and
+`main_mla_cache` and nothing else, while the allocator sums draft specs too via
+`tiered_moe_kv.py:140`).
+
+It is **not** the whole 1.65e9, though: CUDA graph pools (~0.4 GiB in the MTP3
+run), NCCL buffers and fragmentation are also unbudgeted. MTP3 passes this same
+check at reserve 6, so those together stay under 1e9 — the draft cache is the
+increment that pushes DFlash2 over. An earlier revision of this file attributed
+the entire gap to the draft cache; that was too strong.
+
+The draft cache is also full-length despite the drafter's 2048 sliding window,
+because page sizes cannot be unified across groups:
+
+```
+kv_cache_utils.py:1581] KV cache page sizes cannot be unified; treating
+sliding-window layers as full attention for cache allocation.
+```
+
+### Two ways forward
+
+**Shorten the context.** The draft cache scales with block count, so the gap
+does too. `max_model_len` is now overridable, and anything other than 400000
+lifts the shape pin automatically:
+
+```bash
+CLAUDE_GLM53_MAX_MODEL_LEN=200000 ./claude-glm53-c1-df2.sh --start
+```
+
+This is also the experiment that confirms the diagnosis: if the gap halves with
+the block count, the draft cache is the driver.
+
+**Fix the planner.** Add the draft specs to `fixed_hbm_allocations` so the
+planner stops handing away memory it has already committed. This is the durable
+fix and helps every dense-drafter shape, but the planner runs before KV specs
+exist, so it needs the drafter's page geometry passed in — and that arithmetic
+should be validated against a measured allocation rather than derived, which is
+what the context probe would provide.
+
 ## No `--kv-cache-memory`, deliberately
 
 Every other W4A16 config here passes `21689598771` (which buys 400,064 tokens
@@ -127,5 +194,6 @@ headroom, not on KV sizing.
 
 ## Status
 
-Three launches, three OOMs, all from the draft-cache accounting gap above.
-Now 0.90 / reserve 10 and **not yet re-launched**.
+Four launches. Three OOMed during KV init; the fourth (reserve 10) cleared
+that and stopped at the runtime reserve check, which no reserve value can
+satisfy. Blocked on either a shorter context or the planner fix above.

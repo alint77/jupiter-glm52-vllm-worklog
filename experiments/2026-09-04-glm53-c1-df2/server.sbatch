@@ -153,7 +153,14 @@ export TIERED_MOE_PLACEMENT_PROFILE="${repo_dir}/agent_space/profiles/glm53-w4a1
 #
 export TIERED_MOE_HBM_RESERVE_GB="${CLAUDE_GLM53_HBM_RESERVE_GB:-10}"
 gpu_util="${CLAUDE_GLM53_GPU_UTIL:-0.90}"
-echo "memory: gpu_util=${gpu_util} reserve=${TIERED_MOE_HBM_RESERVE_GB}GB"
+# The unbudgeted draft cache scales with the block count, so shortening the
+# context shrinks the gap the runtime reserve check trips on. Overridable to
+# probe that; 400000 is the shape pin, and anything else needs the pin lifted.
+model_len="${CLAUDE_GLM53_MAX_MODEL_LEN:-400000}"
+if [[ "${model_len}" != 400000 ]]; then
+  export VLLM_TIERED_MOE_RELAX_SHAPE=1
+fi
+echo "memory: gpu_util=${gpu_util} reserve=${TIERED_MOE_HBM_RESERVE_GB}GB max_model_len=${model_len}"
 # DFlash2 verifies 8 tokens per step (7 drafted plus the bonus), and c=1
 # means that is the only decode shape: capture [8] and nothing else, matching
 # arm-dcp.sh:34,46 at SEQS=1.
@@ -199,7 +206,7 @@ agent_space/experiments/2026-07-17-end-to-end-tuning/run-server.sh \
   --host 0.0.0.0 \
   --port "${port}" \
   --gpu-memory-utilization "${gpu_util}" \
-  --max-model-len 400000 \
+  --max-model-len "${model_len}" \
   --enable-prefix-caching \
   --enable-auto-tool-choice \
   --tool-call-parser glm47 \
