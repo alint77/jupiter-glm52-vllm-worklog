@@ -53,9 +53,9 @@
 # self-consistent 22.28 GiB. The cost is ~3.5 min of startup profiling, which
 # the 240 x 10s ready loop below absorbs.
 #
-# Caveat: no W4A16 config has yet run without --kv-cache-memory, so the
-# no-flag path is proven on NVFP4 only. A profiling failure is loud and cheap
-# to diagnose; a wrong constant is not. The launch confirms it.
+# Confirmed by launch: jobs 1658089 and 1658174 both profiled to 21.92 GiB and
+# allocated exactly 400,064 tokens, the planner's 6251 blocks. They died later,
+# on HBM headroom rather than KV sizing -- see the reserve note below.
 #
 # Differences from claude-glm53-c4.sh (MTP3, DCP4), all deliberate:
 #   * speculator  DFlash2 (GLM-5.3-DFlash2), 7 speculative tokens, greedy
@@ -116,9 +116,28 @@ export TIERED_MOE_MODEL_PATH="${model_fscratch}"
 echo "model: ${TIERED_MOE_MODEL_PATH} (${actual_shards} shards)"
 
 export TIERED_MOE_PLACEMENT_PROFILE="${repo_dir}/agent_space/profiles/glm53-w4a16-2496.json"
-# 6 GB, not 7: at gpu_memory_utilization 0.94 the reserve check needs 4.66 GiB
-# physically free after KV, and 7 GB would demand 5.59 GiB and refuse to start.
-export TIERED_MOE_HBM_RESERVE_GB=6
+# 7 GB at utilisation 0.90, which is repl2-eager-dcp1's pair rather than the
+# MTP3 launcher's 6 GB at 0.94. The first two launches of this file used
+# 0.94/6 and both died the same way: KV allocated correctly (400,064 tokens off
+# a self-profiled 21.92 GiB) and the planner then promoted experts to 2528 to
+# fill its budget, leaving 887 MiB free -- and flashinfer's autotuner wants
+# 2.00 GiB. Jobs 1658089 and 1658174.
+#
+# Utilisation is the knob that shrinks the planner's budget, and it does so
+# without touching KV. Two measurements bracket it: repl2 at 0.90/7 took
+# 45.8 GiB of experts + 22.28 GiB of KV; the 0.94/6 failure took 50.0 + 21.92.
+# The 3.8 GiB difference is 0.04 x 95 GiB, so the planner tracks utilisation
+# almost exactly and spends it on hot experts. Reserve alone cannot substitute:
+# 7 GB at 0.94 fails the reserve check outright and refuses to start.
+#
+# Costs roughly 200 hot experts against 0.94. Raise it only with a launch to
+# confirm; DFlash2 carries six dense draft layers of KV that MTP3 does not, so
+# the MTP3 launcher's headroom does not transfer.
+# Overridable so a probe at a different pair is one command rather than a
+# forked copy of this file; the defaults are the proven pair.
+export TIERED_MOE_HBM_RESERVE_GB="${CLAUDE_GLM53_HBM_RESERVE_GB:-7}"
+gpu_util="${CLAUDE_GLM53_GPU_UTIL:-0.90}"
+echo "memory: gpu_util=${gpu_util} reserve=${TIERED_MOE_HBM_RESERVE_GB}GB"
 # DFlash2 verifies 8 tokens per step (7 drafted plus the bonus), and c=1
 # means that is the only decode shape: capture [8] and nothing else, matching
 # arm-dcp.sh:34,46 at SEQS=1.
@@ -163,7 +182,7 @@ agent_space/experiments/2026-07-17-end-to-end-tuning/run-server.sh \
   --max-num-seqs 1 \
   --host 0.0.0.0 \
   --port "${port}" \
-  --gpu-memory-utilization 0.94 \
+  --gpu-memory-utilization "${gpu_util}" \
   --max-model-len 400000 \
   --enable-prefix-caching \
   --enable-auto-tool-choice \

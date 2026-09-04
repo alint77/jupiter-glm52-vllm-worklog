@@ -44,6 +44,48 @@ quantisation, so the cache figures carry over. Expert residency does not —
 W4A16 weights are smaller, so expect more than 2317 hot experts. The
 `Tiered MoE residency` log line reports the actual number.
 
+## Launch 1 and 2: OOM at 0.94 / reserve 6 (jobs 1658089, 1658174)
+
+Both died identically, and **not** on anything this file got wrong about KV:
+
+```
+KV cache allocated, 400,064 tokens          <- exactly the planner's 6251 blocks
+Tiered MoE residency: 2528 hot / 2272 cold  <- promoted from the profile's 2496
+CUDA out of memory. Tried to allocate 2.00 GiB.
+  GPU 0 ... 95.00 GiB total, 887.75 MiB free
+```
+
+Surfaced as `RuntimeError: torch_call_dispatcher("aten::new_empty", ...)`, which
+is a wrapper; the OOM is the root cause. flashinfer's autotuner asks for 2.00 GiB
+after the KV cache is up, and there was 0.88 GiB left.
+
+The self-profiled KV was right. What was wrong was inheriting the MTP3
+launcher's `0.94` / reserve `6` pair: the planner spends whatever utilisation
+allows on hot experts (it *promoted* 2496 → 2528 to fill the budget), so the
+headroom flashinfer needs was gone. DFlash2 carries six dense draft layers of
+KV that MTP3 does not, so MTP3's headroom does not transfer.
+
+Utilisation is the knob, and it shrinks the planner's budget without touching
+KV. Two measurements bracket it:
+
+| run | util / reserve | experts | KV | outcome |
+|---|---|---|---|---|
+| `repl2-eager-dcp1` | 0.90 / 7 | 45.8 GiB | 22.28 GiB | ran |
+| jobs 1658089, 1658174 | 0.94 / 6 | 50.0 GiB | 21.92 GiB | OOM, 0.88 GiB free |
+
+The 3.8 GiB difference is `0.04 x 95 GiB` — the planner tracks utilisation
+almost exactly and spends it on experts. Reserve alone cannot substitute: 7 GB
+at 0.94 fails the reserve check and refuses to start.
+
+**Now set to 0.90 / 7**, repl2's pair, proven on this exact shape. Costs roughly
+200 hot experts against 0.94.
+
+Both knobs are overridable, so probing a tighter pair is one command:
+
+```bash
+CLAUDE_GLM53_GPU_UTIL=0.92 CLAUDE_GLM53_HBM_RESERVE_GB=6 ./claude-glm53-c1-df2.sh --start
+```
+
 ## No `--kv-cache-memory`, deliberately
 
 Every other W4A16 config here passes `21689598771` (which buys 400,064 tokens
@@ -59,10 +101,12 @@ revisions. `repl2-eager-dcp1` passed no flag and profiled to a self-consistent
 Cost: ~3.5 min of startup profiling (repl2's log runs residency 14:39:02 →
 KV 14:42:38), which the sbatch's 240 × 10s ready loop absorbs.
 
-**Unverified:** no W4A16 config has yet run without the flag, so the no-flag
-path is proven on NVFP4 only. A profiling failure is loud and cheap to
-diagnose; a wrong constant is not. The first launch confirms it.
+**Confirmed by launch:** jobs 1658089 and 1658174 both profiled to 21.92 GiB
+and allocated exactly 400,064 tokens — the planner's 6251 blocks, predicted
+before the run. The no-flag path works on W4A16. Those jobs died on HBM
+headroom, not on KV sizing.
 
 ## Status
 
-Written, syntax-checked, **not yet launched**.
+Launched twice at 0.94 / reserve 6; both OOMed on flashinfer's autotuner.
+Now set to 0.90 / 7 and **not yet re-launched**.
