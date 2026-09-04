@@ -1,0 +1,16 @@
+306 marlin calls in chunk 3
+
+all-64 calls: 6
+  w13  E=64      3631 us      864 MiB     250 GB/s  t=5819ms
+  w2   E=64      1987 us      432 MiB     228 GB/s  t=5823ms
+  w13  E=64        22 us      864 MiB   40503 GB/s  t=5827ms
+  w2   E=64        15 us      432 MiB   29371 GB/s  t=5827ms
+  w13  E=64        22 us      864 MiB   40619 GB/s  t=5827ms
+  w2   E=64        15 us      432 MiB   29617 GB/s  t=5827ms
+  reference w13: hot median   268 GB/s, cold median    93 GB/s
+  reference w2: hot median   243 GB/s, cold median    92 GB/s
+
+=> an all-64 call at ~hot rate means hot=64/cold=0 (nothing to prefetch);
+   at ~cold rate it means cold=64 and the slot must be sized for 64 experts.
+
+profile hot-per-layer for rank0: min 26 max 49; layers with 0 hot: 0, with 64 hot: 0
