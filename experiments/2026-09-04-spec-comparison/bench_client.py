@@ -182,7 +182,15 @@ def main() -> int:
             "per_pos": per_pos,
             "reasoning_chars": r["reasoning_chars"],
             "content_chars": len(r["content"]),
-            "finished_thinking": len(r["content"]) > 0,
+            # The arms serve without --reasoning-parser (run-server.sh sets
+            # none and arm.sh does not add one), so the thinking trace stays
+            # inline in content and closes with a literal </think>. That tag
+            # is the real "did it stop reasoning and answer" signal; a
+            # non-empty content is not, since content is never empty here.
+            # Generation is unaffected -- the parser only splits the stream.
+            "think_closed": "</think>" in r["content"],
+            "answer_sample": r["content"].split("</think>")[-1][:400],
+            "finished_thinking": "</think>" in r["content"],
         }
         rows.append(rec)
         if (i + 1) % 6 == 0:

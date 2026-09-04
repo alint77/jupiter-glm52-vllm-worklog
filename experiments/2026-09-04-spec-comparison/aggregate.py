@@ -78,7 +78,11 @@ def main() -> int:
         al = (acc + steps) / steps if steps else float("nan")
         dec_s = sum(r["decode_s"] for r in warm)
         out = sum(r["output_tokens"] or 0 for r in warm)
-        think_only = sum(1 for r in warm if not r.get("finished_thinking", True))
+        # spdf23's bench started before think_closed was recorded; for it the
+        # count is unknown rather than zero, and is reported as such.
+        has_flag = all("think_closed" in r for r in warm)
+        think_only = (sum(1 for r in warm if not r["think_closed"])
+                      if has_flag else None)
         summary[label] = {
             "name": name, "al": al,
             "step_ms": med([r.get("step_ms_median") for r in warm]),
@@ -87,9 +91,10 @@ def main() -> int:
             "out": out, "n": len(warm), "think_only": think_only,
         }
         s = summary[label]
+        tt = "  n/a" if think_only is None else f"{think_only:>4}"
         print(f"{name:<12} {al:>6.3f} {s['step_ms'] or 0:>8.1f} "
               f"{s['tok_s_decode'] or 0:>10.1f} {s['ttft_med'] or 0:>9.2f} "
-              f"{out:>8} {residency(label):>12} {think_only:>4}/{len(warm):<6}")
+              f"{out:>8} {residency(label):>12} {tt}/{len(warm):<6}")
 
     print("\n## By task kind (acceptance)\n")
     print(f"{'arm':<12} {'code AL':>9} {'prose AL':>9} {'code tok/s':>11} {'prose tok/s':>12}")
@@ -114,12 +119,23 @@ def main() -> int:
                          for i in range(max(tot) + 1)) if tot else "-"
         print(f"{name:<12} pos0..N: {cells}")
 
+    print("\n## Sample answers (post-</think>), one code and one prose per arm\n")
+    for label, (name, d) in arms.items():
+        for kind in ("code", "prose"):
+            r = next((x for x in d["per_request"][1:]
+                      if x["task_kind"] == kind and x.get("answer_sample")), None)
+            if r:
+                txt = " ".join(r["answer_sample"].split())[:150]
+                print(f"  {name:<12} {kind:<6} {txt!r}")
+            else:
+                print(f"  {name:<12} {kind:<6} (no sample recorded)")
+
     if len(summary) == 4:
         print("\n## Verdict\n")
         best = max(summary.values(), key=lambda s: s["tok_s_decode"] or 0)
         print(f"  fastest decode: {best['name']} at {best['tok_s_decode']:.1f} tok/s")
         for s in summary.values():
-            if s["think_only"] > s["n"] * 0.5:
+            if s["think_only"] is not None and s["think_only"] > s["n"] * 0.5:
                 print(f"  WARNING {s['name']}: {s['think_only']}/{s['n']} requests "
                       f"never finished reasoning -- this is a reasoning-throughput "
                       f"comparison for that arm, not code-vs-prose")
