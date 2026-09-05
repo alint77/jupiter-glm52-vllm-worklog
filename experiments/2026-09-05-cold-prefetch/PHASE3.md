@@ -144,6 +144,27 @@ Job `1669268`: four server loads in one allocation -- two identical baselines
 (the second is the across-restart control), then staging without and with
 verify.
 
+## Ruled out: KV cache geometry
+
+The memory-profiling pass runs 8192 dummy tokens, which is above
+`MIN_TOKENS`, so the slot is allocated lazily *during* profiling and the
+staging arm measures less free HBM:
+
+| arm | available KV cache | GPU KV cache size |
+| --- | --- | --- |
+| baseline | 23.02 GiB | 400,064 tokens |
+| prefetch | 21.94 GiB | 400,064 tokens |
+
+The 1.08 GiB gap is the slot (830 MiB) plus allocator slack. It is a real cost
+and worth knowing -- at a larger `max_model_len` it would cut KV capacity --
+but here `max_model_len=400000` caps the cache first, so **both arms run the
+identical KV geometry**. It cannot be what moved the output, and it means the
+phase-3b arms are not confounded by cache size either.
+
+Phase 4 makes this cost explicit rather than incidental: the planner reserves
+the slot up front, so it comes out of expert residency where it can be seen,
+not out of whatever the profiling pass happened to measure.
+
 ## The speedup is about half of what the mechanism should give
 
 580 ms/chunk of cold Marlin at the hot tier's per-expert rate would be ~210 ms;
