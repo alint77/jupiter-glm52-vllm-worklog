@@ -31,6 +31,30 @@ from gsm8k_eval import (  # noqa: E402
 )
 
 
+FILLER = Path(
+    "agent_space/experiments/2026-09-04-mtp3-profile/prompts.jsonl"
+)
+
+
+def _pad(prompt: str, pad_chars: int) -> str:
+    """Prefix real long-context text, fenced off from the few-shot block.
+
+    GSM8K's own prompts are ~539 tokens, which is one chunk. Padding past 8192
+    puts the first chunk on the single-stream path -- the regime the prefetch
+    was built for and the one no accuracy eval had covered -- while leaving the
+    arithmetic, and so the grading, untouched.
+
+    The filler is coding-assistant transcript, so it is fenced with a rule to
+    stop the model reading it as instructions for the math that follows.
+    """
+    import json
+
+    text = json.loads(FILLER.read_text().splitlines()[0])["prompt"]
+    while len(text) < pad_chars:
+        text += text
+    return text[:pad_chars] + "\n\n---\n\n" + prompt
+
+
 async def run(prompts, labels, url, max_tokens, concurrency):
     preds: list[int] = [0] * len(prompts)
     texts: list[str] = [""] * len(prompts)
@@ -63,9 +87,18 @@ def main() -> int:
     ap.add_argument("--port", type=int, default=8027)
     ap.add_argument("--concurrency", type=int, default=1)
     ap.add_argument("--out", required=True)
+    ap.add_argument(
+        "--pad-chars",
+        type=int,
+        default=0,
+        help="Prefix each prompt with this many characters of filler, to push "
+        "the prefill past a chunk boundary and onto the single-stream path.",
+    )
     args = ap.parse_args()
 
     prompts, labels = _build_gsm8k_prompts(args.num_questions, args.num_shots, "")
+    if args.pad_chars:
+        prompts = [_pad(p, args.pad_chars) for p in prompts]
     # call_vllm_api appends /v1/completions itself; give it the base.
     url = f"http://127.0.0.1:{args.port}"
     start = time.perf_counter()
