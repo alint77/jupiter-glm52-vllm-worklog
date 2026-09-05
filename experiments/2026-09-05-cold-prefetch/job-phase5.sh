@@ -87,7 +87,7 @@ run_arm() {
   # Residency and slot, so the planner's cost is on the record next to the
   # accuracy it bought.
   grep -hoE "Tiered MoE residency: .{0,80}|cold staging: .{0,80}|cold prefetch: [0-9]+ layers.{0,60}" \
-    "${result_dir}/p5-${arm}-server."{out,err} 2>/dev/null | sort -u | head -4
+    "${result_dir}/p5-${arm}-server."{out,err} 2>/dev/null | sort -u | head -4 || true
 
   # Two questions first: a transport fault scores zero in a few seconds and
   # is indistinguishable from a real result once written to the file.
@@ -103,7 +103,9 @@ run_arm() {
 
   echo "--- staging engagement (${arm}) ---"
   grep -hoE "cold prefetch: chunk .{0,150}" \
-    "${result_dir}/p5-${arm}-server."{out,err} 2>/dev/null | tail -2
+    "${result_dir}/p5-${arm}-server."{out,err} 2>/dev/null | tail -2 || true
+  # The baseline arm legitimately has no such lines, and under
+  # `set -o pipefail` an empty grep would otherwise kill the job.
 
   # Prefill throughput on the long prompt, same measurement as phase 3.
   ARM="${arm}" RESULT_DIR="${result_dir}" .venv/bin/python - <<'PY'
