@@ -1,0 +1,9 @@
+questions: 1000
+  baseline  accuracy 0.7620  (762/1000)  3230s
+  staged    accuracy 0.7630  (763/1000)  2979s
+
+concordant 767  baseline-only 116  staged-only 117
+McNemar exact two-sided p = 1.0000
+accuracy delta +0.0010
+
+No asymmetry detected (p=1.000). 233 discordant pairs are consistent with this configuration's run-to-run noise.
