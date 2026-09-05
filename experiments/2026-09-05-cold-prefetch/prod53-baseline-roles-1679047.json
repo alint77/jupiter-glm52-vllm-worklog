@@ -1,0 +1,2383 @@
+{
+ "wall": 1901.3446886393228,
+ "busy": 1964.7002196132487,
+ "cum": 1964.9156793333325,
+ "n": 6,
+ "roles": [
+  {
+   "op": "_flashmla_C::sparse_decode_fwd",
+   "tag": "",
+   "ms": 549.8402784999997,
+   "kern": 157.0,
+   "calls": 78.0,
+   "dims": [
+    [
+     1,
+     8185,
+     64,
+     576
+    ],
+    [
+     6251,
+     64,
+     1,
+     656
+    ],
+    [
+     1,
+     8185,
+     2048
+    ],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    []
+   ],
+   "kernel": "void sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_sparse_kernel<sm90::decode::sparse_fp8::KernelTemplate<(ModelType)0, 64>, sm90::decode::sparse_fp8::KernelTemplate<(ModelType)0, 64>::TmaParams<cute::tuple<int, int, int, int>, cute::TiledCopy<cute::Copy_Atom<cute::Copy_Traits<cute::SM90_TMA_LOAD, cute::C<65536>, cute::AuxTmaParams<cute::tuple<cute::ScaledBasis<cute::C<1>, 1>, cute::ScaledBasis<cute::C<1>, 0>, cute::ScaledBasis<cute::C<1>, 2>, cute::ScaledBasis<cute::C<1>, 3> >, cute::Layout<cute::tuple<cute::C<64>, cute::C<64>, cute::C<1>, cute::C<1> >, cute::tuple<cute::ScaledBasis<cute::C<1>, 1>, cute::ScaledBasis<cute::C<1>, 0>, cute::ScaledBasis<cute::C<1>, 2>, cute::ScaledBasis<cute::C<1>, 3> > > const&, cute::Swizzle<3, 4, 3> const&> >, cutlass::bfloat16_t>, cute::Layout<cute::tuple<cute::C<1>, cute::tuple<cute::tuple<cute::tuple<cute::C<64>, cute::C<64> >, cute::C<9> > > >, cute::tuple<cute::C<0>, cute::tuple<cute::tuple<cute::tuple<cute::C<64>, cute::C<1> >, cute::C<4096> > > > >, cute::tuple<cute::C<64>, cute::C<576> > > > >(SparseAttnDecodeParams, sm90::decode::sparse_fp8::KernelTemplate<(ModelType)0, 64>::TmaParams<cute::tuple<int, int, int, int>, cute::TiledCopy<cute::Copy_Atom<cute::Copy_Traits<cute::SM90_TMA_LOAD, cute::C<65536>, cute::AuxTmaParams<cute::tuple<cute::ScaledBasis<cute::C<1>, 1>, cute::ScaledBasis<cute::C<1>, 0>, cute::ScaledBasis<cute::C<1>, 2>, cute::ScaledBasis<cute::C<1>, 3> >, cute::Layout<cute::tuple<cute::C<64>, cute::C<64>, cute::C<1>, cute::C<1> >, cute::tuple<cute::ScaledBasis<cute::C<1>, 1>, cute::ScaledBasis<cute::C<1>, 0>, cute::ScaledBasis<cute::C<1>, 2>, cute::ScaledBasis<cute::C<1>, 3> > > const&, cute::Swizzle<3, 4, 3> const&> >, cutlass::bfloat16_t>, cute::Layout<cute::tuple<cute::C<1>, cute::tuple<cute::tuple<cute::tuple<cute::C<64>, cute::C<64> >, cute::C<9> > > >, cute::tuple<cute::C<0>, cute::tuple<cute::tuple<cute::tuple<cute::C<64>, cute::C<1> >, cute::C<4096> > > > >, cute::tuple<cute::C<64>, cute::C<576> > > >)"
+  },
+  {
+   "op": "_moe_C::moe_wna16_marlin_gemm",
+   "tag": "cold w13",
+   "ms": 401.42855599999945,
+   "kern": 75.0,
+   "calls": 75.0,
+   "dims": [
+    [
+     8185,
+     6144
+    ],
+    [
+     65480,
+     4096
+    ],
+    [
+     21,
+     384,
+     8192
+    ],
+    [],
+    [
+     21,
+     192,
+     4096
+    ],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [
+     528
+    ],
+    [
+     81608
+    ],
+    [
+     1276
+    ],
+    [
+     1
+    ],
+    [
+     8185,
+     8
+    ],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    []
+   ],
+   "kernel": "void marlin_moe_wna16::Marlin<1125899906909960l, 1125899907892224l, 1125899906909960l, 1125899906909960l, 128, 4, 8, 4, false, 4, 2, false>(int4 const*, int4 const*, int4*, int4*, int4 const*, float const*, int4 const*, float const*, int4 const*, int const*, int const*, int const*, int const*, float const*, int, bool, int, int, int, int, int*, bool, bool, bool)"
+  },
+  {
+   "op": "_moe_C::moe_wna16_marlin_gemm",
+   "tag": "cold w2",
+   "ms": 203.17002266666665,
+   "kern": 75.0,
+   "calls": 75.0,
+   "dims": [
+    [
+     65480,
+     2048
+    ],
+    [
+     65480,
+     6144
+    ],
+    [
+     21,
+     128,
+     12288
+    ],
+    [],
+    [
+     21,
+     64,
+     6144
+    ],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [
+     528
+    ],
+    [
+     81608
+    ],
+    [
+     1276
+    ],
+    [
+     1
+    ],
+    [
+     8185,
+     8
+    ],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    []
+   ],
+   "kernel": "void marlin_moe_wna16::Marlin<1125899906909960l, 1125899907892224l, 1125899906909960l, 1125899906909960l, 128, 4, 8, 4, false, 4, 2, false>(int4 const*, int4 const*, int4*, int4*, int4 const*, float const*, int4 const*, float const*, int4 const*, int const*, int const*, int const*, int const*, float const*, int, bool, int, int, int, int, int*, bool, bool, bool)"
+  },
+  {
+   "op": "vllm::all_reduce",
+   "tag": "",
+   "ms": 181.94478850000004,
+   "kern": 157.0,
+   "calls": 157.0,
+   "dims": [
+    [
+     8185,
+     6144
+    ],
+    []
+   ],
+   "kernel": "ncclDevKernel_AllReduce_Sum_bf16_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+  },
+  {
+   "op": "_moe_C::moe_wna16_marlin_gemm",
+   "tag": "hot w13",
+   "ms": 123.10710383333323,
+   "kern": 75.0,
+   "calls": 75.0,
+   "dims": [
+    [
+     8185,
+     6144
+    ],
+    [
+     65480,
+     4096
+    ],
+    [
+     43,
+     384,
+     8192
+    ],
+    [],
+    [
+     43,
+     192,
+     4096
+    ],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [
+     528
+    ],
+    [
+     81608
+    ],
+    [
+     1276
+    ],
+    [
+     1
+    ],
+    [
+     8185,
+     8
+    ],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    []
+   ],
+   "kernel": "void marlin_moe_wna16::Marlin<1125899906909960l, 1125899907892224l, 1125899906909960l, 1125899906909960l, 128, 4, 8, 4, false, 4, 2, false>(int4 const*, int4 const*, int4*, int4*, int4 const*, float const*, int4 const*, float const*, int4 const*, int const*, int const*, int const*, int const*, float const*, int, bool, int, int, int, int, int*, bool, bool, bool)"
+  },
+  {
+   "op": "vllm::sparse_attn_indexer",
+   "tag": "",
+   "ms": 91.48152850000004,
+   "kern": 73.5,
+   "calls": 21.0,
+   "dims": [
+    [
+     8185,
+     6144
+    ],
+    [],
+    [
+     6251,
+     64,
+     132
+    ],
+    [
+     8185,
+     32,
+     128
+    ],
+    [],
+    [
+     8185,
+     128
+    ],
+    [
+     8185,
+     32
+    ],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [
+     8192,
+     2048
+    ],
+    [],
+    [],
+    [],
+    [],
+    [],
+    []
+   ],
+   "kernel": "void deep_gemm::sm90_fp8_mqa_logits<32u, 128u, false, 4u, 256u, 3u, 3u, 132u, 128u, 512u, float>(unsigned int, unsigned int, unsigned int, unsigned int, unsigned int*, unsigned int*, float*, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st, CUtensorMap_st)"
+  },
+  {
+   "op": "_moe_C::moe_wna16_marlin_gemm",
+   "tag": "hot w2",
+   "ms": 67.49466599999994,
+   "kern": 75.0,
+   "calls": 75.0,
+   "dims": [
+    [
+     65480,
+     2048
+    ],
+    [
+     65480,
+     6144
+    ],
+    [
+     43,
+     128,
+     12288
+    ],
+    [],
+    [
+     43,
+     64,
+     6144
+    ],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [
+     528
+    ],
+    [
+     81608
+    ],
+    [
+     1276
+    ],
+    [
+     1
+    ],
+    [
+     8185,
+     8
+    ],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    []
+   ],
+   "kernel": "void marlin_moe_wna16::Marlin<1125899906909960l, 1125899907892224l, 1125899906909960l, 1125899906909960l, 128, 4, 8, 4, false, 4, 2, false>(int4 const*, int4 const*, int4*, int4*, int4 const*, float const*, int4 const*, float const*, int4 const*, int const*, int const*, int const*, int const*, float const*, int, bool, int, int, int, int, int*, bool, bool, bool)"
+  },
+  {
+   "op": "aten::mm",
+   "tag": "4096x6144",
+   "ms": 49.79490150000001,
+   "kern": 156.0,
+   "calls": 78.0,
+   "dims": [
+    [
+     8185,
+     4096
+    ],
+    [
+     4096,
+     6144
+    ],
+    [
+     8185,
+     6144
+    ]
+   ],
+   "kernel": "nvjet_sm90_tst_256x152_64x4_1x2_h_bz_coopA_TNT"
+  },
+  {
+   "op": "_C::top_k_per_row_prefill",
+   "tag": "",
+   "ms": 32.874274,
+   "kern": 73.5,
+   "calls": 73.5,
+   "dims": [
+    [
+     4099,
+     32740
+    ],
+    [
+     4099
+    ],
+    [
+     4099
+    ],
+    [
+     4099,
+     2048
+    ],
+    [],
+    [],
+    [],
+    []
+   ],
+   "kernel": "void vllm::topKPerRowPrefill<512, false>(float const*, int const*, int const*, int*, int, int, int, int)"
+  },
+  {
+   "op": "_C::silu_and_mul",
+   "tag": "",
+   "ms": 32.75195999999998,
+   "kern": 150.0,
+   "calls": 150.0,
+   "dims": [
+    [
+     65480,
+     2048
+    ],
+    [
+     65480,
+     4096
+    ]
+   ],
+   "kernel": "void vllm::act_and_mul_kernel<c10::BFloat16, __nv_bfloat162, &(c10::BFloat16 vllm::silu_kernel<c10::BFloat16>(c10::BFloat16 const&, float)), &(__nv_bfloat162 vllm::packed_silu_kernel<__nv_bfloat162>(__nv_bfloat162 const&, float)), true, true, false, false>(c10::BFloat16*, c10::BFloat16 const*, int, float, float, float)"
+  },
+  {
+   "op": "aten::mm",
+   "tag": "6144x2624",
+   "ms": 31.12714700000009,
+   "kern": 156.0,
+   "calls": 78.0,
+   "dims": [
+    [
+     8185,
+     6144
+    ],
+    [
+     6144,
+     2624
+    ],
+    [
+     8185,
+     2624
+    ]
+   ],
+   "kernel": "nvjet_sm90_tst_192x176_64x4_2x1_v_bz_coopB_TNT"
+  },
+  {
+   "op": "aten::copy_",
+   "tag": "",
+   "ms": 23.405436666666674,
+   "kern": 253.0,
+   "calls": 253.0,
+   "dims": [
+    [
+     128
+    ],
+    [
+     128
+    ],
+    []
+   ],
+   "kernel": "void at::native::elementwise_kernel<128, 4, at::native::gpu_kernel_impl_nocast<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase&)::{lambda()#3}::operator()() const::{lambda()#12}::operator()() const::{lambda(c10::BFloat16)#1}>(at::TensorIteratorBase&, at::native::direct_copy_kernel_cuda(at::TensorIteratorBase&)::{lambda()#3}::operator()() const::{lambda()#12}::operator()() const::{lambda(c10::BFloat16)#1} const&)::{lambda(int)#1}>(int, at::native::gpu_kernel_impl_nocast<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase&)::{lambda()#3}::operator()() const::{lambda()#12}::operator()() const::{lambda(c10::BFloat16)#1}>(at::TensorIteratorBase&, at::native::direct_copy_kernel_cuda(at::TensorIteratorBase&)::{lambda()#3}::operator()() const::{lambda()#12}::operator()() const::{lambda(c10::BFloat16)#1} const&)::{lambda(int)#1})"
+  },
+  {
+   "op": "aten::mm",
+   "tag": "2048x4096",
+   "ms": 22.2605268333334,
+   "kern": 198.0,
+   "calls": 99.0,
+   "dims": [
+    [
+     8185,
+     2048
+    ],
+    [
+     2048,
+     4096
+    ],
+    [
+     8185,
+     4096
+    ]
+   ],
+   "kernel": "nvjet_sm90_tst_256x144_64x4_2x1_v_bz_coopA_TNT"
+  },
+  {
+   "op": "aten::fill_",
+   "tag": "",
+   "ms": 14.393176500000017,
+   "kern": 257.5,
+   "calls": 257.5,
+   "dims": [
+    [
+     1
+    ],
+    []
+   ],
+   "kernel": "void at::native::vectorized_elementwise_kernel<8, at::native::FillFunctor<c10::BFloat16>, std::array<char*, 1ul> >(int, at::native::FillFunctor<c10::BFloat16>, std::array<char*, 1ul>)"
+  },
+  {
+   "op": "triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_5",
+   "tag": "",
+   "ms": 13.055257333333323,
+   "kern": 77.0,
+   "calls": 77.0,
+   "dims": [
+    [
+     8185,
+     4096
+    ],
+    [
+     8185
+    ],
+    [
+     1048576,
+     64
+    ],
+    [
+     8185,
+     16,
+     256
+    ],
+    []
+   ],
+   "kernel": "triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_5"
+  },
+  {
+   "op": "_moe_C::moe_sum",
+   "tag": "",
+   "ms": 11.658017333333328,
+   "kern": 150.0,
+   "calls": 150.0,
+   "dims": [
+    [
+     8185,
+     8,
+     6144
+    ],
+    [
+     8185,
+     6144
+    ],
+    [
+     8185,
+     8
+    ],
+    [
+     256
+    ]
+   ],
+   "kernel": "void vllm::moe::moe_sum_vec_kernel<c10::BFloat16, int, 8, true>(c10::BFloat16*, c10::BFloat16 const*, long, int, long, long, int const*, int const*, long, long)"
+  },
+  {
+   "op": "aten::bmm",
+   "tag": "",
+   "ms": 11.0921148333332,
+   "kern": 313.0,
+   "calls": 157.0,
+   "dims": [
+    [
+     16,
+     8185,
+     192
+    ],
+    [
+     16,
+     192,
+     512
+    ],
+    [
+     16,
+     8185,
+     512
+    ]
+   ],
+   "kernel": "nvjet_sm90_tst_128x304_64x3_2x1_v_bz_coopA_TNT"
+  },
+  {
+   "op": "aten::mm",
+   "tag": "6144x1024",
+   "ms": 11.056998166666672,
+   "kern": 75.0,
+   "calls": 75.0,
+   "dims": [
+    [
+     8185,
+     6144
+    ],
+    [
+     6144,
+     1024
+    ]
+   ],
+   "kernel": "nvjet_sm90_tst_128x256_64x4_2x1_v_bz_coopA_TNN"
+  },
+  {
+   "op": "triton_red_fused_fused_add_rms_norm_moe_forward_shared_0",
+   "tag": "",
+   "ms": 10.518186166666672,
+   "kern": 75.0,
+   "calls": 75.0,
+   "dims": [
+    [
+     8185,
+     6144
+    ],
+    [
+     8185,
+     6144
+    ],
+    [
+     6144
+    ],
+    [
+     8185,
+     6144
+    ],
+    [
+     8185,
+     6144
+    ],
+    [
+     8185,
+     6144
+    ],
+    [],
+    []
+   ],
+   "kernel": "triton_red_fused_fused_add_rms_norm_moe_forward_shared_0"
+  },
+  {
+   "op": "triton_red_fused_fused_add_rms_norm_2",
+   "tag": "",
+   "ms": 10.483345500000004,
+   "kern": 72.0,
+   "calls": 72.0,
+   "dims": [
+    [
+     8185,
+     6144
+    ],
+    [
+     8185,
+     6144
+    ],
+    [
+     8185,
+     6144
+    ],
+    [
+     6144
+    ],
+    [
+     8185,
+     6144
+    ],
+    [
+     8185,
+     6144
+    ],
+    [],
+    []
+   ],
+   "kernel": "triton_red_fused_fused_add_rms_norm_2"
+  },
+  {
+   "op": "aten::mm",
+   "tag": "512x6144",
+   "ms": 7.1466521666666365,
+   "kern": 150.0,
+   "calls": 75.0,
+   "dims": [
+    [
+     8185,
+     512
+    ],
+    [
+     512,
+     6144
+    ]
+   ],
+   "kernel": "nvjet_sm90_tst_256x152_64x4_1x2_h_bz_coopA_TNT"
+  },
+  {
+   "op": "_C_cache_ops::concat_mla_q",
+   "tag": "",
+   "ms": 6.99896066666667,
+   "kern": 78.0,
+   "calls": 78.0,
+   "dims": [
+    [
+     8185,
+     16,
+     512
+    ],
+    [
+     8185,
+     16,
+     64
+    ],
+    [
+     8185,
+     16,
+     576
+    ]
+   ],
+   "kernel": "void vllm::ConcatMLAQKernel<c10::BFloat16, 512>(c10::BFloat16*, c10::BFloat16 const*, c10::BFloat16 const*, int, int, long, long, long, long, long, long)"
+  },
+  {
+   "op": "vllm::unified_mla_attention_with_output",
+   "tag": "",
+   "ms": 6.321397666666666,
+   "kern": 78.0,
+   "calls": 78.0,
+   "dims": [
+    [
+     8185,
+     16,
+     256
+    ],
+    [
+     8185,
+     512
+    ],
+    [
+     8185,
+     1,
+     64
+    ],
+    [
+     8185,
+     4096
+    ],
+    [],
+    [],
+    [],
+    [
+     0
+    ],
+    [],
+    [],
+    [],
+    []
+   ],
+   "kernel": "_convert_req_index_to_global_index_kernel"
+  },
+  {
+   "op": "triton_poi_fused_add_mul_1",
+   "tag": "",
+   "ms": 6.320909499999998,
+   "kern": 75.0,
+   "calls": 75.0,
+   "dims": [
+    [
+     8185,
+     6144
+    ],
+    [
+     8185,
+     6144
+    ],
+    []
+   ],
+   "kernel": "triton_poi_fused_add_mul_1"
+  },
+  {
+   "op": "aten::mm",
+   "tag": "36864x6144",
+   "ms": 6.308160833333335,
+   "kern": 2.0,
+   "calls": 1.0,
+   "dims": [
+    [
+     8185,
+     36864
+    ],
+    [
+     36864,
+     6144
+    ]
+   ],
+   "kernel": "nvjet_sm90_tst_256x152_64x4_1x2_h_bz_coopA_TNT"
+  },
+  {
+   "op": "aten::add_",
+   "tag": "",
+   "ms": 6.168164333333327,
+   "kern": 75.0,
+   "calls": 75.0,
+   "dims": [
+    [
+     8185,
+     6144
+    ],
+    [
+     8185,
+     6144
+    ],
+    []
+   ],
+   "kernel": "void at::native::vectorized_elementwise_kernel<8, at::native::CUDAFunctor_add<c10::BFloat16>, std::array<char*, 3ul> >(int, at::native::CUDAFunctor_add<c10::BFloat16>, std::array<char*, 3ul>)"
+  },
+  {
+   "op": "_moe_C::moe_align_block_size",
+   "tag": "",
+   "ms": 5.455223000000003,
+   "kern": 300.0,
+   "calls": 150.0,
+   "dims": [
+    [
+     8185,
+     8
+    ],
+    [],
+    [],
+    [
+     81608
+    ],
+    [
+     1276
+    ],
+    [
+     1
+    ],
+    [
+     256
+    ]
+   ],
+   "kernel": "void vllm::moe::moe_align_block_size_kernel<int>(int const*, int*, int*, int*, int*, int, int, int, int, unsigned long, int*, int, int, bool)"
+  },
+  {
+   "op": "_moe_C::grouped_topk",
+   "tag": "",
+   "ms": 3.615018166666671,
+   "kern": 75.0,
+   "calls": 75.0,
+   "dims": [
+    [
+     8185,
+     256
+    ],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [
+     256
+    ],
+    []
+   ],
+   "kernel": "void vllm::moe::grouped_topk_fused_small_expert_count_kernel<float, float, int, (vllm::moe::ScoringFunc)1, 384, false, 8>(float*, float*, int*, float const*, long, long, long, long, long, long, bool, double)"
+  },
+  {
+   "op": "aten::mm",
+   "tag": "6144x256",
+   "ms": 3.4720228333333356,
+   "kern": 77.0,
+   "calls": 76.0,
+   "dims": [
+    [
+     8185,
+     6144
+    ],
+    [
+     6144,
+     256
+    ],
+    []
+   ],
+   "kernel": "nvjet_sm90_tss_128x128_64x6_1x2_h_bz_TNT"
+  },
+  {
+   "op": "_fused_indexer_q_rope_quant_kernel_0",
+   "tag": "",
+   "ms": 3.3619068333333337,
+   "kern": 21.0,
+   "calls": 21.0,
+   "dims": [
+    [
+     8185
+    ],
+    [
+     8185,
+     32,
+     128
+    ],
+    [],
+    [],
+    [
+     1048576,
+     64
+    ],
+    [],
+    [
+     8185,
+     32,
+     128
+    ],
+    [],
+    [],
+    [
+     8185,
+     32
+    ],
+    [],
+    [],
+    [
+     8185,
+     32
+    ],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    []
+   ],
+   "kernel": "_fused_indexer_q_rope_quant_kernel"
+  },
+  {
+   "op": "aten::mm",
+   "tag": "6144x6144",
+   "ms": 3.1195886666666666,
+   "kern": 12.0,
+   "calls": 9.0,
+   "dims": [
+    [
+     8185,
+     6144
+    ],
+    [
+     6144,
+     6144
+    ],
+    [
+     8185,
+     6144
+    ]
+   ],
+   "kernel": "nvjet_sm90_tst_256x152_64x4_1x2_h_bz_coopA_TNT"
+  },
+  {
+   "op": "triton_red_fused_4",
+   "tag": "",
+   "ms": 2.173116333333334,
+   "kern": 57.0,
+   "calls": 57.0,
+   "dims": [
+    [
+     8185,
+     2624
+    ],
+    [
+     512
+    ],
+    [
+     2048
+    ],
+    [
+     8185,
+     512
+    ],
+    [
+     8185,
+     2048
+    ],
+    [],
+    []
+   ],
+   "kernel": "triton_red_fused_4"
+  },
+  {
+   "op": "triton_poi_fused_mul_silu_slice_0",
+   "tag": "",
+   "ms": 1.6428131666666648,
+   "kern": 75.0,
+   "calls": 75.0,
+   "dims": [
+    [
+     8185,
+     1024
+    ],
+    [
+     8185,
+     512
+    ],
+    [],
+    [],
+    []
+   ],
+   "kernel": "triton_poi_fused_mul_silu_slice_0"
+  },
+  {
+   "op": "aten::mm",
+   "tag": "3072x6144",
+   "ms": 1.6381861666666664,
+   "kern": 12.0,
+   "calls": 9.0,
+   "dims": [
+    [
+     8185,
+     3072
+    ],
+    [
+     3072,
+     6144
+    ],
+    [
+     8185,
+     6144
+    ]
+   ],
+   "kernel": "nvjet_sm90_tst_256x152_64x4_1x2_h_bz_coopA_TNT"
+  },
+  {
+   "op": "_C_custom_ar::all_reduce",
+   "tag": "",
+   "ms": 1.2581770000000005,
+   "kern": 26.0,
+   "calls": 13.0,
+   "dims": [
+    [],
+    [
+     8,
+     6144
+    ],
+    [
+     8,
+     6144
+    ],
+    [],
+    []
+   ],
+   "kernel": "void vllm::cross_device_reduce_1stage<__nv_bfloat16, 4>(vllm::RankData*, vllm::RankSignals, vllm::Signal*, __nv_bfloat16*, int, int)"
+  },
+  {
+   "op": "triton_red_fused_3",
+   "tag": "",
+   "ms": 1.0254449999999997,
+   "kern": 20.0,
+   "calls": 20.0,
+   "dims": [
+    [
+     8185,
+     160
+    ],
+    [
+     128
+    ],
+    [
+     128
+    ],
+    [
+     8185,
+     2624
+    ],
+    [
+     2048
+    ],
+    [
+     512
+    ],
+    [
+     8185,
+     128
+    ],
+    [
+     8185,
+     2048
+    ],
+    [
+     8185,
+     512
+    ],
+    [],
+    [],
+    []
+   ],
+   "kernel": "triton_red_fused_3"
+  },
+  {
+   "op": "triton_red_fused_add_fused_add_rms_norm_2",
+   "tag": "",
+   "ms": 1.0154263333333333,
+   "kern": 6.0,
+   "calls": 6.0,
+   "dims": [
+    [
+     8185,
+     6144
+    ],
+    [
+     8185,
+     6144
+    ],
+    [
+     8185,
+     6144
+    ],
+    [
+     6144
+    ],
+    [
+     8185,
+     6144
+    ],
+    [
+     8185,
+     6144
+    ],
+    [
+     8185,
+     6144
+    ],
+    [],
+    []
+   ],
+   "kernel": "triton_red_fused_add_fused_add_rms_norm_2"
+  },
+  {
+   "op": "aten::mm",
+   "tag": "6144x160",
+   "ms": 0.7869480000000003,
+   "kern": 21.0,
+   "calls": 21.0,
+   "dims": [
+    [
+     8185,
+     6144
+    ],
+    [
+     6144,
+     160
+    ],
+    [
+     8185,
+     160
+    ]
+   ],
+   "kernel": "nvjet_sm90_tst_80x128_64x8_2x1_v_bz_TNN"
+  },
+  {
+   "op": "_C_cache_ops::concat_and_cache_mla",
+   "tag": "",
+   "ms": 0.7056818333333338,
+   "kern": 78.0,
+   "calls": 78.0,
+   "dims": [
+    [
+     8185,
+     512
+    ],
+    [
+     8185,
+     64
+    ],
+    [
+     6251,
+     64,
+     656
+    ],
+    [
+     8185
+    ],
+    [],
+    []
+   ],
+   "kernel": "void vllm::concat_and_cache_ds_mla_kernel<__nv_bfloat16, unsigned char, (vllm::Fp8KVCacheDataType)1>(__nv_bfloat16 const*, __nv_bfloat16 const*, unsigned char*, long const*, int, int, int, int, int, int, int, float const*)"
+  },
+  {
+   "op": "aten::mm",
+   "tag": "6144x3072",
+   "ms": 0.48489750000000004,
+   "kern": 2.0,
+   "calls": 1.0,
+   "dims": [
+    [
+     8185,
+     6144
+    ],
+    [
+     6144,
+     3072
+    ]
+   ],
+   "kernel": "nvjet_sm90_tst_256x152_64x4_1x2_h_bz_coopA_TNT"
+  },
+  {
+   "op": "aten::cat",
+   "tag": "",
+   "ms": 0.34495499999999996,
+   "kern": 1.0,
+   "calls": 1.0,
+   "dims": [
+    [
+     [
+      8185,
+      6144
+     ],
+     [
+      8185,
+      6144
+     ],
+     [
+      8185,
+      6144
+     ],
+     [
+      8185,
+      6144
+     ],
+     [
+      8185,
+      6144
+     ],
+     [
+      8185,
+      6144
+     ]
+    ],
+    []
+   ],
+   "kernel": "void at::native::(anonymous namespace)::CatArrayBatchedCopy_vectorized<at::native::(anonymous namespace)::OpaqueType<2u>, unsigned int, 2, 128, 1, 16, 8>(char*, at::native::(anonymous namespace)::CatArrInputTensorMetadata<at::native::(anonymous namespace)::OpaqueType<2u>, unsigned int, 128, 1>, at::native::(anonymous namespace)::TensorSizeStride<unsigned int, 4u>, int, unsigned int)"
+  },
+  {
+   "op": "aten::mm",
+   "tag": "6144x38720",
+   "ms": 0.2857406666666666,
+   "kern": 2.0,
+   "calls": 2.0,
+   "dims": [
+    [
+     1,
+     6144
+    ],
+    [
+     6144,
+     38720
+    ]
+   ],
+   "kernel": "nvjet_sm90_tst_192x8_64x8_2x1_v_bz_TNT"
+  },
+  {
+   "op": "triton_red_fused_fused_add_rms_norm_0",
+   "tag": "",
+   "ms": 0.2511875,
+   "kern": 3.0,
+   "calls": 3.0,
+   "dims": [
+    [
+     8185,
+     6144
+    ],
+    [
+     8185,
+     6144
+    ],
+    [
+     6144
+    ],
+    [
+     8185,
+     6144
+    ],
+    [],
+    []
+   ],
+   "kernel": "triton_red_fused_fused_add_rms_norm_0"
+  },
+  {
+   "op": "triton_poi_fused_3",
+   "tag": "",
+   "ms": 0.23388116666666656,
+   "kern": 58.0,
+   "calls": 58.0,
+   "dims": [
+    [
+     8185,
+     128
+    ],
+    [
+     8185
+    ],
+    [
+     1048576,
+     64
+    ],
+    [
+     8185,
+     2624
+    ],
+    [
+     8185,
+     64
+    ],
+    [
+     8185,
+     1,
+     32,
+     2
+    ],
+    [
+     8185,
+     64
+    ],
+    [],
+    []
+   ],
+   "kernel": "triton_poi_fused_3"
+  },
+  {
+   "op": "_C_cache_ops::cp_gather_indexer_k_quant_cache",
+   "tag": "",
+   "ms": 0.18282683333333336,
+   "kern": 21.0,
+   "calls": 21.0,
+   "dims": [
+    [
+     6251,
+     64,
+     132
+    ],
+    [
+     32740,
+     128
+    ],
+    [
+     32740,
+     4
+    ],
+    [
+     1,
+     6250
+    ],
+    [
+     2
+    ]
+   ],
+   "kernel": "void vllm::cp_gather_indexer_k_quant_cache_kernel<32>(char const*, char*, char*, int const*, int const*, int, long, long, long, long, long, int, int, int)"
+  },
+  {
+   "op": "_C_cache_ops::indexer_k_quant_and_cache",
+   "tag": "",
+   "ms": 0.1795413333333333,
+   "kern": 21.0,
+   "calls": 21.0,
+   "dims": [
+    [
+     8185,
+     128
+    ],
+    [
+     6251,
+     64,
+     132
+    ],
+    [
+     8185
+    ],
+    [],
+    []
+   ],
+   "kernel": "void vllm::indexer_k_quant_and_cache_kernel<__nv_bfloat16, unsigned char, (vllm::Fp8KVCacheDataType)1>(__nv_bfloat16 const*, unsigned char*, long const*, int, int, int, long, bool)"
+  },
+  {
+   "op": "triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_4",
+   "tag": "",
+   "ms": 0.1639845,
+   "kern": 1.0,
+   "calls": 1.0,
+   "dims": [
+    [
+     8185,
+     4096
+    ],
+    [
+     8185
+    ],
+    [
+     1048576,
+     64
+    ],
+    [
+     8185,
+     16,
+     256
+    ],
+    []
+   ],
+   "kernel": "triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_4"
+  },
+  {
+   "op": "aten::mm",
+   "tag": "6144x1536",
+   "ms": 0.1277931666666666,
+   "kern": 24.0,
+   "calls": 12.0,
+   "dims": [
+    [
+     8,
+     6144
+    ],
+    [
+     6144,
+     1536
+    ],
+    [
+     8,
+     1536
+    ]
+   ],
+   "kernel": "nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT"
+  },
+  {
+   "op": "triton_poi_fused_mul_silu_slice_1",
+   "tag": "",
+   "ms": 0.12700916666666667,
+   "kern": 3.0,
+   "calls": 3.0,
+   "dims": [
+    [
+     8185,
+     6144
+    ],
+    [
+     8185,
+     3072
+    ],
+    []
+   ],
+   "kernel": "triton_poi_fused_mul_silu_slice_1"
+  },
+  {
+   "op": "_C::rms_norm",
+   "tag": "",
+   "ms": 0.12355916666666668,
+   "kern": 2.0,
+   "calls": 2.0,
+   "dims": [
+    [
+     8185,
+     6144
+    ],
+    [
+     8185,
+     6144
+    ],
+    [
+     6144
+    ],
+    []
+   ],
+   "kernel": "void vllm::rms_norm_kernel<c10::BFloat16, 8, 4, true>(c10::BFloat16*, c10::BFloat16 const*, long, long, long, long, long, c10::BFloat16 const*, long, float, int, int)"
+  },
+  {
+   "op": "_C_cache_ops::reshape_and_cache_flash",
+   "tag": "",
+   "ms": 0.11481299999999994,
+   "kern": 12.0,
+   "calls": 12.0,
+   "dims": [
+    [
+     8185,
+     2,
+     128
+    ],
+    [
+     8185,
+     2,
+     128
+    ],
+    [
+     6251,
+     64,
+     2,
+     128
+    ],
+    [
+     6251,
+     64,
+     2,
+     128
+    ],
+    [
+     8185
+    ],
+    [],
+    [],
+    []
+   ],
+   "kernel": "void vllm::reshape_and_cache_flash_kernel<__nv_bfloat16, __nv_bfloat16, (vllm::Fp8KVCacheDataType)0>(__nv_bfloat16 const*, __nv_bfloat16 const*, __nv_bfloat16*, __nv_bfloat16*, long const*, long, long, long, long, long, int, int, int, float const*, float const*, int)"
+  },
+  {
+   "op": "triton_poi_fused_4",
+   "tag": "",
+   "ms": 0.11369249999999988,
+   "kern": 21.0,
+   "calls": 21.0,
+   "dims": [
+    [
+     8185,
+     128
+    ],
+    [
+     8185
+    ],
+    [
+     1048576,
+     64
+    ],
+    [
+     8185,
+     2624
+    ],
+    [
+     8185,
+     64
+    ],
+    [
+     8185,
+     1,
+     32,
+     2
+    ],
+    [
+     8185,
+     64
+    ],
+    [],
+    []
+   ],
+   "kernel": "triton_poi_fused_4"
+  },
+  {
+   "op": "(unjoined)",
+   "tag": "",
+   "ms": 0.10318083333333332,
+   "kern": 19.5,
+   "calls": 0.16666666666666666,
+   "dims": null,
+   "kernel": "void flashinfer::sampling::RadixTopKKernel_Unified<1024u, 8u, true, true, (flashinfer::sampling::RadixTopKMode)0, __nv_bfloat16, int>(__nv_bfloat16*, int*, __nv_bfloat16*, int const*, int*, int const*, int const*, long, unsigned int, unsigned int, unsigned int, flashinfer::sampling::RadixRowState*, flashinfer::sampling::RadixDeterministicCollectScratch*, unsigned int, unsigned int)"
+  },
+  {
+   "op": "_vllm_fa3_C::fwd",
+   "tag": "",
+   "ms": 0.09109100000000002,
+   "kern": 12.0,
+   "calls": 6.0,
+   "dims": [
+    [
+     8,
+     16,
+     128
+    ],
+    [
+     6251,
+     64,
+     2,
+     128
+    ],
+    [
+     6251,
+     64,
+     2,
+     128
+    ],
+    [],
+    [],
+    [],
+    [
+     8,
+     16,
+     128
+    ],
+    [
+     2
+    ],
+    [],
+    [],
+    [],
+    [
+     1
+    ],
+    [],
+    [],
+    [
+     1,
+     6250
+    ],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [
+     1,
+     2
+    ],
+    [
+     1,
+     2
+    ],
+    [
+     1,
+     2
+    ],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [
+     13
+    ],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    []
+   ],
+   "kernel": "void cutlass::device_kernel<flash::enable_sm90_or_later<flash::FlashAttnFwdSm90<flash::CollectiveMainloopFwdSm90<2, cute::tuple<cute::C<1>, cute::C<1>, cute::C<1> >, cute::tuple<cute::C<128>, cute::C<128>, cute::C<128> >, 128, cutlass::bfloat16_t, float, cutlass::arch::Sm90, false, true, false, true, true, false, false, true, true, true, true, false, cutlass::bfloat16_t, 1>, flash::CollectiveEpilogueFwd<cute::tuple<cute::C<128>, cute::C<128>, cute::C<128> >, cute::tuple<cute::C<1>, cute::C<1>, cute::C<1> >, cutlass::bfloat16_t, cutlass::arch::Sm90, 256, true, true, true, false, 1>, flash::VarlenDynamicPersistentTileScheduler<128, 128, 256, 128, true, true, true, true, false, true> > > >(flash::enable_sm90_or_later<flash::FlashAttnFwdSm90<flash::CollectiveMainloopFwdSm90<2, cute::tuple<cute::C<1>, cute::C<1>, cute::C<1> >, cute::tuple<cute::C<128>, cute::C<128>, cute::C<128> >, 128, cutlass::bfloat16_t, float, cutlass::arch::Sm90, false, true, false, true, true, false, false, true, true, true, true, false, cutlass::bfloat16_t, 1>, flash::CollectiveEpilogueFwd<cute::tuple<cute::C<128>, cute::C<128>, cute::C<128> >, cute::tuple<cute::C<1>, cute::C<1>, cute::C<1> >, cutlass::bfloat16_t, cutlass::arch::Sm90, 256, true, true, true, false, 1>, flash::VarlenDynamicPersistentTileScheduler<128, 128, 256, 128, true, true, true, true, false, true> > >::Params)"
+  },
+  {
+   "op": "aten::mm",
+   "tag": "6144x2560",
+   "ms": 0.08734700000000002,
+   "kern": 12.0,
+   "calls": 6.0,
+   "dims": [
+    [
+     8,
+     6144
+    ],
+    [
+     6144,
+     2560
+    ],
+    [
+     8,
+     2560
+    ]
+   ],
+   "kernel": "nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT"
+  },
+  {
+   "op": "aten::mm",
+   "tag": "2048x6144",
+   "ms": 0.06050483333333332,
+   "kern": 6.0,
+   "calls": 6.0,
+   "dims": [
+    [
+     8,
+     2048
+    ],
+    [
+     2048,
+     6144
+    ],
+    [
+     8,
+     6144
+    ]
+   ],
+   "kernel": "nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT"
+  },
+  {
+   "op": "triton_red_fused_rms_norm_1",
+   "tag": "",
+   "ms": 0.05621166666666667,
+   "kern": 1.0,
+   "calls": 1.0,
+   "dims": [
+    [
+     8185,
+     6144
+    ],
+    [
+     6144
+    ],
+    [
+     8185,
+     6144
+    ],
+    [],
+    []
+   ],
+   "kernel": "triton_red_fused_rms_norm_1"
+  },
+  {
+   "op": "triton_red_fused_2",
+   "tag": "",
+   "ms": 0.05074,
+   "kern": 1.0,
+   "calls": 1.0,
+   "dims": [
+    [
+     8185,
+     160
+    ],
+    [
+     128
+    ],
+    [
+     128
+    ],
+    [
+     8185,
+     2624
+    ],
+    [
+     2048
+    ],
+    [
+     512
+    ],
+    [
+     8185,
+     128
+    ],
+    [
+     8185,
+     2048
+    ],
+    [
+     8185,
+     512
+    ],
+    [],
+    [],
+    []
+   ],
+   "kernel": "triton_red_fused_2"
+  },
+  {
+   "op": "triton_poi_fused_add_bitwise_and_bitwise_not_bitwise_or_embedding_ge_lt_masked_fill_mul_sub_unsqueeze_0",
+   "tag": "",
+   "ms": 0.04004666666666667,
+   "kern": 2.0,
+   "calls": 2.0,
+   "dims": [
+    [
+     8185
+    ],
+    [
+     38720,
+     6144
+    ],
+    [
+     8185,
+     6144
+    ],
+    []
+   ],
+   "kernel": "triton_poi_fused_add_bitwise_and_bitwise_not_bitwise_or_embedding_ge_lt_masked_fill_mul_sub_unsqueeze_0"
+  },
+  {
+   "op": "triton_red_fused_add_arange_bitwise_and_constant_pad_nd_fused_add_rms_norm_ge_mul_select_slice_unsqueeze_view_3",
+   "tag": "",
+   "ms": 0.035673500000000004,
+   "kern": 6.0,
+   "calls": 6.0,
+   "dims": [
+    [
+     8,
+     6144
+    ],
+    [
+     2,
+     2,
+     6144
+    ],
+    [
+     8,
+     1536
+    ],
+    [
+     8,
+     6144
+    ],
+    [
+     6144
+    ],
+    [
+     8,
+     6144
+    ],
+    [
+     8,
+     6144
+    ],
+    [],
+    []
+   ],
+   "kernel": "triton_red_fused_add_arange_bitwise_and_constant_pad_nd_fused_add_rms_norm_ge_mul_select_slice_unsqueeze_view_3"
+  },
+  {
+   "op": "_C::rotary_embedding",
+   "tag": "",
+   "ms": 0.03428166666666666,
+   "kern": 1.0,
+   "calls": 1.0,
+   "dims": [
+    [
+     49110
+    ],
+    [
+     49110,
+     256
+    ],
+    [],
+    [],
+    [
+     1048576,
+     128
+    ],
+    [],
+    [],
+    []
+   ],
+   "kernel": "void vllm::rotary_embedding_kernel<c10::BFloat16, c10::BFloat16, true>(long const*, c10::BFloat16*, c10::BFloat16*, c10::BFloat16 const*, int, long, long, long, int, int, int, long, bool)"
+  },
+  {
+   "op": "vllm::all_gather",
+   "tag": "",
+   "ms": 0.032335333333333334,
+   "kern": 3.0,
+   "calls": 3.0,
+   "dims": [
+    [
+     1,
+     38720
+    ],
+    [],
+    [],
+    []
+   ],
+   "kernel": "ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)"
+  },
+  {
+   "op": "triton_red_fused_add_arange_bitwise_and_constant_pad_nd_fused_add_rms_norm_ge_mul_select_slice_unsqueeze_view_0",
+   "tag": "",
+   "ms": 0.031988833333333334,
+   "kern": 6.0,
+   "calls": 6.0,
+   "dims": [
+    [
+     2,
+     2,
+     6144
+    ],
+    [
+     8,
+     2,
+     384
+    ],
+    [
+     8,
+     6144
+    ],
+    [
+     8,
+     6144
+    ],
+    [
+     6144
+    ],
+    [
+     8,
+     6144
+    ],
+    [
+     8,
+     6144
+    ],
+    [],
+    []
+   ],
+   "kernel": "triton_red_fused_add_arange_bitwise_and_constant_pad_nd_fused_add_rms_norm_ge_mul_select_slice_unsqueeze_view_0"
+  },
+  {
+   "op": "triton_poi_fused_add_arange_bitwise_and_constant_pad_nd_ge_mul_select_slice_unsqueeze_view_1",
+   "tag": "",
+   "ms": 0.014804833333333337,
+   "kern": 11.0,
+   "calls": 11.0,
+   "dims": [
+    [
+     2,
+     2,
+     6144
+    ],
+    [
+     8,
+     1536
+    ],
+    [
+     8,
+     6144
+    ],
+    [
+     8,
+     384,
+     16
+    ],
+    [],
+    []
+   ],
+   "kernel": "triton_poi_fused_add_arange_bitwise_and_constant_pad_nd_ge_mul_select_slice_unsqueeze_view_1"
+  },
+  {
+   "op": "aten::index",
+   "tag": "",
+   "ms": 0.012484999999999994,
+   "kern": 6.0,
+   "calls": 6.0,
+   "dims": [
+    [
+     8185,
+     6144
+    ],
+    []
+   ],
+   "kernel": "void at::native::index_elementwise_kernel<128, 4, at::native::gpu_index_kernel<at::native::index_kernel_impl<at::native::OpaqueType<2> >(at::TensorIteratorBase&, c10::ArrayRef<long>, c10::ArrayRef<long>)::{lambda(char*, char const*, long)#1}>(at::TensorIteratorBase&, c10::ArrayRef<long>, c10::ArrayRef<long>, at::native::index_kernel_impl<at::native::OpaqueType<2> >(at::TensorIteratorBase&, c10::ArrayRef<long>, c10::ArrayRef<long>)::{lambda(char*, char const*, long)#1} const&, bool)::{lambda(int)#1}>(long, at::native::gpu_index_kernel<at::native::index_kernel_impl<at::native::OpaqueType<2> >(at::TensorIteratorBase&, c10::ArrayRef<long>, c10::ArrayRef<long>)::{lambda(char*, char const*, long)#1}>(at::TensorIteratorBase&, c10::ArrayRef<long>, c10::ArrayRef<long>, at::native::index_kernel_impl<at::native::OpaqueType<2> >(at::TensorIteratorBase&, c10::ArrayRef<long>, c10::ArrayRef<long>)::{lambda(char*, char const*, long)#1} const&, bool)::{lambda(int)#1})"
+  },
+  {
+   "op": "triton_poi_fused_5",
+   "tag": "",
+   "ms": 0.007583666666666669,
+   "kern": 5.0,
+   "calls": 5.0,
+   "dims": [
+    [
+     8,
+     2560
+    ],
+    [
+     8,
+     2,
+     1
+    ],
+    [
+     128
+    ],
+    [
+     8
+    ],
+    [
+     1048576,
+     128
+    ],
+    [
+     8,
+     16,
+     1
+    ],
+    [
+     128
+    ],
+    [
+     8,
+     2,
+     64
+    ],
+    [
+     8,
+     2,
+     64
+    ],
+    [
+     8,
+     16,
+     64
+    ],
+    [
+     8,
+     16,
+     64
+    ],
+    [],
+    []
+   ],
+   "kernel": "triton_poi_fused_5"
+  },
+  {
+   "op": "triton_poi_fused_mul_silu_slice_2",
+   "tag": "",
+   "ms": 0.0074768333333333345,
+   "kern": 6.0,
+   "calls": 6.0,
+   "dims": [
+    [
+     8,
+     6144
+    ],
+    [
+     8,
+     3072
+    ],
+    []
+   ],
+   "kernel": "triton_poi_fused_mul_silu_slice_2"
+  },
+  {
+   "op": "aten::cumsum",
+   "tag": "",
+   "ms": 0.007002500000000001,
+   "kern": 7.0,
+   "calls": 3.5,
+   "dims": [
+    [
+     1
+    ],
+    [],
+    [],
+    [
+     1
+    ]
+   ],
+   "kernel": "void at_cuda_detail::cub::detail::scan::DeviceScanKernel<at_cuda_detail::cub::detail::scan::policy_hub<int, int, int, unsigned int, std::plus<int> >::Policy1000, int const*, int*, at_cuda_detail::cub::ScanTileState<int, true>, std::plus<int>, at_cuda_detail::cub::NullType, unsigned int, int, false, at_cuda_detail::cub::NullType>(int const*, int*, at_cuda_detail::cub::ScanTileState<int, true>, int, std::plus<int>, at_cuda_detail::cub::NullType, unsigned int)"
+  },
+  {
+   "op": "triton_per_fused_4",
+   "tag": "",
+   "ms": 0.005813000000000001,
+   "kern": 5.0,
+   "calls": 5.0,
+   "dims": [
+    [
+     8,
+     2560
+    ],
+    [
+     8,
+     16,
+     1
+    ],
+    [
+     8,
+     2,
+     1
+    ],
+    [],
+    []
+   ],
+   "kernel": "triton_per_fused_4"
+  },
+  {
+   "op": "aten::sub",
+   "tag": "",
+   "ms": 0.004485166666666669,
+   "kern": 4.5,
+   "calls": 4.5,
+   "dims": [
+    [
+     2
+    ],
+    [],
+    []
+   ],
+   "kernel": "void at::native::elementwise_kernel<128, 2, at::native::gpu_kernel_impl_nocast<at::native::CUDAFunctor_add<int> >(at::TensorIteratorBase&, at::native::CUDAFunctor_add<int> const&)::{lambda(int)#1}>(int, at::native::gpu_kernel_impl_nocast<at::native::CUDAFunctor_add<int> >(at::TensorIteratorBase&, at::native::CUDAFunctor_add<int> const&)::{lambda(int)#1})"
+  },
+  {
+   "op": "aten::argmax",
+   "tag": "",
+   "ms": 0.004037333333333333,
+   "kern": 1.0,
+   "calls": 1.0,
+   "dims": [
+    [
+     1,
+     152
+    ],
+    [],
+    []
+   ],
+   "kernel": "void at::native::reduce_kernel<512, 1, at::native::ReduceOp<float, at::native::ArgMaxOps<float>, unsigned int, long, 4, 4> >(at::native::ReduceOp<float, at::native::ArgMaxOps<float>, unsigned int, long, 4, 4>)"
+  },
+  {
+   "op": "_vllm_fa3_C::get_scheduler_metadata",
+   "tag": "",
+   "ms": 0.003573333333333333,
+   "kern": 2.0,
+   "calls": 2.0,
+   "dims": [
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [
+     1
+    ],
+    [
+     2
+    ],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    []
+   ],
+   "kernel": "void flash::prepare_varlen_num_blocks_kernel<1, false>(int, int, int, int const*, int const*, int const*, int const*, int const*, int const*, int, int, int, int, int, cutlass::FastDivmod, cutlass::FastDivmod, int*, int*, int*, int*, int*, bool, bool, bool, int)"
+  },
+  {
+   "op": "triton_poi_fused_add_arange_bitwise_and_constant_pad_nd_ge_mul_select_slice_unsqueeze_view_2",
+   "tag": "",
+   "ms": 0.003349333333333333,
+   "kern": 1.0,
+   "calls": 1.0,
+   "dims": [
+    [
+     2,
+     2,
+     6144
+    ],
+    [
+     8,
+     1536
+    ],
+    [
+     8,
+     6144
+    ],
+    [
+     8,
+     384,
+     16
+    ],
+    [],
+    []
+   ],
+   "kernel": "triton_poi_fused_add_arange_bitwise_and_constant_pad_nd_ge_mul_select_slice_unsqueeze_view_2"
+  },
+  {
+   "op": "aten::gather",
+   "tag": "",
+   "ms": 0.003125333333333333,
+   "kern": 2.0,
+   "calls": 2.0,
+   "dims": [
+    [
+     1,
+     152
+    ],
+    [],
+    [
+     1,
+     1
+    ],
+    []
+   ],
+   "kernel": "void at::native::_scatter_gather_elementwise_kernel<128, 8, at::native::_cuda_scatter_gather_internal_kernel<false, at::native::OpaqueType<8>, long>::operator()<at::native::TensorAssign>(at::TensorIterator&, long, long, long, at::native::TensorAssign const&)::{lambda(int)#1}>(int, at::native::_cuda_scatter_gather_internal_kernel<false, at::native::OpaqueType<8>, long>::operator()<at::native::TensorAssign>(at::TensorIterator&, long, long, long, at::native::TensorAssign const&)::{lambda(int)#1})"
+  },
+  {
+   "op": "triton_red_fused_mul_rms_norm_1",
+   "tag": "",
+   "ms": 0.002768,
+   "kern": 1.0,
+   "calls": 1.0,
+   "dims": [
+    [
+     8,
+     6144
+    ],
+    [
+     6144
+    ],
+    [
+     8,
+     6144
+    ],
+    [],
+    []
+   ],
+   "kernel": "triton_red_fused_mul_rms_norm_1"
+  },
+  {
+   "op": "triton_poi_fused__unsafe_view_cat_expand_index_mm_mul_slice_unsqueeze_1",
+   "tag": "",
+   "ms": 0.002048,
+   "kern": 1.0,
+   "calls": 1.0,
+   "dims": [
+    [
+     1
+    ],
+    [
+     1,
+     7,
+     16
+    ],
+    [
+     154880,
+     256
+    ],
+    [
+     8,
+     256
+    ],
+    [
+     1,
+     7,
+     16,
+     256
+    ],
+    []
+   ],
+   "kernel": "triton_poi_fused__unsafe_view_cat_expand_index_mm_mul_slice_unsqueeze_1"
+  },
+  {
+   "op": "triton_poi_fused_0",
+   "tag": "",
+   "ms": 0.001792,
+   "kern": 1.0,
+   "calls": 1.0,
+   "dims": [
+    [
+     1,
+     7,
+     6144
+    ],
+    [
+     1,
+     7,
+     16
+    ],
+    [
+     154880,
+     256
+    ],
+    [
+     8,
+     6144
+    ],
+    [
+     1,
+     7,
+     16,
+     256
+    ]
+   ],
+   "kernel": "triton_poi_fused_0"
+  },
+  {
+   "op": "aten::_index_put_impl_",
+   "tag": "",
+   "ms": 0.001744,
+   "kern": 1.0,
+   "calls": 1.0,
+   "dims": [
+    [
+     1,
+     7
+    ],
+    [],
+    [
+     7
+    ],
+    [],
+    []
+   ],
+   "kernel": "void at::native::index_elementwise_kernel<128, 4, at::native::gpu_index_kernel<at::native::index_put_kernel_impl<at::native::OpaqueType<8> >(at::TensorIterator&, c10::ArrayRef<long>, c10::ArrayRef<long>)::{lambda(char*, char const*, long)#1}>(at::TensorIteratorBase&, c10::ArrayRef<long>, c10::ArrayRef<long>, at::native::index_put_kernel_impl<at::native::OpaqueType<8> >(at::TensorIterator&, c10::ArrayRef<long>, c10::ArrayRef<long>)::{lambda(char*, char const*, long)#1} const&, bool)::{lambda(int)#1}>(long, at::native::gpu_index_kernel<at::native::index_put_kernel_impl<at::native::OpaqueType<8> >(at::TensorIterator&, c10::ArrayRef<long>, c10::ArrayRef<long>)::{lambda(char*, char const*, long)#1}>(at::TensorIteratorBase&, c10::ArrayRef<long>, c10::ArrayRef<long>, at::native::index_put_kernel_impl<at::native::OpaqueType<8> >(at::TensorIterator&, c10::ArrayRef<long>, c10::ArrayRef<long>)::{lambda(char*, char const*, long)#1} const&, bool)::{lambda(int)#1})"
+  },
+  {
+   "op": "triton_per_fused_3",
+   "tag": "",
+   "ms": 0.0015411666666666666,
+   "kern": 1.0,
+   "calls": 1.0,
+   "dims": [
+    [
+     8,
+     2560
+    ],
+    [
+     8,
+     16,
+     1
+    ],
+    [
+     8,
+     2,
+     1
+    ],
+    [],
+    []
+   ],
+   "kernel": "triton_per_fused_3"
+  },
+  {
+   "op": "aten::add",
+   "tag": "",
+   "ms": 0.001008,
+   "kern": 1.0,
+   "calls": 1.0,
+   "dims": [
+    [
+     7,
+     16
+    ],
+    [],
+    []
+   ],
+   "kernel": "void at::native::vectorized_elementwise_kernel<2, at::native::CUDAFunctorOnSelf_add<long>, std::array<char*, 2ul> >(int, at::native::CUDAFunctorOnSelf_add<long>, std::array<char*, 2ul>)"
+  },
+  {
+   "op": "triton_poi_fused_add_permute_unsqueeze_view_2",
+   "tag": "",
+   "ms": 0.0009599999999999999,
+   "kern": 1.0,
+   "calls": 1.0,
+   "dims": [
+    [
+     1,
+     7,
+     16
+    ],
+    [
+     7,
+     16,
+     16
+    ],
+    [
+     1,
+     7,
+     16,
+     16
+    ],
+    []
+   ],
+   "kernel": "triton_poi_fused_add_permute_unsqueeze_view_2"
+  },
+  {
+   "op": "aten::arange",
+   "tag": "",
+   "ms": 0.0007146666666666665,
+   "kern": 1.0,
+   "calls": 1.0,
+   "dims": [
+    [],
+    [],
+    [],
+    [
+     0
+    ]
+   ],
+   "kernel": "void (anonymous namespace)::elementwise_kernel_with_index<int, at::native::arange_cuda_out(c10::Scalar const&, c10::Scalar const&, c10::Scalar const&, at::Tensor&)::{lambda()#1}::operator()() const::{lambda()#3}::operator()() const::{lambda(long)#1}>(int, at::native::arange_cuda_out(c10::Scalar const&, c10::Scalar const&, c10::Scalar const&, at::Tensor&)::{lambda()#1}::operator()() const::{lambda()#3}::operator()() const::{lambda(long)#1}, function_traits<at::native::arange_cuda_out(c10::Scalar const&, c10::Scalar const&, c10::Scalar const&, at::Tensor&)::{lambda()#1}::operator()() const::{lambda()#3}::operator()() const::{lambda(long)#1}>::result_type*)"
+  }
+ ]
+}

@@ -1,0 +1,122 @@
+rank 0: 6 chunks
+rank 1: 6 chunks
+rank 2: 6 chunks
+rank 3: 6 chunks
+
+========================================================================================================
+PREFILL CHUNK (8192 tokens), rank 0, mean of 6 chunks
+wall 1581.6 ms | GPU busy(union) 1632.4 ms | cumulative kernel 1778.1 ms | cum/busy 1.089 -> single-stream, shares are additive
+========================================================================================================
+operator                           tier/shape   calls        ms      %  operands
+_flashmla_C::sparse_decode_fwd                     78   583.502  35.74  [[1, 8185, 64, 576], [6251, 64, 1, 656], [
+aten::copy_                                       327   170.662  10.45  [[128], [128]]
+vllm::all_reduce                                  157   167.337  10.25  [[8185, 6144]]
+_moe_C::moe_wna16_marlin_gemm      cold w13        75   152.308   9.33  [[8185, 6144], [65480, 4096], [22, 384, 81
+_moe_C::moe_wna16_marlin_gemm      hot w13         75   122.757   7.52  [[8185, 6144], [65480, 4096], [42, 384, 81
+vllm::sparse_attn_indexer                          21    92.163   5.65  [[8185, 6144], [6251, 64, 132], [8185, 32,
+_moe_C::moe_wna16_marlin_gemm      cold w2         75    83.927   5.14  [[65480, 2048], [65480, 6144], [22, 128, 1
+_moe_C::moe_wna16_marlin_gemm      hot w2          75    67.666   4.15  [[65480, 2048], [65480, 6144], [42, 128, 1
+aten::mm                           4096x6144       78    50.609   3.10  [[8185, 4096], [4096, 6144], [8185, 6144]]
+aten::mm                           6144x2624       78    36.932   2.26  [[8185, 6144], [6144, 2624], [8185, 2624]]
+_C::top_k_per_row_prefill                          74    33.977   2.08  [[4099, 32740], [4099], [4099]]
+_C::silu_and_mul                                  150    33.299   2.04  [[65480, 2048], [65480, 4096]]
+aten::mm                           2048x4096       99    24.649   1.51  [[8185, 2048], [2048, 4096], [8185, 4096]]
+aten::fill_                                       258    14.398   0.88  [[1]]
+triton_poi_fused_add_copy_index_se                 77    13.434   0.82  [[8185, 4096], [8185], [1048576, 64]]
+aten::mm                           6144x1024       75    11.898   0.73  [[8185, 6144], [6144, 1024]]
+_moe_C::moe_sum                                   150    11.886   0.73  [[8185, 8, 6144], [8185, 6144], [8185, 8]]
+aten::bmm                                         157    11.559   0.71  [[16, 8185, 192], [16, 192, 512], [16, 818
+triton_red_fused_fused_add_rms_nor                 72    11.388   0.70  [[8185, 6144], [8185, 6144], [8185, 6144]]
+triton_red_fused_fused_add_rms_nor                 75    10.534   0.65  [[8185, 6144], [8185, 6144], [6144]]
+aten::mm                           512x6144        75     7.179   0.44  [[8185, 512], [512, 6144]]
+_C_cache_ops::concat_mla_q                         78     7.139   0.44  [[8185, 16, 512], [8185, 16, 64], [8185, 1
+triton_poi_fused_add_mul_1                         75     6.727   0.41  [[8185, 6144], [8185, 6144]]
+aten::mm                           36864x6144       1     6.351   0.39  [[8185, 36864], [36864, 6144]]
+vllm::unified_mla_attention_with_o                 78     6.322   0.39  [[8185, 16, 256], [8185, 512], [8185, 1, 6
+aten::add_                                         75     6.190   0.38  [[8185, 6144], [8185, 6144]]
+(56 smaller roles)                                       33.271   2.04
+TOTAL                                                  1778.063 108.92
+
+--------------------------------------------------------------------------------------------------------
+PER-CHUNK TREND (does it grow with context?)  ms per chunk, rank 0
+role                                                c1        c2        c3        c4        c5        c6
+_flashmla_C::sparse_decode_fwd                  579.26    582.06    579.46    586.16    588.51    585.57
+vllm::sparse_attn_indexer                        50.28     71.40     86.67    103.00    108.21    133.43
+_C::top_k_per_row_prefill                        22.42     28.39     31.03     36.11     40.40     45.52
+vllm::all_reduce                                166.38    162.95    172.78    159.75    169.80    172.36
+_moe_C::moe_wna16_marlin_gemm hot w13           118.41    126.24    122.99    125.83    120.95    122.12
+
+wrote /e/project1/profound/alint77/vllm/agent_space/experiments/2026-09-05-cold-prefetch/prod53-staged-roles-1679047.json
+
+--------------------------------------------------------------------------------------------------------
+RANK 1 MINUS MEAN(OTHERS), ms per chunk  (rank 1 arrives last 58.8% of the time)
+role                                                 r0       r1       r2       r3   r1-mean
+_flashmla_C::sparse_decode_fwd                   583.50   594.63   594.61   596.58     +3.07
+aten::copy_                                      170.66   170.14   170.47   170.23     -0.32
+vllm::all_reduce                                 167.34   118.23   143.73   147.83    -34.74
+_moe_C::moe_wna16_marlin_gemm cold w13           152.31   157.56   154.05   153.00     +4.44
+_moe_C::moe_wna16_marlin_gemm hot w13            122.76   120.81   122.63   120.16     -1.04
+vllm::sparse_attn_indexer                         92.16    97.64    94.32    94.55     +3.97
+_moe_C::moe_wna16_marlin_gemm cold w2             83.93    87.05    84.76    84.37     +2.70
+_moe_C::moe_wna16_marlin_gemm hot w2              67.67    66.93    67.43    66.29     -0.20
+aten::mm 4096x6144                                50.61    58.02    52.18    52.67     +6.20
+aten::mm 6144x2624                                36.93    48.31    40.35    38.68     +9.65
+_C::top_k_per_row_prefill                         33.98    34.51    34.67    34.41     +0.16
+_C::silu_and_mul                                  33.30    33.69    33.72    33.63     +0.14
+aten::mm 2048x4096                                24.65    28.56    25.56    25.46     +3.33
+aten::fill_                                       14.40    14.41    14.41    14.41     +0.00
+-- GPU busy per chunk --                        1632.43  1633.06  1632.78  1632.80
+
+--------------------------------------------------------------------------------------------------------
+ONE MoE LAYER IN LAUNCH ORDER (chunk 3, between all-reduce #40 and #42)
+  #        us  kernel                                                         operator
+  0     474.7  ncclDevKernel_AllReduce_Sum_bf16_RING_LL(ncclDevKernelArgsStor vllm::all_reduce
+  1     186.0  triton_red_fused_add_fused_add_rms_norm_2                      triton_red_fused_add_fused_add_rms
+  2       1.6  Memset (Device)                                                aten::mm
+  3     464.9  nvjet_sm90_tst_192x176_64x4_2x1_v_bz_coopB_TNT                 aten::mm
+  4       4.3  triton_poi_fused_3                                             triton_poi_fused_3
+  5      41.6  triton_red_fused_4                                             triton_red_fused_4
+  6       1.7  Memset (Device)                                                aten::mm
+  7     262.9  nvjet_sm90_tst_256x144_64x4_2x1_v_bz_coopA_TNT                 aten::mm
+  8     184.5  triton_poi_fused_add_copy_index_select_mul_slice_split_stack_s triton_poi_fused_add_copy_index_se
+  9      10.0  void vllm::concat_and_cache_ds_mla_kernel<__nv_bfloat16, unsig _C_cache_ops::concat_and_cache_mla
+ 10       1.6  Memset (Device)                                                aten::bmm
+ 11      69.1  nvjet_sm90_tst_128x256_64x4_2x1_v_bz_coopA_NNN                 aten::bmm
+ 12      97.3  void vllm::ConcatMLAQKernel<c10::BFloat16, 512>(c10::BFloat16* _C_cache_ops::concat_mla_q
+ 13      81.7  _convert_req_index_to_global_index_kernel                      vllm::unified_mla_attention_with_o
+ 14     178.4  void at::native::vectorized_elementwise_kernel<8, at::native:: aten::fill_
+ 15     202.8  void at::native::elementwise_kernel<128, 4, at::native::gpu_ke aten::copy_
+ 16    7423.0  void sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_spars _flashmla_C::sparse_decode_fwd
+ 17      41.7  void smxx::decode::flash_fwd_mla_combine_kernel<cutlass::bfloa _flashmla_C::sparse_decode_fwd
+ 18       0.7  Memset (Device)                                                aten::bmm
+ 19      82.0  nvjet_sm90_tst_128x304_64x3_2x1_v_bz_coopA_TNT                 aten::bmm
+ 20       0.7  Memset (Device)                                                aten::mm
+ 21     633.2  nvjet_sm90_tst_256x152_64x4_1x2_h_bz_coopA_TNT                 aten::mm
+ 22     961.0  ncclDevKernel_AllReduce_Sum_bf16_RING_LL(ncclDevKernelArgsStor vllm::all_reduce
+ 23     140.7  triton_red_fused_fused_add_rms_norm_moe_forward_shared_0       triton_red_fused_fused_add_rms_nor
+ 24      48.0  nvjet_sm90_tss_128x128_64x6_1x2_h_bz_TNT                       aten::mm
+ 25     157.7  nvjet_sm90_tst_128x256_64x4_2x1_v_bz_coopA_TNN                 aten::mm
+ 26      21.4  triton_poi_fused_mul_silu_slice_0                              triton_poi_fused_mul_silu_slice_0
+ 27       0.7  Memset (Device)                                                aten::mm
+ 28      91.5  nvjet_sm90_tst_256x152_64x4_1x2_h_bz_coopA_TNT                 aten::mm
+ 29      47.0  void vllm::moe::grouped_topk_fused_small_expert_count_kernel<f _moe_C::grouped_topk
+ 30      26.0  void vllm::moe::moe_align_block_size_kernel<int>(int const*, i _moe_C::moe_align_block_size
+ 31       7.7  void vllm::moe::count_and_sort_expert_tokens_kernel<int>(int c _moe_C::moe_align_block_size
+ 32       0.9  void at::native::vectorized_elementwise_kernel<4, at::native:: aten::fill_
+ 33    2306.0  void marlin_moe_wna16::Marlin<1125899906909960l, 1125899907892 _moe_C::moe_wna16_marlin_gemm [hot]
+ 34     222.2  void vllm::act_and_mul_kernel<c10::BFloat16, __nv_bfloat162, & _C::silu_and_mul
+ 35    1258.5  void marlin_moe_wna16::Marlin<1125899906909960l, 1125899907892 _moe_C::moe_wna16_marlin_gemm [hot]
+ 36      85.7  void vllm::moe::moe_sum_vec_kernel<c10::BFloat16, int, 8, true _moe_C::moe_sum
+ 37      55.1  Memcpy DtoD (Device -> Device)                                 aten::copy_
+ 38      36.0  void vllm::moe::moe_align_block_size_kernel<int>(int const*, i _moe_C::moe_align_block_size
+ 39       6.4  void vllm::moe::count_and_sort_expert_tokens_kernel<int>(int c _moe_C::moe_align_block_size
+ 40       1.0  void at::native::vectorized_elementwise_kernel<4, at::native:: aten::fill_
+ 41    1790.0  void marlin_moe_wna16::Marlin<1125899906909960l, 1125899907892 _moe_C::moe_wna16_marlin_gemm [cold]
+ 42     219.3  void vllm::act_and_mul_kernel<c10::BFloat16, __nv_bfloat162, & _C::silu_and_mul
+ 43     989.0  void marlin_moe_wna16::Marlin<1125899906909960l, 1125899907892 _moe_C::moe_wna16_marlin_gemm [cold]
+ 44      77.8  void vllm::moe::moe_sum_vec_kernel<c10::BFloat16, int, 8, true _moe_C::moe_sum
+ 45      82.6  void at::native::vectorized_elementwise_kernel<8, at::native:: aten::add_
+ 46      55.5  Memcpy DtoD (Device -> Device)                                 aten::copy_
+ 47      88.8  triton_poi_fused_add_mul_1                                     triton_poi_fused_add_mul_1
+ 48    2245.5  Memcpy HtoD (Pinned -> Device)                                 aten::copy_
+ 49     619.6  ncclDevKernel_AllReduce_Sum_bf16_RING_LL(ncclDevKernelArgsStor vllm::all_reduce

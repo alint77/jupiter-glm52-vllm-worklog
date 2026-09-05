@@ -1,0 +1,8 @@
+role                                        ms      %       AI   achieved    effBW      roof   eff%
+---------------------------------------------------------------------------------------------------
+routed MoE Marlin W4 hot w13             123.1    6.3      664     233 TF     350G      989T   23.5
+routed MoE Marlin W4 hot w2               67.5    3.4      572     212 TF     371G      989T   21.5
+routed MoE Marlin W4 cold w13            401.4   20.4      664      83 TF     124G      248T   33.4
+routed MoE Marlin W4 cold w2             203.2   10.3      572      82 TF     143G      213T   38.3
+
+per-expert: hot 85.7 us, cold 234.7 us (+173.9% vs hot)
