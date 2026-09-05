@@ -19,6 +19,9 @@ either 450 GB/s or the 373 GB/s measured rate; worst case is 7.04x margin at a
 | `PLAN.md` | design, hooks, gating, phases, kill criteria, risks |
 | `all64_tier_probe.py` | resolves whether the all-64-expert layers are hot or cold |
 | `all64-tier-1665068.txt` | its output: they are **hot**, so no all-cold-64 layer exists |
+| `PHASE1.md` | DMA microbenchmark: all three mechanisms reach 417-421 GB/s |
+| `PHASE2.md` | in situ staging, verified, still executing from Grace |
+| `PHASE3.md` | cold tier executes from the staged slot (weights **and** scales) |
 
 ## Two facts that shaped the design
 
