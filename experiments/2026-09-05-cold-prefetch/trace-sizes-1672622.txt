@@ -1,0 +1,7 @@
+512	/e/project1/profound/alint77/traces/prod-prefetch-1672622/capture-report.json
+58M	/e/project1/profound/alint77/traces/prod-prefetch-1672622/decode
+51M	/e/project1/profound/alint77/traces/prod-prefetch-1672622/prefill
+24K	/e/project1/profound/alint77/traces/prod-prefetch-1672622/profiler_out_0.txt
+24K	/e/project1/profound/alint77/traces/prod-prefetch-1672622/profiler_out_1.txt
+24K	/e/project1/profound/alint77/traces/prod-prefetch-1672622/profiler_out_2.txt
+24K	/e/project1/profound/alint77/traces/prod-prefetch-1672622/profiler_out_3.txt
