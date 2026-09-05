@@ -14,6 +14,8 @@ import urllib.request
 from pathlib import Path
 
 BASE = "http://127.0.0.1:8027"
+# Overridden by --model. The served name differs per launcher, and a name the
+# server does not know returns 404 from /v1/completions, not a clear error.
 MODEL = "glm53-cmp-tiered"
 
 
@@ -113,10 +115,14 @@ def move_traces(trace_root: Path, label: str) -> int:
 
 
 def main() -> None:
+    global MODEL
     parser = argparse.ArgumentParser()
     parser.add_argument("--prompts", required=True)
     parser.add_argument("--trace-root", required=True)
+    parser.add_argument("--model", default=MODEL,
+                        help="served-model-name of the target server")
     args = parser.parse_args()
+    MODEL = args.model
 
     prompts = [
         json.loads(line)["prompt"]

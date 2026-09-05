@@ -112,6 +112,11 @@ report() {
 }
 
 # ---------------- arm 1: prod config boots with the flag ----------------
+# Job 1673979 already proved this arm; PROD53_SKIP_BOOT=1 goes straight to the
+# traced pair rather than spending seven minutes reloading to re-prove it.
+if [[ "${PROD53_SKIP_BOOT:-0}" == 1 ]]; then
+  echo "=== boot: skipped (proved in job 1673979) ==="
+else
 start_server boot 1024 notrace --enable-prefix-caching
 curl -fsS http://127.0.0.1:8027/v1/completions -H 'Content-Type: application/json' \
   -d '{"model":"glm53-w4a16-tiered","prompt":"The capital of France is","max_tokens":8,"temperature":0}' \
@@ -127,6 +132,7 @@ print(json.dumps(json.load(urllib.request.urlopen(req, timeout=900))))
 PY
 report boot
 stop_server
+fi
 
 # ---------------- arms 2 and 3: traced pair, prefix caching off ----------
 for arm in baseline staged; do
@@ -135,7 +141,8 @@ for arm in baseline staged; do
   curl -fsS http://127.0.0.1:8027/v1/completions -H 'Content-Type: application/json' \
     -d '{"model":"glm53-w4a16-tiered","prompt":"The capital of France is","max_tokens":8,"temperature":0}' \
     >"${result_dir}/prod53-${arm}-smoke.json"
-  .venv/bin/python "${input_dir}/capture.py" --prompts "${prompts}" --trace-root "${trace_root}"
+  .venv/bin/python "${input_dir}/capture.py" --prompts "${prompts}" \
+    --trace-root "${trace_root}" --model glm53-w4a16-tiered
   cp "${trace_root}/capture-report.json" "${result_dir}/prod53-${arm}-capture-${SLURM_JOB_ID}.json"
   printf '%s\n' "${trace_root}" >"${result_dir}/prod53-${arm}-tracepath-${SLURM_JOB_ID}.txt"
   report "${arm}"
