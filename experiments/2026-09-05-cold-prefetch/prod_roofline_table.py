@@ -30,7 +30,6 @@ BF16, FP8 = 989e12, 1979e12
 NVL_AGG = 450e9
 L, M, TOPK, EP = 75, 8192, 8, 4
 ROWS = M * TOPK / EP
-GROUP = 64
 
 
 def main() -> int:
@@ -43,6 +42,14 @@ def main() -> int:
         choices=("hbm", "c2c"),
         default="hbm",
         help="Where the cold tier reads from: hbm when staged, c2c when not.",
+    )
+    ap.add_argument(
+        "--group",
+        type=int,
+        required=True,
+        help="Quantisation group size: 32 for GLM-5.3 W4A16 (compressed-tensors), "
+             "64 for GLM-5.2 AutoRound W4G64. It sets the scale-group count per "
+             "expert, so a wrong value misprices every Marlin row.",
     )
     args = ap.parse_args()
 
@@ -61,7 +68,7 @@ def main() -> int:
             if key not in R:
                 continue
             r = R[key]
-            g = K // GROUP
+            g = K // args.group
             rows = ROWS * E / 64
             flops = 2 * rows * K * N * L
             byts = (E * kp * npk * 4 + E * g * n2 * 2) * L + (
