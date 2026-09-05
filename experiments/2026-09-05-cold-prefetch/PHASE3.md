@@ -175,3 +175,43 @@ staged kernel is selected; it does not prove it reads at HBM rate. That is the
 first phase-5 question: one profiled chunk through `prefill_roofline.py` shows
 whether staged cold Marlin now sits at the hot tier's ~250 GB/s or somewhere
 between.
+
+## Phase 3b result: there is a race, and VERIFY was hiding it
+
+`staged_noverify`, one server, three reps per prompt:
+
+| prompt | rep0 | rep2 |
+| --- | --- | --- |
+| long | `</think>` | ` Show` |
+| chunk | `130` | `9` |
+| mid | `owners` | `owners` |
+
+Both baseline arms (`baseline1`, and `baseline2` after a full restart) were
+stable across every rep and every prompt. Greedy decoding at temperature 0 that
+does not reproduce itself **on the same server process** is a data race.
+
+This also explains phase 3. `verify_staged` runs `torch.equal` and reads the
+result, a host sync on every layer, and phase 3 ran with `VERIFY=1`. That sync
+serialised the copy stream against compute and masked the race, which is why
+phase 3 looked internally consistent. The 1924/0 byte compares are not
+falsified -- they prove the copy landed -- but they were never evidence of
+correct ordering, because the check enforced the very property it was auditing.
+
+The timings agree: `staged_noverify` runs the long prompt in 19.82 s against
+the baseline's 23.4 s (-15%, matching the roofline's 268 ms/chunk x 12), where
+phase 3 with `VERIFY=1` gained only 1.84 s. The verify costs ~1.7 s and buys
+false confidence.
+
+The unit tests said in their own docstring that cross-stream ordering was not
+covered, and the gap was argued away from the source instead of measured. The
+standing lesson -- settle it with a probe, not a trace -- applied and was not
+followed.
+
+### Next
+
+1. Confirm with `staged_verify` (same job): it should come back deterministic.
+2. Locate the race by probe, not by reading: run the staging with the copy
+   issued on the compute stream itself. If the non-determinism disappears, the
+   fault is in the cross-stream handoff rather than in the staging logic.
+3. The performance case is unaffected and strong (cold Marlin 580.4 -> 223.9
+   ms/chunk at 333/351 GB/s). Correctness has to land before any of it counts.
