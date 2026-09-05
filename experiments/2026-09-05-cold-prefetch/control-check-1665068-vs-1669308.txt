@@ -1,0 +1,41 @@
+Control check: is the -14.1% GLM-5.3 pair a valid before/after?
+
+Pair:  baseline 1665068 (2026-09-04, prefetch OFF, OLDER COMMIT, 6 chunks)
+       staged   1669308 (2026-09-05, prefetch ON,  new code,     7 chunks)
+Wall:  1902.5 ms -> 1634.3 ms = -14.10%   <- the figure quoted in PHASE7
+
+Rows the prefetch CANNOT touch (ms/chunk, rank 0):
+
+  role                        baseline    staged    delta
+  sparse_decode_fwd            543.809   601.755   +10.7%   <- flat per chunk in both
+  sparse_attn_indexer           95.083   109.664   +15.3%   <- grows with context
+  top_k_per_row_prefill         33.724    37.758   +12.0%   (calls 81 -> 88)
+  silu_and_mul                  32.838    33.911    +3.3%
+  hot w13                      127.720   134.700    +5.5%
+  hot w2                        69.996    74.193    +6.0%
+
+VERDICT: FAIL. Control rows move +3% to +15%, far outside the ~1-3% rank
+spread. sparse_decode_fwd is flat across chunks in both arms (541-547 vs
+594-609), so its +10.7% is NOT the extra-chunk artifact -- it is a genuine
+run/code difference. top_k call count 81 -> 88 also indicates the two traces
+are not the same execution shape. The chunk-count difference (6 vs 7) further
+inflates the context-growing rows in the staged arm.
+
+Rows the prefetch DOES touch are directly comparable (identical shapes and
+expert counts -- cold [20,384,...], hot [44,384,...] in both):
+
+  cold w13                     385.333   144.328   -62.5%
+  cold w2                      195.101    79.572   -59.2%
+  cold Marlin total            580.434   223.900   -61.4%
+  hot Marlin total             197.716   208.893    +5.7%
+  all_reduce                   195.637   150.990   -22.8%
+
+So the MoE result stands; the -14.1% WALL number does not. The confounds run
+AGAINST the staged arm (slower attention, one deeper chunk), so -14.1%
+if anything understates the MoE gain -- but it is not a clean wall delta.
+
+Defensible wall numbers come from the matched same-allocation pairs instead:
+  phase 3 (job 1669068): 23.53 s -> 21.69 s  = -7.8%
+  phase 5 (job 1669612): 23.36 s -> 19.60 s  = -16.1%
+Both arms in one allocation, one code version, only MIN_TOKENS differing.
+The spread between them (-7.8 vs -16.1) is itself worth reporting.

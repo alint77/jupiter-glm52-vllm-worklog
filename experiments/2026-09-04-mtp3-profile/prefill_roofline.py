@@ -98,6 +98,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", default="/e/project1/profound/alint77/traces/mtp3-profile-1665068/prefill")
     ap.add_argument("--out", type=Path)
+    ap.add_argument("--max-chunks", type=int,
+                    help="Use only the first N chunks. Two traces that caught "
+                         "a different number of chunks are not comparable on "
+                         "context-growing roles without this.")
     a = ap.parse_args()
     root = Path(a.root)
 
@@ -109,6 +113,8 @@ def main():
         walls, busies, nch = [], [], 0
         per_chunk_role = []
         for ops, wall in chunks_of(p):
+            if a.max_chunks and nch >= a.max_chunks:
+                break
             nch += 1
             tier = tag_tiers(ops)
             walls.append(wall)

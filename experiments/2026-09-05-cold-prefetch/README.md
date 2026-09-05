@@ -25,6 +25,18 @@ either 450 GB/s or the 373 GB/s measured rate; worst case is 7.04x margin at a
 | `PHASE4.md` | the planner budgets the slot; verified to precede the reserve check |
 | `PHASE5.md` | paired GSM8K gate: p=0.888 over 1319 questions, prefill -16.1% |
 | `PHASE6.md` | the same gate on the single-stream M=8192 path: p=1.000 over 1000 |
+| `PHASE7.md` | second-quantiser validation (GLM-5.2 AutoRound W4G64, auto_gptq) |
+| `PHASE8.md` | enabled in **production** (GLM-5.3 W4A16 + DFlash2) and traced there |
+| `prod52-matched-c1c6.txt` | phase 7's arms matched on chunk count: -12.4%, not -11.2% |
+| `control-check-1665068-vs-1669308.txt` | why the -14.1% cross-commit pair is not a valid before/after |
+| `planner_staging_probe.py` | prices the staging budget off-node against the real checkpoint |
+| `job-prod53.sh` | the production three-arm job: boot test + traced baseline/staged |
+
+**Which checkpoint is production:** `GLM-5.3-W4A16` served by
+`experiments/2026-09-04-glm53-c1-df2/server.sbatch` via `claude-glm53-c1-df2.sh`.
+Phases 1-6 all ran that checkpoint with `glm53-w4a16-2496.json`, so the
+accuracy gates cover production directly. Phase 7 briefly mistook GLM-5.2
+AutoRound for production — see the correction at the top of `PHASE7.md`.
 
 ## Two facts that shaped the design
 

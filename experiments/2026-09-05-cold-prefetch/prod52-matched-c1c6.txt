@@ -1,0 +1,42 @@
+GLM-5.2 AutoRound W4G64 (NOT production): matched c1-c6 comparison.
+
+The staged trace caught 7 chunks and the baseline 6. Chunk 7 is a full chunk,
+not a tail (sparse_decode_fwd 581.96, in line with c1-c6), but it sits deeper
+in context, so context-growing roles are inflated by including it. Restricting
+the staged arm to its first 6 chunks (prefill_roofline.py --max-chunks 6)
+matches the arms.
+
+  role                 baseline(6)   staged(c1-c6)     delta
+  wall ms                  1821.1          1595.1    -12.4%
+  GPU busy ms              1881.2          1645.0    -12.6%
+  cum/busy                  1.000           1.070   overlap appears
+
+  cold w13                292.267         117.655    -59.7%
+  cold w2                 148.179          66.179    -55.3%
+  COLD TOTAL              440.446         183.834    -58.3%
+
+  hot w13                 155.195         156.672     +1.0%
+  hot w2                   85.262          86.118     +1.0%
+  HOT TOTAL               240.457         242.790     +1.0%
+
+  all_reduce              189.891         155.270    -18.2%
+  sparse_decode_fwd       552.077         577.959     +4.7%
+  aten::copy_              23.479         138.983   +115.5 ms (the staging copy)
+
+Expert counts are identical between arms (cold [12,384,...], hot [52,384,...]),
+so the Marlin rows are directly comparable.
+
+WHERE THE COPY COSTS TIME. stage(L+1) is issued after apply_tiered for layer L
+and joined at L+1's MoE, so the copy is in flight during the post-MoE
+all-reduce and during L+1's attention/indexer/dense-mm -- but NOT during hot or
+cold Marlin, which run after the join and before the next stage. So:
+
+  * hot Marlin +1.0% is near-noise, as the ordering predicts. PHASE7's earlier
+    "+3.2% hot from copy-stream contention" was both the wrong number (it came
+    from the unmatched 7-chunk mean) and the wrong mechanism -- hot Marlin is
+    the one role that cannot be contended.
+  * sparse_decode_fwd +4.7% (+25.9 ms) IS the contention, and it is the real
+    cost of the feature. It was not reported at all before.
+
+Net: -12.4% wall while paying ~26 ms of attention contention to save 257 ms of
+cold Marlin.
