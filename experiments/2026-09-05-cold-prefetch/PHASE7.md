@@ -73,6 +73,41 @@ result. Cold sitting slightly ahead is consistent rather than surprising: cold
 layers hold fewer experts on average (28.3 against 35.7), so each Marlin call
 loops over fewer experts for the same routed rows.
 
+## Before and after, both traced on the production checkpoint
+
+Job `1672712` is the same capture with `MIN_TOKENS=0`. Its residency is
+2714 hot / 2086 cold and it logs no staging lines at all, so the off arm is
+genuinely off.
+
+| | baseline | staged | |
+| --- | --- | --- | --- |
+| prefill wall | 1821.1 ms | **1616.9 ms** | **-11.2%** |
+| cold Marlin | 440.4 ms | **182.7 ms** | **-58.5%** |
+| hot Marlin | 240.5 ms | 244.8 ms | +1.8% |
+| cold per-expert | 211.1 us | **86.0 us** | **-59.3%** |
+| hot per-expert | 88.6 us | 91.5 us | +3.2% |
+| cold effBW | 133 / 153 GB/s | **338 / 351 GB/s** | 2.5x / 2.3x |
+| `cum/busy` | 1.000 | 1.069 | overlap appears |
+
+**The cold tier went from 2.38x the hot tier's per-expert cost to 0.94x.** Total
+MoE Marlin time falls 37.2%, from 680.9 to 427.5 ms per chunk.
+
+Three details worth keeping:
+
+* The hot tier pays 3.2% per expert -- copy-stream contention for HBM
+  bandwidth. Its absolute time barely moves (240.5 -> 244.8 ms) because it also
+  gained the 37 experts the slot cost.
+* Staging moved **more** work into the cold tier (2086 -> 2123 experts) and the
+  cold tier still got 58.5% faster.
+* `cum/busy` moves from exactly 1.000 to 1.069, which is the copy stream
+  overlapping. In the baseline there is nothing to overlap with.
+* All-reduce drops 189.9 -> 153.0 ms. That is not a communication change; it is
+  arrival skew shrinking as the per-rank MoE time becomes more uniform.
+
+The -11.2% is smaller than GLM-5.3's -14.1%, and for a structural reason: this
+checkpoint's placement leaves fewer experts cold (2086 of 4800) than GLM-5.3's
+did (2475 of 4800), so there is less slow work available to accelerate.
+
 ## Corrections carried into this analysis
 
 The 2026-09-04 roofline table cannot be reused here unchanged. It hardcodes 192
