@@ -254,6 +254,43 @@ because there was no determinism to begin with. It does cost time --
 baseline at 23.4 s. **With `VERIFY=0` the staged arm is 15.3% faster end to
 end.**
 
+### Averaging over reps: mostly reassuring, one prompt to watch
+
+Averaging each arm's top-20 logprob vector over its three reps cuts the noise
+by root-3. Judged against the same-config control (`baseline1` vs `baseline2`),
+which is the only honest yardstick here:
+
+| prompt | control d | cross-config d | separable? |
+| --- | --- | --- | --- |
+| long | 0.280 | 0.209-0.346 | no |
+| mid | 0.539 | 0.250-0.615 | no |
+| chunk | 0.308 | 0.474-1.111 | **yes** |
+
+Two readings, and the honest one is not the flattering one. `long` and `mid`
+show cross-config distances inside the same-config control: no detectable
+effect. `chunk` does not -- cross-config distance runs 1.5x to 3.6x the
+control.
+
+That is a flag, not a finding. `chunk` is also the prompt with the most
+degenerate argmax (the staged arms' top-1 leads top-2 by 0.042 and 0.083 nats,
+a numerical tie), where the ordering of the top-20 is unstable for reasons that
+have nothing to do with staging. And the control is a single measurement, so
+"1.5x the control" rests on one number. It is worth watching, not reporting as
+a defect.
+
+An earlier version of this analysis applied a fixed scatter threshold and
+declared four cross-config pairs "EXCEEDS". That threshold was an invented
+constant, and the same-config control failed it on two of three prompts, so it
+had no discriminating power. Only the control comparison above is kept.
+
+### The one clean correctness signal available before the eval
+
+On `mid`, top-1 leads top-2 by ~4.7 nats -- a decisive argmax, not a tie -- and
+**all four arms return `owners` in every one of their three reps**. Twelve
+samples, unanimous, on the prompt where a staging defect would actually have to
+show itself to flip the answer. That is weak evidence rather than a proof, but
+it is the only argmax in the phase-3b set that is robust enough to carry any.
+
 ## The measured win, which is unaffected
 
 Cold Marlin 580.4 -> 223.9 ms/chunk at 333/351 GB/s against the hot tier's

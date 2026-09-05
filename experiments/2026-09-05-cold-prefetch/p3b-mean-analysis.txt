@@ -1,0 +1,18 @@
+=== chunk ===
+  baseline1        rep scatter(max sd)=0.638  top1-top2=1.125  first tokens=['2', '9']
+  baseline2        rep scatter(max sd)=1.056  top1-top2=1.250  first tokens=['9']
+  staged_noverify  rep scatter(max sd)=0.573  top1-top2=0.042  first tokens=['1', '130', '9']
+  staged_verify    rep scatter(max sd)=0.548  top1-top2=0.083  first tokens=['2', '9']
+  CONTROL same-config d=0.308 vs cross-config 0.474-1.111 -> separable
+=== long ===
+  baseline1        rep scatter(max sd)=0.244  top1-top2=0.167  first tokens=[' Show', '</think>']
+  baseline2        rep scatter(max sd)=0.284  top1-top2=0.333  first tokens=[' Show', '</think>']
+  staged_noverify  rep scatter(max sd)=0.389  top1-top2=0.167  first tokens=[' Show', '</think>']
+  staged_verify    rep scatter(max sd)=0.413  top1-top2=0.250  first tokens=[' Show', '</think>']
+  CONTROL same-config d=0.280 vs cross-config 0.209-0.346 -> NOT separable
+=== mid ===
+  baseline1        rep scatter(max sd)=0.305  top1-top2=4.708  first tokens=['owners']
+  baseline2        rep scatter(max sd)=0.326  top1-top2=4.667  first tokens=['owners']
+  staged_noverify  rep scatter(max sd)=0.296  top1-top2=4.958  first tokens=['owners']
+  staged_verify    rep scatter(max sd)=0.368  top1-top2=4.667  first tokens=['owners']
+  CONTROL same-config d=0.539 vs cross-config 0.250-0.615 -> NOT separable
