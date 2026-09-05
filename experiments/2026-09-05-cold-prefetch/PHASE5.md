@@ -49,6 +49,24 @@ Fifty discordant pairs, split 24 against 26. That is as symmetric as fifty
 coin flips get, and it is what a correct implementation under a noisy runtime
 looks like.
 
+## Throughput, with the placement cost included
+
+Three runs of the 96K prompt per arm, on the same allocation:
+
+| arm | runs | mean |
+| --- | --- | --- |
+| baseline | 23.31, 23.32, 23.44 s | 23.36 s |
+| staged | 19.57, 19.60, 19.62 s | **19.60 s** |
+
+**-16.1%**, with each arm tight to +/-0.15 s. This is the honest end-to-end
+figure: it is measured on the merged code, so the 41 hot experts phase 4 gives
+up to budget the slot are already paid for inside it.
+
+GSM8K wall time was 1630 s staged against 1644 s baseline -- unchanged, as
+expected. Staging 49.4 GiB behind a 539-token prefill is overhead, but it is
+small next to 256 tokens of decode, so short-prompt serving is not harmed
+either.
+
 ## What the result does and does not bound
 
 With 50 discordant pairs, the smallest asymmetry this test would have flagged

@@ -22,6 +22,8 @@ either 450 GB/s or the 373 GB/s measured rate; worst case is 7.04x margin at a
 | `PHASE1.md` | DMA microbenchmark: all three mechanisms reach 417-421 GB/s |
 | `PHASE2.md` | in situ staging, verified, still executing from Grace |
 | `PHASE3.md` | cold tier executes from the staged slot (weights **and** scales) |
+| `PHASE4.md` | the planner budgets the slot; verified to precede the reserve check |
+| `PHASE5.md` | paired GSM8K gate: p=0.888 over 1319 questions, prefill -16.1% |
 
 ## Two facts that shaped the design
 
