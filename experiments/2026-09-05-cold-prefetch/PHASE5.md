@@ -49,6 +49,25 @@ Fifty discordant pairs, split 24 against 26. That is as symmetric as fifty
 coin flips get, and it is what a correct implementation under a noisy runtime
 looks like.
 
+## Which code path the eval actually exercised
+
+Worth being precise, because it is the harder one. GSM8K's prompts are ~539
+tokens, and `tiered_overlap_max_tokens` is 2048, so `256 <= 539 <= 2048` puts
+every one of these prefills **inside the overlap window**: hot Marlin on the
+compute stream, the staged cold kernel on `tier_stream`, both cross-stream
+hazards live at once. That is the configuration where a missing `wait_stream`
+would show, and it passed at p = 0.888 over 1319 questions.
+
+The converse is the honest caveat. The single-stream chunked path at M=8192 --
+the regime the prefetch was actually built for -- has the 1924/0 byte
+verification and the roofline behind it, but **no accuracy eval**. The one
+unexplained flag from phase 3b, the `chunk` prompt at 3725 tokens, sits on that
+path. It is most likely tie instability (a 0.042-nat margin, and the baselines
+varied across all three reps there too), but the coincidence belongs in the
+record rather than in a footnote. A long-context eval would close it; MRCR
+needs its dataset pre-materialised first, since it streams from HuggingFace and
+the compute nodes have no network.
+
 ## Throughput, with the placement cost included
 
 Three runs of the 96K prompt per arm, on the same allocation:

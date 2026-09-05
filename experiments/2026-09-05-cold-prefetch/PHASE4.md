@@ -33,11 +33,24 @@ about worker startup:
 
 ```
 04:19:39  cold prefetch: 75 layers, slot 830 MiB   (lines 86-89, all four ranks)
+04:19:39  cold prefetch: chunk 1 staged 49.4 GiB   <- the profiling dummy run
 04:20:29  observed HBM reserve: 10.31 GiB free (minimum 8.38 GiB)   (lines 152-155)
 ```
 
-Allocation first, by 50 seconds, on every rank. The reserve check now passes
-*with the slot already resident*, which is the entire point.
+Allocation first, by 50 seconds, on every rank. The reserve check passes *with
+the slot already resident*, which is the property that matters.
+
+**Which mechanism did it, precisely.** Not the eager hook. The line after the
+allocation is `chunk 1 staged 49.4 GiB` -- that is the memory-profiling dummy
+run, whose 8192 tokens clear `MIN_TOKENS`, firing the *lazy* path. The eager
+hook runs 50 seconds later, immediately before the reserve check, and finds the
+slot already there.
+
+The hook is not redundant: it is what allocates the slot whenever the profiling
+batch does not clear the threshold, which is any deployment with `MIN_TOKENS`
+above `max_num_batched_tokens`. But in this configuration the dummy run carried
+the property, and an earlier revision of this file credited the hook. The
+distinction matters to anyone who later changes either one.
 
 | | baseline | staged |
 | --- | --- | --- |
