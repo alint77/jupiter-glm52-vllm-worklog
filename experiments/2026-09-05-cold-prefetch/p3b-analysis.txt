@@ -1,0 +1,36 @@
+== reproducibility within an arm (same server, 3 reps) ==
+  baseline1        chunk  tokens=   3725 max|dlogp|=1.557e+00  3 DISTINCT TEXTS
+  baseline1        long   tokens=  95995 max|dlogp|=5.847e-01  2 DISTINCT TEXTS
+  baseline1        mid    tokens=   1451 max|dlogp|=7.475e-01  2 DISTINCT TEXTS
+  baseline2        chunk  tokens=   3725 max|dlogp|=2.268e+00  3 DISTINCT TEXTS
+  baseline2        long   tokens=  95995 max|dlogp|=6.903e-01  stable
+  baseline2        mid    tokens=   1451 max|dlogp|=6.941e-01  2 DISTINCT TEXTS
+  staged_noverify  chunk  tokens=   3725 max|dlogp|=1.384e+00  3 DISTINCT TEXTS
+  staged_noverify  long   tokens=  95995 max|dlogp|=9.139e-01  2 DISTINCT TEXTS
+  staged_noverify  mid    tokens=   1451 max|dlogp|=6.799e-01  stable
+  staged_verify    chunk  tokens=   3725 max|dlogp|=1.989e+00  3 DISTINCT TEXTS
+  staged_verify    long   tokens=  95995 max|dlogp|=1.011e+00  stable
+  staged_verify    mid    tokens=   1451 max|dlogp|=8.124e-01  2 DISTINCT TEXTS
+
+== across arms (rep 0) ==
+  -- chunk --
+    baseline1        vs baseline2        max|dlogp|=1.998e+00 shared=19 margin=1.125e+00 first== text=X -> TIE-FLIP
+    baseline1        vs staged_noverify  max|dlogp|=1.443e+00 shared=17 margin=7.500e-01 first=X text=X -> TIE-FLIP
+    baseline1        vs staged_verify    max|dlogp|=1.399e+00 shared=18 margin=0.000e+00 first=X text=X -> TIE-FLIP
+    baseline2        vs staged_noverify  max|dlogp|=2.931e+00 shared=17 margin=7.500e-01 first=X text=X -> TIE-FLIP
+    baseline2        vs staged_verify    max|dlogp|=2.349e+00 shared=19 margin=0.000e+00 first=X text=X -> TIE-FLIP
+    staged_noverify  vs staged_verify    max|dlogp|=1.269e+00 shared=16 margin=0.000e+00 first=X text=X -> TIE-FLIP
+  -- long --
+    baseline1        vs baseline2        max|dlogp|=9.493e-01 shared=19 margin=3.750e-01 first== text=X -> TIE-FLIP
+    baseline1        vs staged_noverify  max|dlogp|=8.869e-01 shared=19 margin=1.250e-01 first=X text=X -> TIE-FLIP
+    baseline1        vs staged_verify    max|dlogp|=6.639e-01 shared=19 margin=3.750e-01 first=X text=X -> TIE-FLIP
+    baseline2        vs staged_noverify  max|dlogp|=8.749e-01 shared=19 margin=1.250e-01 first=X text== -> match
+    baseline2        vs staged_verify    max|dlogp|=9.729e-01 shared=19 margin=3.750e-01 first=X text== -> match
+    staged_noverify  vs staged_verify    max|dlogp|=4.730e-01 shared=20 margin=1.250e-01 first== text== -> match
+  -- mid --
+    baseline1        vs baseline2        max|dlogp|=7.406e-01 shared=18 margin=4.500e+00 first== text=X -> SHIFT
+    baseline1        vs staged_noverify  max|dlogp|=9.834e-01 shared=18 margin=4.500e+00 first== text== -> match
+    baseline1        vs staged_verify    max|dlogp|=4.361e-01 shared=18 margin=4.375e+00 first== text=X -> SHIFT
+    baseline2        vs staged_noverify  max|dlogp|=7.428e-01 shared=18 margin=4.875e+00 first== text=X -> SHIFT
+    baseline2        vs staged_verify    max|dlogp|=4.920e-01 shared=18 margin=4.375e+00 first== text=X -> SHIFT
+    staged_noverify  vs staged_verify    max|dlogp|=9.848e-01 shared=18 margin=4.375e+00 first== text=X -> SHIFT

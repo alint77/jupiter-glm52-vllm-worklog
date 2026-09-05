@@ -229,6 +229,31 @@ exactly the tool for a system with a per-token noise floor: accuracy over many
 samples is stable where any single completion is not. Phase 5 runs one on both
 arms rather than diffing text.
 
+### The full 3b matrix
+
+Max |delta logprob| over the shared top-20, within an arm across 3 reps:
+
+| arm | chunk | long | mid |
+| --- | --- | --- | --- |
+| baseline1 | 1.557 | 0.585 | 0.748 |
+| baseline2 | 2.268 | 0.690 | 0.694 |
+| staged_noverify | 1.384 | 0.914 | 0.680 |
+| staged_verify | 1.989 | 1.011 | 0.812 |
+
+And **between the two identically configured baselines** at rep 0: 1.998
+(chunk), 0.949 (long). That is the number that settles it -- the distance
+between two runs of the *same* configuration is the same size as the distance
+between configurations (baseline vs staged: 1.443-2.931 chunk, 0.664-0.973
+long). At this sample size the staging effect is not separable from run-to-run
+noise, in either direction.
+
+`staged_verify` varies across reps as well, which retires the last of the
+masking hypothesis: the verify does not serialise anything into determinism,
+because there was no determinism to begin with. It does cost time --
+21.54 s against `staged_noverify`'s 19.82 s on the long prompt, with the
+baseline at 23.4 s. **With `VERIFY=0` the staged arm is 15.3% faster end to
+end.**
+
 ## The measured win, which is unaffected
 
 Cold Marlin 580.4 -> 223.9 ms/chunk at 333/351 GB/s against the hot tier's
