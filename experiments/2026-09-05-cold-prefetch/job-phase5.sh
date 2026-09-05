@@ -89,6 +89,12 @@ run_arm() {
   grep -hoE "Tiered MoE residency: .{0,80}|cold staging: .{0,80}|cold prefetch: [0-9]+ layers.{0,60}" \
     "${result_dir}/p5-${arm}-server."{out,err} 2>/dev/null | sort -u | head -4
 
+  # Two questions first: a transport fault scores zero in a few seconds and
+  # is indistinguishable from a real result once written to the file.
+  .venv/bin/python "${result_dir}/gsm8k_paired.py" \
+    --num-questions 2 --num-shots 5 --max-tokens 256 --port 8027 \
+    --out "${result_dir}/p5-${arm}-smoke.json"
+
   # Per-question outcomes, so the arms can be compared pairwise on the
   # identical question set rather than as two independent accuracies.
   .venv/bin/python "${result_dir}/gsm8k_paired.py" \

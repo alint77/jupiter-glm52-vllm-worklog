@@ -24,6 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "tests/evals/gsm8k"
 
 import aiohttp  # noqa: E402
 from gsm8k_eval import (  # noqa: E402
+    INVALID,
     _build_gsm8k_prompts,
     call_vllm_api,
     get_answer_value,
@@ -65,7 +66,8 @@ def main() -> int:
     args = ap.parse_args()
 
     prompts, labels = _build_gsm8k_prompts(args.num_questions, args.num_shots, "")
-    url = f"http://127.0.0.1:{args.port}/v1/completions"
+    # call_vllm_api appends /v1/completions itself; give it the base.
+    url = f"http://127.0.0.1:{args.port}"
     start = time.perf_counter()
     preds, texts = asyncio.run(
         run(prompts, labels, url, args.max_tokens, args.concurrency)
@@ -86,10 +88,17 @@ def main() -> int:
             indent=2,
         )
     )
+    invalid = sum(1 for p in preds if p == INVALID) / len(preds)
     print(
         f"accuracy {accuracy:.4f} on {len(correct)} questions in {elapsed:.0f}s "
-        f"({len(correct) / elapsed:.2f} q/s)"
+        f"({len(correct) / elapsed:.2f} q/s), invalid {invalid:.3f}"
     )
+    # A broken transport returns empty strings fast and scores zero, which is
+    # indistinguishable from a real result in the saved file. Refuse to hand
+    # back a run that plainly never reached the model.
+    if invalid > 0.5 or accuracy == 0.0:
+        print("FAIL: the run did not produce usable answers")
+        return 1
     return 0
 
 
