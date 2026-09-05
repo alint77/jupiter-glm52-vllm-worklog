@@ -161,6 +161,22 @@ if [[ "${model_len}" != 400000 ]]; then
   export VLLM_TIERED_MOE_RELAX_SHAPE=1
 fi
 echo "memory: gpu_util=${gpu_util} reserve=${TIERED_MOE_HBM_RESERVE_GB}GB max_model_len=${model_len}"
+# Stage each layer's cold experts into an HBM slot while the previous layer
+# computes, so the cold tier reads HBM instead of scattered Grace. On this
+# checkpoint (GLM-5.3 W4A16): cold Marlin 580 -> 224 ms/chunk at 333/351 GB/s
+# against the hot tier's 335/353, prefill -16.1% (23.36 -> 19.60 s on the 96K
+# prompt, three reps each, both arms in one allocation). GSM8K unchanged:
+# paired McNemar p=0.888 on the fork branch, p=1.000 on the single-stream
+# path. See agent_space/experiments/2026-09-05-cold-prefetch/PHASE5.md.
+#
+# The gate is a token count, not a phase test: it must exceed the largest
+# decode batch, which setup_tiered_moe_kernels enforces at load. Here that is
+# max_num_seqs x verify tokens = 1 x 8 = 8, so 1024 clears it with room.
+#
+# Interaction with the reserve above: the planner budgets 871 MiB for the slot
+# and pays for it by demoting 43 hot experts (2192 -> 2149), so this is
+# residency the plan gives up, not reserve the drafter needs.
+export VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS="${CLAUDE_GLM53_COLD_PREFETCH_MIN_TOKENS:-1024}"
 # The drafter runs eagerly by default now: DFlash2Speculator sets
 # default_eager_draft, because replaying the captured draft graph costs
 # acceptance (Phase 52, undiagnosed). On GSM8K at DCP1, same config, the mode
