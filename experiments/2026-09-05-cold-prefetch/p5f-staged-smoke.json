@@ -1,0 +1,17 @@
+{
+  "accuracy": 1.0,
+  "num_questions": 2,
+  "seconds": 1.8410658370703459,
+  "correct": [
+    1,
+    1
+  ],
+  "preds": [
+    18,
+    3
+  ],
+  "labels": [
+    18,
+    3
+  ]
+}
