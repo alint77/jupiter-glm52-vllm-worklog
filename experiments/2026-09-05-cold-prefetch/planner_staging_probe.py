@@ -66,9 +66,12 @@ def price(min_tokens: int) -> dict:
     )
     plan = scenario.rank_plans[0]
     fixed = dict(plan.fixed_hbm_allocations)
+    # Across every rank, not just rank 0: the scenario budgets one figure for
+    # all of them, so a rank-0 maximum would understate what the budget covers.
     largest = max(
         len(layer.cold_expert_ids) + len(layer.replica_expert_ids)
-        for layer in plan.layer_placements
+        for rank_plan in scenario.rank_plans
+        for layer in rank_plan.layer_placements
     )
     return {
         "hot": plan.hot_expert_slots,

@@ -56,6 +56,19 @@ fi
 export TIERED_MOE_PLACEMENT_PROFILE="${repo_dir}/agent_space/experiments/2026-07-26-autoround-w4g64/hybrid-p0.5-profile.json"
 export VLLM_TIERED_MOE_PROFILE_CAP=0
 export TIERED_MOE_HBM_RESERVE_GB=5
+# Stage each layer's cold experts into an HBM slot while the previous layer
+# computes, so the cold tier reads HBM instead of scattered Grace. Measured on
+# GLM-5.3 W4A16: cold Marlin 580 -> 224 ms/chunk at 333/351 GB/s against the
+# hot tier's 335/353, prefill -16.1%, GSM8K unchanged (paired McNemar p=0.888
+# on the fork branch, p=1.000 on the single-stream path). See
+# agent_space/experiments/2026-09-05-cold-prefetch/PHASE3.md and PHASE5.md.
+#
+# The gate is a token count, not a phase test: it must stay above the largest
+# decode batch (max_num_seqs x verify tokens = 1 x 4 here), which
+# setup_tiered_moe_kernels enforces at load. 1024 is the value the roofline was
+# measured under. The planner budgets 746 MiB for the slot on this checkpoint
+# and gives up 39 hot experts (2574 -> 2535) to do it.
+export VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS=1024
 export TIERED_MOE_COMPILATION_CONFIG='{"mode":3,"cudagraph_mode":"FULL_AND_PIECEWISE","cudagraph_capture_sizes":[4],"compile_sizes":[4],"cudagraph_num_of_warmups":1,"pass_config":{"fuse_allreduce_rms":false}}'
 
 mkdir -p "${run_dir}" "${log_dir}" "${VLLM_CACHE_ROOT}" \
