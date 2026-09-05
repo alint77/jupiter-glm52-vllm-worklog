@@ -1,0 +1,3 @@
+ Show the complete file.
+
+Write a pytest test for verify_observed_hbm_reserve that covers the below-reserve rejection and the tolerance path. Use only functions visible

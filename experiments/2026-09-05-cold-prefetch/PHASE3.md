@@ -64,6 +64,93 @@ wrong tokens. Prefill wall time is recorded as the cheap read on whether cold
 Marlin actually got faster — the formal number (cold Marlin 583 ms/chunk →
 below 383) is the phase-5 kill criterion.
 
-## Results
+## Results — job `1669068`
 
-Pending job `1669068`.
+The mechanism works. Every number that measures *the staging itself* is clean:
+
+| | |
+| --- | --- |
+| slot | 830 MiB on ranks 0/2/3, 810 MiB on rank 1, 75 layers each |
+| staged | 48.5 GiB per chunk |
+| byte verifies | **1924, 0 mismatched** |
+| tier selection | **74 from slot, 1 from Grace** per chunk, every chunk |
+| prefill wall | 23.53 s baseline -> **21.69 s** prefetch (-7.8%) |
+
+`74 from slot / 1 from Grace` is exactly the predicted steady state: the one
+fallback is the first MoE layer of each chunk, which has nothing staged behind
+it. So the staged kernel is genuinely being selected and genuinely being read.
+
+## The gate failed, and the gate was wrong
+
+The short completion matched. The long one diverged **from the first token** --
+too gross to be float noise, which sent me looking for a view-offset bug.
+
+It is not a bug in the change. Phase 2 ran the same prompt with the cold tier
+executing **from Grace** -- staging happened but nothing read the slot, so the
+arithmetic was identical to the baseline's. Its completion:
+
+```
+ Show the complete file.\n\nWrite a pytest test for verify_observed_hbm_reserve ...
+```
+
+which is **character-for-character the phase-3 prefetch arm's output**. The
+phase-3 *baseline* is the one that stands alone:
+
+```
+</think>```python\n# SPDX-License-Identifier: Apache-2.0 ...
+```
+
+What this does establish, and all it establishes: **the execution swap does
+not move the output.** Phase 2 (staging on, cold tier read from Grace) and
+phase 3 (staging on, cold tier read from the slot) agree character for
+character, on different server processes. That is the thing phase 3 changed,
+and it is clean.
+
+What it does *not* establish is why the staging-off baseline differs. Two
+readings fit the same three runs:
+
+* the runs are not reproducible, and A/B are two attractors on a near-tie; or
+* `MIN_TOKENS > 0` deterministically shifts prefill output whether or not the
+  slot is ever read -- which would be a real finding, since phase 2 read
+  nothing from it.
+
+Note the evidence leans against the first: two *independent* server processes
+produced character-identical text, which is evidence **for** reproducibility
+within a configuration. Calling this non-determinism would be the same mistake
+in the other direction.
+
+The error was in the gate, not the conclusion: bitwise identity presumes
+run-to-run reproducibility across a configuration change, and I asserted it
+rather than measuring it. Phase 3b measures it.
+
+## Phase 3b — a gate that measures what it claims to
+
+1. **Determinism control.** One server, the long prompt three times; then a
+   restart of the same arm and once more. This is the missing measurement:
+   whether the baseline reproduces itself within a process and across restarts.
+2. **A numerical gate instead of a token gate.** Compare the top-20 logprobs
+   after the 96K prefill (`max_tokens=1, logprobs=20`) between arms. That reads
+   the prefill's output directly rather than through a greedy argmax that can
+   flip on a tie, and it produces a distance, not a boolean.
+3. The 1924/0 byte verify already establishes that what reaches the kernel is
+   the right bytes. What is still unmeasured is whether the staged *kernel*
+   computes the same function -- which is what the logprob distance settles.
+4. A `VERIFY=0` staging arm, to separate the per-layer host sync from the slot
+   allocation itself, and a one-chunk and a ~1500-token prompt beside the 96K
+   one. Twelve chunks of a 96K prefill is where ties are likeliest; a
+   single-chunk prompt gives the logprob gate teeth.
+
+Job `1669268`: four server loads in one allocation -- two identical baselines
+(the second is the across-restart control), then staging without and with
+verify.
+
+## The speedup is about half of what the mechanism should give
+
+580 ms/chunk of cold Marlin at the hot tier's per-expert rate would be ~210 ms;
+over 12 chunks, less verify and copy contention, that is ~3.9 s. The measured
+drop was 1.84 s, which puts staged cold Marlin near ~400 ms/chunk -- at or
+above the 383 ms phase-5 kill line. The `74 from slot` counter proves the
+staged kernel is selected; it does not prove it reads at HBM rate. That is the
+first phase-5 question: one profiled chunk through `prefill_roofline.py` shows
+whether staged cold Marlin now sits at the hot tier's ~250 GB/s or somewhere
+between.
