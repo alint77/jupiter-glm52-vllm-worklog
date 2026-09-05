@@ -6,15 +6,21 @@
 # eval is the right instrument: accuracy over many samples is stable where any
 # single completion is not.
 #
-# MIN_TOKENS is 512 here, not the 1024 of phases 3/3b, so that GSM8K's ~1000
-# token 5-shot prompts actually cross the threshold. Decode (4 tokens under
-# MTP3) stays below it either way.
+# MIN_TOKENS is 256 here, not the 1024 of phases 3/3b: GSM8K's 5-shot prompts
+# measure ~539 tokens, so a 512 threshold would have been marginal and the
+# staged path might never have engaged. Decode (4 tokens under MTP3) stays
+# below 256 either way. The per-chunk log is checked to confirm engagement --
+# an eval that silently exercised nothing is the failure mode here.
+#
+# Staging 48.5 GiB behind a ~539-token prefill is pure overhead in this regime;
+# that is deliberate. This run gates correctness, not speed, and short prompts
+# are the harsher test of it. The speed case is the 2026-09-04 roofline.
 #SBATCH --account=profound
 #SBATCH --partition=booster
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --gres=gpu:4
-#SBATCH --time=03:00:00
+#SBATCH --time=05:00:00
 #SBATCH --job-name=cpfphase5
 #SBATCH --output=agent_space/experiments/2026-09-05-cold-prefetch/slurm-%x-%j.out
 #SBATCH --error=agent_space/experiments/2026-09-05-cold-prefetch/slurm-%x-%j.err
@@ -83,11 +89,15 @@ run_arm() {
   grep -hoE "Tiered MoE residency: .{0,80}|cold staging: .{0,80}|cold prefetch: [0-9]+ layers.{0,60}" \
     "${result_dir}/p5-${arm}-server."{out,err} 2>/dev/null | sort -u | head -4
 
-  .venv/bin/python tests/evals/gsm8k/gsm8k_eval.py \
-    --num-questions 200 --num-shots 5 --max-tokens 256 \
-    --port 8027 --temperature 0 \
-    --save-results "${result_dir}/p5-${arm}-gsm8k.json" \
-    2>&1 | tail -8
+  # Per-question outcomes, so the arms can be compared pairwise on the
+  # identical question set rather than as two independent accuracies.
+  .venv/bin/python "${result_dir}/gsm8k_paired.py" \
+    --num-questions 300 --num-shots 5 --max-tokens 256 --port 8027 \
+    --out "${result_dir}/p5-${arm}-gsm8k.json"
+
+  echo "--- staging engagement (${arm}) ---"
+  grep -hoE "cold prefetch: chunk .{0,150}" \
+    "${result_dir}/p5-${arm}-server."{out,err} 2>/dev/null | tail -2
 
   # Prefill throughput on the long prompt, same measurement as phase 3.
   ARM="${arm}" RESULT_DIR="${result_dir}" .venv/bin/python - <<'PY'
@@ -119,25 +129,8 @@ PY
 }
 
 run_arm baseline 0
-run_arm staged 512
+run_arm staged 256
 
 echo "=== summary ==="
-for arm in baseline staged; do
-  acc=$(.venv/bin/python -c "
-import json,sys
-try:
-    d=json.load(open('${result_dir}/p5-${arm}-gsm8k.json'))
-    print(d.get('accuracy', d.get('acc', '?')))
-except Exception as e:
-    print('?', e)
-")
-  t=$(.venv/bin/python -c "
-import json
-try:
-    print(', '.join(f'{x:.2f}s' for x in json.load(open('${result_dir}/p5-${arm}-prefill.json'))['seconds']))
-except Exception:
-    print('?')
-")
-  echo "${arm}: gsm8k accuracy=${acc}  prefill=${t}"
-done
+.venv/bin/python "${result_dir}/analyze_phase5.py" || true
 echo "=== done ==="
