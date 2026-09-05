@@ -176,42 +176,62 @@ first phase-5 question: one profiled chunk through `prefill_roofline.py` shows
 whether staged cold Marlin now sits at the hot tier's ~250 GB/s or somewhere
 between.
 
-## Phase 3b result: there is a race, and VERIFY was hiding it
+## Phase 3b result: the serving configuration is non-deterministic
 
-`staged_noverify`, one server, three reps per prompt:
+**Correction.** An earlier revision of this file claimed phase 3b had found a
+race that `VERIFY` was masking. That was wrong, and it was wrong because it
+generalised from the monitor's filtered output -- which printed only `rep0` and
+`rep2` first tokens -- instead of the recorded results. The baselines agreed on
+those two lines and disagreed everywhere else.
 
-| prompt | rep0 | rep2 |
-| --- | --- | --- |
-| long | `</think>` | ` Show` |
-| chunk | `130` | `9` |
-| mid | `owners` | `owners` |
+The full records show **every arm varies, baseline included**:
 
-Both baseline arms (`baseline1`, and `baseline2` after a full restart) were
-stable across every rep and every prompt. Greedy decoding at temperature 0 that
-does not reproduce itself **on the same server process** is a data race.
+| arm | prompt | rep0 | rep1 | rep2 |
+| --- | --- | --- | --- | --- |
+| baseline1 | long | `</think>` | ` Show` | `</think>` |
+| baseline1 | chunk | 3 distinct texts | | |
+| baseline2 | chunk | 3 distinct texts | | |
+| staged_noverify | chunk | 3 distinct texts | | |
 
-This also explains phase 3. `verify_staged` runs `torch.equal` and reads the
-result, a host sync on every layer, and phase 3 ran with `VERIFY=1`. That sync
-serialised the copy stream against compute and masked the race, which is why
-phase 3 looked internally consistent. The 1924/0 byte compares are not
-falsified -- they prove the copy landed -- but they were never evidence of
-correct ordering, because the check enforced the very property it was auditing.
+Within-arm logprob spread, max over the shared top-20:
 
-The timings agree: `staged_noverify` runs the long prompt in 19.82 s against
-the baseline's 23.4 s (-15%, matching the roofline's 268 ms/chunk x 12), where
-phase 3 with `VERIFY=1` gained only 1.84 s. The verify costs ~1.7 s and buys
-false confidence.
+| arm | chunk | long | mid |
+| --- | --- | --- | --- |
+| baseline1 | 1.557 | 0.585 | 0.748 |
+| baseline2 | 2.268 | 0.690 | 0.694 |
+| staged_noverify | **1.384** | 0.914 | 0.680 |
 
-The unit tests said in their own docstring that cross-stream ordering was not
-covered, and the gap was argued away from the source instead of measured. The
-standing lesson -- settle it with a probe, not a trace -- applied and was not
-followed.
+The staged arm's variation sits inside the baselines' range, and on the chunk
+prompt it is the *lowest* of the three. There is a cleaner demonstration still
+inside a single rep: each rep issues two separate prefills of the same prompt
+(the `max_tokens=1` logprob probe and the 32-token text request), and in the
+baseline those two disagree on the first token.
 
-### Next
+So this serving configuration -- GLM-5.3 W4A16, MTP3, chunked prefill, TP4 --
+does not reproduce itself run to run, at a noise floor of roughly 0.6 to 2.3
+nats on the top-20 logprobs. That predates the prefetch entirely.
 
-1. Confirm with `staged_verify` (same job): it should come back deterministic.
-2. Locate the race by probe, not by reading: run the staging with the copy
-   issued on the compute stream itself. If the non-determinism disappears, the
-   fault is in the cross-stream handoff rather than in the staging logic.
-3. The performance case is unaffected and strong (cold Marlin 580.4 -> 223.9
-   ms/chunk at 333/351 GB/s). Correctness has to land before any of it counts.
+### What this does and does not settle
+
+* **Settled:** token-level comparison cannot gate this change, in either
+  direction. Phase 3's "gate failed" carried no information, and phase 2
+  agreeing with phase 3 was luck rather than evidence.
+* **Settled:** staging does not make output *less* stable than the baseline.
+* **Not settled:** whether staging is correct. A noise floor this high would
+  hide a real defect, so "within noise" is not proof. The 1924/0 byte compares
+  remain genuine evidence that the bytes reaching the kernel are right, but they
+  say nothing about the staged kernel computing the right function.
+
+### Next: an eval, which is the right instrument anyway
+
+`AGENTS.md` requires a model eval for output-affecting changes, and an eval is
+exactly the tool for a system with a per-token noise floor: accuracy over many
+samples is stable where any single completion is not. Phase 5 runs one on both
+arms rather than diffing text.
+
+## The measured win, which is unaffected
+
+Cold Marlin 580.4 -> 223.9 ms/chunk at 333/351 GB/s against the hot tier's
+335/353 -- per-expert parity, the 4.6x access-pattern gap closed, and the
+383 ms/chunk kill line cleared. Prefill wall 1902.5 -> 1634.3 ms/chunk. End to
+end on the 96K prompt, 23.4 s -> 19.8 s with `VERIFY=0`.
