@@ -13,6 +13,7 @@ symmetric discordance. A staging defect produces asymmetry. That distinction is
 what the test buys, and it is why no separate within-arm control is needed.
 """
 
+import argparse
 import json
 import sys
 from math import comb
@@ -31,9 +32,12 @@ def two_sided_exact(b: int, c: int) -> float:
 
 
 def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--prefix", default="p5")
+    args = ap.parse_args()
     arms = {}
     for arm in ("baseline", "staged"):
-        path = HERE / f"p5-{arm}-gsm8k.json"
+        path = HERE / f"{args.prefix}-{arm}-gsm8k.json"
         if not path.exists():
             print(f"missing {path.name}")
             return 1
