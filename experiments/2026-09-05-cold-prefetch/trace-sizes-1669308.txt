@@ -1,0 +1,7 @@
+512	/e/project1/profound/alint77/traces/cold-prefetch-staged-1669308/capture-report.json
+58M	/e/project1/profound/alint77/traces/cold-prefetch-staged-1669308/decode
+51M	/e/project1/profound/alint77/traces/cold-prefetch-staged-1669308/prefill
+24K	/e/project1/profound/alint77/traces/cold-prefetch-staged-1669308/profiler_out_0.txt
+24K	/e/project1/profound/alint77/traces/cold-prefetch-staged-1669308/profiler_out_1.txt
+24K	/e/project1/profound/alint77/traces/cold-prefetch-staged-1669308/profiler_out_2.txt
+24K	/e/project1/profound/alint77/traces/cold-prefetch-staged-1669308/profiler_out_3.txt

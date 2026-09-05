@@ -1,0 +1,16 @@
+role                                       ms     %        AI   achieved    effBW      roof   eff%
+----------------------------------------------------------------------------------------------------
+routed MoE Marlin W4 hot w13            134.7   8.0       664     222 TF     335G      989T   22.5
+routed MoE Marlin W4 hot w2              74.2   4.4       572     202 TF     353G      989T   20.4
+routed MoE Marlin W4 cold w13           144.3   8.6       664     221 TF     333G      248T   89.2
+routed MoE Marlin W4 cold w2             79.6   4.7       572     200 TF     351G      213T   94.0
+sparse MLA FP8, 64 heads launched       601.8  35.9       212     315 TF    1481G      849T   37.0 b
+  the 16 real TP heads only             601.8  35.9        53      79 TF    1481G      849T    9.3 u
+DSA indexer FP8 scan                    109.7   6.5      1970     421 TF     214G     1979T   21.3 b
+BF16 dense GEMM 4096x6144                58.7   3.5      1890     569 TF     301G      989T   57.6
+BF16 dense GEMM 6144x2624                42.9   2.6      1502     499 TF     332G      989T   50.4
+BF16 dense GEMM 2048x4096                24.7   1.5      1170     584 TF     499G      989T   59.1
+BF16 dense GEMM 6144x1024                12.1   0.7       793     663 TF     836G      989T   67.0
+BF16 dense GEMM 512x6144                  7.3   0.4       447     553 TF    1238G      989T   55.9
+BF16 MLA W_UK/W_UV bmm                   11.1   0.7       137     376 TF    2739G      549T   68.5
+MoE activation silu_and_mul              33.9   2.0         --         --    3633G     4000G   90.8
