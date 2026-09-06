@@ -278,14 +278,44 @@ assignment path, D the candidate placement. `diagnose_smoke.py` always writes
 its result and keeps the completions, unlike the qualification gate, which
 refuses a zero by design and so cannot be used to compare arms.
 
-Prime suspect is the padding fix, the only routing change since job 1674389 ran
-`exact` with healthy acceptance (2.48-2.63). It masks padded rows to -1 before
-assignment and skips negative sentinels in the fused histogram and alignment; a
-mask that catches real rows, or a skip that drops real tokens' MoE
-contribution, would produce exactly this silent, symmetric, coherent-but-wrong
-output. The pinned-accounting patch is the other change in the checkout; the
-claim that it does not affect execution is unverified.
+**Result (job 1685116, 8 questions per arm):**
 
-Note that no reported speedup has passed an accuracy check. The 6.1%/7.4%
-draft-round improvement in 1674389 was latency-only, and `exact` assignment has
-never been accuracy-qualified on GLM-5.3.
+| Arm | Profile | Assignment | `ROUTE_CHECK` | Accuracy |
+| --- | --- | --- | --- | ---: |
+| A | baseline | off | 0 | 0.875 |
+| B | baseline | off | 1 | 0.875 |
+| C | baseline | exact | 1 | server died, rank 3 exitcode -9 |
+| D | cap-50 candidate | exact | 1 | **0.000**, invalid 0.375 |
+
+A and B are byte-identical in their predictions, so the frozen checkout is
+healthy and the route check is both working and free of side effects. C hit
+the already-known pinned-rounding OOM, because the baseline profile's 3,940
+unconstrained secondaries exceed host memory once materialized and the
+accounting patch is deliberately not in this checkout. D reproduces the
+failure, and its garbage differs on every run (`[-9999999, 0, ...]` here,
+`[-9999999, 2, ...]` in 1684062 and 1684063) while A and B are deterministic.
+
+### Root cause: `is_padding` is published unconditionally but maintained conditionally
+
+`prepare_inputs` refreshes the padding buffer only under `VLLM_MOE_SKIP_PADDING`
+(`gpu/model_runner.py:871-878`), which defaults to false and is set by no serve
+script. Graph capture fills the same buffer with all-`True` unconditionally
+(`gpu/cudagraph_utils.py:496`), and the forward context publishes it
+unconditionally (`gpu/model_runner.py:1038`). So after capture the buffer is
+stuck all-`True` for the life of the server.
+
+`mask_replica_padding` reads it without that guard, so every real token's
+`topk_ids` becomes -1; the assignment kernel's new `routed >= 0` test then
+masks out every route and no expert executes, leaving whatever was already in
+the output rows. That accounts for all four observations: nondeterministic
+garbage, identical on every rank so the route check stays silent, only under
+`exact` because `apply_tiered_moe` gates the mask on the assignment mode, and
+invisible to arms A and B, which never call it.
+
+The contract is settled by the pre-existing consumer, which guards correctly:
+`deepseek_v4/nvidia/model.py:455` reads `is_padding` only under
+`if envs.VLLM_MOE_SKIP_PADDING and is_forward_context_available()`. The
+qualification patch introduced a second consumer that omits the guard. This is
+a live latent defect in root production source, currently masked only because
+production ships replica assignment off.
+
