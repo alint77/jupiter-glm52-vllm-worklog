@@ -319,3 +319,35 @@ qualification patch introduced a second consumer that omits the guard. This is
 a live latent defect in root production source, currently masked only because
 production ships replica assignment off.
 
+
+### Fix and validation (job 1763631)
+
+`prepare_inputs` now refreshes the padding mark unconditionally, through a
+named `_mark_padding`, so the buffer matches the contract its unconditional
+publication already implies. Root-tree commit `8b131c5650`, with a regression
+in `tests/v1/worker/test_gpu_model_runner_v2_eplb.py` that fails on the gated
+version and passes on the fixed one; all 75 tiered replica/manifest tests pass.
+
+The originally planned second half -- confining the mask to assignment and
+validation instead of rebinding `topk_ids` -- was dropped after reading
+`apply_tiered`. The rebinding is the upstream design: `-1` rows are meant to
+flow into `_prepare` so prepare/finalize drops them, which is the same
+mechanism `modular_kernel.py:1250` describes. Masking only the assignment
+would make genuine padding rows execute.
+
+What reading could not settle is whether the `-1` sentinel survives the
+tiered Marlin path end to end. The assignment kernel is guarded (`routed >= 0`),
+but arm D's smoke cannot exercise the sentinel at all: with capture size 8 and
+MTP K=7 every decode step is exactly at the capture boundary, so `is_padding`
+is all-False and no `-1` is ever produced. Job 1763631 therefore runs three
+arms, the second of which replays a size-16 graph with 8 real rows:
+
+| Arm | Profile | Assignment | Capture | Purpose |
+| --- | --- | --- | --- | --- |
+| 1 | cap-50 | exact | 8 | reproduces 1685116 arm D, which scored 0.000 |
+| 2 | cap-50 | exact | 16 | 8 padding rows carry `-1` into the tiered path |
+| 3 | cap-50 | off | 16 | control, so an arm 2 failure is not the capture size |
+
+Arms 1 and 3 passing with arm 2 failing would mean the fix is correct and the
+`-1` sentinel is separately unsupported by this Marlin path, not that the fix
+failed.
