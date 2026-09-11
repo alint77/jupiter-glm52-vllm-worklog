@@ -351,3 +351,25 @@ arms, the second of which replays a size-16 graph with 8 real rows:
 Arms 1 and 3 passing with arm 2 failing would mean the fix is correct and the
 `-1` sentinel is separately unsupported by this Marlin path, not that the fix
 failed.
+
+**Result (job 1763631).** All three arms score 0.875 with byte-identical
+predictions `[18, 3, 70000, 540, 20, 64]`, matching arms A and B of job
+1685116 exactly.
+
+| Arm | Assignment | Capture | Before | After |
+| --- | --- | --- | ---: | ---: |
+| 1 boundary | exact | 8 | 0.000 | **0.875** |
+| 2 padded | exact | 16 | - | **0.875** |
+| 3 padded | off | 16 | - | **0.875** |
+
+Arm 1 is the configuration that scored 0.000 in 1684062, 1684063 and 1685116,
+so the fix is confirmed against its own failure. Arm 2 settles the question
+reading could not: the server logs record `capture_sizes': [8]` for arm 1 and
+`[16]` for arm 2, so arm 2 really did replay a size-16 graph with 8 real rows
+and push 8 sentinel-carrying padding rows through the tiered Marlin path. The
+sentinel is tolerated end to end, and arm 3 shows the padded shape is not
+itself responsible for anything.
+
+Identical predictions across assignment on and off is the expected signature
+of a correct implementation: replicas move where an expert is read from, not
+what it computes.
