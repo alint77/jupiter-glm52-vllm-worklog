@@ -65,8 +65,25 @@ eval_model() {
 export ROUTE_CHECK=1
 start route-smoke "${out}/candidate-profile.json" exact
 .venv/bin/python agent_space/experiments/2026-09-05-cold-prefetch/gsm8k_paired.py \
-  --num-questions 2 --num-shots 5 --max-tokens 256 --port 8129 \
+  --num-questions 8 --num-shots 5 --max-tokens 256 --port 8129 \
   --out "${out}/route-smoke-gsm8k.json"
+# gsm8k_paired only refuses `invalid > 0.5`, so a server that died partway
+# through scored exactly 0.5 and passed twice. Any unanswered request here is
+# a dead server, not a wrong answer: refuse the run outright.
+.venv/bin/python - "${out}/route-smoke-gsm8k.json" <<'GATE'
+import json, sys
+
+sys.path.insert(0, "agent_space/experiments/2026-09-05-cold-prefetch")
+from gsm8k_paired import INVALID
+
+r = json.load(open(sys.argv[1]))
+unanswered = sum(p == INVALID for p in r["preds"])
+if unanswered:
+    sys.exit(f"route smoke: {unanswered} unanswered; the server did not survive")
+if r["accuracy"] < 0.5:
+    sys.exit(f"route smoke accuracy {r['accuracy']:.3f} is below 0.5")
+print(f"route smoke ok: accuracy {r['accuracy']:.3f}, all requests answered")
+GATE
 cleanup
 sleep 15
 for round in 1 2 3; do
