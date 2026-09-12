@@ -456,3 +456,35 @@ Job 1764486 decides it without needing to see inside the graph: run graphs on
 with the check disabled and score 24 questions. Healthy accuracy means the
 routes are effectively correct and the check is the broken party. Garbage
 means the divergence is real. An eager arm repeats as the control.
+
+**Result (job 1764486): the routes are fine; the in-graph check is not.**
+
+| Arm | Graphs | Check | Accuracy (24 q) |
+| --- | --- | --- | ---: |
+| graph-nocheck | on | off | **0.875**, invalid 0.000 |
+| eager-control | off | off | 0.833, invalid 0.000 |
+
+With graphs on and replica assignment on, the server runs 24 questions to
+completion and scores at the healthy baseline, with identical leading
+predictions to the eager arm. The same configuration with the check *enabled*
+dies within a few requests. So the assertion is reporting a divergence that
+does not visibly affect the model's output.
+
+The eager/graph gap of one question is the ordinary kernel-path difference
+between the two modes, not evidence of a routing problem; both sit at the
+0.875 baseline established in job 1763631.
+
+This does not prove the routes are bitwise identical under replay. It proves
+they are not *grossly* wrong: the padding defect scored 0.000 on the same
+smoke, so catastrophic mis-routing is excluded. A divergence rare and small
+enough to hide in 24 questions would still need the full 1,319-question paired
+evaluation to exclude, and that remains the accuracy gate.
+
+The check calls `group.all_gather` inside the captured graph, which allocates
+its output from the graph's private pool at capture time; every other part of
+the routing path behaves identically in both modes. It is the only component
+that differs between the arm that works and the arm that dies.
+
+Next: restrict the assertion to the eager path, where 24 questions of tracing
+found zero divergence, and re-qualify with graphs on and the full paired
+evaluation as the accuracy gate rather than the smoke.
