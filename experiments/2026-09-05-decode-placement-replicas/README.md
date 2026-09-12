@@ -373,3 +373,52 @@ itself responsible for anything.
 Identical predictions across assignment on and off is the expected signature
 of a correct implementation: replicas move where an expert is read from, not
 what it computes.
+
+### Qualification attempt (job 1763763): failed, on a second defect
+
+The run completed its timing rounds and the baseline evaluation, then failed.
+Both route-checked servers died with the same device-side assertion:
+
+```
+Assertion `Tiered MoE replica routes differ across ranks' failed
+```
+
+The ranks genuinely disagree about routing. This is **not** the padding defect
+fixed in `8b131c5650`, which job 1763631 confirmed against its own failure with
+byte-identical output across three arms. It is a second, independent problem,
+and it is intermittent: the eight-question validation passed this exact
+configuration with the check enabled, and in the two-question smoke here the
+first question succeeded before the second brought the server down.
+
+**Nothing in this run qualifies anything, and two numbers in
+`summary.json` must not be quoted as findings.**
+
+The accuracy block reports `candidate_accuracy 0.003` and a -91.36 point delta.
+That is the crashed server, not a measurement: 997 of 1000 sampled responses are
+connection failures after the route assertion killed it. The baseline arm is
+real -- **0.9166 over all 1,319 questions**, consistent with the historical
+~91% -- but there is no candidate arm to pair it against.
+
+The timing rounds ran with `ROUTE_CHECK=0`, so they did not abort; but the
+check fired on both servers where it was enabled, so the candidate arm was
+very likely mis-routing throughout. A computation that routes inconsistently
+across ranks is not the computation under test, whatever its latency:
+
+| Candidate vs baseline | short | 96K context |
+| --- | ---: | ---: |
+| `server_decode_s_per_draft` | -8.50% [-10.24, -6.77] | -8.12% [-9.18, -7.07] |
+| `mean_tpot_s` | -12.74% [-21.88, -3.60] | -17.65% [-37.77, +2.47] |
+| `mean_ttft_s` | **+5.96% [+1.60, +10.32]** | +0.57% [+0.14, +0.99] |
+| `acceptance_length` | +5.17% [-8.32, +18.66] | +10.42% [-16.82, +37.66] |
+
+Three paired rounds each. The decode-per-draft figure is consistent with the
+6.1-7.4% of job 1674389, and TPOT is confounded by the acceptance shift. The
+short-prompt **TTFT regression is new and significant**, and the rollout
+criteria call for no unexplained TTFT regression, so it needs an explanation
+even once routing is fixed.
+
+The smoke gate also failed to stop the run. `gsm8k_paired.py` refuses a result
+only when `invalid > 0.5` or accuracy is exactly zero; the route-checked smoke
+scored `accuracy 0.5, invalid 0.500`, so a crashed server passed the gate on a
+boundary and the job spent another hour. A transport failure should fail the
+gate on its own, independent of score.
