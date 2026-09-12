@@ -422,3 +422,37 @@ only when `invalid > 0.5` or accuracy is exactly zero; the route-checked smoke
 scored `accuracy 0.5, invalid 0.500`, so a crashed server passed the gate on a
 boundary and the job spent another hour. A transport failure should fail the
 gate on its own, independent of score.
+
+### Divergence is confined to the CUDA graph path (job 1764447)
+
+| Arm | Graphs | Check | Trace | Result |
+| --- | --- | --- | --- | --- |
+| trace-eager | off | off | on | **0.875, zero divergence records over 24 questions** |
+| check-graph | on | fatal | off | asserts, server dies |
+
+Running eagerly, the same all-gather comparison the fatal check performs finds
+the routes identical on every rank, for every routed layer, across 24
+questions. With graphs on, the in-graph check asserts within a few requests.
+
+Two earlier hypotheses are dead. The custom all-reduce is **not** asymmetric:
+`csrc/custom_all_reduce.cuh:305` states that accumulation order is fixed across
+ranks for bitwise identical results, `packed_reduce` accumulates `ptrs[0..n]`
+in index order, and decode's 96 KiB message takes the 1-stage path anyway. And
+it is **not node-specific**: job 1764183 asserted twice per arm on
+`jpbo-018-36`, the node that had run 24 route-checked requests clean in 1763631.
+
+The tracer cannot observe the graph path, because Python does not execute
+during graph replay; that is why the eager arm had to disable graphs. So the
+open question is no longer "which layer diverges" but whether the divergence
+is real at all:
+
+- the routes genuinely differ only under graph replay, which would be a defect
+  in how the captured routing metadata is refreshed; or
+- the in-graph check itself is wrong -- an all-gather captured into a graph
+  comparing against a buffer that replay does not refresh -- and reports a
+  divergence that does not exist.
+
+Job 1764486 decides it without needing to see inside the graph: run graphs on
+with the check disabled and score 24 questions. Healthy accuracy means the
+routes are effectively correct and the check is the broken party. Garbage
+means the divergence is real. An eager arm repeats as the control.
