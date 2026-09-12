@@ -488,3 +488,53 @@ that differs between the arm that works and the arm that dies.
 Next: restrict the assertion to the eager path, where 24 questions of tracing
 found zero divergence, and re-qualify with graphs on and the full paired
 evaluation as the accuracy gate rather than the smoke.
+
+### Qualification (job 1764640): decode win and accuracy pass, blocked on TTFT
+
+The run completed all seven servers with **no route assertion anywhere**, and
+the hardened smoke passed with all eight requests answered. So the eager-only
+check and the strict gate both behave as intended.
+
+**Accuracy, all 1,319 questions, paired:**
+
+| | |
+| --- | ---: |
+| Baseline | 0.9166 |
+| Candidate | 0.9181 |
+| Delta | **+0.152 points** |
+| Paired bootstrap 95% CI | **[-0.910, +1.213]** |
+| Noninferiority margin | -1.0 |
+| Passes | **yes** |
+
+It passes, but narrowly: the lower bound is -0.910 against a -1.0 margin, so
+the test has little margin to spare. Discordance is nearly symmetric --
+25 baseline-only against 27 candidate-only -- which is what noise looks like
+rather than a defect in either direction.
+
+**Latency, three order-balanced pairs (`*` = CI excludes zero):**
+
+| Metric | short | 96K context |
+| --- | ---: | ---: |
+| `server_decode_s_per_draft` | **-8.99%\*** [-10.64, -7.35] | **-9.56%\*** [-14.60, -4.53] |
+| `mean_tpot_s` | -7.54% [-18.17, +3.09] | -7.33% [-38.43, +23.76] |
+| `output_tok_s` | +6.76% [-3.86, +17.39] | +0.01% [-1.92, +1.95] |
+| `acceptance_length` | -1.42% [-14.40, +11.56] | -2.01% [-36.52, +32.49] |
+| `mean_ttft_s` | **+6.18%\*** [+0.89, +11.48] | **+0.50%\*** [+0.41, +0.59] |
+
+The decode improvement is real and now measured on a configuration that is not
+mis-routing: about **9% off decode time per draft round**, at both prompt
+lengths, with confidence intervals well clear of zero. Acceptance is flat, so
+this is the scheduler's own effect and not a speculation artifact.
+
+**The short-prompt TTFT regression blocks rollout.** It is +6.18% here and was
++5.96% in job 1763763, so it reproduces across two independent runs and is not
+noise. The predeclared criteria forbid an unexplained TTFT regression.
+
+The leading hypothesis is residency: the cap-50 candidate keeps 2,174 hot
+experts per rank against the current placement's 2,182, and spends more pinned
+cold storage and a larger staging slot on replicas, so prefill reads more cold
+bytes. That predicts a *larger* effect at 96K, where every expert activates,
+and the measurement shows the opposite -- +0.50% long against +6.18% short --
+so the hypothesis does not fit and the cause is more likely a per-request fixed
+cost. Short-prompt TTFT is ~0.31 s, so +6% is about 19 ms. This needs a prefill
+profile of the two arms, not another guess.
