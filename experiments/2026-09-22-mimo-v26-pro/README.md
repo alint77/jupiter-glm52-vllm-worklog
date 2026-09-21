@@ -103,6 +103,41 @@ Three ways forward, for the user to pick:
   transformers does not know `model_type: mimo_v2` natively. Confirmed by a
   failed `AutoConfig.from_pretrained` without it.
 
+## The tiered port, scoped
+
+Ordered, with the GLM analogue for each. None of it should start before the
+smoke test says what the KV actually costs.
+
+1. **Manifest** — `build_mimo_v26_manifest` beside `build_glm_w4a16_manifest`
+   (`tiered_moe_manifest.py:454`), with a `_validate_mimo_v26_config` mirroring
+   `_validate_glm_w4a16_config:178`. The per-expert byte size drives every
+   downstream budget: **measure it off one loaded shard**, do not derive it
+   from the mxfp4 packing. Deriving expert/page bytes is what cost four
+   launches on GLM this session.
+
+2. **KV plan** — `plan_glm_kv_cache` rejects anything non-MLA at
+   `tiered_moe_kv.py:52`. A GQA plan is structurally simpler (no sparse
+   indexer, one spec kind) but must encode two things the GLM plan never had:
+   asymmetric K/V widths (192/128) and whatever the smoke test shows about
+   sliding-window promotion.
+
+3. **Spec-kind classifier** — `_get_tiered_kv_spec_kind` treats "not
+   MLAAttentionSpec" as *draft*. With a GQA target every spec is a
+   `FullAttentionSpec`, so target-vs-draft has to come from somewhere else
+   (layer name, or the owning module). This one silently mislabels rather than
+   raising, so it needs a test before it is trusted.
+
+4. **Validator pins** — `config/vllm.py:2318+` hardcodes GLM's
+   `max_model_len=400000`, `block_size=64`, `kv_cache_dtype=fp8_ds_mla` and
+   layer counts. Parametrise by model family; do **not** loosen them for GLM in
+   the process. The requested 250K context trips the `max_model_len` pin.
+
+5. **Draft-cache budgeting** — the fix landed earlier today adds draft specs to
+   `fixed_hbm_allocations`. It reads the drafter geometry from a
+   `FullAttentionSpec`, so it should carry to MiMo's dflash drafter unchanged,
+   but it assumes the drafter config exposes `num_key_value_heads` and
+   `head_dim` — MiMo's dflash config does.
+
 ## Status
 
 Download **complete** — 130 shards, 535 GB, every shard in the index present
