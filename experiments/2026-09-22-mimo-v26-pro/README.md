@@ -126,10 +126,29 @@ Three ways forward, for the user to pick:
   transformers does not know `model_type: mimo_v2` natively. Confirmed by a
   failed `AutoConfig.from_pretrained` without it.
 
+## Structural blocker found while scoping: group count
+
+`get_tiered_kv_available_memory` requires exactly one group and that it be a
+`UniformTypeKVCacheSpecs` (`tiered_moe_kv.py:93-95`, "Tiered GLM requires one
+uniform-type MLA cache group"). GLM satisfies that because the promotion path
+unifies everything into one group.
+
+MiMo does not, and for the same reason its KV is cheap: the promotion branch
+returns early for GQA, so `get_kv_cache_groups` splits layers by spec type --
+**a FullAttentionSpec group for the 10 GA layers and a SlidingWindowSpec group
+for the 60 SWA layers. Two groups, neither uniform-type.**
+
+So the tiered KV accounting has to be generalised to sum across groups, not
+just taught about GQA specs. The cheap-KV result and this blocker are two faces
+of the same branch.
+
 ## The tiered port, scoped
 
 Ordered, with the GLM analogue for each. None of it should start before the
 smoke test says what the KV actually costs.
+
+0. **Multi-group KV accounting** — see the blocker above; this gates everything
+   else in `tiered_moe_kv.py`.
 
 1. **Manifest** — `build_mimo_v26_manifest` beside `build_glm_w4a16_manifest`
    (`tiered_moe_manifest.py:454`), with a `_validate_mimo_v26_config` mirroring
