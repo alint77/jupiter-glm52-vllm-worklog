@@ -4,7 +4,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --gres=gpu:4
-#SBATCH --time=01:00:00
+#SBATCH --time=00:20:00
 #SBATCH --job-name=mimo26-smoke
 #SBATCH --output=agent_space/experiments/2026-09-22-mimo-v26-pro/smoke-%j.out
 #SBATCH --error=agent_space/experiments/2026-09-22-mimo-v26-pro/smoke-%j.err
@@ -21,10 +21,20 @@
 #
 # Context is deliberately 64K, not the target 250K: bytes/token extrapolates
 # exactly and a smaller cache cannot OOM the first attempt.
+#
+# 20 minutes, not the default hour, to fit a backfill window -- sinfo showed 20
+# idle nodes while this sat at reason=Priority. Sized from a measured
+# reference: GLM-5.3-W4A16 is 451 GB and reached "experts placed" at 3:00,
+# fully ready at 7:47 with torch.compile. MiMo is 573 GB (1.27x) and runs
+# eager, so ~4 min to weights and ~8 to the KV numbers. Those numbers are
+# logged during engine init, before generation, so even a truncated run
+# still answers the sliding-window question.
 set -euo pipefail
 cd /e/project1/profound/alint77/vllm
 source agent_space/jupiter-env.sh
 export VLLM_USE_V2_MODEL_RUNNER=1
+# The first attempt OOMed allocating parameters, before any shard was read.
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 export CUDA_VISIBLE_DEVICES=0,1,2,3
 export VLLM_CACHE_ROOT=/e/fscratch/profound/${USER}/caches/marlin/vllm-cache-mimo26
 export TRITON_CACHE_DIR=/e/fscratch/profound/${USER}/caches/triton

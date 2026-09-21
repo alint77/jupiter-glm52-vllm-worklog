@@ -19,7 +19,7 @@ def main() -> None:
         tensor_parallel_size=4,
         max_model_len=max_len,
         max_num_seqs=1,
-        cpu_offload_gb=float(os.environ.get("SMOKE_OFFLOAD_GB", "60")),
+        cpu_offload_gb=float(os.environ.get("SMOKE_OFFLOAD_GB", "105")),
         # cpu_offload_gb routes weights through UVA, and unbound C2C runs about
         # 6x slow on this machine -- enough to turn weight load into the whole
         # job. Bind before any pinned allocation happens.
