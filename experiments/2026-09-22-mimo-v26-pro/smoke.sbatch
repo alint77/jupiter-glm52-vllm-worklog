@@ -32,8 +32,14 @@
 set -euo pipefail
 cd /e/project1/profound/alint77/vllm
 source agent_space/jupiter-env.sh
-export VLLM_USE_V2_MODEL_RUNNER=1
-# The first attempt OOMed allocating parameters, before any shard was read.
+# VLLM_USE_V2_MODEL_RUNNER is deliberately NOT set. cpu_offload_gb only works
+# under the V1 runner: gpu_model_runner.py:933 calls
+# set_offloader(create_offloader(...)), and the V2 runner
+# (v1/worker/gpu/model_runner.py) never does, so get_offloader() stays a
+# NoopOffloader whose wrap_modules returns modules untouched. Under V2 the flag
+# is accepted and silently ignored -- jobs 1943437 and 1944037 OOMed at 94.48
+# and 94.47 GiB resident for cpu_offload_gb of 60 and 105 respectively, a 0.01
+# GiB difference across a 45 GiB change in budget.
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 export CUDA_VISIBLE_DEVICES=0,1,2,3
 export VLLM_CACHE_ROOT=/e/fscratch/profound/${USER}/caches/marlin/vllm-cache-mimo26
