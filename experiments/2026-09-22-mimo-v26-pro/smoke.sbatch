@@ -41,6 +41,11 @@ source agent_space/jupiter-env.sh
 # and 94.47 GiB resident for cpu_offload_gb of 60 and 105 respectively, a 0.01
 # GiB difference across a 45 GiB change in budget.
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+# cpu_offload_gb is PER GPU and pins host memory, so 105 meant 420 GiB pinned
+# across four workers -- job 1944307 died silently right after the Marlin MoE
+# backend came up, no traceback, no core. Only ~50 GiB per rank is needed
+# (~145 GB/rank against 95 GiB of HBM), so 60 leaves margin on both sides.
+export SMOKE_OFFLOAD_GB=60
 export CUDA_VISIBLE_DEVICES=0,1,2,3
 export VLLM_CACHE_ROOT=/e/fscratch/profound/${USER}/caches/marlin/vllm-cache-mimo26
 export TRITON_CACHE_DIR=/e/fscratch/profound/${USER}/caches/triton

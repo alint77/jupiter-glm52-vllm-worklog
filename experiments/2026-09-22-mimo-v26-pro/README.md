@@ -32,17 +32,36 @@ way this model runs at all here.
 Rough per-rank budget: 116 GiB experts + ~6 GiB sharded attention weights + KV,
 against 95 HBM + 118.8 Grace = 213.8 GiB. It fits, but not loosely.
 
-## KV cache: the open sizing question
+## KV cache: answered from the code, not a launch
 
-K and V differ in width, so per token per layer per rank (2 KV heads at TP4)
-is `2*192 + 2*128 = 640` elements, not `2*2*192`.
+`kv_cache_utils.py:1568-1572` gates the promotion:
 
-- if the 60 sliding-window layers are **promoted to full attention** (which is
-  what happened on GLM — `kv_cache_utils.py:1581`, "page sizes cannot be
-  unified"), 250K costs **~22.4 GB/rank at bf16**, ~11.2 at fp8.
-- if the window is **honoured**, the 10 full layers dominate: **~3.2 GB**.
+```python
+has_mla = any(isinstance(spec, MLAAttentionSpec) for spec in ...)
+has_regular_swa = any(isinstance(spec, SlidingWindowSpec) for spec in ...)
+if not (has_mla and has_regular_swa):
+    return None      # no promotion; the hybrid manager handles mixed specs
+```
 
-A 7x swing. Being measured by `smoke.sbatch`, not assumed.
+Promotion needs **both** MLA and sliding-window specs — that is the GLM case (MLA
+target plus an SWA drafter), which is why the "page sizes cannot be unified"
+warning appeared there. **MiMo V2.6 is GQA, so `has_mla` is False and the branch
+returns early. The sliding-window layers are not promoted.**
+
+Per rank at TP4, 250K, bf16 (K and V differ: `2*192 + 2*128 = 640` elements per
+token per layer):
+
+| | GB/rank at 250K |
+|---|---|
+| if promoted (what GLM does) | 22.4 |
+| **actual — 10 full-attention layers only** | **3.2** |
+
+The 60 sliding-window layers cost their 128-token window, negligible even with
+block rounding. The convertor stripping `attention_chunk_size` keeps the hybrid
+manager enabled, which is what makes this path reachable.
+
+**KV is not a constraint for the 250K target.** The constraint is entirely the
+expert weights.
 
 ## The gap: tiered MoE is hard-pinned to GLM
 
@@ -97,8 +116,12 @@ Three ways forward, for the user to pick:
   asymmetric `v_head_dim`.
 - `store_dtype: mxfp4` under `quant_method: fp8` routes to `Mxfp4MoEMethod`
   (`fp8.py:204`).
-- `visual.*` / `audio.*` towers load harmlessly: `load_weights` drops anything
-  not in `params_dict`, so the text-only class ignores them.
+- the `visual.*` / `audio.*` towers are **built, not skipped** — an earlier
+  note here claimed otherwise and was wrong. `config.json` declares
+  `MiMoV2ForCausalLM`, but `MimoV2ModelArchConfigConvertor` rewrites it to
+  `MiMoV2OmniForCausalLM` whenever `vision_config` is present
+  (`model_arch_config_convertor.py:509`), and the run log confirms
+  `Resolved architecture: MiMoV2OmniForCausalLM`.
 - `trust_remote_code` **is** required — the config has an `auto_map` and
   transformers does not know `model_type: mimo_v2` natively. Confirmed by a
   failed `AutoConfig.from_pretrained` without it.
@@ -137,6 +160,34 @@ smoke test says what the KV actually costs.
    `FullAttentionSpec`, so it should carry to MiMo's dflash drafter unchanged,
    but it assumes the drafter config exposes `num_key_value_heads` and
    `head_dim` — MiMo's dflash config does.
+
+## The non-tiered smoke test is a dead end (4 launches)
+
+| job | runner | offload | outcome |
+|---|---|---|---|
+| 1943437 | V2 | 60 | CUDA OOM, `mxfp4.py:577`, 94.48 GiB resident |
+| 1944037 | V2 | 105 | CUDA OOM, 94.47 GiB — a 45 GiB budget change moved 0.01 GiB |
+| 1944307 | V1 | 105 | offloader installed, workers die silently after Marlin init |
+| 1944556 | V1 | 60 | identical silent death; `ExitCode 1:0`, no signal, no core |
+
+The V2 pair diagnosed a real bug (see below). The V1 pair shows the offload
+budget is not the variable: 60 and 105 fail identically. Exit code carries no
+signal, so it is neither the OOM-killer nor a segfault — a worker exception that
+never reached the log.
+
+It does load far enough to validate the interesting parts:
+
+```
+mimo_v2.py:322   Using FLASH_ATTN_DIFFKV for attention.
+fa_utils.py:217  Diff-KV with sinks: upgrading FlashAttention 3 -> 4
+mxfp4.py:622     Using 'MARLIN' Mxfp4 MoE backend.
+```
+
+Asymmetric QK/V heads route to diff-KV and auto-upgrade to FA4; mxfp4 experts
+pick up Marlin. Neither needed porting.
+
+Not worth a fifth launch: the KV question it existed to answer is settled above
+from the code, and tiered MoE is where this model has to run regardless.
 
 ## Status
 
