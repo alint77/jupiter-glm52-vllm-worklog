@@ -42,7 +42,17 @@ mkdir -p "${VLLM_CACHE_ROOT}"
 export PYTHONFAULTHANDLER=1
 reserve_gb="${MIMO_HBM_RESERVE_GB:-8}"
 model_len="${MIMO_MAX_MODEL_LEN:-250000}"
-echo "mimo: model_len=${model_len} reserve=${reserve_gb}GB port=${port}"
+batched="${MIMO_BATCHED_TOKENS:-8192}"
+# Extra serve flags for sweeps, e.g. --language-model-only.
+read -r -a extra_args <<< "${MIMO_EXTRA_ARGS:-}"
+# MIMO_MTP=k drafts k tokens with the (single, reused) MTP layer; decode steps
+# then carry k+1 tokens, so that is the graph size to capture.
+capture=1
+if [[ -n "${MIMO_MTP:-}" ]]; then
+  capture=$((MIMO_MTP + 1))
+  extra_args+=(--speculative-config "{\"method\":\"mtp\",\"num_speculative_tokens\":${MIMO_MTP}}")
+fi
+echo "mimo: model_len=${model_len} reserve=${reserve_gb}GB batched=${batched} extra=${MIMO_EXTRA_ARGS:-} mtp=${MIMO_MTP:-off} port=${port}"
 
 exec .venv/bin/vllm serve "${model}" \
   --served-model-name mimo26-pro \
@@ -57,14 +67,15 @@ exec .venv/bin/vllm serve "${model}" \
   --block-size 64 \
   --max-model-len "${model_len}" \
   --max-num-seqs 1 \
-  --max-num-batched-tokens 8192 \
+  --max-num-batched-tokens "${batched}" \
   --gpu-memory-utilization 0.90 \
   --optimization-level 2 \
-  --compilation-config '{"mode":3,"cudagraph_mode":"FULL_AND_PIECEWISE","cudagraph_capture_sizes":[1],"compile_sizes":[],"cudagraph_num_of_warmups":1,"pass_config":{"fuse_allreduce_rms":false}}' \
+  --compilation-config '{"mode":3,"cudagraph_mode":"FULL_AND_PIECEWISE","cudagraph_capture_sizes":['"${capture}"'],"compile_sizes":[],"cudagraph_num_of_warmups":1,"pass_config":{"fuse_allreduce_rms":false}}' \
   --enable-tiered-moe \
   --tiered-moe-backend uva \
   --tiered-moe-hbm-reserve-gb "${reserve_gb}" \
   --tiered-moe-host-reserve-gb 8 \
   --tiered-moe-numa-strict \
   --mla-cache-tier hbm \
-  --grace-machine-profile agent_space/profiles/jupiter-gh200-baseline.json
+  --grace-machine-profile agent_space/profiles/jupiter-gh200-baseline.json \
+  "${extra_args[@]}"

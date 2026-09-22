@@ -289,3 +289,43 @@ random tokens route differently.
 Configuration: `serve.sbatch` (block 64, batched tokens 8192, CUDA graph
 capture [1], tiered uva, numa-strict, grace profile
 jupiter-gh200-baseline.json, cold tier on the GPU-local Grace NUMA node).
+
+## Memory sweep: 250K, c=1 (no SD unless noted)
+
+Each arm is `bench.sbatch` with `MIMO_HBM_RESERVE_GB`, `MIMO_BATCHED_TOKENS`,
+`MIMO_EXTRA_ARGS` (jobs in `sweep1-jobs.txt`). `hbm.csv` polls nvidia-smi every
+200 ms; `hbm_peaks.py` reports per-phase peaks. Decode = coding suite
+16 x 1024, TPOT P50. "min free" is the worst GPU over the whole bench,
+including the 240K prompt.
+
+| arm | job | hot/rank | free after warmup | min free serving | decode ms | 32K TTFT s | 240K TTFT s |
+|---|---|---|---|---|---|---|---|
+| R8 | 1960037 | 3666 | 7.49 | -- | 23.13 | 5.10 | -- |
+| R8 LM-only | 1960414 | 3706 | 8.45 | 8.25 | 23.04 | 5.12 | 50.3 |
+| R6 | 1960415 | 3765 | 5.63 | 4.92 | 22.81 | 5.06 | 49.7 |
+| R5 | 1960416 | 3815 | 4.70 | 2.99 | 22.70 | 5.08 | 50.2 |
+| R8 B16384 | 1960417 | 3442 | 10.33 | 7.38 | 23.83 | 5.00 | 48.9 |
+| R8 B4096 | 1960418 | 3777 | 7.56 | 5.68 | 22.78 | 7.45 | 51.8 |
+| R4 LM-only | 1960720 | 3905 | 4.70 | 3.50 | 22.39 | 5.00 | 48.2 |
+| R3 LM-only | 1960721 | 3955 | 3.77 | 3.56 | 22.30 | 4.96 | 47.7 |
+| **R2 LM-only** | 1960722 | **4005** | 2.88 | 2.68 | **22.13** | 4.94 | 47.5 |
+
+Findings:
+
+* **The planner's steady state is exact**: free HBM after warmup equals the
+  planned reserve to ~0.05 GiB (R5: 4.70 GiB free for 4.66 GiB planned).
+* **Serving transients are small and chunk-bound, not context-bound**: a
+  prefill chunk adds ~0.75 GiB over the post-warmup level, and 32K, 128K and
+  240K prompts peak identically. The 5 GB floor (GLM-derived) left ~3 GiB
+  idle; floors are now 2 GB planned / 1 GB observed (31609eb272).
+* **`--language-model-only`** drops the vision and audio towers
+  (StageMissingLayer); ad8a5b7453 removes them from the planner's non-routed
+  budget (+40 experts) and ~1 GiB more is freed than planned, which is why
+  LM-only arms sit ~1 GiB above their reserve.
+* **Chunk size**: 16K chunks cost 224 hot experts (runtime buffers and
+  sliding admission scale with it) for 2-3% faster prefill; 4K chunks gain 111
+  experts but make 32K prefill 46% slower. 8192 stays.
+* **Decode vs residency**: 3666 -> 4005 hot (51% -> 60%) took decode from
+  23.13 to 22.13 ms (-4.3%), ~2.9 us per hot expert. The remaining 2.7 GiB of
+  idle HBM at R2 is worth ~140 experts, ~0.4 ms.
+* 240K prompts work: 47.5 s TTFT (5.1K tok/s), decode after them 20.5 ms.

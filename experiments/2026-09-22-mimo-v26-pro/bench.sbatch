@@ -45,6 +45,13 @@ for _ in $(seq 1 540); do
 done
 [[ "${ready}" == true ]] || { echo "SERVER NOT READY"; kill "${pid}"; exit 1; }
 echo "server ready at $(date +%T)"
+# Device-level HBM per GPU every 200 ms: the reserve must absorb transient
+# activations, which the post-warmup check cannot see.
+nvidia-smi --query-gpu=timestamp,index,memory.used,memory.total --format=csv,noheader,nounits \
+  -lms 200 > "${result_dir}/hbm.csv" &
+smi_pid=$!
+phase() { echo "$(date +%Y/%m/%d\ %H:%M:%S.%3N),$1" >> "${result_dir}/phases.csv"; echo "=== $1 ==="; }
+phase rest
 tr '\r' '\n' < "${result_dir}/server.out" | grep -ohE "Tiered MoE residency:.{0,70}|observed HBM reserve:.{0,50}|GPU KV cache size:.{0,25}|conversion.{0,60}" | sort -u
 
 bench() {
@@ -57,24 +64,26 @@ bench() {
 }
 reset() { curl -fsS -X POST http://127.0.0.1:8031/reset_prefix_cache >/dev/null || true; }
 
-echo "=== warmup (excluded) ==="
+phase warmup
 bench --dataset-name random --random-input-len 512 --random-output-len 64 --num-prompts 2 >/dev/null 2>&1 || true
 reset
 
-echo "=== decode: PyTorch coding suite, c=1, 1024 out ==="
+phase decode
 bench --dataset-name custom \
   --dataset-path agent_space/experiments/2026-08-29-glm53-routing-capture/prompts-short.jsonl \
   --custom-output-len 1024 --disable-shuffle --num-prompts 16 \
   --save-result --result-dir "${result_dir}" --result-filename decode.json 2>&1 | tail -30
 reset
 
-for len in 32768 131072; do
-  echo "=== prefill: random ${len} in, 64 out ==="
+for len in 32768 131072 240000; do
+  phase "prefill-${len}"
   bench --dataset-name random --random-input-len "${len}" --random-output-len 64 \
     --num-prompts 2 --save-result --result-dir "${result_dir}" \
     --result-filename "prefill-${len}.json" 2>&1 | tail -30
   reset
 done
 
-kill "${pid}" 2>/dev/null || true
+phase end
+kill "${smi_pid}" "${pid}" 2>/dev/null || true
+.venv/bin/python "${E}/hbm_peaks.py" "${result_dir}" || true
 echo "BENCH DONE"
