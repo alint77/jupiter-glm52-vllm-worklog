@@ -151,7 +151,53 @@ Measured constants, each cross-checked more than one way:
 | experts per EP4 rank | 123.7 GiB |
 | non-routed, checkpoint-wide | 34.7 GB |
 
-## The one remaining piece
+## The planner runs end to end
+
+Job 1950886 reached, on every rank:
+
+```
+Tiered MoE residency: 2931 hot / 3693 cold experts per rank
+                      (54.7 GiB available / 19.1 MiB per expert)
+```
+
+Manifest, non-routed inventory, KV plan and placement all reconciled, and the
+19.1 MiB per expert matches the measured 20,054,016 bytes. The non-routed
+inventory came out at 8.00 GiB per rank: 428 replicated tensors, 588
+tp-sharded, 48 dropped -- exactly the MTP tensor count, since speculative
+decoding is off.
+
+## The remaining piece: Mxfp4MoEMethod has no tiered hook
+
+The run then OOMed. `Mxfp4MoEMethod.create_weights` allocated all 6,624 local
+experts (123.7 GiB) while the planner had budgeted 2,931 hot (54.7 GiB), and
+died at 94.5 GiB. **No launcher setting closes a 69 GiB gap** -- the reserve
+and utilisation knobs are worth about 2 GiB each.
+
+The tiered allocation hook lives in the quantisation methods, and only three
+have it: `auto_gptq.py`, `modelopt.py`, and
+`compressed_tensors_moe_wna16_marlin.py`. No mxfp4 caller has needed tiering
+before, so `mxfp4.py` has none.
+
+Scope, read rather than estimated -- it is more than mirroring auto_gptq's
+construction branch:
+
+| | |
+|---|---|
+| `create_weights` | tiered branch: resolve placement, attach it, allocate tier storage, register zero-sized placeholders |
+| `allocate_layer_expert_storage` (`:193`) and `build_expert_component_views` (`:109`) | both call `glm_marlin_components(group_size)` **hardcoded**; mxfp4 needs its own specs plus dispatch at both |
+| `setup_tiered_moe_kernels` | reads components generically off storage, but builds WNA16/NVFP4 Marlin kernels keyed on group_size; mxfp4 needs its own kernel branch for hot and cold |
+| staged cold path | `_staged_cold_tier` / `_cold_prefetch_for` rebuild the cold kernel from the same quantisation description, so they need the mxfp4 variant too |
+| `process_weights_after_loading` | delegate to `setup_tiered_moe_kernels`, as the other three do |
+
+The component specs are already measured, so that input is not in doubt:
+`w13_weight (4096, 3072) u8`, `w2_weight (6144, 1024) u8`,
+`w13_weight_scale (4096, 192) u8`, `w2_weight_scale (6144, 64) u8` --
+20,054,016 bytes, matching the probe and the index arithmetic.
+
+This is effectively adding a quantisation backend to the tiered runtime rather
+than finishing the port, and it is the only thing between here and a server.
+
+## Superseded: the earlier "one remaining piece"
 
 `build_glm_non_routed_runtime_inventory` classifies every non-expert tensor
 into `TP_SHARDED` / `REPLICATED` / `EP_SHARDED` / `DROPPED` from GLM's tensor
