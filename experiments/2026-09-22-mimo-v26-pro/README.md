@@ -32,99 +32,53 @@ way this model runs at all here.
 Rough per-rank budget: 116 GiB experts + ~6 GiB sharded attention weights + KV,
 against 95 HBM + 118.8 Grace = 213.8 GiB. It fits, but not loosely.
 
-## KV cache: answered from the code, not a launch
+## KV cache: 19.21 GB/rank at 250K (measured against the real code)
 
-`kv_cache_utils.py:1568-1572` gates the promotion:
+Two separate questions, and an earlier revision of this file got the second
+one wrong.
 
-```python
-has_mla = any(isinstance(spec, MLAAttentionSpec) for spec in ...)
-has_regular_swa = any(isinstance(spec, SlidingWindowSpec) for spec in ...)
-if not (has_mla and has_regular_swa):
-    return None      # no promotion; the hybrid manager handles mixed specs
+**Is the sliding window promoted to full attention?** No.
+`kv_cache_utils.py:1568-1572` gates promotion on `has_mla and has_regular_swa`
+-- that is the GLM shape, MLA target plus SWA drafter. MiMo is GQA, so
+`has_mla` is False and the branch returns early. Its layers group by spec type
+instead: one `FullAttentionSpec` group of 10, one `SlidingWindowSpec` group
+of 60.
+
+**So what does it cost?** Not "only the 10 full-attention layers". The pool is
+sized by the *largest* group, because `_pool_bytes_per_block` returns
+`page_size * max(len(g.layer_names))`. Measured by calling the real function:
+
 ```
-
-Promotion needs **both** MLA and sliding-window specs — that is the GLM case (MLA
-target plus an SWA drafter), which is why the "page sizes cannot be unified"
-warning appeared there. **MiMo V2.6 is GQA, so `has_mla` is False and the branch
-returns early. The sliding-window layers are not promoted.**
-
-Per rank at TP4, 250K, bf16 (K and V differ: `2*192 + 2*128 = 640` elements per
-token per layer):
+full.page_size_bytes  = 81920      # 64 x 2 heads x (192 + 128) x 2 bytes
+swa.page_size_bytes   = 81920
+_pool_bytes_per_block = 4915200    # = page x 60, the larger group
+num_blocks @250K c=1  = 3908
+RESERVED TOTAL        = 19.21 GB
+```
 
 | | GB/rank at 250K |
 |---|---|
-| if promoted (what GLM does) | 22.4 |
-| **actual — 10 full-attention layers only** | **3.2** |
+| an earlier claim here, 10 full layers only | 3.20 — **wrong** |
+| all 70 layers | 22.41 |
+| **actual, measured** | **19.21** |
 
-The 60 sliding-window layers cost their 128-token window, negligible even with
-block rounding. The convertor stripping `attention_chunk_size` keeps the hybrid
-manager enabled, which is what makes this path reachable.
+`head_size_v` *is* budgeted, despite `real_page_size_bytes` appearing to use
+`head_size` for both K and V -- another reason this was measured rather than
+read.
 
-**KV is not a constraint for the 250K target.** The constraint is entirely the
-expert weights.
+### What that does to the budget
 
-## The gap: tiered MoE is hard-pinned to GLM
+| per rank | |
+|---|---|
+| HBM | 102 GB |
+| KV at 250K | 19.2 |
+| non-routed weights | ~8 |
+| reserve | ~9 |
+| **left for hot experts** | **~66 GB -> ~3,300 of 6,624 (~50%)** |
 
-Every pin fails for this model:
-
-| pin | GLM | MiMo V2.6 |
-|---|---|---|
-| cache spec | MLA only (`tiered_moe_kv.py:52`) | GQA / `FullAttentionSpec` |
-| main layers | 78 + MTP | 70 + 3 |
-| sparse indexer | 21 + MTP layers required | none |
-| cache dtype | `fp8_ds_mla` | n/a |
-| manifest | `build_glm_w4a16_manifest`, W4A16 compressed-tensors | mxfp4 + fp8 scales |
-| config validator | `max_model_len=400000`, `block_size=64` | 250K wanted |
-
-So this is a second model family in the tiered path, not a config change.
-
-## Blocker for the requested shape: MTP3 is not supported
-
-The checkpoint ships **3** MTP layers. vLLM pins MiMo-V2 to **1**:
-
-```python
-# mimo_v2_mtp.py:53
-_MIMO_V2_PRO_NUM_MTP_LAYERS = 1
-# speculative.py:391
-# vLLM currently supports only the first MiMo-V2 MTP layer.
-```
-
-`MiMoV2MultiTokenPredictor.__init__` also hardcodes `num_mtp_layers = 1`
-(`mimo_v2_mtp.py:173`), and `forward` indexes `spec_step_idx % num_mtp_layers`
-— so asking for 3 speculative tokens today reuses **layer 0 three times** and
-silently ignores the weights for layers 1 and 2. It would run, and it would
-under-accept, with nothing in the logs saying why.
-
-Three ways forward, for the user to pick:
-
-1. **MTP1 now.** Supported, correct, lower acceptance. Good enough to get the
-   model serving and to measure everything else.
-2. **Lift the pin to 3.** The constant, the hardcoded `num_mtp_layers`, and the
-   weight mapping for `model.mtp.layers.{1,2}`. Contained, but it is a real
-   change to a shared model file and needs an acceptance measurement to show it
-   helped.
-3. **Use the shipped `dflash/` drafter** (5 layers, SWA 1024, `is_causal:
-   false`) — the card calls this the model's speculative decoder. Note the
-   DFlash CUDA-graph acceptance defect found earlier today; the eager default
-   now in `DFlash2Speculator` would cover it, but MiMo's drafter routes through
-   `DFlashSpeculator`, which still defaults to the captured graph.
-
-## What already works, and does not need porting
-
-- `MiMoV2ForCausalLM` is registered and handles attention sinks,
-  `attention_value_scale`, chunked attention, the hybrid layer pattern, and the
-  asymmetric `v_head_dim`.
-- `store_dtype: mxfp4` under `quant_method: fp8` routes to `Mxfp4MoEMethod`
-  (`fp8.py:204`).
-- the `visual.*` / `audio.*` towers are **built, not skipped** — an earlier
-  note here claimed otherwise and was wrong. `config.json` declares
-  `MiMoV2ForCausalLM`, but `MimoV2ModelArchConfigConvertor` rewrites it to
-  `MiMoV2OmniForCausalLM` whenever `vision_config` is present
-  (`model_arch_config_convertor.py:509`), and the run log confirms
-  `Resolved architecture: MiMoV2OmniForCausalLM`.
-- `trust_remote_code` **is** required — the config has an `auto_map` and
-  transformers does not know `model_type: mimo_v2` natively. Confirmed by a
-  failed `AutoConfig.from_pretrained` without it.
+So KV *is* a real claim on HBM, not the rounding error the 3.2 GB figure
+implied. Half the experts resident is still a workable hot/cold regime, and
+`kv_cache_dtype=fp8` would halve the KV if more residency is wanted.
 
 ## Measured: runtime_expert_bytes = 20,054,016 (19.125 MiB/expert)
 
