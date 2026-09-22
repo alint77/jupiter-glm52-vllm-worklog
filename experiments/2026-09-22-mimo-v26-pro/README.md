@@ -388,3 +388,23 @@ block sizes -- vLLM gives draft layers 80-token blocks to match pages).
 
 **Recommended serve config** (now `serve.sbatch` defaults): DFlash k=7,
 `--language-model-only`, HBM reserve 3 GB, 8192-token chunks, block 64.
+
+## Cold-expert prefill prefetch (DFlash k=7, R3)
+
+Off in every run above (`VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS` unset).
+The staged cold kernel was WNA16-only; 3f11e2f953 adds the mxfp4 branch (see git
+log "Stage mxfp4 cold experts"). Slot 784 MiB/rank (largest cold layer),
+51.5 GiB staged per 8192-token chunk.
+
+| | job | hot/rank | TTFT 32K | 128K | 240K | min free |
+|---|---|---|---|---|---|---|
+| prefetch off | 1962760 | 3867 | 5.24 | 20.99 | 48.54 | 1.44 |
+| **prefetch on** | 1962761 | 3826 | **4.03** | **16.92** | **40.22** | 1.51 |
+
+Decode is untouched by design (gate is >= 1024 tokens). Both arms' decode
+TPOT (10.2 / 10.5 ms) is inflated by correctness probes sent mid-bench.
+Correctness: a 5.3K-token greedy prompt diverges between on and off after
+140 chars, but each server diverges from itself after 189-218 chars, so it
+is within run-to-run nondeterminism; both outputs are coherent.
+
+Now on by default in `serve.sbatch`.

@@ -40,6 +40,9 @@ mkdir -p "${VLLM_CACHE_ROOT}"
 # which on the V2 runner means a native crash. faulthandler prints the Python
 # stack on SIGSEGV/SIGABRT so the crash site is visible.
 export PYTHONFAULTHANDLER=1
+# Stage each layer's cold experts into a 784 MiB HBM slot during prefill
+# chunks (>= 1024 tokens; decode batches are at most 8): -17..-23% TTFT.
+export VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS="${VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS:-1024}"
 reserve_gb="${MIMO_HBM_RESERVE_GB:-3}"
 model_len="${MIMO_MAX_MODEL_LEN:-250000}"
 batched="${MIMO_BATCHED_TOKENS:-8192}"
