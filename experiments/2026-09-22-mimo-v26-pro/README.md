@@ -408,3 +408,26 @@ Correctness: a 5.3K-token greedy prompt diverges between on and off after
 is within run-to-run nondeterminism; both outputs are coherent.
 
 Now on by default in `serve.sbatch`.
+
+## Claude Code backend: `./claude-mimo26.sh`
+
+`claude-server.sbatch` (12 h) runs `serve.sbatch`'s tuned flags plus
+`--enable-auto-tool-choice --tool-call-parser mimo --reasoning-parser mimo`,
+an API key, and the ready/endpoint files `claude-local.sh` polls.
+`generation_config.json` stays in force (temperature 1.0, top_p 0.95, three
+EOS ids).
+
+Validated on a 1 h copy (job 1963171):
+
+* `tool_probe.py` over `/v1/messages`, the path Claude Code uses: tool call
+  returned as a `tool_use` block with parsed JSON input and
+  `stop_reason: tool_use`; reasoning as a separate `thinking` block; no raw
+  `<tool_call>`/`<think>` in text; `tool_result` round trip answered
+  correctly; the streamed form carries the same `tool_use` and valid
+  `input_json_delta`. All pass.
+* GSM8K (repo `tests/evals/gsm8k`, 5-shot completions, 400 questions,
+  greedy): **92.2%**, 0.3% invalid, 114 tok/s (`gsm8k-400.json`). The same
+  eval on GLM-5.3 W4A16 here gives 91.21%, so no sign the mxfp4 tiered
+  conversion costs accuracy.
+
+Not yet exercised: multi-hour sessions (every run so far was < 1 h).
