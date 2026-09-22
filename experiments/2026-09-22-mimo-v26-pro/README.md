@@ -263,3 +263,29 @@ its numbers. Fixes in order, each found by the run before it:
 Bench jobs 1960037 (HBM reserve 8 GB) and 1960038 (16 GB) run in parallel:
 the freed KV reservation goes to hot experts, so the tighter plan is the one
 to watch for OOM.
+
+## Results: MiMo-V2.6-Pro-RL, tiered MoE, 1x GH200 node (TP4/EP4), 250K, c=1, no SD
+
+Both servers came up with a 250,045-token KV pool. A greedy chat check returned
+coherent text ("The capital of France is Paris. The Seine River runs through
+the city."), so the mxfp4 tiered conversion is correct end to end.
+
+| | 1960037 (reserve 8 GB) | 1960038 (reserve 16 GB) |
+|---|---|---|
+| hot / cold experts per rank | 3666 / 2958 (55% hot) | 3267 / 3357 (49%) |
+| observed HBM free (min) | 7.49 GiB (6.52) | 14.94 GiB (13.97) |
+| decode TPOT P50 / P90 (coding suite, 16 x 1024) | **23.13 / 23.17 ms = 43.2 tok/s** | 24.28 / 24.31 ms = 41.2 tok/s |
+| TTFT P50, short prompts | 244 ms | 267 ms |
+| 32K prefill TTFT | **5.10 s (6.4K tok/s)** | 5.29 s |
+| 128K prefill TTFT | **20.8 s (6.3K tok/s)** | pending |
+| decode TPOT after 128K prompt | 21.9 ms | |
+
+No speculative decoding, so TPOT is per token. Mean TTFT on the decode suite
+(804 ms) includes the first request's cold path; P50 is the steady value.
+Each extra ~400 hot experts per rank bought ~1.15 ms/token (24.28 -> 23.13).
+Decode after the 128K random prompt is not comparable to the coding suite:
+random tokens route differently.
+
+Configuration: `serve.sbatch` (block 64, batched tokens 8192, CUDA graph
+capture [1], tiered uva, numa-strict, grace profile
+jupiter-gh200-baseline.json, cold tier on the GPU-local Grace NUMA node).
