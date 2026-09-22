@@ -227,3 +227,39 @@ Download **complete** — 130 shards, 535 GB, every shard in the index present
 `smoke.sbatch` (job 1943383) submitted: non-tiered, TP4, `cpu_offload_gb=60`,
 64K context, eager. It answers whether the weights load at all and what the KV
 actually costs per token, which is the input the tiered port needs.
+
+## Server bring-up (tiered, 250K, c=1, no SD)
+
+MTP dropped at the user's request; the target is a working tiered server and
+its numbers. Fixes in order, each found by the run before it:
+
+1. **mxfp4 tiered backend** (commits 0268435749..f69bb6fa2d): construction
+   hook, measured resident component specs (`w13_weight (384,8192) i32`,
+   `w2_weight (128,12288) i32`, `w13_weight_scale (192,4096) e8m0`,
+   `w2_weight_scale (64,6144) e8m0`; 20,054,016 B/expert), per-expert
+   conversion through `convert_weight_to_mxfp4_moe_kernel_format`, per-tier
+   Marlin mxfp4 kernels, `apply` routed to `apply_tiered_moe`.
+2. **Pinned allocations rounded to a power of two** (ea51bc67a1).
+   `pin_memory=True` goes through `CachingHostAllocator`, which rounds up
+   (`PowerOf2Ceil`): a 1.009 GiB request pinned 2.000 GiB (`pin_probe`), so
+   the cold tier took ~105 GiB/rank against 69 planned and the workers were
+   SIGKILLed silently. `GraceAllocation.allocate_pinned` now allocates pageable
+   memory at the exact size and `cudaHostRegister`s it. This also affected GLM
+   (51 GiB planned vs 75 pinned).
+3. **Load succeeds** (job 1959828): weights 132 s, model load 64.16 GiB and
+   184 s, residency 2931 hot / 3693 cold per rank.
+4. **KV pool undersized, planner oversized** (0781a3a81b). vLLM splits the
+   10 full + 60 sliding layers into **seven 10-layer groups** (group size =
+   the smaller type's count), all sharing one pool of `81,920 B x 10` blocks.
+   Admission charges every group: 3907 full blocks + 6 x 259 sliding blocks
+   (window 127 + 2 x 8192 in-flight tokens, +1) = 4.17 GiB. The runtime sized
+   the pool for full attention only (3908 blocks, 2.98 GiB) and failed the
+   admission check; the planner charged 60 layers per block and reserved
+   19.2 GB -- about 14.7 GB/rank of HBM that could hold ~770 more hot experts.
+   Both now count 5462 blocks = 4.47 GB, and the tests build groups with
+   vLLM's own `_get_kv_cache_groups_uniform_page_size` rather than a hand
+   model of it (the old test pinned the wrong model on both sides).
+
+Bench jobs 1960037 (HBM reserve 8 GB) and 1960038 (16 GB) run in parallel:
+the freed KV reservation goes to hot experts, so the tighter plan is the one
+to watch for OOM.

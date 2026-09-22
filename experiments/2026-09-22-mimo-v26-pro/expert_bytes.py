@@ -35,6 +35,18 @@ def _param_bytes(module: torch.nn.Module) -> dict[str, int]:
     return out
 
 
+def _param_shapes(module: torch.nn.Module) -> dict[str, str]:
+    """Shape and dtype per tensor -- equal byte counts either side of the
+    repack do not imply equal layouts, and the tiered storage specs need the
+    resident one."""
+    out: dict[str, str] = {}
+    for name, p in module.named_parameters(recurse=True):
+        out[name] = f"{tuple(p.data.shape)} {p.data.dtype}"
+    for name, b in module.named_buffers(recurse=True):
+        out.setdefault(name, f"{tuple(b.shape)} {b.dtype}")
+    return out
+
+
 def main() -> None:
     model = os.environ.get("PROBE_MODEL", MODEL)
     cfg = json.load(open(os.path.join(model, "config.json")))
@@ -83,6 +95,8 @@ def main() -> None:
             print("   %-46s %10.2f MiB" % (k, v / 1024**2))
         print("   TOTAL %.2f MiB for %d experts -> %.3f MiB/expert"
               % (tot_b / 1024**2, n, tot_b / 1024**2 / n))
+        for k, v in sorted(_param_shapes(experts).items()):
+            print("   SHAPE-BEFORE %-40s %s" % (k, v))
 
         # The FusedMoE wrapper's .quant_method is a MoERunner; the real method
         # lives on the RoutedExperts child. Walk the tree the way the loader
@@ -104,6 +118,8 @@ def main() -> None:
         for k, v in sorted(after.items()):
             print("   %-46s %10.2f MiB" % (k, v / 1024**2))
         print("   TOTAL %.2f MiB for %d experts" % (tot_a / 1024**2, n))
+        for k, v in sorted(_param_shapes(experts).items()):
+            print("   SHAPE-AFTER  %-40s %s" % (k, v))
         print()
         print("RUNTIME_EXPERT_BYTES %d" % (tot_a // n))
         print("   = %.3f MiB/expert   (GLM w4a16 reference: 20.3)"

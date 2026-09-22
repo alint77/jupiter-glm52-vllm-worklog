@@ -4,7 +4,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --gres=gpu:4
-#SBATCH --time=00:50:00
+#SBATCH --time=00:25:00
 #SBATCH --job-name=mimo26-serve
 #SBATCH --output=agent_space/experiments/2026-09-22-mimo-v26-pro/serve-%j.out
 #SBATCH --error=agent_space/experiments/2026-09-22-mimo-v26-pro/serve-%j.err
@@ -36,6 +36,10 @@ export TORCHINDUCTOR_CACHE_DIR=/e/fscratch/profound/${USER}/caches/inductor
 export FLASHINFER_CACHE_DIR=/e/fscratch/profound/${USER}/caches/flashinfer
 mkdir -p "${VLLM_CACHE_ROOT}"
 
+# Worker deaths during construction have been silent -- no Python traceback,
+# which on the V2 runner means a native crash. faulthandler prints the Python
+# stack on SIGSEGV/SIGABRT so the crash site is visible.
+export PYTHONFAULTHANDLER=1
 reserve_gb="${MIMO_HBM_RESERVE_GB:-8}"
 model_len="${MIMO_MAX_MODEL_LEN:-250000}"
 echo "mimo: model_len=${model_len} reserve=${reserve_gb}GB port=${port}"
