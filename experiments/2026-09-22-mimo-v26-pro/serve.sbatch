@@ -48,11 +48,15 @@ read -r -a extra_args <<< "${MIMO_EXTRA_ARGS:-}"
 # MIMO_MTP=k drafts k tokens with the (single, reused) MTP layer; decode steps
 # then carry k+1 tokens, so that is the graph size to capture.
 capture=1
-if [[ -n "${MIMO_MTP:-}" ]]; then
+if [[ -n "${MIMO_DFLASH:-}" ]]; then
+  # DFlash drafts a block of MIMO_DFLASH tokens (block_size 8 -> 7) in one pass.
+  capture=$((MIMO_DFLASH + 1))
+  extra_args+=(--speculative-config "{\"method\":\"dflash\",\"model\":\"${model}/dflash\",\"num_speculative_tokens\":${MIMO_DFLASH}}")
+elif [[ -n "${MIMO_MTP:-}" ]]; then
   capture=$((MIMO_MTP + 1))
   extra_args+=(--speculative-config "{\"method\":\"mtp\",\"num_speculative_tokens\":${MIMO_MTP}}")
 fi
-echo "mimo: model_len=${model_len} reserve=${reserve_gb}GB batched=${batched} extra=${MIMO_EXTRA_ARGS:-} mtp=${MIMO_MTP:-off} port=${port}"
+echo "mimo: model_len=${model_len} reserve=${reserve_gb}GB batched=${batched} extra=${MIMO_EXTRA_ARGS:-} mtp=${MIMO_MTP:-off} dflash=${MIMO_DFLASH:-off} port=${port}"
 
 exec .venv/bin/vllm serve "${model}" \
   --served-model-name mimo26-pro \

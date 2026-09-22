@@ -329,3 +329,27 @@ Findings:
   23.13 to 22.13 ms (-4.3%), ~2.9 us per hot expert. The remaining 2.7 GiB of
   idle HBM at R2 is worth ~140 experts, ~0.4 ms.
 * 240K prompts work: 47.5 s TTFT (5.1K tok/s), decode after them 20.5 ms.
+
+## MTP (all at R2, LM-only, 8192 chunks, 250K)
+
+| arm | job | hot/rank | decode ms (tok/s) | accept len | per-position | min free |
+|---|---|---|---|---|---|---|
+| no SD | 1960722 | 4005 | 22.13 (45) | -- | -- | 2.68 |
+| MTP=3, layer 0 reused | 1961108 | 3979 | 11.88 (84) | 2.26 | .81 .36 .09 | 1.60 |
+| **MTP=3, three layers** | 1961352 | 3947 | **11.49 (87)** | 2.33 | .82 .40 .12 | 1.54 |
+| MTP=2, layer 0 | 1961575 | ~3979 | 13.08 (76) | 2.20 | .82 .38 | 1.61 |
+
+Fixes needed (all committed):
+* the dense MTP drafter skipped the tiered loader and every routed expert
+  tensor (31609eb272);
+* the MTP loader chunked the fused fp8 qkv as if TP8; it now reuses the
+  target's `_shard_fp8_qkv_proj` (fc18908429);
+* the planner charges MTP layer weights and their sliding KV layers
+  (5c7e42dc7b);
+* three MTP layers only work once a drafter's KV layers stay in one group:
+  vLLM dealt same-type layers round-robin, splitting them (669ed19a6c), then
+  352b232250 uses all three.
+
+Decode with MTP=3 is 1.93x the no-SD number. The official SGLang recipe uses
+the same three layers as multi-layer EAGLE with 3 steps. Deeper positions
+stay weak even with their own trained layers.
