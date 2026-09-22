@@ -4,7 +4,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --gres=gpu:4
-#SBATCH --time=12:00:00
+#SBATCH --time=01:00:00
 #SBATCH --job-name=mimo26-claude
 #SBATCH --output=agent_space/experiments/2026-09-22-mimo-v26-pro/slurm-%j.out
 #SBATCH --error=agent_space/experiments/2026-09-22-mimo-v26-pro/slurm-%j.err
