@@ -128,84 +128,52 @@ So the tiered KV accounting has to be generalised to sum across groups, not
 just taught about GQA specs. The cheap-KV result and this blocker are two faces
 of the same branch.
 
-## The tiered port, scoped
+## The tiered port: what is done
 
-Ordered, with the GLM analogue for each. None of it should start before the
-smoke test says what the KV actually costs.
+All committed, GLM unaffected throughout (every shared change is a defaulted
+parameter or a `model_type`-gated branch; its assertions of 21,579,452,160
+bytes at 6251 blocks still pass).
 
-0. **Multi-group KV accounting** — see the blocker above; this gates everything
-   else in `tiered_moe_kv.py`. Smaller than it first looked:
-   `UniformTypeKVCacheSpecs.page_size_bytes` is defined as
-   `sum(spec.page_size_bytes ...)` (`kv_cache_interface.py:847`), exactly what
-   the GLM path computes by hand, so
+| piece | |
+|---|---|
+| multi-group KV accounting | `_pooled_kv_bytes`, sizes against `_pool_bytes_per_block` |
+| GQA KV plan | `plan_mimo_v2_kv_cache`, 19,208,601,600 B/rank at 250K |
+| manifest | `build_mimo_v26_manifest`, validated on the real 535 GB checkpoint |
+| validator pins | scoped by `model_type` rather than relaxed |
+| dispatch | `tiered_model_family`, `build_tiered_moe_manifest`, `plan_tiered_kv_cache_from_path` |
 
-   ```python
-   num_blocks * _pool_bytes_per_block(vllm_config, kv_cache_groups)
-   ```
+Measured constants, each cross-checked more than one way:
 
-   reproduces GLM's number identically and handles MiMo's two groups for free.
-   That replaces the main/indexer/draft classification with a generic formula
-   rather than adding a second bespoke path.
+| | |
+|---|---|
+| `runtime_expert_bytes` | 20,054,016 (GPU probe, index arithmetic, uniform-size assertion over 26,496 experts) |
+| KV at 250K, c=1 | 19,208,601,600 B/rank (planner and allocator pinned together in a test) |
+| experts per EP4 rank | 123.7 GiB |
+| non-routed, checkpoint-wide | 34.7 GB |
 
-1. **Manifest** — `build_mimo_v26_manifest` beside `build_glm_w4a16_manifest`
-   (`tiered_moe_manifest.py:454`), with a `_validate_mimo_v26_config` mirroring
-   `_validate_glm_w4a16_config:178`. The per-expert byte size drives every
-   downstream budget: **measure it off one loaded shard**, do not derive it
-   from the mxfp4 packing. Deriving expert/page bytes is what cost four
-   launches on GLM this session.
+## The one remaining piece
 
-2. **KV plan** — `plan_glm_kv_cache` rejects anything non-MLA at
-   `tiered_moe_kv.py:52`. A GQA plan is structurally simpler (no sparse
-   indexer, one spec kind) but must encode two things the GLM plan never had:
-   asymmetric K/V widths (192/128) and whatever the smoke test shows about
-   sliding-window promotion.
+`build_glm_non_routed_runtime_inventory` classifies every non-expert tensor
+into `TP_SHARDED` / `REPLICATED` / `EP_SHARDED` / `DROPPED` from GLM's tensor
+names and its sparse indexer, then asserts the total reconciles with
+`manifest.non_routed_bytes`. MiMo needs its own, and it is more work than GLM's
+because the Omni class builds a 28-block vision tower and an audio encoder
+whose TP sharding has to be read out of `mimo_v2.py` and `mimo_v2_omni.py`
+rather than assumed.
 
-3. **Spec-kind classifier** — `_get_tiered_kv_spec_kind` treats "not
-   MLAAttentionSpec" as *draft*. With a GQA target every spec is a
-   `FullAttentionSpec`, so target-vs-draft has to come from somewhere else
-   (layer name, or the owning module). This one silently mislabels rather than
-   raising, so it needs a test before it is trusted.
+That is the 34.7 GB above. A wrong sharding rule there yields a plausible
+per-rank figure and fails much later as an unexplained OOM -- the same shape as
+the draft-cache gap and the `3 <= layer_id < 78` window, both of which produced
+quietly wrong numbers rather than exceptions.
 
-4. **Validator pins** — `config/vllm.py:2318+` hardcodes GLM's
-   `max_model_len=400000`, `block_size=64`, `kv_cache_dtype=fp8_ds_mla` and
-   layer counts. Parametrise by model family; do **not** loosen them for GLM in
-   the process. The requested 250K context trips the `max_model_len` pin.
-
-5. **Draft-cache budgeting** — the fix landed earlier today adds draft specs to
-   `fixed_hbm_allocations`. It reads the drafter geometry from a
-   `FullAttentionSpec`, so it should carry to MiMo's dflash drafter unchanged,
-   but it assumes the drafter config exposes `num_key_value_heads` and
-   `head_dim` — MiMo's dflash config does.
-
-## The non-tiered smoke test is a dead end (4 launches)
-
-| job | runner | offload | outcome |
-|---|---|---|---|
-| 1943437 | V2 | 60 | CUDA OOM, `mxfp4.py:577`, 94.48 GiB resident |
-| 1944037 | V2 | 105 | CUDA OOM, 94.47 GiB — a 45 GiB budget change moved 0.01 GiB |
-| 1944307 | V1 | 105 | offloader installed, workers die silently after Marlin init |
-| 1944556 | V1 | 60 | identical silent death; `ExitCode 1:0`, no signal, no core |
-
-The V2 pair diagnosed a real bug (see below). The V1 pair shows the offload
-budget is not the variable: 60 and 105 fail identically. Exit code carries no
-signal, so it is neither the OOM-killer nor a segfault — a worker exception that
-never reached the log.
-
-It does load far enough to validate the interesting parts:
-
-```
-mimo_v2.py:322   Using FLASH_ATTN_DIFFKV for attention.
-fa_utils.py:217  Diff-KV with sinks: upgrading FlashAttention 3 -> 4
-mxfp4.py:622     Using 'MARLIN' Mxfp4 MoE backend.
-```
-
-Asymmetric QK/V heads route to diff-KV and auto-upgrade to FA4; mxfp4 experts
-pick up Marlin. Neither needed porting.
-
-Not worth a fifth launch: the KV question it existed to answer is settled above
-from the code, and tiered MoE is where this model has to run regardless.
+`build_rank_load_plan` therefore raises for a non-GLM family, naming the gap,
+instead of calling the GLM classifier on MiMo tensors.
 
 ## Status
+## Status
+
+Port written except the non-routed inventory above. Nothing has launched with
+tiered MiMo yet.
 
 Download **complete** — 130 shards, 535 GB, every shard in the index present
 (the HF API's "132" counts the dflash drafter).
