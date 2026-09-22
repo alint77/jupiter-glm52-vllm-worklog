@@ -353,3 +353,38 @@ Fixes needed (all committed):
 Decode with MTP=3 is 1.93x the no-SD number. The official SGLang recipe uses
 the same three layers as multi-layer EAGLE with 3 steps. Deeper positions
 stay weak even with their own trained layers.
+
+## DFlash drafter vs MTP (250K, c=1, LM-only, 8192 chunks)
+
+The model card's "MTP" is a separate 5-layer sliding-window DFlash drafter
+(`dflash/`, block 8), not the three `model.mtp` layers. Launch:
+`--speculative-config '{"method":"dflash","model":"<ckpt>/dflash","num_speculative_tokens":7}'`.
+
+| arm | job | reserve | hot/rank | decode ms (tok/s) | accept len | TTFT 32K / 128K / 240K s | min free |
+|---|---|---|---|---|---|---|---|
+| no SD | 1960722 | 2 | 4005 | 22.13 (45) | -- | 4.94 / 20.4 / 47.5 | 2.68 |
+| MTP=3 (3 layers) | 1961352 | 2 | 3947 | 11.49 (87) | 2.33 | 5.05 / 20.8 / 48.4 | 1.54 |
+| DFlash k=7, v-scale | 1962224 | 2 | 3916 | 9.08 (110) | 3.65 | 5.25 / 28.2 / 52.4 | 1.04 |
+| DFlash k=7 | 1962225 | 2 | 3916 | 9.10 (110) | 3.74 | 5.19 / 28.2 / 51.3 | 1.01 |
+| **DFlash k=7** | 1962470 | **3** | 3867 | **9.37 (107)** | 3.72 | 5.19 / 20.9 / 48.5 | 1.97 |
+| DFlash k=5 | 1962478 | 3 | 3867 | 11.09 | 3.17 | 6.02 / 21.0 / 48.5 | 1.98 |
+| DFlash k=3 | 1962477 | 3 | 3867 | 9.76 | 2.74 | 5.26 / 25.0 / 48.5 | 1.99 |
+
+Per-position acceptance (k=7): .78 .57 .42 .32 .26 .21 .18.
+
+* DFlash k=7 decodes 2.4x no-SD and 1.23x MTP=3.
+* `attention_value_scale` (0.612 in `dflash_config`) is not applied: with it
+  acceptance was 3.65 vs 3.74 without, same TPOT; upstream and the reference
+  also omit it.
+* DFlash transients are larger (min free 1.0 GiB at R2), so the chosen
+  config is **R3**: 3867 hot, 1.97 GiB minimum free over a 240K prompt.
+* 128K TTFT varied 20.9-28.2 s across runs of the same config (1962225 vs
+  1962470); treat single prefill samples as +-30%.
+* k=5 slower than k=3 is unexplained (single run); k=7 wins either way.
+
+Fixes: 3f11e2f953 (Omni SupportsEagle3, spec-built KV plan incl. the drafter,
+drafter weights charged 1.55 GiB/rank, draft KV dtype fallback, per-group
+block sizes -- vLLM gives draft layers 80-token blocks to match pages).
+
+**Recommended serve config** (now `serve.sbatch` defaults): DFlash k=7,
+`--language-model-only`, HBM reserve 3 GB, 8192-token chunks, block 64.

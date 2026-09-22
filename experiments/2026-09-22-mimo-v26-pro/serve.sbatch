@@ -40,14 +40,17 @@ mkdir -p "${VLLM_CACHE_ROOT}"
 # which on the V2 runner means a native crash. faulthandler prints the Python
 # stack on SIGSEGV/SIGABRT so the crash site is visible.
 export PYTHONFAULTHANDLER=1
-reserve_gb="${MIMO_HBM_RESERVE_GB:-8}"
+reserve_gb="${MIMO_HBM_RESERVE_GB:-3}"
 model_len="${MIMO_MAX_MODEL_LEN:-250000}"
 batched="${MIMO_BATCHED_TOKENS:-8192}"
 # Extra serve flags for sweeps, e.g. --language-model-only.
-read -r -a extra_args <<< "${MIMO_EXTRA_ARGS:-}"
+read -r -a extra_args <<< "${MIMO_EXTRA_ARGS---language-model-only}"
 # MIMO_MTP=k drafts k tokens with the (single, reused) MTP layer; decode steps
 # then carry k+1 tokens, so that is the graph size to capture.
 capture=1
+# Defaults are the measured best for 250K c=1: DFlash k=7, 3 GB reserve,
+# text only. MIMO_DFLASH= MIMO_MTP=3 switches to MTP; both empty disables SD.
+MIMO_DFLASH="${MIMO_DFLASH-7}"
 if [[ -n "${MIMO_DFLASH:-}" ]]; then
   # DFlash drafts a block of MIMO_DFLASH tokens (block_size 8 -> 7) in one pass.
   capture=$((MIMO_DFLASH + 1))
@@ -56,7 +59,7 @@ elif [[ -n "${MIMO_MTP:-}" ]]; then
   capture=$((MIMO_MTP + 1))
   extra_args+=(--speculative-config "{\"method\":\"mtp\",\"num_speculative_tokens\":${MIMO_MTP}}")
 fi
-echo "mimo: model_len=${model_len} reserve=${reserve_gb}GB batched=${batched} extra=${MIMO_EXTRA_ARGS:-} mtp=${MIMO_MTP:-off} dflash=${MIMO_DFLASH:-off} port=${port}"
+echo "mimo: model_len=${model_len} reserve=${reserve_gb}GB batched=${batched} extra=${MIMO_EXTRA_ARGS---language-model-only} mtp=${MIMO_MTP:-off} dflash=${MIMO_DFLASH:-off} port=${port}"
 
 exec .venv/bin/vllm serve "${model}" \
   --served-model-name mimo26-pro \
