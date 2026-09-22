@@ -126,6 +126,38 @@ Three ways forward, for the user to pick:
   transformers does not know `model_type: mimo_v2` natively. Confirmed by a
   failed `AutoConfig.from_pretrained` without it.
 
+## Measured: runtime_expert_bytes = 20,054,016 (19.125 MiB/expert)
+
+Job 1945336, one `FusedMoE` at MiMo's real dims on one GPU
+(`expert_bytes.py`). The planner budgets in post-repack bytes, and nothing in
+the tree recorded MiMo's, so it was measured rather than derived:
+
+```
+routed_experts.w13_weight         4608.00 MiB
+routed_experts.w13_weight_scale    288.00 MiB
+routed_experts.w2_weight          2304.00 MiB
+routed_experts.w2_weight_scale     144.00 MiB
+TOTAL 7344.00 MiB / 384 experts = 19.125 MiB/expert
+```
+
+**The Marlin mxfp4 repack is byte-neutral** — `process_weights_after_loading`
+leaves every tensor the same size, so runtime layout equals checkpoint layout.
+That is not true of GLM's `vllm_marlin_static_w4a16`, and it simplifies the
+manifest: one constant, no separate checkpoint/runtime accounting.
+
+For comparison GLM is 20.3 MiB/expert, so per-expert the two models are close;
+MiMo simply has more of them.
+
+| | per rank at EP4 |
+|---|---|
+| experts | 6,624 |
+| expert bytes | **123.7 GiB** |
+| against | 95 GiB HBM + 118.8 GiB Grace |
+
+So roughly a third of the experts fit in HBM once weights, KV and reserve are
+taken out — the hot/cold regime the overlap machinery exists for, which is what
+makes tiered worth running here even with a linear (profile-less) placement.
+
 ## Structural blocker found while scoping: group count
 
 `get_tiered_kv_available_memory` requires exactly one group and that it be a
@@ -148,7 +180,18 @@ Ordered, with the GLM analogue for each. None of it should start before the
 smoke test says what the KV actually costs.
 
 0. **Multi-group KV accounting** — see the blocker above; this gates everything
-   else in `tiered_moe_kv.py`.
+   else in `tiered_moe_kv.py`. Smaller than it first looked:
+   `UniformTypeKVCacheSpecs.page_size_bytes` is defined as
+   `sum(spec.page_size_bytes ...)` (`kv_cache_interface.py:847`), exactly what
+   the GLM path computes by hand, so
+
+   ```python
+   num_blocks * _pool_bytes_per_block(vllm_config, kv_cache_groups)
+   ```
+
+   reproduces GLM's number identically and handles MiMo's two groups for free.
+   That replaces the main/indexer/draft classification with a generic formula
+   rather than adding a second bespoke path.
 
 1. **Manifest** — `build_mimo_v26_manifest` beside `build_glm_w4a16_manifest`
    (`tiered_moe_manifest.py:454`), with a `_validate_mimo_v26_config` mirroring

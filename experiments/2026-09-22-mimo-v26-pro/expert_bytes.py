@@ -51,25 +51,30 @@ def main() -> None:
 
     # initialize_model_parallel reads get_current_vllm_config(), so the whole
     # setup has to sit inside the context, not just the layer construction.
+    torch.cuda.set_device(0)
     with set_current_vllm_config(vllm_config):
         init_distributed_environment(
             world_size=1, rank=0, distributed_init_method="env://", local_rank=0,
             backend="nccl",
         )
         initialize_model_parallel(tensor_model_parallel_size=1)
-        experts = FusedMoE(
-            num_experts=cfg["n_routed_experts"],
-            top_k=cfg["num_experts_per_tok"],
-            hidden_size=cfg["hidden_size"],
-            intermediate_size=cfg["moe_intermediate_size"],
-            renormalize=cfg.get("norm_topk_prob", True),
-            quant_config=vllm_config.quant_config,
-            prefix="model.layers.1.mlp.experts",
-            use_grouped_topk=True,
-            num_expert_group=cfg.get("n_group"),
-            topk_group=cfg.get("topk_group"),
-            scoring_func="sigmoid",
-        )
+        # Construct on CUDA: gptq_marlin_repack is a CUDA-only op, so weights
+        # created on CPU make process_weights_after_loading raise
+        # NotImplementedError instead of producing the runtime layout.
+        with torch.device("cuda"):
+            experts = FusedMoE(
+                num_experts=cfg["n_routed_experts"],
+                top_k=cfg["num_experts_per_tok"],
+                hidden_size=cfg["hidden_size"],
+                intermediate_size=cfg["moe_intermediate_size"],
+                renormalize=cfg.get("norm_topk_prob", True),
+                quant_config=vllm_config.quant_config,
+                prefix="model.layers.1.mlp.experts",
+                use_grouped_topk=True,
+                num_expert_group=cfg.get("n_group"),
+                topk_group=cfg.get("topk_group"),
+                scoring_func="sigmoid",
+            )
         n = cfg["n_routed_experts"]
         before = _param_bytes(experts)
         tot_b = sum(before.values())
@@ -79,7 +84,20 @@ def main() -> None:
         print("   TOTAL %.2f MiB for %d experts -> %.3f MiB/expert"
               % (tot_b / 1024**2, n, tot_b / 1024**2 / n))
 
-        experts.quant_method.process_weights_after_loading(experts)
+        # The FusedMoE wrapper's .quant_method is a MoERunner; the real method
+        # lives on the RoutedExperts child. Walk the tree the way the loader
+        # does rather than guess the attribute path.
+        done = 0
+        for sub in experts.modules():
+            qm = getattr(sub, "quant_method", None)
+            fn = getattr(qm, "process_weights_after_loading", None)
+            if callable(fn):
+                print("   process_weights_after_loading on %s (%s)"
+                      % (type(sub).__name__, type(qm).__name__))
+                fn(sub)
+                done += 1
+        print("   ran on %d submodule(s)" % done)
+        torch.cuda.synchronize()
         after = _param_bytes(experts)
         tot_a = sum(after.values())
         print("== after process_weights_after_loading (RUNTIME layout) ==")
