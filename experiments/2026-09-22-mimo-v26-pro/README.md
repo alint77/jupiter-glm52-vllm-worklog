@@ -392,7 +392,7 @@ block sizes -- vLLM gives draft layers 80-token blocks to match pages).
 ## Cold-expert prefill prefetch (DFlash k=7, R3)
 
 Off in every run above (`VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS` unset).
-The staged cold kernel was WNA16-only; 3f11e2f953 adds the mxfp4 branch (see git
+The staged cold kernel was WNA16-only; 96b0ddfa3e adds the mxfp4 branch (see git
 log "Stage mxfp4 cold experts"). Slot 784 MiB/rank (largest cold layer),
 51.5 GiB staged per 8192-token chunk.
 
