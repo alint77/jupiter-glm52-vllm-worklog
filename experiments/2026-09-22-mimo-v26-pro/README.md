@@ -431,3 +431,37 @@ Validated on a 1 h copy (job 1963171):
   conversion costs accuracy.
 
 Not yet exercised: multi-hour sessions (every run so far was < 1 h).
+
+## Upstream MiMo PRs backported (2026-09-23)
+
+Found with `gh pr list --repo vllm-project/vllm --search "mimo in:title"`.
+
+| PR | state | what | commit |
+|---|---|---|---|
+| #57784 | merged | GateLinear router (bf16 params, fp32 logits; V2.6 config already sets `moe_router_dtype: bfloat16`), DFlash `attention_value_scale` on query and context V, Omni SupportsEagle3 | ece7ff08f5 |
+| #57508 | merged | fused fp8 qkv sharding by checkpoint pre-shard count, target and MTP (supersedes my fc18908429 path) | 05b05539ac |
+| #58184 | open | skip fused qkv tensors for absent layers | 02ccc26b14 |
+| #58142 | open | keep qkv pairing state across load_weights calls | 48322fc0a5 |
+| #54089 | merged | reasoning-end detection scoped to the current ChatML turn | c129b60a9a |
+| #58019 | open, partial | MiMo tool parser keeps parameter values verbatim | b52e2d6fb6 |
+
+Skipped: #45343 (draft FP4 DFlash), #57804 (RL sink reload), Rust frontend
+PRs, #58019's strict-mode structural tags (need newer infrastructure).
+
+**Claude Code bug fixed by #54089**: every streamed multi-turn response came
+back as text starting with `<think>`. MiMo's template replays
+`<think>...</think>` for each earlier assistant turn and the parser, scanning
+back for the nearest think tag, found an old `</think>` and declared reasoning
+over. Non-streaming was unaffected, which is why the single-turn probe passed.
+My own fix (b5130eb7d5) was reverted in favour of the upstream one.
+
+**Tool-argument bug fixed by #58019**: Qwen3's converter `.strip()`s every
+parameter value, so an Edit `old_string` lost its indentation.
+
+Validation on job 1963684 (all ports): `tool_probe.py` all pass, including
+Edit `old_string` `'    return 1'`; multi-turn streaming on both
+`/v1/messages` and `/v1/chat/completions` returns separate reasoning.
+GSM8K: 90.5% on 400 (`gsm8k-400-ported.json`); on the full set the eval's
+600 s session timeout cut off requests queued behind the c=1 server (55.5%
+"invalid" = timeouts), and the ~587 answered scored 91.9% -- in line with the
+pre-port 92.2%.
