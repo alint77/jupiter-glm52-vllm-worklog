@@ -18,9 +18,9 @@
 # parsers, an API key, and the ready/endpoint files claude-local.sh polls.
 #
 # generation_config.json stays in force (unlike the GLM launchers'
-# --generation-config vllm): it carries the recommended temperature 1.0 /
-# top_p 0.95 and three EOS ids. Its max_new_tokens 2048 only applies when a
-# request omits max_tokens, which Anthropic-style requests never do.
+# --generation-config vllm) for its temperature 1.0 / top_p 0.95 and three EOS
+# ids, but its max_new_tokens 2048 is overridden below: vLLM treats it as a
+# server-wide output cap, which ended opencode turns mid-reasoning.
 
 set -euo pipefail
 
@@ -53,8 +53,11 @@ fi
 echo "model: ${model} (${actual_shards} shards, dflash drafter present)"
 
 export MIMO_PORT="${port}"
+# generation_config.json's max_new_tokens (2048) is a server-wide output cap;
+# null drops it and keeps the sampling defaults (get_diff_sampling_param).
 export MIMO_EXTRA_ARGS="--language-model-only --enable-prefix-caching \
---enable-auto-tool-choice --tool-call-parser mimo --reasoning-parser mimo"
+--enable-auto-tool-choice --tool-call-parser mimo --reasoning-parser mimo \
+--override-generation-config {\"max_new_tokens\":null}"
 
 mkdir -p "${run_dir}" "${log_dir}"
 rm -f "${ready_file}" "${endpoint_file}"
