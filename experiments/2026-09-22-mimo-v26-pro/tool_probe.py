@@ -29,6 +29,19 @@ TOOLS = [
         },
     },
     {
+        "name": "Edit",
+        "description": "Replace old_string with new_string exactly in a file.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "file_path": {"type": "string"},
+                "old_string": {"type": "string"},
+                "new_string": {"type": "string"},
+            },
+            "required": ["file_path", "old_string", "new_string"],
+        },
+    },
+    {
         "name": "Read",
         "description": "Read a file from the local filesystem.",
         "input_schema": {
@@ -138,6 +151,44 @@ try:
     results.append(check("stream tool input is JSON", bool(json.loads(partial or "null"))))
 except json.JSONDecodeError:
     results.append(check("stream tool input is JSON", False, partial[:200]))
+
+# Values must reach the tool verbatim: the Qwen3 converter used to strip
+# them, which breaks any Edit whose old_string starts with indentation.
+edit_messages: list[dict] = [
+    {
+        "role": "user",
+        "content": "In /tmp/a.py the function body line is exactly "
+        "'    return 1' (four spaces of indentation). Use the Edit tool "
+        "to change it to '    return 2', keeping the indentation in "
+        "both old_string and new_string.",
+    }
+]
+edits: list[dict] = []
+for _ in range(3):
+    edit = post({"system": SYSTEM, "tools": TOOLS, "messages": edit_messages})
+    calls = [b for b in edit["content"] if b["type"] == "tool_use"]
+    edits = [b for b in calls if b["name"] == "Edit"]
+    if edits or not calls:
+        break
+    # The model may Read first, as an agent should; answer and continue.
+    edit_messages += [
+        {"role": "assistant", "content": edit["content"]},
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "tool_result",
+                    "tool_use_id": call["id"],
+                    "content": "     1\tdef f():\n     2\t    return 1\n",
+                }
+                for call in calls
+            ],
+        },
+    ]
+old = edits[0]["input"].get("old_string", "") if edits else ""
+results.append(
+    check("Edit old_string keeps leading spaces", old.startswith("    "), repr(old))
+)
 
 required = [r for i, r in enumerate(results) if i != 4]
 print("ALL REQUIRED PASS" if all(required) else "SOME CHECKS FAILED")
