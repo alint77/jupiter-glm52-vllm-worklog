@@ -1,0 +1,14 @@
+# built binaries (no extension), cubins, regenerable SASS dumps
+*
+!*/
+!*.cu
+!*.sh
+!*.sbatch
+!*.md
+!*.txt
+!*.out
+!*.err
+!.gitignore
+!ncu_f16_hot33.ncu-rep
+!ncu_f16b_hot33.ncu-rep
+sass_*.txt

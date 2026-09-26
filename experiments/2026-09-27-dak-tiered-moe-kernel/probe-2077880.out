@@ -1,0 +1,7 @@
+GPU0 Grace node 0 on jpbo-024-05.jupiter.internal
+### cold alone: CTAs x in-flight
+cold_ctas=1 hot_ctas=0 stage=16KB stages=4 copies=1 (in flight/CTA 64 KB)
+  cold  ctas=  1    1073.7 MB in   20.694 ms  ->    51.9 GB/s
+cold_ctas=1 hot_ctas=0 stage=32KB stages=4 copies=1 (in flight/CTA 128 KB)
+  cold  ctas=  1    1073.7 MB in   10.356 ms  ->   103.7 GB/s
+CUDA error cudaFuncSetAttribute(stream_kernel, cudaFuncAttributeMaxDynamicSharedMemorySize, (int)smem) at 139: invalid argument

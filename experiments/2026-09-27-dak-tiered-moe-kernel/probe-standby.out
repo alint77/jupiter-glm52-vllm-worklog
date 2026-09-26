@@ -1,0 +1,103 @@
+GPU0 Grace node 0 on jpbo-052-29.jupiter.internal
+### cold alone: CTAs x in-flight
+cold_ctas=1 hot_ctas=0 stage=16KB stages=4 copies=1 (in flight/CTA 64 KB)
+  cold  ctas=  1    1073.7 MB in   20.541 ms  ->    52.3 GB/s
+cold_ctas=1 hot_ctas=0 stage=32KB stages=4 copies=1 (in flight/CTA 128 KB)
+  cold  ctas=  1    1073.7 MB in   10.322 ms  ->   104.0 GB/s
+cold_ctas=1 hot_ctas=0 stage=32KB stages=6 copies=1 (in flight/CTA 192 KB)
+  cold  ctas=  1    1073.7 MB in   10.269 ms  ->   104.6 GB/s
+cold_ctas=1 hot_ctas=0 stage=64KB stages=3 copies=1 (in flight/CTA 192 KB)
+  cold  ctas=  1    1073.7 MB in    7.551 ms  ->   142.2 GB/s
+cold_ctas=2 hot_ctas=0 stage=16KB stages=4 copies=1 (in flight/CTA 64 KB)
+  cold  ctas=  2    1073.7 MB in   10.278 ms  ->   104.5 GB/s
+cold_ctas=2 hot_ctas=0 stage=32KB stages=4 copies=1 (in flight/CTA 128 KB)
+  cold  ctas=  2    1073.7 MB in    5.464 ms  ->   196.5 GB/s
+cold_ctas=2 hot_ctas=0 stage=32KB stages=6 copies=1 (in flight/CTA 192 KB)
+  cold  ctas=  2    1073.7 MB in    5.136 ms  ->   209.1 GB/s
+cold_ctas=2 hot_ctas=0 stage=64KB stages=3 copies=1 (in flight/CTA 192 KB)
+  cold  ctas=  2    1073.7 MB in    4.392 ms  ->   244.5 GB/s
+cold_ctas=4 hot_ctas=0 stage=16KB stages=4 copies=1 (in flight/CTA 64 KB)
+  cold  ctas=  4    1073.7 MB in    5.262 ms  ->   204.1 GB/s
+cold_ctas=4 hot_ctas=0 stage=32KB stages=4 copies=1 (in flight/CTA 128 KB)
+  cold  ctas=  4    1073.7 MB in    3.374 ms  ->   318.2 GB/s
+cold_ctas=4 hot_ctas=0 stage=32KB stages=6 copies=1 (in flight/CTA 192 KB)
+  cold  ctas=  4    1073.7 MB in    2.735 ms  ->   392.6 GB/s
+cold_ctas=4 hot_ctas=0 stage=64KB stages=3 copies=1 (in flight/CTA 192 KB)
+  cold  ctas=  4    1073.7 MB in    2.723 ms  ->   394.3 GB/s
+cold_ctas=8 hot_ctas=0 stage=16KB stages=4 copies=1 (in flight/CTA 64 KB)
+  cold  ctas=  8    1073.7 MB in    3.136 ms  ->   342.3 GB/s
+cold_ctas=8 hot_ctas=0 stage=32KB stages=4 copies=1 (in flight/CTA 128 KB)
+  cold  ctas=  8    1073.7 MB in    2.544 ms  ->   422.0 GB/s
+cold_ctas=8 hot_ctas=0 stage=32KB stages=6 copies=1 (in flight/CTA 192 KB)
+  cold  ctas=  8    1073.7 MB in    2.549 ms  ->   421.2 GB/s
+cold_ctas=8 hot_ctas=0 stage=64KB stages=3 copies=1 (in flight/CTA 192 KB)
+  cold  ctas=  8    1073.7 MB in    2.548 ms  ->   421.4 GB/s
+cold_ctas=16 hot_ctas=0 stage=16KB stages=4 copies=1 (in flight/CTA 64 KB)
+  cold  ctas= 16    1073.7 MB in    2.548 ms  ->   421.3 GB/s
+cold_ctas=16 hot_ctas=0 stage=32KB stages=4 copies=1 (in flight/CTA 128 KB)
+  cold  ctas= 16    1073.7 MB in    2.549 ms  ->   421.3 GB/s
+cold_ctas=16 hot_ctas=0 stage=32KB stages=6 copies=1 (in flight/CTA 192 KB)
+  cold  ctas= 16    1073.7 MB in    2.548 ms  ->   421.4 GB/s
+cold_ctas=16 hot_ctas=0 stage=64KB stages=3 copies=1 (in flight/CTA 192 KB)
+  cold  ctas= 16    1073.7 MB in    2.548 ms  ->   421.4 GB/s
+cold_ctas=32 hot_ctas=0 stage=16KB stages=4 copies=1 (in flight/CTA 64 KB)
+  cold  ctas= 32    1073.7 MB in    2.548 ms  ->   421.4 GB/s
+cold_ctas=32 hot_ctas=0 stage=32KB stages=4 copies=1 (in flight/CTA 128 KB)
+  cold  ctas= 32    1073.7 MB in    2.549 ms  ->   421.3 GB/s
+cold_ctas=32 hot_ctas=0 stage=32KB stages=6 copies=1 (in flight/CTA 192 KB)
+  cold  ctas= 32    1073.7 MB in    2.551 ms  ->   421.0 GB/s
+cold_ctas=32 hot_ctas=0 stage=64KB stages=3 copies=1 (in flight/CTA 192 KB)
+  cold  ctas= 32    1073.7 MB in    2.548 ms  ->   421.3 GB/s
+### hot alone
+cold_ctas=0 hot_ctas=33 stage=32KB stages=4 copies=1 (in flight/CTA 128 KB)
+  hot   ctas= 33    4294.0 MB in    1.302 ms  ->  3297.3 GB/s
+cold_ctas=0 hot_ctas=33 stage=64KB stages=3 copies=1 (in flight/CTA 192 KB)
+  hot   ctas= 33    4292.9 MB in    1.218 ms  ->  3523.7 GB/s
+cold_ctas=0 hot_ctas=66 stage=32KB stages=4 copies=1 (in flight/CTA 128 KB)
+  hot   ctas= 66    4292.9 MB in    1.163 ms  ->  3691.4 GB/s
+cold_ctas=0 hot_ctas=66 stage=64KB stages=3 copies=1 (in flight/CTA 192 KB)
+  hot   ctas= 66    4290.8 MB in    1.236 ms  ->  3472.4 GB/s
+cold_ctas=0 hot_ctas=100 stage=32KB stages=4 copies=1 (in flight/CTA 128 KB)
+  hot   ctas=100    4292.6 MB in    1.186 ms  ->  3618.4 GB/s
+cold_ctas=0 hot_ctas=100 stage=64KB stages=3 copies=1 (in flight/CTA 192 KB)
+  hot   ctas=100    4292.6 MB in    1.178 ms  ->  3644.8 GB/s
+cold_ctas=0 hot_ctas=132 stage=32KB stages=4 copies=1 (in flight/CTA 128 KB)
+  hot   ctas=132    4290.8 MB in    1.138 ms  ->  3769.1 GB/s
+cold_ctas=0 hot_ctas=132 stage=64KB stages=3 copies=1 (in flight/CTA 192 KB)
+  hot   ctas=132    4290.8 MB in    1.135 ms  ->  3781.9 GB/s
+cold_ctas=0 hot_ctas=264 stage=32KB stages=4 copies=1 (in flight/CTA 128 KB)
+  hot   ctas=264    4290.8 MB in    1.138 ms  ->  3771.9 GB/s
+cold_ctas=0 hot_ctas=264 stage=64KB stages=3 copies=1 (in flight/CTA 192 KB)
+  hot   ctas=264    4290.8 MB in    1.135 ms  ->  3780.4 GB/s
+### co-run: cold c + hot (132 - c), and cold c + hot 264 (2 CTAs/SM)
+cold_ctas=2 hot_ctas=130 stage=32KB stages=4 copies=1 (in flight/CTA 128 KB)
+  cold  ctas=  2    1073.7 MB in    6.239 ms  ->   172.1 GB/s
+  hot   ctas=130    4293.9 MB in    1.144 ms  ->  3752.2 GB/s
+cold_ctas=2 hot_ctas=264 stage=32KB stages=3 copies=1 (in flight/CTA 96 KB)
+  cold  ctas=  2    1073.7 MB in    7.922 ms  ->   135.5 GB/s
+  hot   ctas=264    4290.8 MB in    1.190 ms  ->  3607.0 GB/s
+cold_ctas=4 hot_ctas=128 stage=32KB stages=4 copies=1 (in flight/CTA 128 KB)
+  cold  ctas=  4    1073.7 MB in    4.042 ms  ->   265.6 GB/s
+  hot   ctas=128    4295.0 MB in    1.149 ms  ->  3736.9 GB/s
+cold_ctas=4 hot_ctas=264 stage=32KB stages=3 copies=1 (in flight/CTA 96 KB)
+  cold  ctas=  4    1073.7 MB in    5.062 ms  ->   212.1 GB/s
+  hot   ctas=264    4290.8 MB in    1.186 ms  ->  3617.8 GB/s
+cold_ctas=8 hot_ctas=124 stage=32KB stages=4 copies=1 (in flight/CTA 128 KB)
+  cold  ctas=  8    1073.7 MB in    2.980 ms  ->   360.3 GB/s
+  hot   ctas=124    4294.8 MB in    1.169 ms  ->  3673.6 GB/s
+cold_ctas=8 hot_ctas=264 stage=32KB stages=3 copies=1 (in flight/CTA 96 KB)
+  cold  ctas=  8    1073.7 MB in    3.433 ms  ->   312.8 GB/s
+  hot   ctas=264    4290.8 MB in    1.172 ms  ->  3661.0 GB/s
+cold_ctas=16 hot_ctas=116 stage=32KB stages=4 copies=1 (in flight/CTA 128 KB)
+  cold  ctas= 16    1073.7 MB in    2.550 ms  ->   421.0 GB/s
+  hot   ctas=116    4291.4 MB in    1.211 ms  ->  3543.3 GB/s
+cold_ctas=16 hot_ctas=264 stage=32KB stages=3 copies=1 (in flight/CTA 96 KB)
+  cold  ctas= 16    1073.7 MB in    3.024 ms  ->   355.1 GB/s
+  hot   ctas=264    4290.8 MB in    1.198 ms  ->  3583.0 GB/s
+cold_ctas=32 hot_ctas=100 stage=32KB stages=4 copies=1 (in flight/CTA 128 KB)
+  cold  ctas= 32    1073.7 MB in    2.560 ms  ->   419.4 GB/s
+  hot   ctas=100    4292.6 MB in    2.175 ms  ->  1973.9 GB/s
+cold_ctas=32 hot_ctas=264 stage=32KB stages=3 copies=1 (in flight/CTA 96 KB)
+  cold  ctas= 32    1073.7 MB in    2.556 ms  ->   420.1 GB/s
+  hot   ctas=264    4290.8 MB in    1.231 ms  ->  3485.9 GB/s
+### done
