@@ -1,0 +1,57 @@
+diff --git a/vllm/model_executor/model_loader/tiered_moe_planner.py b/vllm/model_executor/model_loader/tiered_moe_planner.py
+index 32021c77c6..cb23eeda47 100644
+--- a/vllm/model_executor/model_loader/tiered_moe_planner.py
++++ b/vllm/model_executor/model_loader/tiered_moe_planner.py
+@@ -95,7 +95,21 @@ class RankTierPlan:
+     @property
+     def planned_host_bytes(self) -> int:
+         """Grace bytes committed by fixed allocations, experts, and reserve."""
+-        return self.fixed_host_bytes + self.cold_expert_bytes + self.host_reserve_bytes
++        return (
++            self.fixed_host_bytes + self.cold_allocated_bytes + self.host_reserve_bytes
++        )
++
++    @property
++    def cold_allocated_bytes(self) -> int:
++        """Pinned allocator backing, including per-layer power-of-two rounding."""
++        if self.cold_allocation_kind != "pinned_uva":
++            return self.cold_expert_bytes
++        sizes = (
++            (len(layer.cold_expert_ids) + len(layer.replica_expert_ids))
++            * self.expert_bytes
++            for layer in self.layer_placements
++        )
++        return sum(1 << (size - 1).bit_length() for size in sizes if size)
+ 
+     @property
+     def load_peak_hbm_bytes(self) -> int:
+@@ -119,6 +133,7 @@ class RankTierPlan:
+             "fixed_host_bytes": self.fixed_host_bytes,
+             "hot_expert_bytes": self.hot_expert_bytes,
+             "cold_expert_bytes": self.cold_expert_bytes,
++            "cold_allocated_bytes": self.cold_allocated_bytes,
+             "hbm_reserve_bytes": self.hbm_reserve_bytes,
+             "host_reserve_bytes": self.host_reserve_bytes,
+             "planned_hbm_bytes": self.planned_hbm_bytes,
+@@ -456,7 +471,7 @@ def plan_rank_expert_tiers(
+         )
+         for placement in layer_placements
+     )
+-    return RankTierPlan(
++    plan = RankTierPlan(
+         ep_rank=ep_rank,
+         ep_size=ep_size,
+         expert_bytes=manifest.runtime_expert_bytes,
+@@ -474,3 +489,12 @@ def plan_rank_expert_tiers(
+         host_reserve_bytes=host_reserve_bytes,
+         transient_hbm_bytes=transient_hbm_bytes,
+     )
++    if plan.planned_host_bytes > host_capacity_bytes:
++        raise ValueError(
++            "Fixed allocations, rounded pinned cold allocations, and reserve "
++            f"exceed paired Grace capacity on rank {ep_rank}: "
++            f"{plan.planned_host_bytes} > {host_capacity_bytes} bytes "
++            f"({cold_expert_bytes} logical cold bytes, "
++            f"{plan.cold_allocated_bytes} allocated bytes)"
++        )
++    return plan

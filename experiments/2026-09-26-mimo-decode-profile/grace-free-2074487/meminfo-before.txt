@@ -1,0 +1,468 @@
+== node0
+Node 0 MemTotal:       124551040 kB
+Node 0 MemFree:        103392064 kB
+Node 0 MemUsed:        21158976 kB
+Node 0 Active(file):       5632 kB
+Node 0 Inactive(file):      960 kB
+Node 0 Unevictable:      524288 kB
+Node 0 Mlocked:          524288 kB
+Node 0 FilePages:        562240 kB
+Node 0 AnonPages:       1857280 kB
+Node 0 Shmem:            555648 kB
+Node 0 SReclaimable:     134272 kB
+Node 0 HugePages_Total:     0
+== node1
+Node 1 MemTotal:       125575808 kB
+Node 1 MemFree:        81658688 kB
+Node 1 MemUsed:        43917120 kB
+Node 1 Active(file):      20608 kB
+Node 1 Inactive(file):    36096 kB
+Node 1 Unevictable:     3164928 kB
+Node 1 Mlocked:          524288 kB
+Node 1 FilePages:       3821888 kB
+Node 1 AnonPages:       2543104 kB
+Node 1 Shmem:           1124096 kB
+Node 1 SReclaimable:     189248 kB
+Node 1 HugePages_Total:     0
+== node10
+Node 10 MemTotal:              0 kB
+Node 10 MemFree:               0 kB
+Node 10 MemUsed:               0 kB
+Node 10 Active(file):          0 kB
+Node 10 Inactive(file):        0 kB
+Node 10 Unevictable:           0 kB
+Node 10 Mlocked:               0 kB
+Node 10 FilePages:             0 kB
+Node 10 AnonPages:             0 kB
+Node 10 Shmem:                 0 kB
+Node 10 SReclaimable:          0 kB
+Node 10 HugePages_Total:     0
+== node11
+Node 11 MemTotal:              0 kB
+Node 11 MemFree:               0 kB
+Node 11 MemUsed:               0 kB
+Node 11 Active(file):          0 kB
+Node 11 Inactive(file):        0 kB
+Node 11 Unevictable:           0 kB
+Node 11 Mlocked:               0 kB
+Node 11 FilePages:             0 kB
+Node 11 AnonPages:             0 kB
+Node 11 Shmem:                 0 kB
+Node 11 SReclaimable:          0 kB
+Node 11 HugePages_Total:     0
+== node12
+Node 12 MemTotal:       99614720 kB
+Node 12 MemFree:        99596352 kB
+Node 12 MemUsed:           18368 kB
+Node 12 Active(file):       7744 kB
+Node 12 Inactive(file):       64 kB
+Node 12 Unevictable:           0 kB
+Node 12 Mlocked:               0 kB
+Node 12 FilePages:          7808 kB
+Node 12 AnonPages:             0 kB
+Node 12 Shmem:                 0 kB
+Node 12 SReclaimable:          0 kB
+Node 12 HugePages_Total:     0
+== node13
+Node 13 MemTotal:              0 kB
+Node 13 MemFree:               0 kB
+Node 13 MemUsed:               0 kB
+Node 13 Active(file):          0 kB
+Node 13 Inactive(file):        0 kB
+Node 13 Unevictable:           0 kB
+Node 13 Mlocked:               0 kB
+Node 13 FilePages:             0 kB
+Node 13 AnonPages:             0 kB
+Node 13 Shmem:                 0 kB
+Node 13 SReclaimable:          0 kB
+Node 13 HugePages_Total:     0
+== node14
+Node 14 MemTotal:              0 kB
+Node 14 MemFree:               0 kB
+Node 14 MemUsed:               0 kB
+Node 14 Active(file):          0 kB
+Node 14 Inactive(file):        0 kB
+Node 14 Unevictable:           0 kB
+Node 14 Mlocked:               0 kB
+Node 14 FilePages:             0 kB
+Node 14 AnonPages:             0 kB
+Node 14 Shmem:                 0 kB
+Node 14 SReclaimable:          0 kB
+Node 14 HugePages_Total:     0
+== node15
+Node 15 MemTotal:              0 kB
+Node 15 MemFree:               0 kB
+Node 15 MemUsed:               0 kB
+Node 15 Active(file):          0 kB
+Node 15 Inactive(file):        0 kB
+Node 15 Unevictable:           0 kB
+Node 15 Mlocked:               0 kB
+Node 15 FilePages:             0 kB
+Node 15 AnonPages:             0 kB
+Node 15 Shmem:                 0 kB
+Node 15 SReclaimable:          0 kB
+Node 15 HugePages_Total:     0
+== node16
+Node 16 MemTotal:              0 kB
+Node 16 MemFree:               0 kB
+Node 16 MemUsed:               0 kB
+Node 16 Active(file):          0 kB
+Node 16 Inactive(file):        0 kB
+Node 16 Unevictable:           0 kB
+Node 16 Mlocked:               0 kB
+Node 16 FilePages:             0 kB
+Node 16 AnonPages:             0 kB
+Node 16 Shmem:                 0 kB
+Node 16 SReclaimable:          0 kB
+Node 16 HugePages_Total:     0
+== node17
+Node 17 MemTotal:              0 kB
+Node 17 MemFree:               0 kB
+Node 17 MemUsed:               0 kB
+Node 17 Active(file):          0 kB
+Node 17 Inactive(file):        0 kB
+Node 17 Unevictable:           0 kB
+Node 17 Mlocked:               0 kB
+Node 17 FilePages:             0 kB
+Node 17 AnonPages:             0 kB
+Node 17 Shmem:                 0 kB
+Node 17 SReclaimable:          0 kB
+Node 17 HugePages_Total:     0
+== node18
+Node 18 MemTotal:              0 kB
+Node 18 MemFree:               0 kB
+Node 18 MemUsed:               0 kB
+Node 18 Active(file):          0 kB
+Node 18 Inactive(file):        0 kB
+Node 18 Unevictable:           0 kB
+Node 18 Mlocked:               0 kB
+Node 18 FilePages:             0 kB
+Node 18 AnonPages:             0 kB
+Node 18 Shmem:                 0 kB
+Node 18 SReclaimable:          0 kB
+Node 18 HugePages_Total:     0
+== node19
+Node 19 MemTotal:              0 kB
+Node 19 MemFree:               0 kB
+Node 19 MemUsed:               0 kB
+Node 19 Active(file):          0 kB
+Node 19 Inactive(file):        0 kB
+Node 19 Unevictable:           0 kB
+Node 19 Mlocked:               0 kB
+Node 19 FilePages:             0 kB
+Node 19 AnonPages:             0 kB
+Node 19 Shmem:                 0 kB
+Node 19 SReclaimable:          0 kB
+Node 19 HugePages_Total:     0
+== node2
+Node 2 MemTotal:       125575744 kB
+Node 2 MemFree:        101128960 kB
+Node 2 MemUsed:        24446784 kB
+Node 2 Active(file):      53952 kB
+Node 2 Inactive(file):   103552 kB
+Node 2 Unevictable:      524288 kB
+Node 2 Mlocked:          524288 kB
+Node 2 FilePages:        347648 kB
+Node 2 AnonPages:       2348416 kB
+Node 2 Shmem:            190144 kB
+Node 2 SReclaimable:     166848 kB
+Node 2 HugePages_Total:     0
+== node20
+Node 20 MemTotal:       99614720 kB
+Node 20 MemFree:        99589824 kB
+Node 20 MemUsed:           24896 kB
+Node 20 Active(file):       1344 kB
+Node 20 Inactive(file):      128 kB
+Node 20 Unevictable:           0 kB
+Node 20 Mlocked:               0 kB
+Node 20 FilePages:          1472 kB
+Node 20 AnonPages:             0 kB
+Node 20 Shmem:                 0 kB
+Node 20 SReclaimable:          0 kB
+Node 20 HugePages_Total:     0
+== node21
+Node 21 MemTotal:              0 kB
+Node 21 MemFree:               0 kB
+Node 21 MemUsed:               0 kB
+Node 21 Active(file):          0 kB
+Node 21 Inactive(file):        0 kB
+Node 21 Unevictable:           0 kB
+Node 21 Mlocked:               0 kB
+Node 21 FilePages:             0 kB
+Node 21 AnonPages:             0 kB
+Node 21 Shmem:                 0 kB
+Node 21 SReclaimable:          0 kB
+Node 21 HugePages_Total:     0
+== node22
+Node 22 MemTotal:              0 kB
+Node 22 MemFree:               0 kB
+Node 22 MemUsed:               0 kB
+Node 22 Active(file):          0 kB
+Node 22 Inactive(file):        0 kB
+Node 22 Unevictable:           0 kB
+Node 22 Mlocked:               0 kB
+Node 22 FilePages:             0 kB
+Node 22 AnonPages:             0 kB
+Node 22 Shmem:                 0 kB
+Node 22 SReclaimable:          0 kB
+Node 22 HugePages_Total:     0
+== node23
+Node 23 MemTotal:              0 kB
+Node 23 MemFree:               0 kB
+Node 23 MemUsed:               0 kB
+Node 23 Active(file):          0 kB
+Node 23 Inactive(file):        0 kB
+Node 23 Unevictable:           0 kB
+Node 23 Mlocked:               0 kB
+Node 23 FilePages:             0 kB
+Node 23 AnonPages:             0 kB
+Node 23 Shmem:                 0 kB
+Node 23 SReclaimable:          0 kB
+Node 23 HugePages_Total:     0
+== node24
+Node 24 MemTotal:              0 kB
+Node 24 MemFree:               0 kB
+Node 24 MemUsed:               0 kB
+Node 24 Active(file):          0 kB
+Node 24 Inactive(file):        0 kB
+Node 24 Unevictable:           0 kB
+Node 24 Mlocked:               0 kB
+Node 24 FilePages:             0 kB
+Node 24 AnonPages:             0 kB
+Node 24 Shmem:                 0 kB
+Node 24 SReclaimable:          0 kB
+Node 24 HugePages_Total:     0
+== node25
+Node 25 MemTotal:              0 kB
+Node 25 MemFree:               0 kB
+Node 25 MemUsed:               0 kB
+Node 25 Active(file):          0 kB
+Node 25 Inactive(file):        0 kB
+Node 25 Unevictable:           0 kB
+Node 25 Mlocked:               0 kB
+Node 25 FilePages:             0 kB
+Node 25 AnonPages:             0 kB
+Node 25 Shmem:                 0 kB
+Node 25 SReclaimable:          0 kB
+Node 25 HugePages_Total:     0
+== node26
+Node 26 MemTotal:              0 kB
+Node 26 MemFree:               0 kB
+Node 26 MemUsed:               0 kB
+Node 26 Active(file):          0 kB
+Node 26 Inactive(file):        0 kB
+Node 26 Unevictable:           0 kB
+Node 26 Mlocked:               0 kB
+Node 26 FilePages:             0 kB
+Node 26 AnonPages:             0 kB
+Node 26 Shmem:                 0 kB
+Node 26 SReclaimable:          0 kB
+Node 26 HugePages_Total:     0
+== node27
+Node 27 MemTotal:              0 kB
+Node 27 MemFree:               0 kB
+Node 27 MemUsed:               0 kB
+Node 27 Active(file):          0 kB
+Node 27 Inactive(file):        0 kB
+Node 27 Unevictable:           0 kB
+Node 27 Mlocked:               0 kB
+Node 27 FilePages:             0 kB
+Node 27 AnonPages:             0 kB
+Node 27 Shmem:                 0 kB
+Node 27 SReclaimable:          0 kB
+Node 27 HugePages_Total:     0
+== node28
+Node 28 MemTotal:       99614720 kB
+Node 28 MemFree:        99603456 kB
+Node 28 MemUsed:           11264 kB
+Node 28 Active(file):       1216 kB
+Node 28 Inactive(file):       64 kB
+Node 28 Unevictable:           0 kB
+Node 28 Mlocked:               0 kB
+Node 28 FilePages:          1280 kB
+Node 28 AnonPages:             0 kB
+Node 28 Shmem:                 0 kB
+Node 28 SReclaimable:          0 kB
+Node 28 HugePages_Total:     0
+== node29
+Node 29 MemTotal:              0 kB
+Node 29 MemFree:               0 kB
+Node 29 MemUsed:               0 kB
+Node 29 Active(file):          0 kB
+Node 29 Inactive(file):        0 kB
+Node 29 Unevictable:           0 kB
+Node 29 Mlocked:               0 kB
+Node 29 FilePages:             0 kB
+Node 29 AnonPages:             0 kB
+Node 29 Shmem:                 0 kB
+Node 29 SReclaimable:          0 kB
+Node 29 HugePages_Total:     0
+== node3
+Node 3 MemTotal:       125459200 kB
+Node 3 MemFree:        106141824 kB
+Node 3 MemUsed:        19317376 kB
+Node 3 Active(file):      24256 kB
+Node 3 Inactive(file):     6976 kB
+Node 3 Unevictable:      524288 kB
+Node 3 Mlocked:          524288 kB
+Node 3 FilePages:        144960 kB
+Node 3 AnonPages:       1926336 kB
+Node 3 Shmem:            113728 kB
+Node 3 SReclaimable:     119232 kB
+Node 3 HugePages_Total:     0
+== node30
+Node 30 MemTotal:              0 kB
+Node 30 MemFree:               0 kB
+Node 30 MemUsed:               0 kB
+Node 30 Active(file):          0 kB
+Node 30 Inactive(file):        0 kB
+Node 30 Unevictable:           0 kB
+Node 30 Mlocked:               0 kB
+Node 30 FilePages:             0 kB
+Node 30 AnonPages:             0 kB
+Node 30 Shmem:                 0 kB
+Node 30 SReclaimable:          0 kB
+Node 30 HugePages_Total:     0
+== node31
+Node 31 MemTotal:              0 kB
+Node 31 MemFree:               0 kB
+Node 31 MemUsed:               0 kB
+Node 31 Active(file):          0 kB
+Node 31 Inactive(file):        0 kB
+Node 31 Unevictable:           0 kB
+Node 31 Mlocked:               0 kB
+Node 31 FilePages:             0 kB
+Node 31 AnonPages:             0 kB
+Node 31 Shmem:                 0 kB
+Node 31 SReclaimable:          0 kB
+Node 31 HugePages_Total:     0
+== node32
+Node 32 MemTotal:              0 kB
+Node 32 MemFree:               0 kB
+Node 32 MemUsed:               0 kB
+Node 32 Active(file):          0 kB
+Node 32 Inactive(file):        0 kB
+Node 32 Unevictable:           0 kB
+Node 32 Mlocked:               0 kB
+Node 32 FilePages:             0 kB
+Node 32 AnonPages:             0 kB
+Node 32 Shmem:                 0 kB
+Node 32 SReclaimable:          0 kB
+Node 32 HugePages_Total:     0
+== node33
+Node 33 MemTotal:              0 kB
+Node 33 MemFree:               0 kB
+Node 33 MemUsed:               0 kB
+Node 33 Active(file):          0 kB
+Node 33 Inactive(file):        0 kB
+Node 33 Unevictable:           0 kB
+Node 33 Mlocked:               0 kB
+Node 33 FilePages:             0 kB
+Node 33 AnonPages:             0 kB
+Node 33 Shmem:                 0 kB
+Node 33 SReclaimable:          0 kB
+Node 33 HugePages_Total:     0
+== node34
+Node 34 MemTotal:              0 kB
+Node 34 MemFree:               0 kB
+Node 34 MemUsed:               0 kB
+Node 34 Active(file):          0 kB
+Node 34 Inactive(file):        0 kB
+Node 34 Unevictable:           0 kB
+Node 34 Mlocked:               0 kB
+Node 34 FilePages:             0 kB
+Node 34 AnonPages:             0 kB
+Node 34 Shmem:                 0 kB
+Node 34 SReclaimable:          0 kB
+Node 34 HugePages_Total:     0
+== node35
+Node 35 MemTotal:              0 kB
+Node 35 MemFree:               0 kB
+Node 35 MemUsed:               0 kB
+Node 35 Active(file):          0 kB
+Node 35 Inactive(file):        0 kB
+Node 35 Unevictable:           0 kB
+Node 35 Mlocked:               0 kB
+Node 35 FilePages:             0 kB
+Node 35 AnonPages:             0 kB
+Node 35 Shmem:                 0 kB
+Node 35 SReclaimable:          0 kB
+Node 35 HugePages_Total:     0
+== node4
+Node 4 MemTotal:       99614720 kB
+Node 4 MemFree:        99397312 kB
+Node 4 MemUsed:          217408 kB
+Node 4 Active(file):       1216 kB
+Node 4 Inactive(file):        0 kB
+Node 4 Unevictable:           0 kB
+Node 4 Mlocked:               0 kB
+Node 4 FilePages:          1216 kB
+Node 4 AnonPages:             0 kB
+Node 4 Shmem:                 0 kB
+Node 4 SReclaimable:          0 kB
+Node 4 HugePages_Total:     0
+== node5
+Node 5 MemTotal:              0 kB
+Node 5 MemFree:               0 kB
+Node 5 MemUsed:               0 kB
+Node 5 Active(file):          0 kB
+Node 5 Inactive(file):        0 kB
+Node 5 Unevictable:           0 kB
+Node 5 Mlocked:               0 kB
+Node 5 FilePages:             0 kB
+Node 5 AnonPages:             0 kB
+Node 5 Shmem:                 0 kB
+Node 5 SReclaimable:          0 kB
+Node 5 HugePages_Total:     0
+== node6
+Node 6 MemTotal:              0 kB
+Node 6 MemFree:               0 kB
+Node 6 MemUsed:               0 kB
+Node 6 Active(file):          0 kB
+Node 6 Inactive(file):        0 kB
+Node 6 Unevictable:           0 kB
+Node 6 Mlocked:               0 kB
+Node 6 FilePages:             0 kB
+Node 6 AnonPages:             0 kB
+Node 6 Shmem:                 0 kB
+Node 6 SReclaimable:          0 kB
+Node 6 HugePages_Total:     0
+== node7
+Node 7 MemTotal:              0 kB
+Node 7 MemFree:               0 kB
+Node 7 MemUsed:               0 kB
+Node 7 Active(file):          0 kB
+Node 7 Inactive(file):        0 kB
+Node 7 Unevictable:           0 kB
+Node 7 Mlocked:               0 kB
+Node 7 FilePages:             0 kB
+Node 7 AnonPages:             0 kB
+Node 7 Shmem:                 0 kB
+Node 7 SReclaimable:          0 kB
+Node 7 HugePages_Total:     0
+== node8
+Node 8 MemTotal:              0 kB
+Node 8 MemFree:               0 kB
+Node 8 MemUsed:               0 kB
+Node 8 Active(file):          0 kB
+Node 8 Inactive(file):        0 kB
+Node 8 Unevictable:           0 kB
+Node 8 Mlocked:               0 kB
+Node 8 FilePages:             0 kB
+Node 8 AnonPages:             0 kB
+Node 8 Shmem:                 0 kB
+Node 8 SReclaimable:          0 kB
+Node 8 HugePages_Total:     0
+== node9
+Node 9 MemTotal:              0 kB
+Node 9 MemFree:               0 kB
+Node 9 MemUsed:               0 kB
+Node 9 Active(file):          0 kB
+Node 9 Inactive(file):        0 kB
+Node 9 Unevictable:           0 kB
+Node 9 Mlocked:               0 kB
+Node 9 FilePages:             0 kB
+Node 9 AnonPages:             0 kB
+Node 9 Shmem:                 0 kB
+Node 9 SReclaimable:          0 kB
+Node 9 HugePages_Total:     0

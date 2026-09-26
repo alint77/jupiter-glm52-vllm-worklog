@@ -56,7 +56,11 @@ run=0
 for arm in ${ORDER:-linear profile linear profile}; do
   run=$((run + 1))
   tag="${run}-${arm}"
-  if [[ "${arm}" == profile ]]; then
+  # Any other arm name takes its flags from ARM_ARGS_<name>.
+  custom="ARM_ARGS_${arm}"
+  if [[ -n "${!custom:-}" ]]; then
+    export MIMO_EXTRA_ARGS="--language-model-only ${!custom}"
+  elif [[ "${arm}" == profile ]]; then
     export MIMO_EXTRA_ARGS="--language-model-only --tiered-moe-placement-profile ${profile}"
   else
     export MIMO_EXTRA_ARGS="--language-model-only"

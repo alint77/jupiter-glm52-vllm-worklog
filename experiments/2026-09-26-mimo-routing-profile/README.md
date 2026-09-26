@@ -158,3 +158,49 @@ Marlin math on the same weights.
 
 Secret gist: https://gist.github.com/alint77/d8b18397c1f8444544f2425910b7fc7b
 (source in `gist/`, figures from `plot_routing.py` and `plot_ab.py`).
+
+## Follow-up: no sequence-parallel MoE, then replicas (2026-09-26 evening)
+
+The decode profile (`../2026-09-26-mimo-decode-profile`) showed MiMo's MoE
+running sequence-parallel (69 reduce-scatters + 138 all-gathers per step) and
+5 ms/step of reduce-scatter waiting that was per-layer cold imbalance.
+
+**No SP-MoE** (`1eef18f2bd`): tiered MiMo now routes the full batch on every
+rank and combines with one all-reduce, as tiered GLM does. Required for
+replicas (identical routes on every rank) and faster on its own:
+
+| | step | TPOT | n | GSM8K 400 |
+| --- | ---: | ---: | ---: | --- |
+| SP-MoE, profile | 25.03 ms | 6.78 | 7 | 90.2 / 91.5 / 90.7 / 90.0 |
+| **no SP-MoE, profile** | **21.8 ms** (21.48-22.14) | 6.0 | 10 | 89.7 / 90.5 / 91.0 / 89.7 |
+
+**Replicas.** `mimo_replicas.py` picks Grace copies against the runtime's own
+objective (min-max active cold experts per rank per layer), replaying held-out
+verify steps exactly via the orientation closed form. Held-out critical cold
+experts/step: 224.5 none -> 190.5 (500/rank) -> 173.0 (1000) -> 164.5 (1500)
+-> 160.4 (2400); perfect balance is 129.4. Chosen: 1500/rank, 28 GiB of Grace
+(`profile-3827-r1500.json`).
+
+Two fixes were needed first: the assign/align Triton kernel ranged over
+`tl.arange(0, 384)`, which Triton rejects (`bbc6d11cc4` pads to 512 and masks),
+and an uncommitted planner hunk charged pinned cold buffers at the next power
+of two, a model of the allocator `ea51bc67a1` had already replaced with
+exact-size `cudaHostRegister`; it refused the replica plan (127.8 GB "allocated"
+for 85.4 GB real). Dropped with the user's agreement; saved as
+`agent_space/wip-tiered-moe-planner-pinned-rounding.patch`. Host reserve raised
+to 20 GB for replica runs to cover the ~8-11 GiB per-worker process footprint
+the planner does not model (measured, `../2026-09-26-mimo-decode-profile/grace-free-2074487`).
+
+| | step | n |
+| --- | ---: | ---: |
+| no SP, no replicas | 21.88 ms (21.75-22.00) | 6 |
+| **no SP, 1500 replicas, exact** | **20.73 ms** (20.55-20.91) | 6 |
+
+-5.3%; every replica run beat every no-replica run on its node. GSM8K 91.0%
+with `VLLM_TIERED_MOE_ROUTE_CHECK=1` and no route divergence. The oracle's
+~75 us/cold-expert-layer model over-predicted (~4 ms): per-rank cold time is
+not linear in expert count at 1-3 experts, and hot imbalance is untouched.
+
+Open: prefill stages replicas too (they never run there): -44 hot slots on the
+tightest ranks and extra C2C copy per chunk. TTFT benches 2076535 (replicas)
+and 2076536 (control) running.
