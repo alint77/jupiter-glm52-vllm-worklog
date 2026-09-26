@@ -157,9 +157,32 @@ both orders, on three nodes. The decode prompts weren't in the capture.
 | TTFT at 32K / 128K / 240K | 4.0 / 16.9 / 40.2 s | 4.0 / 16.7 / 39.8 s |
 | GSM8K 400, two runs each | 90.2 / 91.5% | 90.7 / 90.0% |
 
-For GLM at 4 concurrent requests we also keep second copies of busy cold experts
-on other GPUs and route each token to whichever copy balances the ranks:
-another −5 to −6.5% step time.
+## What's left: GPUs waiting on each other
+
+A profiler trace of MiMo decode (29.2 ms per step at short context) puts the MoE
+at ~60% of the step. Only 12 ms of that is expert kernels. Another 5 ms is GPUs
+waiting for each other.
+
+![layer ranks](https://gist.githubusercontent.com/alint77/d8b18397c1f8444544f2425910b7fc7b/raw/layer-ranks.png)
+
+This is one real MoE layer on the four GPUs of the node. Each GPU owns a quarter
+of the layer's experts and runs its own hot (blue) and cold (orange) Marlin, then
+all four meet in a reduce-scatter (green) before the next layer can start. The
+collective can only finish once the last GPU arrives.
+- GPUs 1 and 2 drew a lot of cold, Grace-resident work in this layer.
+- GPU 3 drew almost none, so it sits ~150 µs in the collective doing nothing, and
+  so does GPU 0.
+
+Over a whole step, that collective looks like 5.5 ms of communication. Only
+0.46 ms of it is data moving. The rest matches, to within 0.06 ms per GPU, the
+slowest GPU's extra Marlin time in each layer. Which GPU arrives last changes
+from layer to layer (each is last ~25% of the time), so this is routing
+variance, not a slow GPU.
+
+The fix is to balance cold work per layer and per step. For GLM we keep second
+copies of busy cold experts in other GPUs' Grace memory and route each token to
+whichever copy evens out the GPUs: −5 to −6.5% step time at 4 concurrent
+requests. MiMo doesn't have this yet; that 5 ms is the next target.
 
 ## Prefill is different
 
