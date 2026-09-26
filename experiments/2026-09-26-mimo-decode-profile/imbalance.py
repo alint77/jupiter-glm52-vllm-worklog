@@ -20,19 +20,27 @@ from analyze import RANK_RE, category, load, steps, union
 
 
 def layer_rows(rows):
+    """Per MoE layer: the collective that closes it, and this rank's Marlin time.
+
+    A collective closes a MoE layer when Marlin ran since the previous
+    collective: the reduce-scatter under sequence-parallel MoE, the MoE
+    all-reduce without it.
+    """
     out = []
     for row in rows:
         ops = sorted(row["phases"]["target"], key=lambda e: e["t"])
-        rs = [o for o in ops if "ReduceScatter" in o["name"]]
-        left = ops[0]["t"]
+        collectives = [o for o in ops if "ReduceScatter" in o["name"]
+                       or "cross_device_reduce" in o["name"]]
         layers = []
-        for r in rs:
-            seg = [o for o in ops if left <= o["t"] < r["t"] and "ReduceScatter" not in o["name"]]
+        left = ops[0]["t"]
+        for c in collectives:
+            seg = [o for o in ops if left <= o["t"] < c["t"]]
             hot = [o for o in seg if category(o).startswith("MoE hot")]
             cold = [o for o in seg if category(o).startswith("MoE cold")]
-            layers.append({"arrive": r["t"], "done": r["end"],
-                           "hot": union(hot), "cold": union(cold), "marlin": union(hot + cold)})
-            left = r["end"]
+            if hot or cold:
+                layers.append({"arrive": c["t"], "done": c["end"], "hot": union(hot),
+                               "cold": union(cold), "marlin": union(hot + cold)})
+            left = c["end"]
         out.append(layers)
     return out
 
@@ -66,7 +74,7 @@ def main():
             hot_spread += max(row["hot"] for row in rows.values()) - statistics.fmean(row["hot"] for row in rows.values())
             last_arrivals += 1
     print(f"{trace_dir.name}: {n_steps} steps")
-    print("per rank, ms/step: waiting in reduce-scatter vs (slowest rank's Marlin - own Marlin)")
+    print("per rank, ms/step: waiting in the MoE-closing collective vs (slowest rank's Marlin - own Marlin)")
     for r in sorted(per_rank):
         print(f"  rank {r}: waiting {wait[r] / n_steps:5.2f}   Marlin deficit {spread[r] / n_steps:5.2f}")
     print(f"mean waiting {statistics.fmean(wait.values()) / n_steps:.2f}, "

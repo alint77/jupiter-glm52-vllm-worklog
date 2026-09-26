@@ -95,3 +95,56 @@ the machinery exists (`2026-07-31-replicated-expert-scheduling/oracle.py`,
 
 `capture.py`, `job.sbatch` (capture); `analyze.py` -> `breakdown-2074303.{txt,json}`;
 `imbalance.py` -> `imbalance-2074303.txt`; `plot_breakdown.py` -> `figs/`.
+
+## Re-profile after the fixes (job 2077034)
+
+Production config now: routing profile + 1500 replicas/rank, exact replica
+assignment, no sequence-parallel MoE (`serve.sbatch` defaults). Both requests
+now **sample** (temperature 1.0, top-p 0.95, the model's defaults, as Claude
+Code traffic does) instead of greedy, so the 96K request no longer loops
+(5.7 tokens/step). Profiler distortion +5.6% short, +10.8% at 96K.
+
+![before/after](figs/step-breakdown-2077034.png)
+
+| ms/step, mean of 4 GPUs | before (short) | now (short) | now (~96K) |
+| --- | ---: | ---: | ---: |
+| step (profiled) | 29.21 | **24.33** | 29.96 |
+| MoE hot tier | 4.16 | 3.56 | 3.61 |
+| MoE cold tier | 7.96 | 8.61 | 13.47 |
+| **waiting for slowest GPU** | **5.21** | **1.90** | 2.02 |
+| MoE routing/assign + collectives (transfer) | 3.75 | 2.56 | 2.60 |
+| dense GEMMs | 3.02 | 3.02 | 3.03 |
+| attention | 1.01 | 1.01 | 1.53 |
+| other (norms, drafter, logits, sampling, idle) | 4.10 | 3.67 | 3.70 |
+
+Findings:
+
+1. **Waiting fell 5.2 -> 1.9 ms/step (-63%).** Cold-tier spread across GPUs
+   5.8 -> 1.9 ms/step; the replicas did their job. **Hot-tier spread is
+   unchanged (2.2 -> 2.1)** and is now the larger part: replicas only move cold
+   work. GPU 3 is last to arrive 32-37% of layers (was uniform ~25%): it holds
+   the most hot experts (3867 vs 3763), so its hot Marlin runs longest.
+   ![layer](figs/layer-ranks-2077034.png)
+2. **SP collectives are gone.** The only collectives left are 141 custom
+   all-reduces/step: 0.61 ms of transfer (was 2.4 ms with SP RS/AG + AR). MoE
+   routing kernels rose 1.50 -> 1.95 ms (the replica assign kernel, and the gate
+   now runs on all 8 tokens rather than a 2-token chunk).
+3. **The cold tier is the critical path in every layer**: cold sums to
+   11.95 ms/step against 6.76 hot; overlapped union 12.48.
+4. **Long context costs cold work, not attention.** At ~96K (sampled, not
+   looping) cold rises 8.6 -> 13.5 ms/step while attention rises only 1.0 ->
+   1.5. The first capture's 96K cold increase was blamed on the greedy loop;
+   it persists without one, so decoding over a long code context routes to
+   experts the profile (trained on shorter agentic turns) left cold. Needs a
+   routing capture at long context to confirm and fold into the profile.
+5. **Sampling costs ~0.55 ms/step** (top-p softmax + radix sort + scan, and the
+   rejection sampler's recovered tokens), invisible in greedy benchmarks.
+
+Levers now:
+
+| lever | addresses | size |
+| --- | --- | --- |
+| profile trained on long-context traffic too | cold 13.5 ms at 96K | large at long context |
+| balance hot work too (hot residency spread per layer, or hot replicas) | hot spread ~2.1 ms | up to ~2 ms |
+| fewer cold experts per layer (more residency; skip staging replicas in prefill: +44 hot slots) | cold 8.6 ms | per cold expert-layer |
+| FlashInfer top-p sampling instead of torch sort | sampling ~0.55 ms | ~2% |

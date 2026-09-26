@@ -20,6 +20,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "2026-09-04-mtp3-pr
 import capture as harness  # noqa: E402
 
 
+def completion(prompt: str, max_tokens: int, temperature: float) -> None:
+    """Greedy (0) or the model's own sampling defaults (top_p 0.95)."""
+    body = {"model": harness.MODEL, "prompt": prompt, "max_tokens": max_tokens,
+            "temperature": temperature, "ignore_eos": True}
+    if temperature:
+        body["top_p"] = 0.95
+    harness.post("/v1/completions", body)
+
+
 def counters() -> dict[str, float]:
     values = harness.metrics()
     return {
@@ -49,6 +58,9 @@ def main() -> None:
     parser.add_argument("--short-prompts", type=Path, required=True)
     parser.add_argument("--trace-root", type=Path, required=True)
     parser.add_argument("--window", type=float, default=2.0)
+    # 0 reproduces the first capture; greedy decoding looped on the 96K prompt
+    # (every draft accepted), so later captures sample like real traffic.
+    parser.add_argument("--temperature", type=float, default=0.0)
     args = parser.parse_args()
     harness.MODEL = "mimo26-pro"
     long_prompt = json.loads(args.long_prompts.read_text().splitlines()[1])["prompt"]
@@ -57,7 +69,7 @@ def main() -> None:
     for label, prompt in (("decode-short", short_prompt), ("decode-96k", long_prompt)):
         print(f"--- {label} ---", flush=True)
         thread = threading.Thread(
-            target=harness.completion, args=(prompt, 6000), daemon=True
+            target=completion, args=(prompt, 6000, args.temperature), daemon=True
         )
         thread.start()
         harness.wait_for_decode(1, timeout=900)

@@ -25,9 +25,10 @@ echo "node $(hostname) traces ${trace_root}"
 # which make large traces unloadable; ignore_frontend keeps API-server work out.
 profiler="{\"profiler\":\"torch\",\"torch_profiler_dir\":\"${trace_root}\",\"torch_profiler_with_stack\":false,\"torch_profiler_record_shapes\":true,\"ignore_frontend\":true}"
 export MIMO_PORT=8027
-export MIMO_EXTRA_ARGS="--language-model-only \
---tiered-moe-placement-profile ${PWD}/agent_space/experiments/2026-09-26-mimo-routing-profile/profile-3827.json \
---profiler-config ${profiler}"
+# Placement is serve.sbatch's default (routing profile + 1500 replicas) unless
+# PLACEMENT_ARGS says otherwise; job 2074303 used
+#   --tiered-moe-placement-profile .../profile-3827.json (no replicas, SP-MoE).
+export MIMO_EXTRA_ARGS="--language-model-only ${PLACEMENT_ARGS:-} --profiler-config ${profiler}"
 
 sed -e 's/^exec \.venv/.venv/' -e '/^#SBATCH/d' \
   agent_space/experiments/2026-09-22-mimo-v26-pro/serve.sbatch > "${trace_root}/serve-inline.sh"
@@ -45,7 +46,7 @@ tr '\r' '\n' < "${trace_root}/server.out" | grep -ohE "Tiered MoE residency:.{0,
 .venv/bin/python "${E}/capture.py" \
   --long-prompts agent_space/experiments/2026-09-04-mtp3-profile/prompts.jsonl \
   --short-prompts agent_space/experiments/2026-08-29-glm53-routing-capture/prompts-short.jsonl \
-  --trace-root "${trace_root}"
+  --trace-root "${trace_root}" --temperature "${TEMPERATURE:-1.0}"
 cp "${trace_root}/capture-report.json" "${E}/capture-report-${SLURM_JOB_ID}.json"
 du -sh "${trace_root}"/decode-* | tee "${E}/trace-sizes-${SLURM_JOB_ID}.txt"
 echo "=== done ==="

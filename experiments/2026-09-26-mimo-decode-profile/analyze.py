@@ -42,7 +42,8 @@ CATEGORIES = (
     ("MoE all-gather (SP)", lambda e: "AllGather" in e["name"]),
     ("TP all-reduce", lambda e: "cross_device_reduce" in e["name"]),
     ("MoE routing/align/sum/act", lambda e: any(k in e["name"] for k in (
-        "grouped_topk", "moe_align", "count_and_sort", "moe_sum", "act_and_mul"))),
+        "grouped_topk", "moe_align", "count_and_sort", "moe_sum", "act_and_mul",
+        "_assign_kernel", "_route_fingerprint"))),
     ("attention", lambda e: any(k in e["name"] for k in (
         "flash", "Flash", "reshape_and_cache", "prepare_varlen", "slot_mapping"))),
     ("dense GEMM", lambda e: any(k in e["name"] for k in (

@@ -1,0 +1,44 @@
+
+===== decode-short: 4 ranks, 82 steps each
+step period (GPU start to start): 24.33 ms  per rank [24.32, 24.33, 24.33, 24.33]
+phase busy time (ms): {'target': 21.471, 'logits': 0.283, 'draft': 0.868, 'host-side': 0.742}
+GPU idle inside the step: 0.96 ms
+
+target verify graph, union-partitioned (ms/step, mean over ranks; min-max rank):
+  MoE hot Marlin (HBM)           3.56  (3.47-3.62)   16.6%
+  MoE cold Marlin (Grace)        8.61  (8.28-8.76)   40.1%
+  MoE reduce-scatter (SP)        0.00  (0.00-0.00)    0.0%
+  MoE all-gather (SP)            0.00  (0.00-0.00)    0.0%
+  TP all-reduce                  2.51  (2.32-2.77)   11.7%
+  MoE routing/align/sum/act      1.95  (1.94-1.96)    9.1%
+  attention                      1.01  (1.00-1.01)    4.7%
+  dense GEMM                     3.02  (3.01-3.02)   14.1%
+  norm/rope/elementwise          0.81  (0.79-0.82)    3.8%
+  target busy                   21.47
+
+Marlin: hot sum 6.76, cold sum 11.95, union 12.48 ms/step (serial would be 18.70); target span 22.06
+
+collectives in the target graph (ms/step): mean over ranks vs cross-rank min
+  cross_device_reduce    x141.0  mean   2.51  min   0.61  -> waiting  1.90
+
+===== decode-96k: 4 ranks, 67 steps each
+step period (GPU start to start): 29.96 ms  per rank [29.96, 29.96, 29.96, 29.96]
+phase busy time (ms): {'target': 27.067, 'logits': 0.288, 'draft': 0.868, 'host-side': 0.743}
+GPU idle inside the step: 1.00 ms
+
+target verify graph, union-partitioned (ms/step, mean over ranks; min-max rank):
+  MoE hot Marlin (HBM)           3.61  (3.54-3.69)   13.3%
+  MoE cold Marlin (Grace)       13.47  (12.85-13.76)   49.8%
+  MoE reduce-scatter (SP)        0.00  (0.00-0.00)    0.0%
+  MoE all-gather (SP)            0.00  (0.00-0.00)    0.0%
+  TP all-reduce                  2.63  (2.33-3.17)    9.7%
+  MoE routing/align/sum/act      1.99  (1.98-2.00)    7.4%
+  attention                      1.53  (1.52-1.54)    5.7%
+  dense GEMM                     3.03  (3.02-3.03)   11.2%
+  norm/rope/elementwise          0.81  (0.79-0.82)    3.0%
+  target busy                   27.07
+
+Marlin: hot sum 7.01, cold sum 17.05, union 17.36 ms/step (serial would be 24.07); target span 27.67
+
+collectives in the target graph (ms/step): mean over ranks vs cross-rank min
+  cross_device_reduce    x141.0  mean   2.63  min   0.61  -> waiting  2.02
