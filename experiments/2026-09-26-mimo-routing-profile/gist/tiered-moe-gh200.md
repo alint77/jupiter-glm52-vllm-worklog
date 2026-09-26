@@ -16,8 +16,9 @@ the core of the work; everything else builds on it.
 - GLM-5.2 (361 GiB) at 400K context: stock vLLM offload decodes at **38 tok/s**,
   our stack at **128 tok/s**. Overlap is +18% of that on its own, plus another
   −8% step time from the Marlin fix.
-- On top of that, picking the hot set from real routing traces cut MiMo-V2.6's
-  decode step by **28%**.
+- On MiMo-V2.6, picking the hot set from real routing traces and then balancing
+  the cold work across GPUs took decode from **110 to 178 tok/s** (34.7 → 20.7 ms
+  per step), with prefill and accuracy unchanged.
 
 ## The hardware
 
@@ -58,11 +59,6 @@ the right mechanism with the wrong shape:
     tensor pins 2 GiB.
   - Pinned pages land on whatever NUMA node the thread is on. The wrong node
     drops C2C from ~410 to 70–80 GB/s, and nothing errors.
-
-The prefetch offloader copies whole layers into HBM ahead of use. For MoE decode
-that moves every expert a GPU owns in a layer (64–96) to use the ~11 a step
-touches,
-and its staging buffers take HBM that could hold experts.
 
 ## The idea: two tiers, read at the same time
 
@@ -147,21 +143,13 @@ came from Grace, far past the balance point. With the profile it's 17%.
 
 MiMo-V2.6-Pro, 250K context, batch one, DFlash speculative decoding (8 tokens
 verified per step). Only the hot set changes; servers are restarted per run, in
-both orders, on three nodes. The decode prompts weren't in the capture.
-
-| | arbitrary hot set | routing profile |
-| --- | ---: | ---: |
-| expert reads from Grace per step | 42% | **17%** |
-| decode step time | 34.7 ms | **25.0 ms (−28%)** |
-| decode speed | ~110 tok/s | **~147 tok/s** |
-| TTFT at 32K / 128K / 240K | 4.0 / 16.9 / 40.2 s | 4.0 / 16.7 / 39.8 s |
-| GSM8K 400, two runs each | 90.2 / 91.5% | 90.7 / 90.0% |
+both orders, on three nodes. The decode prompts weren't in the capture. Every
+run landed within 0.3 ms of its arm's mean, and GSM8K didn't move.
 
 ## What's left: GPUs waiting on each other
 
-A profiler trace of MiMo decode (29.2 ms per step at short context) puts the MoE
-at ~60% of the step. Only 12 ms of that is expert kernels. Another 5 ms is GPUs
-waiting for each other.
+A profiler trace of MiMo decode (29.2 ms per step) puts the MoE at ~60% of the
+step: 12 ms of expert kernels and 5 ms of GPUs waiting for each other.
 
 ![layer ranks](https://gist.githubusercontent.com/alint77/d8b18397c1f8444544f2425910b7fc7b/raw/layer-ranks.png)
 
@@ -179,10 +167,59 @@ slowest GPU's extra Marlin time in each layer. Which GPU arrives last changes
 from layer to layer (each is last ~25% of the time), so this is routing
 variance, not a slow GPU.
 
-The fix is to balance cold work per layer and per step. For GLM we keep second
-copies of busy cold experts in other GPUs' Grace memory and route each token to
-whichever copy evens out the GPUs: −5 to −6.5% step time at 4 concurrent
-requests. MiMo doesn't have this yet; that 5 ms is the next target.
+## Balancing the GPUs: replicas
+
+The fix is to let a busy GPU hand cold work to a less busy one. That took two
+changes.
+
+**Every GPU must see the same routing.** MiMo's MoE ran sequence-parallel: each
+GPU routed only its share of the tokens, then the GPUs swapped results with a
+reduce-scatter and two all-gathers per layer. Tiered GLM already skips this and
+has every GPU route all tokens, ending the layer in one all-reduce. Doing the
+same on MiMo cut the step by 13% (25.0 → 21.8 ms) on its own. It also means
+every GPU makes the identical routing decision for every token, which the next
+part relies on.
+
+**Spare copies of busy experts.** Each GPU keeps copies of some of the other
+GPUs' cold experts in its own Grace memory: 1,500 copies, 28 GiB per GPU, out of
+~45 GiB we measured free. At every layer, a small kernel looks at which cold
+experts are active and decides which copy runs, so that the busiest GPU gets as
+few cold experts as possible. All GPUs run that decision on the same routes, so
+they agree without talking to each other.
+
+![replicas](https://gist.githubusercontent.com/alint77/d8b18397c1f8444544f2425910b7fc7b/raw/replicas.png)
+
+Here GPU 0 drew 5 of the layer's 11 active cold experts. With copies, GPU 1 and
+GPU 3 each run one of them from their own Grace memory, and the layer waits for
+3 cold experts instead of 5.
+
+Which experts to copy is chosen offline from the routing traces: on held-out
+steps, 1,500 copies per GPU cut the busiest GPU's cold work from 225 to 165
+expert-layers per step, and more copies barely help. Measured: **21.9 →
+20.7 ms per step (−5.3%)**, 6 runs each, and every run with copies beat every
+run without. A check that all GPUs agreed on every route passed, and GSM8K was
+unchanged.
+
+It's less than the replay suggested: with only 1–3 cold experts per GPU, cold
+time isn't proportional to count, and copies don't touch hot-tier imbalance.
+
+## End result on MiMo
+
+![mimo ladder](https://gist.githubusercontent.com/alint77/d8b18397c1f8444544f2425910b7fc7b/raw/mimo-ladder.png)
+
+MiMo-V2.6-Pro on one 4x GH200 node, 250K context, batch one, DFlash speculative
+decoding. Every column is measured with the servers restarted per run.
+
+| | arbitrary hot set | + routing profile | + no SP-MoE | + replicas |
+| --- | ---: | ---: | ---: | ---: |
+| decode step | 34.7 ms | 25.0 ms | 21.8 ms | **20.7 ms** |
+| decode speed | ~110 tok/s | ~147 tok/s | ~165 tok/s | **~178 tok/s** |
+| TTFT 32K / 128K / 240K | 4.0 / 16.9 / 40.2 s | 4.0 / 16.7 / 39.8 s | 4.0 / 16.6 / 39.6 s | 4.0 / 16.9 / 40.2 s |
+| GSM8K 400 (per run) | 90.2, 91.5% | 90.7, 90.0% | 89.7–91.0% | 91.0% |
+
+Prefill is flat throughout. The copies cost ~1.5% at 128K+ because prefill still
+stages them into HBM even though only decode uses them; that's a small fix left
+to do.
 
 ## Prefill is different
 
@@ -201,7 +238,8 @@ Each result is against its own matched control.
 | hot/cold overlap on two streams (MTP3 verify) | +18% decode tok/s (GLM) |
 | Marlin shared-memory fix, tiers truly co-resident | −34% per MoE layer, −7.7% step (GLM) |
 | hot set from routing traces | −28% decode step (MiMo) |
-| cross-GPU copies of busy cold experts | −5 to −6.5% step at 4 concurrent requests (GLM) |
+| every GPU routes all tokens (no sequence-parallel MoE) | −13% decode step (MiMo) |
+| cross-GPU copies of busy cold experts | −5.3% step (MiMo, batch one); −5 to −6.5% at 4 concurrent requests (GLM) |
 | staging cold experts in prefill | −17 to −23% TTFT (MiMo) |
 
 ## Things worth knowing
