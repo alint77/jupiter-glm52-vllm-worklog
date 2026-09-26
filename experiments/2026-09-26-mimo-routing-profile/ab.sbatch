@@ -27,6 +27,9 @@ profile="${PROFILE:?set PROFILE}"
 out="${E}/ab-${SLURM_JOB_ID}"
 mkdir -p "${out}"
 export MIMO_PORT=8031
+# serve.sbatch now defaults to the replica profile; every arm here states its
+# placement explicitly, so switch the defaults off.
+export MIMO_PROFILE= MIMO_REPLICAS=
 sed -e 's/^exec \.venv/.venv/' -e '/^#SBATCH/d' \
   agent_space/experiments/2026-09-22-mimo-v26-pro/serve.sbatch > "${out}/serve-inline.sh"
 

@@ -9,12 +9,16 @@
 #SBATCH --output=agent_space/experiments/2026-09-22-mimo-v26-pro/serve-%j.out
 #SBATCH --error=agent_space/experiments/2026-09-22-mimo-v26-pro/serve-%j.err
 
-# MiMo-V2.6-Pro-RL on tiered MoE: 250K context, concurrency 1, no speculative
-# decoding, EP4/TP4, linear expert placement.
+# MiMo-V2.6-Pro-RL on tiered MoE: 250K context, concurrency 1, EP4/TP4, DFlash
+# k=7, the measured best configuration (see ../2026-09-26-mimo-routing-profile).
 #
-# No placement profile exists for this model, so the hot set is a linear split
-# rather than a routing-derived one. What tiered buys here is the hot/cold
-# overlap and NUMA-pinned expert residency in Grace, not placement quality.
+# Placement: the hot set comes from agentic-coding routing traces, and each
+# rank keeps 1500 Grace copies of other ranks' busy cold experts, assigned per
+# layer at decode time to balance cold work (exact replica assignment). Decode
+# step 34.7 ms (linear) -> 25.0 (profile) -> 20.7 (with replicas and the
+# non-sequence-parallel MoE path, which is automatic under tiered MoE).
+#   MIMO_PROFILE=   linear placement (no profile)
+#   MIMO_REPLICAS=  keep the profile but no replica assignment
 #
 # Differences from the GLM launcher, all forced by the architecture:
 #   * kv-cache-dtype auto, not fp8_ds_mla -- that dtype is MLA-only and MiMo is
@@ -23,7 +27,6 @@
 #     scoped by model_type rather than relaxed.
 #   * trust-remote-code: the config carries an auto_map and transformers does
 #     not know model_type mimo_v2 natively.
-#   * no placement profile.
 set -euo pipefail
 cd /e/project1/profound/alint77/vllm
 source agent_space/jupiter-env.sh
@@ -44,6 +47,17 @@ export PYTHONFAULTHANDLER=1
 # chunks (>= 1024 tokens; decode batches are at most 8): -17..-23% TTFT.
 export VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS="${VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS:-1024}"
 reserve_gb="${MIMO_HBM_RESERVE_GB:-3}"
+profile="${MIMO_PROFILE-${PWD}/agent_space/profiles/mimo26-profile-3827-r1500.json}"
+replicas="${MIMO_REPLICAS-exact}"
+[[ -n "${profile}" ]] || replicas=""
+# Replicas add 1500 x 19.1 MiB of pinned Grace per rank. The planner does not
+# model each worker's own ~8-11 GiB of host memory (measured,
+# ../2026-09-26-mimo-decode-profile/grace-free-2074487), so the reserve covers it.
+if [[ -n "${replicas}" ]]; then
+  host_reserve_gb="${MIMO_HOST_RESERVE_GB:-20}"
+else
+  host_reserve_gb="${MIMO_HOST_RESERVE_GB:-8}"
+fi
 model_len="${MIMO_MAX_MODEL_LEN:-250000}"
 batched="${MIMO_BATCHED_TOKENS:-8192}"
 # Extra serve flags for sweeps, e.g. --language-model-only.
@@ -62,7 +76,14 @@ elif [[ -n "${MIMO_MTP:-}" ]]; then
   capture=$((MIMO_MTP + 1))
   extra_args+=(--speculative-config "{\"method\":\"mtp\",\"num_speculative_tokens\":${MIMO_MTP}}")
 fi
-echo "mimo: model_len=${model_len} reserve=${reserve_gb}GB batched=${batched} extra=${MIMO_EXTRA_ARGS---language-model-only} mtp=${MIMO_MTP:-off} dflash=${MIMO_DFLASH:-off} port=${port}"
+# Prepended, so a placement flag passed in MIMO_EXTRA_ARGS still wins.
+if [[ -n "${replicas}" ]]; then
+  extra_args=(--tiered-moe-replica-assignment "${replicas}" "${extra_args[@]}")
+fi
+if [[ -n "${profile}" ]]; then
+  extra_args=(--tiered-moe-placement-profile "${profile}" "${extra_args[@]}")
+fi
+echo "mimo: model_len=${model_len} reserve=${reserve_gb}GB batched=${batched} extra=${MIMO_EXTRA_ARGS---language-model-only} mtp=${MIMO_MTP:-off} dflash=${MIMO_DFLASH:-off} profile=${profile:-linear} replicas=${replicas:-off} host_reserve=${host_reserve_gb}GB port=${port}"
 
 exec .venv/bin/vllm serve "${model}" \
   --served-model-name mimo26-pro \
@@ -84,7 +105,7 @@ exec .venv/bin/vllm serve "${model}" \
   --enable-tiered-moe \
   --tiered-moe-backend uva \
   --tiered-moe-hbm-reserve-gb "${reserve_gb}" \
-  --tiered-moe-host-reserve-gb 8 \
+  --tiered-moe-host-reserve-gb "${host_reserve_gb}" \
   --tiered-moe-numa-strict \
   --mla-cache-tier hbm \
   --grace-machine-profile agent_space/profiles/jupiter-gh200-baseline.json \
