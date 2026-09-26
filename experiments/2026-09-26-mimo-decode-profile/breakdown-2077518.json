@@ -1,0 +1,248 @@
+{
+  "decode-short": {
+    "ranks": {
+      "0": {
+        "steps": 95,
+        "period_ms": {
+          "mean": 20.992779902407996,
+          "p50": 20.80907917022705
+        },
+        "phase_busy_ms": {
+          "draft": 0.8655811610974764,
+          "host-side": 0.749207225598787,
+          "target": 18.096352938601846,
+          "logits": 0.28522881959614
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 0.9025043186388517,
+          "TP all-reduce": 2.575118190363834,
+          "dense GEMM": 3.0170116424560547,
+          "attention": 1.0045108192845396,
+          "MoE routing/align/sum/act": 1.9328878670408014,
+          "MoE cold Marlin (Grace)": 3.722484038168924,
+          "MoE hot Marlin (HBM)": 4.94183606264884
+        },
+        "marlin_ms": {
+          "hot sum": 7.959875940021716,
+          "cold sum": 6.621051216125489,
+          "union": 9.021253937169126,
+          "target span": 18.702636528015137
+        }
+      },
+      "1": {
+        "steps": 95,
+        "period_ms": {
+          "mean": 20.994717708386872,
+          "p50": 20.80812358856201
+        },
+        "phase_busy_ms": {
+          "draft": 0.8649817316155685,
+          "host-side": 0.7525760048314145,
+          "target": 18.096836421364234,
+          "logits": 0.28487242648476047
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 0.9091131812647769,
+          "TP all-reduce": 2.4533159757915297,
+          "dense GEMM": 3.0081174047369705,
+          "attention": 1.0042355587607936,
+          "MoE routing/align/sum/act": 1.9685238286068565,
+          "MoE cold Marlin (Grace)": 3.7429831103274696,
+          "MoE hot Marlin (HBM)": 5.010547361875835
+        },
+        "marlin_ms": {
+          "hot sum": 7.992038937618858,
+          "cold sum": 6.602611742521587,
+          "union": 9.11188857429906,
+          "target span": 18.69823953728927
+        }
+      },
+      "2": {
+        "steps": 95,
+        "period_ms": {
+          "mean": 20.995176124572755,
+          "p50": 20.805269241333008
+        },
+        "phase_busy_ms": {
+          "draft": 0.8759272123637952,
+          "host-side": 0.7530110208611739,
+          "target": 18.08889473362973,
+          "logits": 0.28499840184261926
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 0.8859710392199065,
+          "TP all-reduce": 2.484832131235223,
+          "dense GEMM": 3.017185602690044,
+          "attention": 1.0071534708926553,
+          "MoE routing/align/sum/act": 1.9570388141431307,
+          "MoE cold Marlin (Grace)": 3.7990188247279115,
+          "MoE hot Marlin (HBM)": 4.937694850720857
+        },
+        "marlin_ms": {
+          "hot sum": 7.903447633040579,
+          "cold sum": 6.651403095847682,
+          "union": 9.091771848578203,
+          "target span": 18.701888144643682
+        }
+      },
+      "3": {
+        "steps": 95,
+        "period_ms": {
+          "mean": 20.99501476287842,
+          "p50": 20.807830810546875
+        },
+        "phase_busy_ms": {
+          "draft": 0.8760259226748818,
+          "host-side": 0.7530281468441612,
+          "target": 18.095706718846372,
+          "logits": 0.28466503745631166
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 0.8899982703359504,
+          "TP all-reduce": 2.346246714341013,
+          "dense GEMM": 3.012217787692421,
+          "attention": 1.0072381872879832,
+          "MoE routing/align/sum/act": 1.9654842694600423,
+          "MoE cold Marlin (Grace)": 3.885809378038373,
+          "MoE hot Marlin (HBM)": 4.988712111690588
+        },
+        "marlin_ms": {
+          "hot sum": 8.042819434718082,
+          "cold sum": 6.828367434049907,
+          "union": 9.23556059787148,
+          "target span": 18.70545775764867
+        }
+      }
+    },
+    "collectives": {
+      "cross_device_reduce": {
+        "per_step": 141.0,
+        "mean_ms_per_step": 2.4648928968529953,
+        "cross_rank_min_ms_per_step": 0.6107948403609427
+      }
+    }
+  },
+  "decode-96k": {
+    "ranks": {
+      "0": {
+        "steps": 87,
+        "period_ms": {
+          "mean": 22.852781120387988,
+          "p50": 22.455222129821777
+        },
+        "phase_busy_ms": {
+          "draft": 0.8666898354716684,
+          "host-side": 0.7456837906234566,
+          "target": 19.936874652731007,
+          "logits": 0.2850892297152815
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 0.8988847677735077,
+          "TP all-reduce": 2.648149912384735,
+          "dense GEMM": 3.026169250751364,
+          "attention": 1.5244817953000123,
+          "MoE routing/align/sum/act": 1.9453456191724288,
+          "MoE cold Marlin (Grace)": 5.450293056809582,
+          "MoE hot Marlin (HBM)": 4.443550250539378
+        },
+        "marlin_ms": {
+          "hot sum": 7.778577070126588,
+          "cold sum": 8.775278376436782,
+          "union": 10.237622085658984,
+          "target span": 20.552105947472583
+        }
+      },
+      "1": {
+        "steps": 87,
+        "period_ms": {
+          "mean": 22.852630143878105,
+          "p50": 22.455803871154785
+        },
+        "phase_busy_ms": {
+          "draft": 0.8646053993838957,
+          "host-side": 0.7507867484257139,
+          "target": 19.95387089389494,
+          "logits": 0.2853836191111597
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 0.9064432286668098,
+          "TP all-reduce": 2.448202220872901,
+          "dense GEMM": 3.019543614880792,
+          "attention": 1.5291460190696278,
+          "MoE routing/align/sum/act": 1.9854912246324095,
+          "MoE cold Marlin (Grace)": 5.653799553940579,
+          "MoE hot Marlin (HBM)": 4.411245031831822
+        },
+        "marlin_ms": {
+          "hot sum": 7.752923516021378,
+          "cold sum": 8.992551091073574,
+          "union": 10.41093869044863,
+          "target span": 20.55846396259878
+        }
+      },
+      "2": {
+        "steps": 87,
+        "period_ms": {
+          "mean": 22.852545771105536,
+          "p50": 22.45746612548828
+        },
+        "phase_busy_ms": {
+          "draft": 0.8776030814510652,
+          "host-side": 0.7496821085611979,
+          "target": 19.944501241048176,
+          "logits": 0.2853426988097443
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 0.8821178195120274,
+          "TP all-reduce": 2.385977690247284,
+          "dense GEMM": 3.0270697330606393,
+          "attention": 1.532152899380388,
+          "MoE routing/align/sum/act": 1.9739785998260382,
+          "MoE cold Marlin (Grace)": 5.787389961695762,
+          "MoE hot Marlin (HBM)": 4.3558145373260375
+        },
+        "marlin_ms": {
+          "hot sum": 7.699483981077698,
+          "cold sum": 9.138938553031833,
+          "union": 10.488120824441143,
+          "target span": 20.56114510284073
+        }
+      },
+      "3": {
+        "steps": 87,
+        "period_ms": {
+          "mean": 22.85253129060241,
+          "p50": 22.456953048706055
+        },
+        "phase_busy_ms": {
+          "draft": 0.8753304207462004,
+          "host-side": 0.7501898688831549,
+          "target": 19.95015552126128,
+          "logits": 0.28524451420224944
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 0.8850828368088295,
+          "TP all-reduce": 2.384722128681753,
+          "dense GEMM": 3.018369296501423,
+          "attention": 1.5283192272843986,
+          "MoE routing/align/sum/act": 1.9745580172630106,
+          "MoE hot Marlin (HBM)": 4.31125201119317,
+          "MoE cold Marlin (Grace)": 5.847852003528697
+        },
+        "marlin_ms": {
+          "hot sum": 7.590674378406042,
+          "cold sum": 9.140929923660453,
+          "union": 10.501805305480957,
+          "target span": 20.566226663260625
+        }
+      }
+    },
+    "collectives": {
+      "cross_device_reduce": {
+        "per_step": 141.0,
+        "mean_ms_per_step": 2.46676298941689,
+        "cross_rank_min_ms_per_step": 0.6100120325198118
+      }
+    }
+  }
+}

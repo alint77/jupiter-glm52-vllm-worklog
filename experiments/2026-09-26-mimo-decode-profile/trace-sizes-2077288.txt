@@ -1,0 +1,2 @@
+35M	/e/project1/profound/alint77/traces/mimo26-decode-2077288/decode-96k
+31M	/e/project1/profound/alint77/traces/mimo26-decode-2077288/decode-short

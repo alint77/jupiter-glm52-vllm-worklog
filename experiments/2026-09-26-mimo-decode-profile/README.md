@@ -148,3 +148,63 @@ Levers now:
 | balance hot work too (hot residency spread per layer, or hot replicas) | hot spread ~2.1 ms | up to ~2 ms |
 | fewer cold experts per layer (more residency; skip staging replicas in prefill: +44 hot slots) | cold 8.6 ms | per cold expert-layer |
 | FlashInfer top-p sampling instead of torch sort | sampling ~0.55 ms | ~2% |
+
+## Speed-of-light analysis (job 2077518, chat endpoint, routes recorded)
+
+Capture with `--enable-return-routed-experts`, requests sent through
+`/v1/chat/completions` (the route writer is only wired into the chat
+endpoint; job 2077288 used `/v1/completions` and recorded no routes).
+
+**Correction to the re-profile above.** Through the chat endpoint the same
+two prompts step at 21.0 ms (short) and 22.9 ms (~96K), cold tier 3.8 / 5.7
+ms/step, against 24.3 / 30.0 and 8.6 / 13.5 through `/v1/completions`. The
+profile was trained on chat traffic; raw-completion continuation routes to
+experts it left cold. The "long context drives cold work" finding was mostly
+this endpoint/content effect; at ~96K cold still rises 3.8 -> 5.7 ms.
+
+### Whole step (`sol.py`, bytes from the checkpoint's shapes, HBM 3.63 TB/s)
+
+![sol](figs/sol-step.png)
+
+| part | ms/step | per call | vs floor |
+| --- | ---: | ---: | --- |
+| MoE Marlin hot (HBM), 9.4 experts/layer/GPU | 7.97 | | **45% of SOL** |
+| MoE Marlin cold (Grace), 1.6 experts/layer/GPU | 6.68 | | 82% of SOL (C2C) |
+| TP all-reduce x141 | 2.46 | 17.5 us | floor 0.61 (cross-rank min): the rest is waiting |
+| MoE sum / act / topk x345 | 1.42 | 4.1 us | latency-bound |
+| o_proj, **bf16** 50.3 MB | 1.33 | 19.1 us | 73% (2.64 TB/s) |
+| qkv_proj, fp8 41.7 MB | 1.09 | 15.5 us | 74% (2.68 TB/s) |
+| norms / rope / elementwise x527 | 0.96 | 1.8 us | latency-bound |
+| replica assign x69 | 0.93 | 13.5 us | latency-bound, one CTA |
+| DFlash drafter (excl. lm_head) | 0.75 | | latency-bound |
+| attention, sliding 128 x60 | 0.61 | 10.1 us | latency-bound (0.2 MB each) |
+| lm_head x3, bf16 469 MB | 0.40 | 132 us | 98% |
+| router gate, bf16 4.7 MB | 0.35 | 5.0 us | 26% |
+| attention, full x10 | 0.13 short, 0.64 at 96K | 12.6 / 63.9 us | 54% at 96K (1.95 TB/s) |
+
+### Marlin by active experts (`marlin_by_count.py`)
+
+Routes joined to the trace per (step, layer, GPU); each GPU's cold experts
+come from replaying the production `tiered_moe_assign_align` op. Alignment
+correlation 0.992 (short) / 0.996 (96K); tight per-count bands.
+
+![marlin](figs/marlin-by-count.png)
+
+- **Cold (Grace): 17-20 us + 48-49 us per expert, marginal 408-421 GB/s = the
+  C2C roof.** 68% of roof at 1 expert (the fixed cost), 86% at 2, 91% at 3,
+  94-99% at 4+. Nothing left in the kernel; only fewer cold experts help.
+- **Hot (HBM): ~16 us + 10.5-10.9 us per expert, marginal ~1.9 TB/s = 52% of
+  HBM.** 43% at the typical 8-9 experts, never above ~52%. This is measured
+  in production overlap (co-resident with cold), with the launch policy
+  (hot 2 CTAs/SM, cold 1) tuned on GLM int4, never re-tuned for mxfp4.
+
+### What it means
+
+On chat traffic the hot tier is now the longer one (8.0 vs 6.7 ms/step
+summed; ~9.4 hot vs ~1.6 cold experts per layer), so **hot Marlin efficiency
+is the top lever**: at 45% of SOL it holds ~4.4 ms/step above its floor.
+Next: sweep the hot tier's CTAs/SM for mxfp4 (smem is 27 KB/CTA, so 3-4 hot
++ 1 cold fit), then look at the mxfp4 Marlin tile config at M=8. Smaller
+items: the replica assign kernel (0.93 ms, single CTA), o_proj in bf16
+(0.36 ms above an fp8 floor if quantized; accuracy question), router gate
+(26%).

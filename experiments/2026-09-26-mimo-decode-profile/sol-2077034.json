@@ -1,0 +1,236 @@
+{
+  "decode-short": {
+    "MoE Marlin hot": {
+      "calls_per_step": 138.0,
+      "mean_us": 48.97810783686255,
+      "ms_per_step": 6.758978881487033
+    },
+    "MoE Marlin cold": {
+      "calls_per_step": 138.0,
+      "mean_us": 86.56519310092622,
+      "ms_per_step": 11.945996647927819
+    },
+    "qkv_proj (fp8)": {
+      "calls_per_step": 70.0,
+      "mean_us": 15.59073476425862,
+      "ms_per_step": 1.0913514334981034,
+      "mb_per_call": 41.691072,
+      "sol_us": 11.498764928151806,
+      "achieved_tbps": 2.674092826951028,
+      "efficiency": 0.7375383586482688,
+      "sol_ms_per_step": 0.8049135449706264
+    },
+    "dense MLP gate_up (fp8)": {
+      "calls_per_step": 1.0,
+      "mean_us": 17.626715869438357,
+      "ms_per_step": 0.017626715869438356,
+      "mb_per_call": 50.343936,
+      "sol_us": 13.885301045315387,
+      "achieved_tbps": 2.8561154768079957,
+      "efficiency": 0.787741808977024,
+      "sol_ms_per_step": 0.013885301045315388
+    },
+    "dense MLP down (fp8)": {
+      "calls_per_step": 1.0,
+      "mean_us": 10.06318301689334,
+      "ms_per_step": 0.01006318301689334,
+      "mb_per_call": 25.171968,
+      "sol_us": 6.942650522657694,
+      "achieved_tbps": 2.5013922491266563,
+      "efficiency": 0.6899060179073436,
+      "sol_ms_per_step": 0.006942650522657694
+    },
+    "o_proj (bf16)": {
+      "calls_per_step": 70.0,
+      "mean_us": 19.03390871938513,
+      "ms_per_step": 1.332373610356959,
+      "mb_per_call": 50.331648,
+      "sol_us": 13.8819119066663,
+      "achieved_tbps": 2.6443148773083913,
+      "efficiency": 0.729325337812944,
+      "sol_ms_per_step": 0.971733833466641
+    },
+    "router gate (bf16)": {
+      "calls_per_step": 69.0,
+      "mean_us": 5.024882035442526,
+      "ms_per_step": 0.3467168604455343,
+      "mb_per_call": 4.718592,
+      "sol_us": 1.3014292412499655,
+      "achieved_tbps": 0.939045328172455,
+      "efficiency": 0.25899697387330856,
+      "sol_ms_per_step": 0.08979861764624762
+    },
+    "lm_head (bf16)": {
+      "calls_per_step": 3.0,
+      "mean_us": 131.76731462401102,
+      "ms_per_step": 0.3953019438720331,
+      "mb_per_call": 468.713472,
+      "sol_us": 129.2753046308299,
+      "achieved_tbps": 3.55713003135445,
+      "efficiency": 0.9810877985918444,
+      "sol_ms_per_step": 0.3878259138924897
+    },
+    "attention, full (FA3)": {
+      "calls_per_step": 10.0,
+      "mean_us": 12.510133952629275,
+      "ms_per_step": 0.12510133952629277,
+      "mb_per_call": 1.92,
+      "sol_us": 0.5295529139200706,
+      "achieved_tbps": 0.15347557486356656,
+      "efficiency": 0.0423299155648748,
+      "sol_ms_per_step": 0.005295529139200706
+    },
+    "attention, sliding (FA4)": {
+      "calls_per_step": 60.0,
+      "mean_us": 10.162972192454143,
+      "ms_per_step": 0.6097783315472487,
+      "mb_per_call": 0.17408,
+      "sol_us": 0.04801279752875307,
+      "achieved_tbps": 0.017128847418204276,
+      "efficiency": 0.004724287011667892,
+      "sol_ms_per_step": 0.002880767851725184
+    },
+    "replica assign + align": {
+      "calls_per_step": 69.0,
+      "mean_us": 14.093865055463136,
+      "ms_per_step": 0.9724766888269564
+    },
+    "TP all-reduce": {
+      "calls_per_step": 141.0,
+      "mean_us": 17.814604721768795,
+      "ms_per_step": 2.5118592657694
+    },
+    "MoE sum / act / topk": {
+      "calls_per_step": 345.0,
+      "mean_us": 3.8086827292632783,
+      "ms_per_step": 1.313995541595831
+    },
+    "norms / rope / elementwise": {
+      "calls_per_step": 457.0,
+      "mean_us": 1.915711288220054,
+      "ms_per_step": 0.8754800587165646
+    },
+    "DFlash drafter (all but lm_head)": {
+      "calls_per_step": 107.0,
+      "mean_us": 7.039149312405644,
+      "ms_per_step": 0.7531889764274039
+    }
+  },
+  "decode-96k": {
+    "MoE Marlin hot": {
+      "calls_per_step": 138.0,
+      "mean_us": 50.80064576140941,
+      "ms_per_step": 7.010489115074499
+    },
+    "MoE Marlin cold": {
+      "calls_per_step": 138.0,
+      "mean_us": 123.5835990579825,
+      "ms_per_step": 17.054536670001585
+    },
+    "qkv_proj (fp8)": {
+      "calls_per_step": 70.0,
+      "mean_us": 15.614721871642416,
+      "ms_per_step": 1.093030531014969,
+      "mb_per_call": 41.691072,
+      "sol_us": 11.498764928151806,
+      "achieved_tbps": 2.6699849246571805,
+      "efficiency": 0.7364053630077447,
+      "sol_ms_per_step": 0.8049135449706264
+    },
+    "dense MLP gate_up (fp8)": {
+      "calls_per_step": 1.0,
+      "mean_us": 18.20808382176641,
+      "ms_per_step": 0.018208083821766412,
+      "mb_per_call": 50.343936,
+      "sol_us": 13.885301045315387,
+      "achieved_tbps": 2.7649222451303506,
+      "efficiency": 0.7625899123287504,
+      "sol_ms_per_step": 0.013885301045315388
+    },
+    "dense MLP down (fp8)": {
+      "calls_per_step": 1.0,
+      "mean_us": 10.203108858706345,
+      "ms_per_step": 0.010203108858706346,
+      "mb_per_call": 25.171968,
+      "sol_us": 6.942650522657694,
+      "achieved_tbps": 2.467088056060549,
+      "efficiency": 0.6804446192626386,
+      "sol_ms_per_step": 0.006942650522657694
+    },
+    "o_proj (bf16)": {
+      "calls_per_step": 70.0,
+      "mean_us": 19.08685317171662,
+      "ms_per_step": 1.3360797220201635,
+      "mb_per_call": 50.331648,
+      "sol_us": 13.8819119066663,
+      "achieved_tbps": 2.636979891194569,
+      "efficiency": 0.727302284026414,
+      "sol_ms_per_step": 0.971733833466641
+    },
+    "router gate (bf16)": {
+      "calls_per_step": 69.0,
+      "mean_us": 5.088530704878688,
+      "ms_per_step": 0.35110861863662945,
+      "mb_per_call": 4.718592,
+      "sol_us": 1.3014292412499655,
+      "achieved_tbps": 0.9272995042510002,
+      "efficiency": 0.25575737216289274,
+      "sol_ms_per_step": 0.08979861764624762
+    },
+    "lm_head (bf16)": {
+      "calls_per_step": 3.0,
+      "mean_us": 133.040148227369,
+      "ms_per_step": 0.39912044468210706,
+      "mb_per_call": 468.713472,
+      "sol_us": 129.2753046308299,
+      "achieved_tbps": 3.523097938818865,
+      "efficiency": 0.9717014476704815,
+      "sol_ms_per_step": 0.3878259138924897
+    },
+    "attention, full (FA3)": {
+      "calls_per_step": 10.0,
+      "mean_us": 63.51021261357549,
+      "ms_per_step": 0.635102126135755,
+      "mb_per_call": 124.544,
+      "sol_us": 34.35033234961524,
+      "achieved_tbps": 1.9610074486410767,
+      "efficiency": 0.5408631295035653,
+      "sol_ms_per_step": 0.3435033234961525
+    },
+    "attention, sliding (FA4)": {
+      "calls_per_step": 60.0,
+      "mean_us": 10.175373601676219,
+      "ms_per_step": 0.6105224161005731,
+      "mb_per_call": 0.17408,
+      "sol_us": 0.04801279752875307,
+      "achieved_tbps": 0.01710797134478908,
+      "efficiency": 0.004718529206715691,
+      "sol_ms_per_step": 0.002880767851725184
+    },
+    "replica assign + align": {
+      "calls_per_step": 69.0,
+      "mean_us": 14.702112933090179,
+      "ms_per_step": 1.0144457923832224
+    },
+    "TP all-reduce": {
+      "calls_per_step": 141.0,
+      "mean_us": 18.658092214504197,
+      "ms_per_step": 2.6307910022450915
+    },
+    "MoE sum / act / topk": {
+      "calls_per_step": 345.0,
+      "mean_us": 3.7116339318607374,
+      "ms_per_step": 1.2805137064919543
+    },
+    "norms / rope / elementwise": {
+      "calls_per_step": 457.0,
+      "mean_us": 1.9142093475928847,
+      "ms_per_step": 0.8747936718499483
+    },
+    "DFlash drafter (all but lm_head)": {
+      "calls_per_step": 107.0,
+      "mean_us": 7.0331948690458335,
+      "ms_per_step": 0.7525518509879041
+    }
+  }
+}

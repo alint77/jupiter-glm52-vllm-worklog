@@ -46,7 +46,7 @@ tr '\r' '\n' < "${trace_root}/server.out" | grep -ohE "Tiered MoE residency:.{0,
 .venv/bin/python "${E}/capture.py" \
   --long-prompts agent_space/experiments/2026-09-04-mtp3-profile/prompts.jsonl \
   --short-prompts agent_space/experiments/2026-08-29-glm53-routing-capture/prompts-short.jsonl \
-  --trace-root "${trace_root}" --temperature "${TEMPERATURE:-1.0}"
+  --trace-root "${trace_root}" --temperature "${TEMPERATURE:-1.0}" ${CAPTURE_ARGS:-}
 cp "${trace_root}/capture-report.json" "${E}/capture-report-${SLURM_JOB_ID}.json"
 du -sh "${trace_root}"/decode-* | tee "${E}/trace-sizes-${SLURM_JOB_ID}.txt"
 echo "=== done ==="

@@ -20,13 +20,26 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "2026-09-04-mtp3-pr
 import capture as harness  # noqa: E402
 
 
+CHAT = False
+
+
 def completion(prompt: str, max_tokens: int, temperature: float) -> None:
-    """Greedy (0) or the model's own sampling defaults (top_p 0.95)."""
-    body = {"model": harness.MODEL, "prompt": prompt, "max_tokens": max_tokens,
+    """Greedy (0) or the model's own sampling defaults (top_p 0.95).
+
+    With CHAT set, the prompt goes to /v1/chat/completions as one user message:
+    the routed-expert trace writer (VLLM_ROUTING_TRACE_DIR) is only wired into
+    the chat endpoint.
+    """
+    body = {"model": harness.MODEL, "max_tokens": max_tokens,
             "temperature": temperature, "ignore_eos": True}
     if temperature:
         body["top_p"] = 0.95
-    harness.post("/v1/completions", body)
+    if CHAT:
+        body["messages"] = [{"role": "user", "content": prompt}]
+        harness.post("/v1/chat/completions", body)
+    else:
+        body["prompt"] = prompt
+        harness.post("/v1/completions", body)
 
 
 def counters() -> dict[str, float]:
@@ -61,7 +74,11 @@ def main() -> None:
     # 0 reproduces the first capture; greedy decoding looped on the 96K prompt
     # (every draft accepted), so later captures sample like real traffic.
     parser.add_argument("--temperature", type=float, default=0.0)
+    parser.add_argument("--chat", action="store_true",
+                        help="use the chat endpoint (needed for routed-expert traces)")
     args = parser.parse_args()
+    global CHAT
+    CHAT = args.chat
     harness.MODEL = "mimo26-pro"
     long_prompt = json.loads(args.long_prompts.read_text().splitlines()[1])["prompt"]
     short_prompt = json.loads(args.short_prompts.read_text().splitlines()[0])["prompt"]
