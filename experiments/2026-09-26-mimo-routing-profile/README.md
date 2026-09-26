@@ -147,9 +147,14 @@ Prefill does not regress. Full `bench.sbatch` with the interim profile
 
 Min free HBM 2.01 GiB during prefill, 3.98 GiB in decode.
 
-## Status
+## Quality
 
-- 2026-09-26: GSM8K 400 per arm, same node, both orders (2073639, 2073640)
-  running. The first attempt (2073382/3) died at the eval: it downloads the
-  dataset and compute nodes have no internet; `ab.sbatch` now points `TMPDIR`
-  at a copy in `/e/fscratch/.../caches/gsm8k`.
+GSM8K 400, greedy, `profile-3827.json` (jobs 2073639 / 2073640, one arm of each
+finished first): linear **90.2%**, profile **90.0%**, 0.3% invalid in both.
+Placement is accuracy-neutral, as expected: the hot and cold tiers run the same
+Marlin math on the same weights.
+
+## Write-up
+
+Secret gist: https://gist.github.com/alint77/d8b18397c1f8444544f2425910b7fc7b
+(source in `gist/`, figures from `plot_routing.py` and `plot_ab.py`).
