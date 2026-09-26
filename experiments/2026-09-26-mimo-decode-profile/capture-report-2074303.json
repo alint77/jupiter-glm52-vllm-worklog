@@ -1,0 +1,36 @@
+{
+  "decode-short": {
+    "unprofiled": {
+      "seconds": 4.005,
+      "steps": 140.0,
+      "tokens": 729.0,
+      "step_ms": 28.611,
+      "tokens_per_step": 5.207
+    },
+    "profiled_window": {
+      "seconds": 2.005,
+      "steps": 68.0,
+      "tokens": 391.0,
+      "step_ms": 29.481,
+      "tokens_per_step": 5.75
+    },
+    "trace_files": 4
+  },
+  "decode-96k": {
+    "unprofiled": {
+      "seconds": 4.004,
+      "steps": 115.0,
+      "tokens": 920.0,
+      "step_ms": 34.817,
+      "tokens_per_step": 8.0
+    },
+    "profiled_window": {
+      "seconds": 2.005,
+      "steps": 55.0,
+      "tokens": 440.0,
+      "step_ms": 36.463,
+      "tokens_per_step": 8.0
+    },
+    "trace_files": 4
+  }
+}

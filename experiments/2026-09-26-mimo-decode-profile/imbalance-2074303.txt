@@ -1,0 +1,18 @@
+decode-short: 68 steps
+per rank, ms/step: waiting in reduce-scatter vs (slowest rank's Marlin - own Marlin)
+  rank 0: waiting  4.82   Marlin deficit  4.78
+  rank 1: waiting  5.03   Marlin deficit  4.96
+  rank 2: waiting  5.11   Marlin deficit  5.08
+  rank 3: waiting  5.22   Marlin deficit  5.16
+mean waiting 5.05, mean Marlin deficit 4.99 ms/step
+per-layer spread (max - mean over ranks), summed per step: cold 5.81 ms, hot 2.22 ms
+last to arrive, share of layers: {0: '26%', 1: '26%', 2: '25%', 3: '23%'}
+decode-96k: 55 steps
+per rank, ms/step: waiting in reduce-scatter vs (slowest rank's Marlin - own Marlin)
+  rank 0: waiting  6.81   Marlin deficit  6.78
+  rank 1: waiting  6.89   Marlin deficit  6.83
+  rank 2: waiting  6.35   Marlin deficit  6.32
+  rank 3: waiting  6.72   Marlin deficit  6.66
+mean waiting 6.69, mean Marlin deficit 6.65 ms/step
+per-layer spread (max - mean over ranks), summed per step: cold 7.18 ms, hot 2.01 ms
+last to arrive, share of layers: {0: '21%', 1: '24%', 2: '30%', 3: '25%'}

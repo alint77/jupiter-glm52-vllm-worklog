@@ -1,0 +1,284 @@
+{
+  "decode-short": {
+    "ranks": {
+      "0": {
+        "steps": 68,
+        "period_ms": {
+          "mean": 29.209987009272854,
+          "p50": 29.533250331878662
+        },
+        "phase_busy_ms": {
+          "draft": 0.8713775382322424,
+          "host-side": 0.19383701156167424,
+          "target": 26.02467492047478,
+          "logits": 0.276097578160903
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 0.920385620173286,
+          "TP all-reduce": 0.37882241080789003,
+          "dense GEMM": 3.0144087707295135,
+          "attention": 1.010906037162332,
+          "MoE routing/align/sum/act": 1.4950091184354295,
+          "MoE all-gather (SP)": 1.5844505113713883,
+          "MoE hot Marlin (HBM)": 4.16336578948825,
+          "MoE cold Marlin (Grace)": 8.1736185948054,
+          "MoE reduce-scatter (SP)": 5.283708067501292
+        },
+        "marlin_ms": {
+          "hot sum": 7.405217759749469,
+          "cold sum": 11.46572244868559,
+          "union": 12.7080400130328,
+          "target span": 27.432523390826056
+        }
+      },
+      "1": {
+        "steps": 68,
+        "period_ms": {
+          "mean": 29.214076420840094,
+          "p50": 29.537282466888428
+        },
+        "phase_busy_ms": {
+          "draft": 0.8679354190826416,
+          "host-side": 0.19604351941276998,
+          "target": 26.07382893562317,
+          "logits": 0.27553659326889934
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 0.9380900368970984,
+          "TP all-reduce": 0.41327545923345227,
+          "dense GEMM": 3.0187371197868798,
+          "attention": 1.0032444280736588,
+          "MoE routing/align/sum/act": 1.4951313336690268,
+          "MoE all-gather (SP)": 1.551469929078046,
+          "MoE hot Marlin (HBM)": 4.247127409074821,
+          "MoE cold Marlin (Grace)": 7.909702878372341,
+          "MoE reduce-scatter (SP)": 5.497050341437845
+        },
+        "marlin_ms": {
+          "hot sum": 7.582127515007468,
+          "cold sum": 11.282640358980965,
+          "union": 12.531685464522418,
+          "target span": 27.457582193262436
+        }
+      },
+      "2": {
+        "steps": 68,
+        "period_ms": {
+          "mean": 29.213916119407205,
+          "p50": 29.537609577178955
+        },
+        "phase_busy_ms": {
+          "draft": 0.8692041425143971,
+          "host-side": 0.19557584033292882,
+          "target": 26.04590887181899,
+          "logits": 0.27599742833305807
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 0.939067475935992,
+          "TP all-reduce": 0.4009103354285745,
+          "dense GEMM": 3.0222678465001724,
+          "attention": 1.0070745524238138,
+          "MoE routing/align/sum/act": 1.5027232894710467,
+          "MoE all-gather (SP)": 1.5537711592281567,
+          "MoE hot Marlin (HBM)": 4.153408831241085,
+          "MoE cold Marlin (Grace)": 7.888987571585411,
+          "MoE reduce-scatter (SP)": 5.577697810004739
+        },
+        "marlin_ms": {
+          "hot sum": 7.421077714246862,
+          "cold sum": 11.206939136280733,
+          "union": 12.415435244055356,
+          "target span": 27.45338633481194
+        }
+      },
+      "3": {
+        "steps": 68,
+        "period_ms": {
+          "mean": 29.21410280115464,
+          "p50": 29.537705421447754
+        },
+        "phase_busy_ms": {
+          "draft": 0.8693015996147605,
+          "host-side": 0.19565405565149643,
+          "target": 26.048518840004416,
+          "logits": 0.2764260909136604
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 0.9377355645684635,
+          "TP all-reduce": 0.39342747015111584,
+          "dense GEMM": 3.0175388280083153,
+          "attention": 1.0062166803023394,
+          "MoE routing/align/sum/act": 1.49549447555168,
+          "MoE all-gather (SP)": 1.5499707811019,
+          "MoE hot Marlin (HBM)": 4.095242035155202,
+          "MoE cold Marlin (Grace)": 7.867666368391,
+          "MoE reduce-scatter (SP)": 5.6852266367743995
+        },
+        "marlin_ms": {
+          "hot sum": 7.343805551528931,
+          "cold sum": 11.161268781213199,
+          "union": 12.334701117347269,
+          "target span": 27.45734735096202
+        }
+      }
+    },
+    "collectives": {
+      "AllGather": {
+        "per_step": 138.0,
+        "mean_ms_per_step": 1.5599155951948727,
+        "cross_rank_min_ms_per_step": 1.4708413937512566
+      },
+      "ReduceScatter": {
+        "per_step": 69.0,
+        "mean_ms_per_step": 5.510920713929569,
+        "cross_rank_min_ms_per_step": 0.4640943302827723
+      },
+      "cross_device_reduce": {
+        "per_step": 72.0,
+        "mean_ms_per_step": 0.39661138899186077,
+        "cross_rank_min_ms_per_step": 0.3183887846329633
+      }
+    }
+  },
+  "decode-96k": {
+    "ranks": {
+      "0": {
+        "steps": 55,
+        "period_ms": {
+          "mean": 36.14444155259566,
+          "p50": 35.99702072143555
+        },
+        "phase_busy_ms": {
+          "draft": 0.8733050953258168,
+          "host-side": 0.19371918764981358,
+          "target": 32.884232104908335,
+          "logits": 0.27634334564208984
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 0.9202329202131792,
+          "TP all-reduce": 0.38255212957208806,
+          "dense GEMM": 3.0325543230230156,
+          "attention": 1.5343983563509855,
+          "MoE routing/align/sum/act": 1.4858673066803902,
+          "MoE all-gather (SP)": 1.5852197647094726,
+          "MoE hot Marlin (HBM)": 3.6446660706491185,
+          "MoE cold Marlin (Grace)": 13.025058067206182,
+          "MoE reduce-scatter (SP)": 7.273683166503906
+        },
+        "marlin_ms": {
+          "hot sum": 6.703622696616433,
+          "cold sum": 16.216084549643778,
+          "union": 17.01096427223899,
+          "target span": 34.30703572359952
+        }
+      },
+      "1": {
+        "steps": 55,
+        "period_ms": {
+          "mean": 36.14593902934681,
+          "p50": 36.00313663482666
+        },
+        "phase_busy_ms": {
+          "draft": 0.867136643149636,
+          "host-side": 0.1949338045987216,
+          "target": 32.967653933438385,
+          "logits": 0.2766997944224964
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 0.938718691739169,
+          "TP all-reduce": 0.45344104766845705,
+          "dense GEMM": 3.0349543571472166,
+          "attention": 1.526425535028631,
+          "MoE routing/align/sum/act": 1.4933717438668914,
+          "MoE all-gather (SP)": 1.5542027733542703,
+          "MoE hot Marlin (HBM)": 3.902209400408196,
+          "MoE cold Marlin (Grace)": 12.713902808680679,
+          "MoE reduce-scatter (SP)": 7.350427575544877
+        },
+        "marlin_ms": {
+          "hot sum": 7.041345197504217,
+          "cold sum": 15.95290579362349,
+          "union": 16.96197395324707,
+          "target span": 34.3662032734264
+        }
+      },
+      "2": {
+        "steps": 55,
+        "period_ms": {
+          "mean": 36.145102154124864,
+          "p50": 36.00018787384033
+        },
+        "phase_busy_ms": {
+          "draft": 0.8708713704889471,
+          "host-side": 0.1952845486727628,
+          "target": 32.93619433316317,
+          "logits": 0.2763764121315696
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 0.9392083601518111,
+          "TP all-reduce": 0.43163399262861774,
+          "dense GEMM": 3.03823336687955,
+          "attention": 1.5336044484918767,
+          "MoE routing/align/sum/act": 1.503028829169996,
+          "MoE all-gather (SP)": 1.558604552529075,
+          "MoE hot Marlin (HBM)": 3.8158836567040644,
+          "MoE cold Marlin (Grace)": 13.305568091074624,
+          "MoE reduce-scatter (SP)": 6.810429035533558
+        },
+        "marlin_ms": {
+          "hot sum": 6.93883939222856,
+          "cold sum": 16.54095269983465,
+          "union": 17.470063226873226,
+          "target span": 34.35556217540394
+        }
+      },
+      "3": {
+        "steps": 55,
+        "period_ms": {
+          "mean": 36.144969281283295,
+          "p50": 35.99785327911377
+        },
+        "phase_busy_ms": {
+          "draft": 0.8720949172973633,
+          "host-side": 0.1950828725641424,
+          "target": 32.93796945051714,
+          "logits": 0.27716895016756926
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 0.937652284448797,
+          "TP all-reduce": 0.4251013842496005,
+          "dense GEMM": 3.0364809556440875,
+          "attention": 1.5298063451593573,
+          "MoE routing/align/sum/act": 1.4918772379557292,
+          "MoE all-gather (SP)": 1.5550293488935991,
+          "MoE hot Marlin (HBM)": 3.706625464468291,
+          "MoE cold Marlin (Grace)": 13.071941118529349,
+          "MoE reduce-scatter (SP)": 7.1834553111683235
+        },
+        "marlin_ms": {
+          "hot sum": 7.036338528719815,
+          "cold sum": 16.541243917291816,
+          "union": 17.123686374317515,
+          "target span": 34.36031712618741
+        }
+      }
+    },
+    "collectives": {
+      "AllGather": {
+        "per_step": 138.0,
+        "mean_ms_per_step": 1.5632641098716042,
+        "cross_rank_min_ms_per_step": 1.4748959107832476
+      },
+      "ReduceScatter": {
+        "per_step": 69.0,
+        "mean_ms_per_step": 7.154498772187666,
+        "cross_rank_min_ms_per_step": 0.46097294200550426
+      },
+      "cross_device_reduce": {
+        "per_step": 72.0,
+        "mean_ms_per_step": 0.42318214069713245,
+        "cross_rank_min_ms_per_step": 0.3207283366810192
+      }
+    }
+  }
+}
