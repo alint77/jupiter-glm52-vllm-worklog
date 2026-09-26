@@ -1,0 +1,18 @@
+[
+ {
+  "id": "add-shape-guard",
+  "prompt": "The fused MoE entry point does not validate that the router logits second dimension equals the expert count. Locate the function, then write the guard and show me the exact edited function body."
+ },
+ {
+  "id": "debug-oom",
+  "prompt": "A worker fails with 'CUDA out of memory. Tried to allocate 2.00 GiB' during engine startup when a speculative draft model is enabled. Read the code that sizes the KV cache and explain, with file references, which knob controls the headroom left for the draft model and what value I should try."
+ },
+ {
+  "id": "test-failure-triage",
+  "prompt": "A test fails with 'ValueError: Placement profile fields do not match its schema version'. Find the validation code, read it, and tell me exactly which key is likely missing or extra and how to fix the profile file."
+ },
+ {
+  "id": "bisect-plan",
+  "prompt": "Decode throughput regressed between two commits. Write me a concrete bisect plan: which benchmark command to run, what threshold counts as a regression, and how to keep the measurement stable on a shared GPU node. Be specific about the flags."
+ }
+]

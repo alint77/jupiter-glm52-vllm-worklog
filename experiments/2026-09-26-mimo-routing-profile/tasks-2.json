@@ -1,0 +1,27 @@
+[
+ {
+  "id": "explain-quant-dispatch",
+  "prompt": "Trace how a checkpoint's quantization_config is turned into a concrete quantization method object. Walk the call chain file by file and name each function involved."
+ },
+ {
+  "id": "write-cli-flag",
+  "parts": [
+   "Find how boolean engine flags are declared in the argument parser and read two nearby examples.",
+   "Add a new flag --enable-route-trace that defaults to False, wire it into the config dataclass, and show me every edit as a diff."
+  ]
+ },
+ {
+  "id": "docstring-pass",
+  "parts": [
+   "Find a public function in this tree with no docstring that takes more than three arguments.",
+   "Write a Google-style docstring for it with Args, Returns, and Raises sections, matching the style already used in that file."
+  ]
+ },
+ {
+  "id": "json-schema-tool",
+  "parts": [
+   "Read how the placement profile JSON is validated and enumerate every field it requires.",
+   "Write a standalone Python script that validates a profile file against that schema and prints a one-line summary of hot-expert counts per rank."
+  ]
+ }
+]

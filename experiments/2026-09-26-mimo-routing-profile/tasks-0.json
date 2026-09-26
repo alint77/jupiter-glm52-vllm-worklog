@@ -1,0 +1,27 @@
+[
+ {
+  "id": "trace-router-topk",
+  "prompt": "Find where the MoE router picks the top-k experts in this tree. Read the relevant file, then explain in a short paragraph how the routing scores are normalised before the top-k selection, quoting the exact lines that do it."
+ },
+ {
+  "id": "grep-then-refactor",
+  "parts": [
+   "Grep for every call site of the function that builds a checkpoint manifest and list them.",
+   "Propose a refactor that lets the builder accept an already-parsed config dict, and write the new signature plus the changes at each call site."
+  ]
+ },
+ {
+  "id": "perf-hypothesis",
+  "parts": [
+   "Read the tiered MoE placement module and summarise how experts are split between the hot and cold tiers.",
+   "I measured 93 tok/s at concurrency 1 with MTP3 and 53 tok/s without. Give me three concrete hypotheses for where the remaining decode time goes, each tied to specific code you have read."
+  ]
+ },
+ {
+  "id": "port-a-kernel-guard",
+  "parts": [
+   "Read the marlin MoE construction path and find the assertion about group size.",
+   "The same assertion should exist in the conversion path. Find that file, and write the equivalent check with an error message that names both the group size and the actorder."
+  ]
+ }
+]

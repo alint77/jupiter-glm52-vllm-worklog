@@ -1,0 +1,20 @@
+{
+  "split": "heldout",
+  "hot_slots_per_rank": 3827,
+  "linear_even": {
+    "steps": 33966,
+    "hot_distinct_per_layer_rank": 6.577589738075671,
+    "cold_distinct_per_layer_rank": 4.742616977591402,
+    "cold_byte_share": 0.41895144644555465,
+    "critical_cold_per_step": 475.5581463816758,
+    "critical_hot_per_step": 627.6897191308956
+  },
+  "profile": {
+    "steps": 33966,
+    "hot_distinct_per_layer_rank": 9.445454085799355,
+    "cold_distinct_per_layer_rank": 1.8747526298677193,
+    "cold_byte_share": 0.16561116567536502,
+    "critical_cold_per_step": 224.52902902902903,
+    "critical_hot_per_step": 846.5146028381323
+  }
+}

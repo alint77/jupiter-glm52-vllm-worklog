@@ -1,0 +1,21 @@
+[
+ {
+  "id": "fix-off-by-one",
+  "parts": [
+   "Search for a loop in this tree that slices a tensor with a start index computed from a modulo, and read the surrounding function.",
+   "Write a unit test that would fail if that start index were off by one. Use pytest and follow the conventions you see in the tree."
+  ]
+ },
+ {
+  "id": "review-diff",
+  "prompt": "Review this change for correctness:\n\n```python\n-    if weights.get(\"actorder\") != \"static\":\n+    if weights.get(\"actorder\") == \"group\":\n         raise ValueError(\"unsupported actorder\")\n```\n\nRead the surrounding module first, then tell me what checkpoints this newly admits and whether any of them are actually broken at runtime."
+ },
+ {
+  "id": "config-audit",
+  "prompt": "List every environment variable this codebase reads that starts with VLLM_TIERED_MOE, and for each one say where it is read and what it controls. Use grep, then read each hit."
+ },
+ {
+  "id": "logging-improve",
+  "prompt": "Find where the routed-expert trace is written to disk and read the function. The except clause swallows every error. Rewrite it so real bugs surface but a full disk still does not kill the request, and explain your choice."
+ }
+]
