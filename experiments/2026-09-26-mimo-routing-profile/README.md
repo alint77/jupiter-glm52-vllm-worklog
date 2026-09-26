@@ -130,8 +130,26 @@ The planner then demotes or promotes arbitrary experts (it pops the highest
 IDs, not the least used). That is ~1% of slots and inside the measured win;
 ranking-aware promotion and demotion is a small follow-up.
 
+## Final profile and prefill
+
+`profile-3827.json` (full capture), one run per arm, jobs 2073382 / 2073383:
+linear 34.81 ms step (9.39 ms TPOT), profile **24.71 ms** (6.64 ms TPOT). Same
+as the interim profile.
+
+Prefill does not regress. Full `bench.sbatch` with the interim profile
+(job 2073120) against the prefetch-on baseline (1962761):
+
+| TTFT | linear | profile |
+| --- | ---: | ---: |
+| 32K | 4.03 s | 4.01 s |
+| 128K | 16.92 s | 16.65 s |
+| 240K | 40.22 s | 39.82 s |
+
+Min free HBM 2.01 GiB during prefill, 3.98 GiB in decode.
+
 ## Status
 
-- 2026-09-26: final-profile A/B with GSM8K 400 per arm (2073382, 2073383) and
-  the full bench with the interim profile (2073120, TTFT at 32K/128K/240K)
-  running.
+- 2026-09-26: GSM8K 400 per arm, same node, both orders (2073639, 2073640)
+  running. The first attempt (2073382/3) died at the eval: it downloads the
+  dataset and compute nodes have no internet; `ab.sbatch` now points `TMPDIR`
+  at a copy in `/e/fscratch/.../caches/gsm8k`.

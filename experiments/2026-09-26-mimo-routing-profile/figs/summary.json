@@ -1,0 +1,24 @@
+{
+  "hot_fraction": 0.5777475845410628,
+  "cumulative_marks": {
+    "top half": 79.98895034740623,
+    "MiMo's HBM budget": 85.75547054407349
+  },
+  "tiers": {
+    "linear, 58% in HBM (today)": {
+      "routes": 0.41812427970383,
+      "distinct": 0.41895144644555465,
+      "distinct_per_layer": 45.28082686266829
+    },
+    "top half in HBM (50%)": {
+      "routes": 0.21218313768798636,
+      "distinct": 0.2420703712369782,
+      "distinct_per_layer": 45.28082686266829
+    },
+    "profile, 58% in HBM": {
+      "routes": 0.15025538779401737,
+      "distinct": 0.16561116567536502,
+      "distinct_per_layer": 45.28082686266829
+    }
+  }
+}

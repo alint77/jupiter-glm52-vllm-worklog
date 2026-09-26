@@ -89,11 +89,15 @@ for arm in ${ORDER:-linear profile linear profile}; do
     | grep -E "^vllm:spec_decode_num_(accepted|draft)_tokens_total|^vllm:spec_decode_num_drafts_total" \
     > "${out}/spec-${tag}.txt" || true
   # GSM8K=N adds a quality check: placement moves which kernel reads an
-  # expert, so it should be accuracy-neutral.
+  # expert, so it should be accuracy-neutral. The eval fetches the dataset
+  # into $TMPDIR, and compute nodes have no internet: point it at a copy
+  # pre-downloaded from the login node.
   if [[ -n "${GSM8K:-}" ]]; then
-    .venv/bin/python tests/evals/gsm8k/gsm8k_eval.py --host http://127.0.0.1 \
+    TMPDIR=/e/fscratch/profound/${USER}/caches/gsm8k \
+      .venv/bin/python tests/evals/gsm8k/gsm8k_eval.py --host http://127.0.0.1 \
       --port 8031 --num-questions "${GSM8K}" --temperature 0 \
-      --save-results "${out}/gsm8k-${tag}.json" 2>&1 | grep -iE "accuracy|invalid"
+      --save-results "${out}/gsm8k-${tag}.json" >"${out}/gsm8k-${tag}.log" 2>&1 || true
+    grep -iE "^accuracy|^invalid" "${out}/gsm8k-${tag}.log" || tail -3 "${out}/gsm8k-${tag}.log"
   fi
   stop_server
 done
