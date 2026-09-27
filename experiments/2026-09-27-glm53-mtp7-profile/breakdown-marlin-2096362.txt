@@ -1,0 +1,26 @@
+
+===== decode-short: 4 ranks, 34 steps each
+step period (GPU start to start): 57.24 ms  per rank [57.27, 57.23, 57.23, 57.23]
+phase busy time (ms): {'target': 42.907, 'logits': 0.163, 'draft': 8.864, 'host-side': 0.345}
+GPU idle inside the step: 4.96 ms
+
+target verify graph, union-partitioned (ms/step, mean over ranks; min-max rank):
+  MoE one-kernel w13             0.00  (0.00-0.00)    0.0%
+  MoE one-kernel w2              0.00  (0.00-0.00)    0.0%
+  MoE one-kernel route/act/finalize   0.00  (0.00-0.00)    0.0%
+  MoE hot Marlin (HBM)           2.61  (2.55-2.67)    6.1%
+  MoE cold Marlin (Grace)       17.51  (17.09-17.90)   40.8%
+  MoE reduce-scatter (SP)        0.00  (0.00-0.00)    0.0%
+  MoE all-gather (SP)            0.00  (0.00-0.00)    0.0%
+  TP all-reduce                 11.84  (9.24-12.94)   27.6%
+  MoE routing/align/sum/act      1.50  (1.49-1.51)    3.5%
+  DSA indexer                    0.28  (0.28-0.28)    0.7%
+  attention                      2.02  (2.01-2.03)    4.7%
+  dense GEMM                     3.90  (2.94-5.22)    9.1%
+  norm/rope/elementwise          3.26  (1.89-4.29)    7.6%
+  target busy                   42.91
+
+Marlin: hot sum 5.13, cold sum 20.25, union 20.47 ms/step (serial would be 25.39); target span 43.95
+
+collectives in the target graph (ms/step): mean over ranks vs cross-rank min
+  cross_device_reduce    x157.0  mean  11.84  min   0.67  -> waiting 11.16

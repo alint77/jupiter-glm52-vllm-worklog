@@ -1,0 +1,2 @@
+64M	/e/project1/profound/alint77/traces/glm53-mtp7-dcp4-2097699/decode-96k
+58M	/e/project1/profound/alint77/traces/glm53-mtp7-dcp4-2097699/decode-short

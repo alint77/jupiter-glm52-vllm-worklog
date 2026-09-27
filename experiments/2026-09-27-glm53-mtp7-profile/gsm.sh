@@ -6,6 +6,9 @@ set -euo pipefail
 cd /e/project1/profound/alint77/vllm
 E=agent_space/experiments/2026-09-27-glm53-mtp7-profile
 G=agent_space/experiments/2026-09-05-cold-prefetch/gsm8k_paired.py
+# the loader caches into gettempdir(); compute nodes have no internet, so
+# point it at the pre-staged copy
+export TMPDIR=/e/fscratch/profound/${USER}/caches/gsm8k
 tag="$1"; shift
 for arm in "$@"; do
   name="${arm%%:*}"; envs="${arm#*:}"

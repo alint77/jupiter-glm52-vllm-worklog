@@ -1,0 +1,129 @@
+{
+  "decode-short": {
+    "ranks": {
+      "0": {
+        "steps": 34,
+        "period_ms": {
+          "mean": 57.2654208575978,
+          "p50": 50.95453691482544
+        },
+        "phase_busy_ms": {
+          "draft": 3.3385685471927418,
+          "host-side": 0.34088774288401885,
+          "target": 39.923498939065375,
+          "logits": 0.16300293978522806
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 4.181364634457757,
+          "TP all-reduce": 9.240742024253397,
+          "dense GEMM": 2.9383386677386714,
+          "DSA indexer": 0.283572000615737,
+          "attention": 2.0259244582232308,
+          "MoE routing/align/sum/act": 1.4954428205303119,
+          "MoE hot Marlin (HBM)": 2.6694606004976755,
+          "MoE cold Marlin (Grace)": 17.088653732748593
+        },
+        "marlin_ms": {
+          "hot sum": 5.251485656289494,
+          "cold sum": 19.886752437142764,
+          "union": 20.10397964365342,
+          "target span": 40.9621299014372
+        }
+      },
+      "1": {
+        "steps": 34,
+        "period_ms": {
+          "mean": 57.22790723688462,
+          "p50": 51.18488073348999
+        },
+        "phase_busy_ms": {
+          "draft": 10.696889119989732,
+          "host-side": 0.34537657569436464,
+          "target": 43.881345356211945,
+          "logits": 0.16223969179041245
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 1.8875830173492432,
+          "TP all-reduce": 12.51205862269682,
+          "dense GEMM": 5.220441584493599,
+          "DSA indexer": 0.2799835485570571,
+          "attention": 2.018801913541906,
+          "MoE routing/align/sum/act": 1.5071074588626039,
+          "MoE hot Marlin (HBM)": 2.554198508169137,
+          "MoE cold Marlin (Grace)": 17.901170702541577
+        },
+        "marlin_ms": {
+          "hot sum": 5.037399263942943,
+          "cold sum": 20.59989643096924,
+          "union": 20.80599063985488,
+          "target span": 44.92984836241778
+        }
+      },
+      "2": {
+        "steps": 34,
+        "period_ms": {
+          "mean": 57.22684568517349,
+          "p50": 51.1851692199707
+        },
+        "phase_busy_ms": {
+          "draft": 10.701321461621452,
+          "host-side": 0.346342872170841,
+          "target": 43.89182472229004,
+          "logits": 0.16318077199599323
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 2.663922800737269,
+          "TP all-reduce": 12.648632778840906,
+          "dense GEMM": 4.461549394270953,
+          "DSA indexer": 0.28437117969288545,
+          "attention": 2.0133188191582176,
+          "MoE routing/align/sum/act": 1.4977729273777383,
+          "MoE hot Marlin (HBM)": 2.5994397986168956,
+          "MoE cold Marlin (Grace)": 17.722817023595177
+        },
+        "marlin_ms": {
+          "hot sum": 5.124601027544807,
+          "cold sum": 20.46522075989667,
+          "union": 20.66460601021262,
+          "target span": 44.93375093796674
+        }
+      },
+      "3": {
+        "steps": 34,
+        "period_ms": {
+          "mean": 57.227437524234546,
+          "p50": 51.18471622467041
+        },
+        "phase_busy_ms": {
+          "draft": 10.720618416281308,
+          "host-side": 0.3475107024697697,
+          "target": 43.9331376692828,
+          "logits": 0.16303783304551067
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 4.293263206294939,
+          "TP all-reduce": 12.939006777370677,
+          "dense GEMM": 2.9751670313816443,
+          "DSA indexer": 0.2826552952037138,
+          "attention": 2.0087010439704445,
+          "MoE routing/align/sum/act": 1.4889022041769588,
+          "MoE hot Marlin (HBM)": 2.6013490358988447,
+          "MoE cold Marlin (Grace)": 17.34409307498558
+        },
+        "marlin_ms": {
+          "hot sum": 5.113977628595689,
+          "cold sum": 20.064964602975284,
+          "union": 20.289771164164822,
+          "target span": 44.955601804396686
+        }
+      }
+    },
+    "collectives": {
+      "cross_device_reduce": {
+        "per_step": 157.0,
+        "mean_ms_per_step": 11.835143019171323,
+        "cross_rank_min_ms_per_step": 0.6727145138908835
+      }
+    }
+  }
+}

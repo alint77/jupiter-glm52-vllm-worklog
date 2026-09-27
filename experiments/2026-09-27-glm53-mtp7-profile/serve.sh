@@ -46,6 +46,7 @@ fi
 exec agent_space/experiments/2026-07-17-end-to-end-tuning/run-server.sh \
   --speculative-config '{"method":"mtp","num_speculative_tokens":7}' \
   --decode-context-parallel-size "${DCP:-4}" \
+  --dcp-comm-backend "${DCP_COMM:-ag_rs}" \
   --max-num-seqs 1 \
   --gpu-memory-utilization 0.90 \
   --max-model-len 400000 \

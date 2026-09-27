@@ -1,0 +1,151 @@
+{
+  "decode-short": {
+    "ranks": {
+      "0": {
+        "steps": 52,
+        "period_ms": {
+          "mean": 38.26421139790462,
+          "p50": 39.127732276916504
+        },
+        "phase_busy_ms": {
+          "draft": 3.7859453604771542,
+          "host-side": 0.33803710570702183,
+          "target": 30.729347522442158,
+          "logits": 0.24240282865671012
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 3.141914642774142,
+          "TP all-reduce": 3.425311418680044,
+          "dense GEMM": 4.618669253129226,
+          "DSA indexer": 0.7935682443472055,
+          "MoE all-gather (SP)": 1.6770762663621168,
+          "attention": 1.8878060854398286,
+          "MoE reduce-scatter (SP)": 0.6710684849665716,
+          "MoE routing/align/sum/act": 0.20793898289020246,
+          "MoE one-kernel route/act/finalize": 0.6049461731543908,
+          "MoE one-kernel w13": 8.871112117400536,
+          "MoE one-kernel w2": 4.8299358532978935
+        },
+        "marlin_ms": {
+          "hot sum": 0.0,
+          "cold sum": 0.0,
+          "union": 0.0,
+          "target span": 32.94331103104811
+        }
+      },
+      "1": {
+        "steps": 52,
+        "period_ms": {
+          "mean": 38.26904091468224,
+          "p50": 39.12756872177124
+        },
+        "phase_busy_ms": {
+          "draft": 3.8070462300227237,
+          "host-side": 0.3396887229039119,
+          "target": 30.818259422595684,
+          "logits": 0.16976149265582746
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 3.6232993052555966,
+          "TP all-reduce": 3.093300067461454,
+          "dense GEMM": 4.186232328414917,
+          "DSA indexer": 0.7938283590170053,
+          "MoE all-gather (SP)": 1.632596309368427,
+          "attention": 1.8873297617985652,
+          "MoE reduce-scatter (SP)": 0.6844477836902325,
+          "MoE routing/align/sum/act": 0.20882505636948806,
+          "MoE one-kernel route/act/finalize": 0.6230050600492038,
+          "MoE one-kernel w13": 9.131170401206383,
+          "MoE one-kernel w2": 4.954224989964412
+        },
+        "marlin_ms": {
+          "hot sum": 0.0,
+          "cold sum": 0.0,
+          "union": 0.0,
+          "target span": 33.02346567007211
+        }
+      },
+      "2": {
+        "steps": 52,
+        "period_ms": {
+          "mean": 38.2683490056258,
+          "p50": 39.12993049621582
+        },
+        "phase_busy_ms": {
+          "draft": 3.793285773350642,
+          "host-side": 0.3375743535848764,
+          "target": 30.74490074010996,
+          "logits": 0.24180060166579026
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 3.856180264399602,
+          "TP all-reduce": 3.264624687341543,
+          "dense GEMM": 3.8780333353922916,
+          "DSA indexer": 0.7925154062417837,
+          "MoE all-gather (SP)": 1.6393986298487737,
+          "attention": 1.8844733421619122,
+          "MoE reduce-scatter (SP)": 0.6729928713578445,
+          "MoE routing/align/sum/act": 0.20255169501671424,
+          "MoE one-kernel route/act/finalize": 0.6094963825665988,
+          "MoE one-kernel w13": 9.032730982853817,
+          "MoE one-kernel w2": 4.911903142929077
+        },
+        "marlin_ms": {
+          "hot sum": 0.0,
+          "cold sum": 0.0,
+          "union": 0.0,
+          "target span": 32.9449257850647
+        }
+      },
+      "3": {
+        "steps": 52,
+        "period_ms": {
+          "mean": 38.26950942553007,
+          "p50": 39.13002634048462
+        },
+        "phase_busy_ms": {
+          "draft": 3.7916702307187595,
+          "host-side": 0.33672440969027007,
+          "target": 30.810592871445877,
+          "logits": 0.16901320677537185
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 2.9594467328144956,
+          "TP all-reduce": 3.303450217613807,
+          "dense GEMM": 4.943993256642268,
+          "DSA indexer": 0.7920023111196665,
+          "MoE all-gather (SP)": 1.5153032449575572,
+          "attention": 1.8817520691798284,
+          "MoE reduce-scatter (SP)": 0.6782074708205003,
+          "MoE routing/align/sum/act": 0.21235237671778753,
+          "MoE one-kernel route/act/finalize": 0.6091368106695322,
+          "MoE one-kernel w13": 9.012944597464342,
+          "MoE one-kernel w2": 4.902003783446092
+        },
+        "marlin_ms": {
+          "hot sum": 0.0,
+          "cold sum": 0.0,
+          "union": 0.0,
+          "target span": 33.02077825252827
+        }
+      }
+    },
+    "collectives": {
+      "AllGather": {
+        "per_step": 177.0,
+        "mean_ms_per_step": 1.6160936126342187,
+        "cross_rank_min_ms_per_step": 1.4269435589130108
+      },
+      "cross_device_reduce": {
+        "per_step": 157.0,
+        "mean_ms_per_step": 3.2716715977742123,
+        "cross_rank_min_ms_per_step": 0.6860059408041147
+      },
+      "ReduceScatter": {
+        "per_step": 78.0,
+        "mean_ms_per_step": 0.6766791527087872,
+        "cross_rank_min_ms_per_step": 0.6012879518362192
+      }
+    }
+  }
+}
