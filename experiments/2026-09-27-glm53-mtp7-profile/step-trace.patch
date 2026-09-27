@@ -1,0 +1,34 @@
+diff --git a/vllm/v1/core/sched/scheduler.py b/vllm/v1/core/sched/scheduler.py
+index 66007f9922..9ebfc3d85c 100644
+--- a/vllm/v1/core/sched/scheduler.py
++++ b/vllm/v1/core/sched/scheduler.py
+@@ -1,6 +1,7 @@
+ # SPDX-License-Identifier: Apache-2.0
+ # SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+ import itertools
++import os
+ import time
+ from collections import defaultdict, deque
+ from collections.abc import Iterable
+@@ -66,6 +67,12 @@ from vllm.v1.utils import record_function_or_nullcontext
+ 
+ logger = init_logger(__name__)
+ 
++_STEP_TRACE = (
++    open(os.environ["VLLM_STEP_TRACE_FILE"], "a", buffering=1)  # noqa: SIM115
++    if os.environ.get("VLLM_STEP_TRACE_FILE")
++    else None
++)
++
+ 
+ def _routed_expert_route_count(
+     request: Request, num_tokens_scheduled: int, num_new_tokens: int
+@@ -1691,6 +1698,8 @@ class Scheduler(SchedulerInterface):
+                 num_sampled = self.num_sampled_tokens_per_step
+                 num_accepted = max(len(generated_token_ids) - num_sampled, 0)
+                 num_rejected = num_draft_tokens - num_accepted
++                if _STEP_TRACE is not None:  # diagnostic: per-step accepted count
++                    _STEP_TRACE.write(f"{time.perf_counter():.6f},{num_accepted}\n")
+                 # num_computed_tokens represents the number of tokens
+                 # processed in the current step, considering scheduled
+                 # tokens and rejections. If some tokens are rejected,

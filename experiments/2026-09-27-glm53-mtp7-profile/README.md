@@ -255,3 +255,54 @@ MiB, 2427 hot, and `VLLM_TIERED_MOE_COLD_PREFETCH_VERIFY=1` found 0 mismatches
 over 370 staged layers of a 96K prefill. The prefetch GPU tests, broken since
 cold tiers moved to `cudaHostRegister` (freed-but-registered test allocations),
 are fixed and pass.
+
+## DCP4 collectives: two cheap options tried (job 2097699)
+
+DCP4 costs ~2.35 ms/step in 255 small NCCL collectives per step, each at the
+~7-12 us floor of NCCL's LL ring: per layer a query all-gather (11.5 us), an
+LSE all-gather (6.7 us) and an output reduce-scatter (8.6 us), plus 21 indexer
+all-gathers (`breakdown-dcp4-2097699`).
+
+- `--dcp-comm-backend a2a` (one all-to-all of outputs + LSE instead of the LSE
+  gather and the reduce-scatter): **-0.21 +- 0.17 ms/step** over 32 runs, not
+  significant. Default stays `ag_rs`.
+- `VLLM_USE_NCCL_SYMM_MEM=1` (NCCL 2.28.9 symmetric kernels for dim-0 gathers
+  and reduce-scatters): the server dies in CUDA graph capture with
+  `cudaErrorStreamCaptureInvalidated`. Not usable on this stack.
+
+Next: one-shot IPC all-gather / reduce-scatter kernels alongside vLLM's custom
+all-reduce (same buffer registration and barriers; the TP group's instance
+covers the same four GPUs), est. -1.2 ms/step.
+
+## GSM8K, new baseline against the old configuration (job 2097700)
+
+Paired, the same 1,000 questions, `gsm8k_paired.py`, c=1:
+
+| | accuracy |
+|---|---|
+| new: DCP4, 985 replicas, INT4 one-kernel, [1, 8], reserve 7 | 0.9120 |
+| old: DCP1, no replicas, Marlin | 0.9140 |
+| difference | **-0.20 pts, 95% CI [-1.40, +1.00]**; 18 new-only, 20 old-only |
+
+Symmetric discordance: noise. The earlier campaign's non-inferiority bar
+(-1.0 pt lower bound) is not met at 1,000 questions; the full 1,319 would be
+needed to claim it.
+
+## Why step time rises with accepted tokens (steptrace-2097699)
+
+`step-trace.patch` (env-gated, not committed to vLLM) logs each scheduler
+update's time and accepted count; `steptrace.py` over 2,441 greedy steps:
+
+| accepted in the step | 0 | 1 | 3 | 5 | 7 |
+|---|---|---|---|---|---|
+| median step, ms | 36.0 | 36.7 | 37.3 | 38.2 | 39.7 |
+
+Regressed on the timed step's acceptance and its neighbours: 0.32 / 0.28 /
+0.18 ms per token (the timed step, the one before, the one before that; with
+async scheduling a scheduler gap times the next step). 32-step rolling means:
+1.07 ms per token, correlation 0.76. The cost follows the text regime more than
+the step: stretches of predictable text both accept well and verify slower,
+most likely because 8 coherent tokens route to more distinct (cold) experts
+than a batch the target rejects early. Not a fixed per-token cost to remove;
+it means A/Bs must keep comparing at matched acceptance, and real-traffic
+gains (lower acceptance) come out somewhat below the greedy bench's.
