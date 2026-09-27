@@ -129,6 +129,79 @@ dedicated, and w2 48.6 vs 42.7.
 
 Dedicated cold CTAs stay.
 
+## vLLM integration
+
+The path is committed on `dflash2-backport` as `b0d13f8699` (kernel + hook) and
+`5077b2dced` (PDL). It is enabled with `VLLM_TIERED_MOE_DECODE_KERNEL=1`.
+
+**What it is.** `vllm/model_executor/layers/fused_moe/tiered_decode/` builds the
+extension on first use into VLLM_CACHE_ROOT. The hook is in
+`tiered_moe_execution.apply_tiered_moe`, and it takes over only on MiMo decode
+steps:
+- replica routing ran;
+- at most 8 tokens;
+- MXFP4 weights, SiLU;
+- no shared experts;
+- no cold-tier staging on the call.
+
+Everything else stays on Marlin.
+
+**Reads Marlin's tensors in place.** The kernel uses the weights and e8m0 scales
+exactly as Marlin stores them in tier storage, so loading, memory and prefill are
+unchanged:
+- The mapping was verified against vLLM's own repack, with 0 mismatches in weights and scales.
+- Each Marlin word is exactly one lane's mma A fragment.
+- Marlin's in-word fp4 bits decode to f16 through e5m2 bytes and PRMT, 2–4% off the custom encoding (`tiered_moe_sk.cu` MARLIN_BITS=2).
+- The strided 512 B weight rows and 64 B scale rows arrive through 3D TMA tensor maps.
+
+**A layer is five PDL-chained launches:** route/prep, w13, silu×up, w2, finalize.
+
+Bugs found on the way:
+
+| bug | symptom | fix |
+|---|---|---|
+| workspace struct left the f16 buffers 8 B off 16 | misaligned address | `alignas` |
+| 96 small 1D bulk copies per chunk | consumers starved: long scoreboard 6.4, 3× slower | tensor maps |
+| each consumer warp covering all four row blocks | 4× the flushes | the harness mapping restored |
+| small kernels looping over dependent loads | slow route/act/finalize | all loads issued at once |
+
+**Tests.** `tests/kernels/moe/test_tiered_decode_moe.py` covers 1, 3 and 8 tokens,
+with the hot tier in HBM and the cold tier on pinned Grace, against fp32 and
+against Marlin. Max error is 2.0e-3 to 3.6e-3 of the row max, versus Marlin's
+5.5e-3 to 7.2e-3; the intermediate stays f32/f16 where Marlin rounds it to bf16.
+
+**Per layer, wall clock** (graph replay, same GPU; `marlin_wall.py` vs
+`bench_vllm_decode.py --wall`). Marlin here is production's two-stream launch
+plus the add.
+
+| hot, cold | Marlin | tiered + PDL | speedup |
+|---|---|---|---|
+| 9, 0 | 103.6 | 81.8 | 1.27× |
+| 9, 1 | 120.5 | 91.2 | 1.32× |
+| 11, 1 | 137.8 | 107.1 | 1.29× |
+| 12, 2 | 157.6 | 125.6 | 1.25× |
+| 7, 2 | 128.3 | 114.7 | 1.12× |
+| 9, 2 | 128.8 | 118.1 | 1.09× |
+| 0, 2 | 119.1 | 110.1 | 1.08× |
+| 9, 3 | 172.8 | 163.4 | 1.06× |
+
+ncu per-kernel sums (`fixedclock-vllm.json`) overstate the small kernels, which
+under graph replay cost far less than an isolated, cache-flushed launch.
+
+**End to end** (`e2e_ab.sbatch`, job 2085950). This is the MiMo-V2.6 serve
+config: profile + 1500 replicas, DFlash k=7, 16 coding prompts × 1024 tokens,
+c=1, same node, arms alternating:
+
+| arm | build | output tok/s | mean TPOT | GSM8K-400 |
+|---|---|---|---|---|
+| 1 Marlin | – | 162.8 | 5.94 ms | 0.880 |
+| 2 tiered | tensor maps, before the consumer fix | 176.5 | 5.46 ms | 0.905 |
+| 3 Marlin | – | 158.0 | 6.13 ms | 0.900 |
+| 4 tiered | `b0d13f8699` | 190.1 | 5.05 ms | 0.900 |
+
+The committed build is +18.5% output throughput over the two Marlin arms, with GSM8K unchanged (Marlin 0.880 and 0.900; tiered 0.905 and 0.900). PDL
+(`5077b2dced`) came after this run and is not in it.
+
 ## What limits v7 at the pinned clock (w13, 9 hot / 33 hot)
 
 | run | 9 hot | 33 hot |

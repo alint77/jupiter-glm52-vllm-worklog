@@ -89,6 +89,8 @@ def main() -> None:
     ap.add_argument("--cold", type=int, required=True)
     ap.add_argument("--reps", type=int, default=5)
     ap.add_argument("--numa-node", type=int, default=1)
+    ap.add_argument("--wall", action="store_true",
+                    help="time 20-call CUDA graph replays (dynamic clock) instead of ncu ranges")
     args = ap.parse_args()
     device = torch.device("cuda:0")
     gen = torch.Generator().manual_seed(0)
@@ -100,6 +102,26 @@ def main() -> None:
     for c in calls[:2]:
         tiered_decode_moe(x, c[0], c[1], c[2], c[3], hot, cold)
     torch.cuda.synchronize()
+    if args.wall:
+        graph = torch.cuda.CUDAGraph()
+        with torch.cuda.graph(graph):
+            for i in range(20):
+                c = calls[i % len(calls)]
+                tiered_decode_moe(x, c[0], c[1], c[2], c[3], hot, cold)
+        for _ in range(50):
+            graph.replay()
+        torch.cuda.synchronize()
+        best = 1e9
+        for _ in range(10):
+            s, e = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+            s.record()
+            for _ in range(10):
+                graph.replay()
+            e.record()
+            torch.cuda.synchronize()
+            best = min(best, s.elapsed_time(e) * 1000 / 200)
+        print(f"hot={args.hot} cold={args.cold}: {best:.1f} us per layer call (graph replay)")
+        return
     torch.cuda.profiler.start()
     for c in calls[2:]:
         tiered_decode_moe(x, c[0], c[1], c[2], c[3], hot, cold)
