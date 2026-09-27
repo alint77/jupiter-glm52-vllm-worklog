@@ -59,23 +59,25 @@ def main() -> None:
         ws = [(torch.randn((n, k), generator=gen, device=dev) * 0.02).to(torch.bfloat16)
               for _ in range(8)]
         floor = n * k * 2 / bw * 1e6
-        for m in (1, 8):
-            x = torch.randn((m, k), generator=gen, device=dev).to(torch.bfloat16)
-            ref = x.float() @ ws[0].float().t()
-            scale = ref.abs().max().item()
-            err = ((skinny_gemm(x, ws[0]).float() - ref).abs().max().item()) / scale
-            err_lib = ((F.linear(x, ws[0]).float() - ref).abs().max().item()) / scale
-            again = skinny_gemm(x, ws[0])
-            stable = torch.equal(again, skinny_gemm(x, ws[0]))
-            calls = 64
-            t_s = graph_us(lambda: [skinny_gemm(x, ws[i % 8]) for i in range(calls)], calls)
-            t_l = graph_us(lambda: [F.linear(x, ws[i % 8]) for i in range(calls)], calls)
-            if m == 8:
-                save_now += (t_l - t_s) * per_step / 1000
-                save_floor += (t_l - floor) * per_step / 1000
-            print(f"{name:15s} M={m} K={k:5d} N={n:5d}  skinny {t_s:6.1f} us  "
-                  f"F.linear {t_l:6.1f}  floor {floor:6.1f} ({floor / t_s:4.0%})  "
-                  f"err {err:.1e} (lib {err_lib:.1e}) repeat-equal {stable}", flush=True)
+        m = 8
+        x = torch.randn((m, k), generator=gen, device=dev).to(torch.bfloat16)
+        ref = x.float() @ ws[0].float().t()
+        scale = ref.abs().max().item()
+        calls = 64
+        t_l = graph_us(lambda: [F.linear(x, ws[i % 8]) for i in range(calls)], calls)
+        cells = []
+        best = None
+        for cfg in (0, 1, 2, 3):
+            for grid in ((0, 66, 264) if name == "o_proj" else (0,)):
+                err = (skinny_gemm(x, ws[0], cfg, grid).float() - ref).abs().max().item()
+                t_s = graph_us(lambda: [skinny_gemm(x, ws[i % 8], cfg, grid)
+                                        for i in range(calls)], calls)
+                cells.append(f"c{cfg}g{grid or 132}:{t_s:5.1f}({err / scale:.0e})")
+                best = t_s if best is None else min(best, t_s)
+        save_now += (t_l - best) * per_step / 1000
+        save_floor += (t_l - floor) * per_step / 1000
+        print(f"{name:15s} K={k:5d} N={n:5d} floor {floor:5.1f}  F.linear {t_l:5.1f}  "
+              f"best skinny {best:5.1f}  | " + " ".join(cells), flush=True)
     print(f"M=8, per verify step at these call counts: skinny saves {save_now:.2f} ms "
           f"over F.linear (floor would save {save_floor:.2f})")
 

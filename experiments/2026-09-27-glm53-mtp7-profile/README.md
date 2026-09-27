@@ -324,3 +324,39 @@ it shares its IPC buffer, CUDA-graph buffer registration and barrier flags.
   **-3.07 +- 0.20 ms/step** -- more than the collectives' kernel time in the
   profile (~2.35 ms), so NCCL's per-call cost outside its kernels was being paid
   too. Now a `serve.sh` default.
+
+## Dense GEMMs: a bf16 weight-streaming kernel, parked
+
+Production's dense GEMMs cost ~5.8 ms/step (oneshot-2097699, PDL off) against a
+~3.0 ms byte floor: 154 calls/step of a 64x8 `nvjet` tile at 13.2 us, the
+shared expert on split-K plus a separate reduce, Triton templates at ~7.5 us.
+`vllm/model_executor/layers/skinny_gemm` (JIT, uncommitted) streams W through a
+TMA ring over all SMs (stream-K, last-CTA-per-tile finish, no second launch).
+Correct (error equal to cuBLAS's on every shape, deterministic), but no tile /
+chunk / grid config beats `F.linear` except the tiny indexer `wk`
+(`bench-skinny-2098311.txt`). ncu on the o_proj shape: cuBLAS 20.0 us at
+2.66 TB/s (66% of DRAM peak), skinny 23.9 us at 2.23 TB/s, both ~14% occupancy
+(`ncu-skinny-2098311.txt`). Even cuBLAS only reaches two thirds of the stream
+rate at 50 MB per call; a perfect kernel would buy ~1.7 ms/step, a realistic one
+~0.5-0.8. Parked in favour of the hot set below.
+
+## The hot set under DCP4 was mostly arbitrary
+
+When HBM outgrows a profile's hot list, `_promote_underfilled_residency` fills
+the extra slots round-robin across layers **in expert-id order** ("ordering
+within the promoted set carries no frequency information"). Under DCP4 that is
+~715 of each GPU's ~3,211 hot experts. And the profile's own 2,496 were already
+worse than plain frequency ranking.
+
+Offline, held-out 8-position steps, 3,211 hot per GPU, 985 replicas:
+
+| hot set | mean cold / GPU / step | busiest-GPU cold / step |
+|---|---|---|
+| profile + id-order promotion (today) | 152.3 | 201.6 |
+| each GPU's most-used experts (training split) | **90.5** | **128.9** |
+
+~73 fewer Grace reads on the critical GPU per step, ~-4 ms at ~55 us each.
+`profiles/glm53-w4a16-freq-3250.json`: 3,250 hot per GPU (just above the largest
+DCP4 budget), each layer's list in descending frequency so any demotion drops
+the least-used first, 985 replicas recomputed for the new hot set; owners and
+checkpoint fingerprint unchanged. Measuring in `ab-hP`.
