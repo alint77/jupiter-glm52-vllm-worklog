@@ -26,6 +26,9 @@ export TIERED_MOE_HBM_RESERVE_GB="${RESERVE_GB:-7}"  # 10 was for DFlash2's draf
 export VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS=1024
 # one-kernel INT4 decode MoE, replicas balanced by time in the kernel
 export VLLM_TIERED_MOE_DECODE_KERNEL="${VLLM_TIERED_MOE_DECODE_KERNEL:-1}"
+# DCP's small gathers / reduce-scatters as one-shot kernels on the custom
+# all-reduce buffers instead of NCCL: -3.07 +- 0.20 ms/step (ab-oC, ab-oD)
+export VLLM_DCP_ONE_SHOT_COLLECTIVES="${VLLM_DCP_ONE_SHOT_COLLECTIVES:-1}"
 # [1, 8]: 8 is the verify step; 1 is MTP's draft-decode passes (positions
 # 1..K-1, one token each at c=1). Without a size-1 entry the speculator's
 # decode graph is silently skipped and those passes run eagerly.

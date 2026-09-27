@@ -306,3 +306,21 @@ most likely because 8 coherent tokens route to more distinct (cold) experts
 than a batch the target rejects early. Not a fixed per-token cost to remove;
 it means A/Bs must keep comparing at matched acceptance, and real-traffic
 gains (lower acceptance) come out somewhat below the greedy bench's.
+
+## One-shot DCP collectives (vLLM 82670c0023)
+
+The custom all-reduce's one-shot algorithm, reused for DCP's all-gathers and
+reduce-scatters: a JIT extension built against `csrc/custom_all_reduce.cuh`
+takes the TP group's live `CustomAllreduce` by pointer (DCP4 = the TP GPUs), so
+it shares its IPC buffer, CUDA-graph buffer registration and barrier flags.
+`VLLM_DCP_ONE_SHOT_COLLECTIVES=1`; unsuitable inputs fall back to NCCL.
+
+- correctness: `test_one_shot_collectives` (TP 2 and 4, eager and captured with
+  replays, interleaved with all-reduces) and `test_one_shot.py` here (DCP shapes):
+  gathers bit-exact, reduce-scatters equal to the reference
+- microbenchmark: 78 query gathers [8, 16, 576] bf16 in a graph, **6.7 us each
+  against NCCL's 13.8**
+- end to end (`ab-oC`, `ab-oD`, 32 runs, two nodes, opposite orders):
+  **-3.07 +- 0.20 ms/step** -- more than the collectives' kernel time in the
+  profile (~2.35 ms), so NCCL's per-call cost outside its kernels was being paid
+  too. Now a `serve.sh` default.
