@@ -81,12 +81,41 @@ def routing(n_hot: int, n_cold: int, pool_hot: int, pool_cold: int, rep: int, ge
     return ids.to(device), weights.to(device), hot_map.to(device), cold_map.to(device)
 
 
+def wall_us(x, calls, hot, cold) -> float:
+    """Graph-replay wall clock of one layer call, us (best of 10 x 10 replays of 20)."""
+    from vllm.model_executor.layers.fused_moe.tiered_decode import tiered_decode_moe
+
+    for c in calls[:2]:
+        tiered_decode_moe(x, c[0], c[1], c[2], c[3], hot, cold)
+    torch.cuda.synchronize()
+    graph = torch.cuda.CUDAGraph()
+    with torch.cuda.graph(graph):
+        for i in range(20):
+            c = calls[i % len(calls)]
+            tiered_decode_moe(x, c[0], c[1], c[2], c[3], hot, cold)
+    for _ in range(30):
+        graph.replay()
+    torch.cuda.synchronize()
+    best = 1e9
+    for _ in range(10):
+        s, e = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+        s.record()
+        for _ in range(10):
+            graph.replay()
+        e.record()
+        torch.cuda.synchronize()
+        best = min(best, s.elapsed_time(e) * 1000 / 200)
+    return best
+
+
 def main() -> None:
     from vllm.model_executor.layers.fused_moe.tiered_decode import tiered_decode_moe
 
     ap = argparse.ArgumentParser()
-    ap.add_argument("--hot", type=int, required=True)
-    ap.add_argument("--cold", type=int, required=True)
+    ap.add_argument("--hot", type=int, default=9)
+    ap.add_argument("--cold", type=int, default=2)
+    ap.add_argument("--grid", nargs="*", default=None,
+                    help="h,c cells timed in one process (implies --wall); JSON lines on stdout")
     ap.add_argument("--reps", type=int, default=5)
     ap.add_argument("--numa-node", type=int, default=1)
     ap.add_argument("--wall", action="store_true",
@@ -94,10 +123,18 @@ def main() -> None:
     args = ap.parse_args()
     device = torch.device("cuda:0")
     gen = torch.Generator().manual_seed(0)
-    pool_hot, pool_cold = max(16, args.hot), max(8, args.cold)
+    cells = [tuple(map(int, c.split(","))) for c in args.grid] if args.grid else [(args.hot, args.cold)]
+    pool_hot = max(16, max(h for h, _ in cells))
+    pool_cold = max(8, max(c for _, c in cells))
     hot, _ = tier(pool_hot, device, False, args.numa_node)
     cold, _keep = tier(pool_cold, device, True, args.numa_node)
     x = (torch.randn((TOKENS, HIDDEN), generator=gen) * 0.3).to(torch.bfloat16).to(device)
+    if args.grid:
+        import json
+        for h, c in cells:
+            calls = [routing(h, c, pool_hot, pool_cold, r, gen, device) for r in range(20)]
+            print(json.dumps({"hot": h, "cold": c, "us": wall_us(x, calls, hot, cold)}), flush=True)
+        return
     calls = [routing(args.hot, args.cold, pool_hot, pool_cold, r, gen, device) for r in range(args.reps + 2)]
     for c in calls[:2]:
         tiered_decode_moe(x, c[0], c[1], c[2], c[3], hot, cold)

@@ -1,0 +1,71 @@
+step 20: period 16203 us
+  +    61.7  gap    4.4  dur     0.7  host-side void at::native::vectorized_elementwise_kernel<4, at::native::FillFunctor<int>, std::array
+  +    69.8  gap    7.4  dur     2.2  host-side Memcpy HtoD (Pinned -> Device)
+  +    82.4  gap    4.0  dur     1.4  host-side triton_poi_fused_add_bitwise_and_clamp_copy__ge_gt_index_where_0
+  +    87.1  gap    3.3  dur     2.0  host-side Memcpy HtoD (Pinned -> Device)
+  +   170.0  gap    4.5  dur     1.8  host-side Memcpy HtoD (Pinned -> Device)
+  +   187.5  gap    5.2  dur     1.8  host-side Memcpy HtoD (Pinned -> Device)
+  +   197.7  gap    5.4  dur     1.2  host-side void at::native::unrolled_elementwise_kernel<at::native::direct_copy_kernel_cuda(at::Tenso
+  +   213.2  gap    8.6  dur     1.7  host-side Memcpy HtoD (Pinned -> Device)
+  +   236.7  gap    9.5  dur     1.5  host-side void at::native::index_elementwise_kernel<128, 4, at::native::gpu_index_kernel<at::native:
+  +   253.0  gap    4.3  dur     1.0  host-side void at::native::vectorized_elementwise_kernel<4, at::native::(anonymous namespace)::launc
+  +   260.2  gap    6.2  dur 13982.1  target    [verify graph]
+  + 14248.0  gap    2.1  dur   144.0  logits    nvjet_sm90_tst_192x8_64x8_2x1_v_bz_TNT
+  + 14393.6  gap    1.7  dur    20.9  logits    ncclDevKernel_AllGather_RING_LL(ncclDevKernelArgsStorage<4096ul>)
+  + 14441.7  gap    1.3  dur    38.5  host-side void at::native::(anonymous namespace)::cunn_SoftMaxForward<4, float, float, float, at::na
+  + 14670.6  gap    1.2  dur    40.0  host-side void at::native::(anonymous namespace)::cunn_SoftMaxForward<4, float, float, float, at::na
+  + 14711.8  gap    1.2  dur   198.1  host-side void at::native::tensor_kernel_scan_innermost_dim<float, std::plus<float> >(float*, float 
+  + 14950.2  gap    1.3  dur    64.9  host-side void at::native::(anonymous namespace)::cunn_SoftMaxForward<4, float, float, float, at::na
+  + 15023.4  gap    1.3  dur    73.7  host-side sample_recovered_tokens_kernel
+  + 15109.0  gap    8.4  dur     2.1  host-side Memcpy HtoD (Pinned -> Device)
+  + 15116.1  gap    5.1  dur     1.3  host-side eagle_prepare_next_token_padded_kernel
+  + 15124.4  gap    1.2  dur   120.1  logits    nvjet_sm90_tst_192x8_64x8_2x1_v_bz_splitK_TNT
+  + 15312.2  gap    3.7  dur     1.5  draft     triton_poi_fused_add_bitwise_and_bitwise_not_bitwise_or_embedding_ge_lt_masked_fill_mul_su
+  + 15321.9  gap    0.4  dur    20.4  draft     nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+  + 15374.1  gap    4.1  dur    18.3  draft     nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+  + 15400.9  gap    0.1  dur    31.2  draft     nvjet_sm90_tst_64x8_64x16_2x1_v_bz_TNT
+  + 15510.0  gap    3.5  dur    18.0  draft     nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+  + 15535.7  gap    0.2  dur    31.6  draft     nvjet_sm90_tst_64x8_64x16_2x1_v_bz_TNT
+  + 15644.8  gap    3.8  dur    17.8  draft     nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+  + 15673.5  gap    0.4  dur    31.1  draft     nvjet_sm90_tst_64x8_64x16_2x1_v_bz_TNT
+  + 15761.3  gap    3.3  dur     2.1  draft     void vllm::reshape_and_cache_flash_kernel<__nv_bfloat16, __nv_bfloat16, (vllm::Fp8KVCacheD
+  + 15786.0  gap    4.6  dur    18.4  draft     nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+  + 15813.1  gap    0.4  dur    32.4  draft     nvjet_sm90_tst_64x8_64x16_2x1_v_bz_TNT
+  + 15925.0  gap    3.4  dur    18.8  draft     nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+  + 15951.8  gap    0.4  dur    30.8  draft     nvjet_sm90_tst_64x8_64x16_2x1_v_bz_TNT
+  + 16019.7  gap    1.3  dur   139.9  draft     nvjet_sm90_tst_192x8_64x8_2x1_v_bz_TNT
+  end gap -2.1
+
+median gap before each op (steps with the common 238-op sequence):
+      2.4 us  before host-side Memcpy HtoD (Pinned -> Device)
+      6.0 us  before host-side void at::native::vectorized_elementwise_kernel<4, at::native::FillFunc
+      5.5 us  before host-side Memcpy HtoD (Pinned -> Device)
+      4.9 us  before host-side triton_poi_fused_add_bitwise_and_clamp_copy__ge_gt_index_where_0
+      5.2 us  before host-side Memcpy HtoD (Pinned -> Device)
+      4.4 us  before host-side void at::native::index_elementwise_kernel<128, 4, at::native::gpu_inde
+      5.2 us  before host-side Memcpy HtoD (Pinned -> Device)
+      5.0 us  before host-side void at::native::index_elementwise_kernel<128, 4, at::native::gpu_inde
+      4.2 us  before host-side Memcpy HtoD (Pinned -> Device)
+      5.4 us  before host-side void at::native::unrolled_elementwise_kernel<at::native::direct_copy_k
+      5.2 us  before host-side Memcpy HtoD (Pinned -> Device)
+      4.5 us  before host-side void at::native::index_elementwise_kernel<128, 4, at::native::gpu_inde
+      5.7 us  before host-side Memcpy HtoD (Pinned -> Device)
+      5.6 us  before host-side void at::native::vectorized_elementwise_kernel<4, at::native::(anonymo
+      6.2 us  before target    [verify graph]
+      2.5 us  before host-side void at::native::vectorized_gather_kernel<16, long>(char*, char*, long
+      4.9 us  before host-side Memcpy HtoD (Pinned -> Device)
+      5.1 us  before host-side eagle_prepare_next_token_padded_kernel
+      3.7 us  before draft     triton_poi_fused_add_bitwise_and_bitwise_not_bitwise_or_embedding_ge_l
+      2.2 us  before draft     void vllm::reshape_and_cache_flash_kernel<__nv_bfloat16, __nv_bfloat16
+      3.8 us  before draft     nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+      2.5 us  before draft     void vllm::reshape_and_cache_flash_kernel<__nv_bfloat16, __nv_bfloat16
+      3.6 us  before draft     nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+      3.7 us  before draft     nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+      2.8 us  before draft     void vllm::reshape_and_cache_flash_kernel<__nv_bfloat16, __nv_bfloat16
+      4.1 us  before draft     nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+      2.2 us  before draft     void vllm::reshape_and_cache_flash_kernel<__nv_bfloat16, __nv_bfloat16
+      3.0 us  before draft     nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+      2.8 us  before draft     void at::native::unrolled_elementwise_kernel<at::native::direct_copy_k
+      2.1 us  before draft     void at::native::reduce_kernel<512, 1, at::native::ReduceOp<c10::BFloa
+      4.3 us  before draft     Memcpy DtoH (Device -> Pinned)
+mean idle per step: 524 us

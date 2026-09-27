@@ -226,6 +226,117 @@ PDL made no measurable difference end to end: 18.35 ms per step without it,
 
 GSM8K-400: Marlin 0.880–0.900, tiered 0.895–0.905.
 
+## Round 2: the per-step gaps left after the one-kernel MoE
+
+The decode profile after integration (job 2092055, `../2026-09-26-mimo-decode-profile`)
+left five non-GEMM items. This round works items 1, 2, 4 and 5; 3 (MoE GEMM
+efficiency) and 6 (o_proj in fp8) are out of scope.
+
+**1 + 2: replica assignment inside the route kernel, balanced by layer time**
+(`b558fc64c8`).
+- **The launch was mostly waste.** Per layer the Triton scheduler took 14.2 µs,
+  and 6 of those built Marlin's aligned metadata, which the one-kernel path never
+  reads. Compiling the alignment out left 8.2 µs, of which 6 µs is the path
+  reversal: block-wide Triton reductions on a problem of 4 GPUs and 6 pair counts
+  (`bench_small.py assign`, `bench_assign_sweep.py`).
+- **Moved into `route_prep`'s list block.** A thread per expert classifies it
+  (hot / fixed cold / flexible cold, by pair), ballots give each flexible expert
+  its ascending-id position within its pair, and one warp runs the reversal.
+  Each lane tries one of the 15 paths from the slowest GPU, in the reference
+  order, and a `__reduce_min_sync` picks the winner. route_prep grows from 3.5 to
+  5.0 µs (`bench_route.py`, held-out MiMo routes, r1500 profile), and the 14.2 µs
+  launch is gone.
+  - A first single-thread version took 46 µs: dynamically indexed arrays live in
+    local memory. Hoisting every global read in front of the first barrier took
+    the setup from 1.9 to 0.45 µs.
+- **Balance by time, not by count.** The closing all-reduce waits for the slowest
+  GPU, and a GPU's MoE time is not its cold count: hot experts are pinned and
+  cost ~8 µs each, a cold one ~50 (`tgrid.json`: the path's graph-replay time
+  over hot 0–24 × cold 0–6). The kernel embeds that grid, rounded and made
+  non-decreasing (`gen_cost_table.py`), and reverses paths while the path end
+  stays below the source's time.
+  - Offline replay of 400 held-out steps × 69 layers (`sim_balance.py`,
+    `sim-balance.json`), in ms per step of Σ_layers max_GPU T:
+
+    | assignment | MoE ms/step |
+    |---|---|
+    | count-balanced (the Triton scheduler, replayed exactly) | 10.69 |
+    | exhaustive time-balanced (greedy above 12 flexible) | 10.45 |
+    | **time-driven path reversal (the kernel)** | **10.43** |
+    | mean over GPUs (no waiting at all) | 8.93 |
+
+  - Only 0.26 of the 1.76 ms imbalance is reachable by moving cold replicas:
+    the rest is hot experts pinned to one GPU (none has a replica in the r1500
+    profile). Closing more of it needs hot replicas in the placement.
+- **Test.** `test_replica_assignment_runs_each_expert_once`: four GPUs' outputs
+  from one placement sum to the full fp32 reference, balanced and unbalanced,
+  and balancing moves work off the GPU that owns every replicated expert.
+
+**End to end** (`e2e_ab.sbatch`, job 2094263). "prev" is `bcb772a619` (Triton
+scheduler + the silu×up fix) run from a worktree via PYTHONPATH; "tiered" is
+`b558fc64c8`. Same serve config and bench as before, same node:
+
+| arm | build | output tok/s | median ITL | GSM8K-200 |
+|---|---|---|---|---|
+| 1 prev | `bcb772a619` | 187.0 | 18.17 ms | 0.905 |
+| 2 tiered | `b558fc64c8` | 201.1 | 17.12 ms | 0.920 |
+| 3 prev | `bcb772a619` | 185.1 | 18.13 ms | 0.895 |
+| 4 tiered | `b558fc64c8` | 198.5 | 17.15 ms | 0.910 |
+
+**−1.02 ms per step (−5.6%)**, +7.4% output throughput; accepted tokens per
+draft are unchanged (2.66–2.73 across arms).
+
+**Profile after the change** (job 2094684, same capture as 2092055;
+`../2026-09-26-mimo-decode-profile/breakdown-2094684.txt`, `imbalance-2094684.txt`):
+
+| ms/step, mean of 4 GPUs | 2092055 | 2094684 |
+|---|---|---|
+| profiled step period | 20.89 | 18.19 |
+| MoE routing / assign / align | 1.21 | 0.26 |
+| one-kernel route / act / finalize | 0.83 | 0.65 |
+| waiting for the slowest GPU's MoE | 1.64 | 1.40 |
+| GPU idle in the step | 1.05 | 0.98 |
+
+The wait drops by 0.24 ms, as the replay predicted (0.26). Temperature-1
+captures route differently, so the GEMM rows (8.79 → 7.65 ms) are mostly
+capture noise; the A/B above is the before/after number.
+
+**4: the small MoE kernels.**
+- **silu×up** (`bcb772a619`): blocks for routes that run on other GPUs return at
+  once (route_prep marks live routes); live ones load float4. 7.5 → 3.0 µs.
+- **Negative: finalize folded into w2** (stream-K fixup: per-tile arrival
+  counters, the CTA landing a tile's last chunk converts it to bf16). The w2
+  GEMM went 38.6 → 56.1 µs at (9,2) and 54 → 82 µs at (4,3): the barrier plus
+  fence/atomic at every tile boundary stalls all consumer warps. Not kept; PDL
+  already hides finalize's launch, so the most it could save is ~2 µs.
+- **Not done: top-8 routing into route_prep.** MiMo routes `noaux_tc` with one
+  group (sigmoid + bias, top 8, renormalised), easy to reproduce, but vLLM's
+  FusedMoE computes routing before the quant method runs; ~3 µs per layer does
+  not pay for restructuring that.
+
+**5: work outside the verify graph** (`gaps.py` on trace 2092055, temperature
+1.0, top-p 0.95):
+- **Sampling.** Kernels outside the graphs: cumsum scan 198 µs, 3 softmaxes 146,
+  radix sort ~97, `sample_recovered_tokens` 73. DFlash verifies 7 draft rows,
+  and `apply_top_k_top_p` only takes its Triton path from 8 rows, so top-p ran
+  the sort path. At 7 rows the Triton path is no faster anyway (359 vs 392 µs,
+  `bench_topp.py`). FlashInfer's pivot-search `top_p_renorm_probs` keeps the
+  same nucleus (checked at the full 152K vocabulary): constraints + softmax
+  456 → 204 µs, **−0.25 ms per step** at temperature > 0 (branch
+  `sampler-topp-renorm`, `110fb49988`).
+- **DFlash `fc` was replicated.** The drafter's context projection
+  ([8, 5×6144] → 6144, 377 MB bf16) was a `ReplicatedLinear`, so every GPU read
+  all of it each step (120 µs); now it is a `ColumnParallelLinear` with a
+  gathered output.
+- **Launch gaps.** About 60 gaps of 3–6 µs (0.69 ms per step) sit around ~240
+  eager ops: 34 host-to-device copies and 15 slot-mapping kernels of input prep
+  before the verify graph (~0.26 ms), then sampling. Async scheduling is on, but
+  the prep depends on the previous step's accepted tokens. Removing it needs
+  GPU-side input prep: a runner change, not done.
+- **Not done:** `sample_recovered_tokens` runs one program per draft row over
+  152K entries (73 µs); a split-vocab argmax would save ~50 µs, but needs a
+  packed atomic max and an extra unpack launch.
+
 ## What limits v7 at the pinned clock (w13, 9 hot / 33 hot)
 
 | run | 9 hot | 33 hot |

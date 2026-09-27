@@ -11,13 +11,16 @@
 
 # Same-node end-to-end A/B of the tiered MoE decode kernel for MiMo-V2.6
 # (serve.sbatch config: routing profile + 1500 replicas, DFlash k=7):
-# "marlin" is production, "tiered" sets VLLM_TIERED_MOE_DECODE_KERNEL=1. Each
-# arm restarts the server; the arms differ only in which kernel runs decode MoE.
+# "marlin" is production, "tiered" sets VLLM_TIERED_MOE_DECODE_KERNEL=1, and
+# "prev" runs the tiered kernel from the worktree at PREV_WT (an earlier commit,
+# build artifacts copied in) by shadowing the package with PYTHONPATH. Each arm
+# restarts the server.
 #
 #   sbatch --export=ALL,ORDER="marlin tiered marlin tiered",GSM8K=400 e2e_ab.sbatch
 #
 # Decode is the bench.sbatch suite (16 coding prompts, 1024 output tokens,
-# greedy, ignore-eos, c=1); GSM8K=N adds the quality check.
+# greedy, ignore-eos, c=1); GSM8K=N adds the quality check, SAMPLED=1 a second
+# decode pass at temperature 1, top-p 0.95.
 set -euo pipefail
 cd /e/project1/profound/alint77/vllm
 source agent_space/jupiter-env.sh
@@ -53,8 +56,9 @@ for arm in ${ORDER:-marlin tiered marlin tiered}; do
   run=$((run + 1))
   tag="${run}-${arm}"
   case "${arm}" in
-    tiered) export VLLM_TIERED_MOE_DECODE_KERNEL=1 ;;
-    marlin) export VLLM_TIERED_MOE_DECODE_KERNEL=0 ;;
+    tiered) export VLLM_TIERED_MOE_DECODE_KERNEL=1; unset PYTHONPATH ;;
+    marlin) export VLLM_TIERED_MOE_DECODE_KERNEL=0; unset PYTHONPATH ;;
+    prev) export VLLM_TIERED_MOE_DECODE_KERNEL=1 PYTHONPATH="${PREV_WT:?}" ;;
     *) echo "unknown arm ${arm}"; exit 1 ;;
   esac
   setsid bash "${out}/serve-inline.sh" >"${out}/server-${tag}.out" 2>"${out}/server-${tag}.err" &
@@ -79,6 +83,15 @@ for arm in ${ORDER:-marlin tiered marlin tiered}; do
     --custom-output-len 1024 --disable-shuffle --num-prompts 16 \
     --save-result --result-dir "${out}" --result-filename "decode-${tag}.json" 2>&1 \
     | grep -E "Mean TPOT|Median TPOT|Output token throughput|acceptance"
+  if [[ -n "${SAMPLED:-}" ]]; then
+    # the chat default (temperature 1, top-p 0.95): exercises the sampler
+    bench --dataset-name custom \
+      --dataset-path agent_space/experiments/2026-08-29-glm53-routing-capture/prompts-short.jsonl \
+      --custom-output-len 1024 --disable-shuffle --num-prompts 16 \
+      --temperature 1.0 --top-p 0.95 \
+      --save-result --result-dir "${out}" --result-filename "sampled-${tag}.json" 2>&1 \
+      | grep -E "Median TPOT|Output token throughput"
+  fi
   curl -fsS http://127.0.0.1:8031/metrics 2>/dev/null \
     | grep -E "^vllm:spec_decode_num_(accepted|draft)_tokens_total|^vllm:spec_decode_num_drafts_total" \
     > "${out}/spec-${tag}.txt" || true

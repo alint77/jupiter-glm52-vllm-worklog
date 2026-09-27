@@ -1,0 +1,2 @@
+{"case": "assign+align", "wall_us_per_call": 14.086214701334635, "kernels_us": {"_assign_kernel": 14.162520289855095}}
+{"case": "assign only", "wall_us_per_call": 8.161391382632049, "kernels_us": {"_assign_kernel": 8.150908695652166}}

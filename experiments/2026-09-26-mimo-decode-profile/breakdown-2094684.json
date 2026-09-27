@@ -1,0 +1,129 @@
+{
+  "decode-short": {
+    "ranks": {
+      "0": {
+        "steps": 108,
+        "period_ms": {
+          "mean": 18.185659726460774,
+          "p50": 17.711700916290283
+        },
+        "phase_busy_ms": {
+          "draft": 0.8619765528926143,
+          "host-side": 0.7542023217236554,
+          "target": 15.184025252306903,
+          "logits": 0.2847398387061225
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 0.5569667639555754,
+          "TP all-reduce": 1.980561962834111,
+          "dense GEMM": 2.981232206026713,
+          "attention": 1.0063460756231237,
+          "MoE routing/align/sum/act": 0.2599559757444594,
+          "MoE one-kernel route/act/finalize": 0.6551144741199635,
+          "MoE one-kernel w13": 4.865411237434104,
+          "MoE one-kernel w2": 2.878436556568852
+        },
+        "marlin_ms": {
+          "hot sum": 0.0,
+          "cold sum": 0.0,
+          "union": 0.0,
+          "target span": 15.76417988317984
+        }
+      },
+      "1": {
+        "steps": 108,
+        "period_ms": {
+          "mean": 18.187215390028776,
+          "p50": 17.710673332214355
+        },
+        "phase_busy_ms": {
+          "draft": 0.8855789237552218,
+          "host-side": 0.745075888103909,
+          "target": 15.335108951286033,
+          "logits": 0.28295205257557055
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 0.5706969896952311,
+          "TP all-reduce": 2.2655526355460838,
+          "dense GEMM": 2.988194364088553,
+          "attention": 1.0089008454923276,
+          "MoE routing/align/sum/act": 0.2587292856640286,
+          "MoE one-kernel route/act/finalize": 0.6510467617600052,
+          "MoE one-kernel w13": 4.781945175594753,
+          "MoE one-kernel w2": 2.81004289344505
+        },
+        "marlin_ms": {
+          "hot sum": 0.0,
+          "cold sum": 0.0,
+          "union": 0.0,
+          "target span": 15.896333941706905
+        }
+      },
+      "2": {
+        "steps": 108,
+        "period_ms": {
+          "mean": 18.18729676140679,
+          "p50": 17.71561861038208
+        },
+        "phase_busy_ms": {
+          "draft": 0.8796876624778465,
+          "host-side": 0.7451651891072592,
+          "target": 15.338689512676662,
+          "logits": 0.28273451769793473
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 0.5675150156021118,
+          "TP all-reduce": 2.2801131672329373,
+          "dense GEMM": 2.981764488750034,
+          "attention": 1.0031970960122567,
+          "MoE routing/align/sum/act": 0.25903787436308684,
+          "MoE one-kernel route/act/finalize": 0.657581541273329,
+          "MoE one-kernel w13": 4.772512073870058,
+          "MoE one-kernel w2": 2.816968255572849
+        },
+        "marlin_ms": {
+          "hot sum": 0.0,
+          "cold sum": 0.0,
+          "union": 0.0,
+          "target span": 15.899476642961856
+        }
+      },
+      "3": {
+        "steps": 108,
+        "period_ms": {
+          "mean": 18.187613443092065,
+          "p50": 17.713378429412842
+        },
+        "phase_busy_ms": {
+          "draft": 0.8860410407737449,
+          "host-side": 0.7447592329095911,
+          "target": 15.338312564072785,
+          "logits": 0.283197561899821
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 0.5663915784270676,
+          "TP all-reduce": 2.1664882633421154,
+          "dense GEMM": 2.984823293156094,
+          "attention": 1.0074600908491347,
+          "MoE routing/align/sum/act": 0.2595910275423968,
+          "MoE one-kernel route/act/finalize": 0.6549316865426523,
+          "MoE one-kernel w13": 4.839120644110221,
+          "MoE one-kernel w2": 2.8595059801031044
+        },
+        "marlin_ms": {
+          "hot sum": 0.0,
+          "cold sum": 0.0,
+          "union": 0.0,
+          "target span": 15.900636664143315
+        }
+      }
+    },
+    "collectives": {
+      "cross_device_reduce": {
+        "per_step": 141.0,
+        "mean_ms_per_step": 2.1731792666293956,
+        "cross_rank_min_ms_per_step": 0.6139814677061858
+      }
+    }
+  }
+}
