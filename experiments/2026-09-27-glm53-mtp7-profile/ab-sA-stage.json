@@ -1,0 +1,15 @@
+{
+  "96k": {
+    "runs": [
+      {
+        "seconds": 0.003,
+        "steps": 0.0,
+        "tokens": 0.0,
+        "step_ms": null,
+        "tokens_per_step": null
+      }
+    ],
+    "step_ms_median": null,
+    "tokens_per_step": null
+  }
+}

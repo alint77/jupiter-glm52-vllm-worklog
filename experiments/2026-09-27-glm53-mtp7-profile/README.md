@@ -224,3 +224,34 @@ speed) yet the kernel takes ~1.4 ms plus a 0.6 ms combine. Under DCP4 the
 queries are all-gathered to 64 real heads and each GPU reads a quarter of the
 (still on-GPU) KV, which also frees ~16 GiB per GPU for hot experts. Being
 measured (`ab-dA`).
+
+## DCP4 at c=1, and 985 vs 2000 replicas
+
+**DCP4 vs DCP1** (job 2097277, 24 runs, both with exact replicas and the INT4
+one-kernel path): **-1.12 +- 0.25 ms/step**. The KV cache stays on the GPUs,
+sharded four ways (400,255 tokens), which lets the planner keep **3177-3239
+hot experts per GPU against 2393-2466**, and the FP8 sparse decode kernel sees
+64 real heads instead of 16 padded to 64. The gain is below what residency plus
+padding predict (~3-4 ms), so DCP's per-layer collectives are taking most of
+it back; profiled next (`run-dcp4-2097699`). **Adopted as the baseline:
+`serve.sh` now defaults to DCP4, exact replicas, the one-kernel path, reserve 7,
+capture [1, 8].**
+
+**985 vs 2000 replicas** (job 2097278, 32 runs, one-kernel path):
+2000 with the old slot +0.19 +- 0.36, 2000 with the fixed slot -0.66 +- 0.36,
+a repeat of 985 -0.33 +- 0.36 -- about -0.5 ms, not significant, as the
+offline count model predicted. Staying at the profile's 985.
+
+## The prefill staging slot was sized with the replicas (vLLM 7b2dad1b41)
+
+The cold prefetch slot held a layer's whole cold tier, own cold experts plus
+the replicas stored after them: 830 MiB without replicas, 1478 with 985, 2572
+with 2000. Prefill never reads replicas (static maps exclude them, and a staged
+step is always above the replica-assignment token limit), so that was HBM taken
+from hot residency: 2427 -> 2393 hot experts at 985, 2339 at 2000. Now the
+planner budgets and the coordinator stages only a layer's own cold experts,
+per component of the component-major tier. Served with 985 replicas: slot 790
+MiB, 2427 hot, and `VLLM_TIERED_MOE_COLD_PREFETCH_VERIFY=1` found 0 mismatches
+over 370 staged layers of a 96K prefill. The prefetch GPU tests, broken since
+cold tiers moved to `cudaHostRegister` (freed-but-registered test allocations),
+are fixed and pass.
