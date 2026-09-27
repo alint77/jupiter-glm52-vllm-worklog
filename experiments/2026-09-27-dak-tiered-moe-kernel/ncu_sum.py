@@ -3,6 +3,7 @@
 
     ncu_sum.py marlin <csv>...   -> per file: align, w13, act, w2, sum, gemm+act+sum (us)
     ncu_sum.py sk <csv>...       -> per file: median sk_kernel duration (us)
+    ncu_sum.py vllm <csv>...     -> per file: median per-call sum of the tiered decode kernels (us)
 """
 
 import csv
@@ -47,6 +48,26 @@ def sk(path):
     return {"calls": len(v), "us": statistics.median(v)}
 
 
+def vllm(path):
+    calls, cur = [], None
+    for name, us in rows(path):
+        if "route_prep_kernel" in name:
+            cur = {"route": us, "w13": 0.0, "act": 0.0, "w2": 0.0, "finalize": 0.0}
+            calls.append(cur)
+        elif "gemm_kernel<0>" in name or "gemm_kernelILi0E" in name:
+            cur["w13"] += us
+        elif "gemm_kernel<1>" in name or "gemm_kernelILi1E" in name:
+            cur["w2"] += us
+        elif "act_kernel" in name:
+            cur["act"] += us
+        elif "finalize_kernel" in name:
+            cur["finalize"] += us
+    out = {k: statistics.median(c[k] for c in calls) for k in calls[0]}
+    out["total"] = statistics.median(sum(c.values()) for c in calls)
+    out["calls"] = len(calls)
+    return out
+
+
 if __name__ == "__main__":
-    fn = marlin if sys.argv[1] == "marlin" else sk
+    fn = {"marlin": marlin, "sk": sk, "vllm": vllm}[sys.argv[1]]
     print(json.dumps({p: fn(p) for p in sys.argv[2:]}, indent=1))

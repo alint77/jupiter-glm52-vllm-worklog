@@ -1,0 +1,130 @@
+[
+ {
+  "hot": 0,
+  "cold": 2,
+  "p": 0,
+  "marlin_us": 127.48800000000001,
+  "integrated_us": 143.584,
+  "gemms_us": 125.312
+ },
+ {
+  "hot": 10,
+  "cold": 1,
+  "p": 0.032,
+  "marlin_us": 138.49599999999998,
+  "integrated_us": 131.04,
+  "gemms_us": 113.82400000000001
+ },
+ {
+  "hot": 10,
+  "cold": 2,
+  "p": 0.04190000000000001,
+  "marlin_us": 138.49599999999998,
+  "integrated_us": 148.224,
+  "gemms_us": 128.96
+ },
+ {
+  "hot": 11,
+  "cold": 1,
+  "p": 0.0288,
+  "marlin_us": 144.00000000000003,
+  "integrated_us": 143.552,
+  "gemms_us": 125.856
+ },
+ {
+  "hot": 11,
+  "cold": 2,
+  "p": 0.0361,
+  "marlin_us": 144.00000000000003,
+  "integrated_us": 155.488,
+  "gemms_us": 138.24
+ },
+ {
+  "hot": 12,
+  "cold": 2,
+  "p": 0.0286,
+  "marlin_us": 160.96,
+  "integrated_us": 162.88,
+  "gemms_us": 144.672
+ },
+ {
+  "hot": 13,
+  "cold": 1,
+  "p": 0.0167,
+  "marlin_us": 175.04000000000002,
+  "integrated_us": 163.008,
+  "gemms_us": 144.64
+ },
+ {
+  "hot": 5,
+  "cold": 2,
+  "p": 0.0166,
+  "marlin_us": 127.48800000000001,
+  "integrated_us": 142.88,
+  "gemms_us": 125.47200000000001
+ },
+ {
+  "hot": 7,
+  "cold": 1,
+  "p": 0.0259,
+  "marlin_us": 103.67999999999999,
+  "integrated_us": 104.32,
+  "gemms_us": 86.144
+ },
+ {
+  "hot": 7,
+  "cold": 2,
+  "p": 0.0363,
+  "marlin_us": 127.48800000000001,
+  "integrated_us": 143.936,
+  "gemms_us": 124.928
+ },
+ {
+  "hot": 8,
+  "cold": 1,
+  "p": 0.0319,
+  "marlin_us": 113.888,
+  "integrated_us": 116.672,
+  "gemms_us": 99.104
+ },
+ {
+  "hot": 8,
+  "cold": 2,
+  "p": 0.042800000000000005,
+  "marlin_us": 127.48800000000001,
+  "integrated_us": 148.224,
+  "gemms_us": 128.96
+ },
+ {
+  "hot": 9,
+  "cold": 0,
+  "p": 0.0103,
+  "marlin_us": 125.79199999999999,
+  "integrated_us": 113.664,
+  "gemms_us": 95.55199999999999
+ },
+ {
+  "hot": 9,
+  "cold": 1,
+  "p": 0.0336,
+  "marlin_us": 125.79199999999999,
+  "integrated_us": 120.864,
+  "gemms_us": 103.77600000000001
+ },
+ {
+  "hot": 9,
+  "cold": 2,
+  "p": 0.0451,
+  "marlin_us": 127.48800000000001,
+  "integrated_us": 144.192,
+  "gemms_us": 124.352
+ },
+ {
+  "hot": 9,
+  "cold": 3,
+  "p": 0.026099999999999998,
+  "marlin_us": 179.29600000000002,
+  "integrated_us": 200.064,
+  "gemms_us": 181.216
+ }
+]

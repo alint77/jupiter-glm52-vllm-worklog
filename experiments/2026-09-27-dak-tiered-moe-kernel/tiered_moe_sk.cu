@@ -150,7 +150,19 @@ __device__ __forceinline__ void mma_f16(float* d, const uint32_t* a, uint32_t b0
 #ifndef E5M2
 #define E5M2 1
 #endif
-#if E5M2
+#ifndef MARLIN_BITS
+#define MARLIN_BITS 0   // 1: Marlin's decode sequence; 2: Marlin's bits via e5m2 bytes + PRMT
+#endif
+#if MARLIN_BITS
+// Marlin's word (gptq_marlin_repack, 4-bit): nibble i holds, in order,
+// (g,k0) (g,k8) (g+8,k0) (g+8,k8) (g,k1) (g,k9) (g+8,k1) (g+8,k9), s at each
+// nibble's top bit. Values come out as f16 at 2^-14.
+constexpr int PLACEMENT_EXP = 14;
+__device__ __forceinline__ uint32_t marlin_pair(uint32_t q) { return (q & 0x80008000u) | ((q & 0x70007000u) >> 3); }
+__device__ __forceinline__ uint32_t prmt0(uint32_t a, uint32_t sel) {
+  uint32_t out; asm("prmt.b32 %0, %1, 0, %2;" : "=r"(out) : "r"(a), "r"(sel)); return out;
+}
+#elif E5M2
 // e2m1 at e5m2 bit positions (value * 2^-14, exact; 0.5 is an f16 subnormal):
 // e5m2 is the high byte of an f16, so a byte permute with zeros builds the
 // f16x2 A register (PRMT, 2.1 cycles/warp-instr vs 2.6 for the e4m3 F2FP).
@@ -299,8 +311,18 @@ __global__ void __launch_bounds__(THREADS, 1) tiered_moe_sk_kernel(Params p) {
       for (int v = 0; v < 2; ++v) {
         const uint32_t w = (j & 1) ? (v ? wv.w : wv.z) : (v ? wv.y : wv.x);
         const uint2 xb = v ? make_uint2(xv.z, xv.w) : make_uint2(xv.x, xv.y);
+#if MARLIN_BITS == 1
+        const uint32_t q8 = w >> 8;
+        uint32_t a[4] = {marlin_pair(q8 << 4), marlin_pair(w << 4), marlin_pair(q8), marlin_pair(w)};
+#elif MARLIN_BITS == 2
+        // low nibbles -> e5m2 bytes {(g,k0), (g+8,k0), (g,k1), (g+8,k1)}; high nibbles -> the k8/k9 ones
+        const uint32_t lo = ((w << 4) & 0x80808080u) | ((w << 1) & 0x0E0E0E0Eu);
+        const uint32_t hi = (w & 0x80808080u) | ((w >> 3) & 0x0E0E0E0Eu);
+        uint32_t a[4] = {prmt0(lo, 0x2404), prmt0(lo, 0x3414), prmt0(hi, 0x2404), prmt0(hi, 0x3414)};
+#else
         uint32_t ra = reg_a(w), rb = reg_b(w);
         uint32_t a[4] = {f16x2_lo(ra), f16x2_lo(rb), f16x2_hi(ra), f16x2_hi(rb)};
+#endif
         mma_f16(d, a, xb.x, xb.y, v ? d : zero);
       }
       float s0 = group_scale(sp & 0xFFu), s1 = group_scale(sp >> 8);
@@ -402,7 +424,13 @@ static std::vector<uint8_t> pack(const std::vector<uint8_t>& codes, const std::v
             // byte order {k0, k0+1, k0+8, k0+9}: low 16 bits -> a0/a1, high 16 bits -> a2/a3
             const int ks[4] = {k0, k0 + 1, k0 + 8, k0 + 9};
             uint32_t w = 0;
+#if MARLIN_BITS
+            // Marlin nibble order: (g,k0) (g,k8) (g+8,k0) (g+8,k8) (g,k1) (g,k9) (g+8,k1) (g+8,k9)
+            const int nr[8] = {0, 0, 1, 1, 0, 0, 1, 1}, nk[8] = {0, 2, 0, 2, 1, 3, 1, 3};
+            for (int i = 0; i < 8; ++i) w |= uint32_t(code(nr[i] ? r1 : r0, ks[nk[i]])) << (4 * i);
+#else
             for (int b = 0; b < 4; ++b) w |= uint32_t(enc_a(code(r0, ks[b])) | enc_b(code(r1, ks[b]))) << (8 * b);
+#endif
             reinterpret_cast<uint32_t*>(blob)[((mbk * (KB / 4) + kb / 4) * 32 + ln) * 4 + kb % 4] = w;
           }
       uint8_t* sb = blob + W_BYTES;   // [mb][group][8 g][row g, row g+8]
