@@ -49,6 +49,9 @@ SWA_WINDOW = 128 + 8
 def roles(context: int):
     """(role, matcher, bytes per call or None when latency-bound, flops)."""
     return [
+        ("MoE one-kernel w13 (both tiers)", lambda n, g: "tiered_decode" in n and "gemm_kernel<0>" in n, None),
+        ("MoE one-kernel w2 (both tiers)", lambda n, g: "tiered_decode" in n and "gemm_kernel<1>" in n, None),
+        ("MoE one-kernel route / act / finalize", lambda n, g: "tiered_decode" in n, None),
         ("MoE Marlin hot", lambda n, g: "marlin_moe" in n and g == 264, None),
         ("MoE Marlin cold", lambda n, g: "marlin_moe" in n and g == 132, None),
         ("qkv_proj (fp8)", lambda n, g: "fp8_gemm_kernel_swapAB<6784u, 6144u" in n, QKV),

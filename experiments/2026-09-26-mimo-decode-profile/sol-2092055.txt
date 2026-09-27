@@ -1,0 +1,38 @@
+
+===== decode-short (context ~2000 tokens)
+role                          calls  mean us  ms/step  MB/call  SOL us   TB/s  % SOL
+MoE one-kernel w13 (both tiers)   69.0     81.1    5.598 
+MoE one-kernel w2 (both tiers)   69.0     46.3    3.194 
+MoE one-kernel route / act / finalize  207.0      4.0    0.832 
+qkv_proj (fp8)                 70.0     15.2    1.064     41.7    11.5   2.74    76%
+dense MLP gate_up (fp8)         1.0     17.6    0.018     50.3    13.9   2.85    79%
+dense MLP down (fp8)            1.0     10.2    0.010     25.2     6.9   2.47    68%
+o_proj (bf16)                  70.0     18.9    1.324     50.3    13.9   2.66    73%
+router gate (bf16)             69.0      4.9    0.340      4.7     1.3   0.96    26%
+lm_head (bf16)                  3.0    132.2    0.397    468.7   129.3   3.55    98%
+attention, full (FA3)          10.0     12.6    0.126      2.6     0.7   0.20     6%
+attention, sliding (FA4)       60.0     10.1    0.607      0.2     0.0   0.02     0%
+replica assign + align         69.0     13.7    0.947 
+TP all-reduce                 141.0     18.0    2.544 
+MoE sum / act / topk           69.0      3.8    0.260 
+norms / rope / elementwise    250.0      2.6    0.646 
+DFlash drafter (all but lm_head)  107.0      7.1    0.757 
+
+===== decode-96k (context ~96000 tokens)
+role                          calls  mean us  ms/step  MB/call  SOL us   TB/s  % SOL
+MoE one-kernel w13 (both tiers)   69.0     71.1    4.906 
+MoE one-kernel w2 (both tiers)   69.0     42.0    2.899 
+MoE one-kernel route / act / finalize  207.0      4.0    0.835 
+qkv_proj (fp8)                 70.0     15.2    1.062     41.7    11.5   2.75    76%
+dense MLP gate_up (fp8)         1.0     17.9    0.018     50.3    13.9   2.81    78%
+dense MLP down (fp8)            1.0     10.3    0.010     25.2     6.9   2.45    68%
+o_proj (bf16)                  70.0     19.0    1.328     50.3    13.9   2.65    73%
+router gate (bf16)             69.0      5.0    0.343      4.7     1.3   0.95    26%
+lm_head (bf16)                  3.0    132.2    0.396    468.7   129.3   3.55    98%
+attention, full (FA3)          10.0     63.8    0.638    122.9    33.9   1.92    53%
+attention, sliding (FA4)       60.0     10.1    0.608      0.2     0.0   0.02     0%
+replica assign + align         69.0     13.5    0.935 
+TP all-reduce                 141.0     21.6    3.048 
+MoE sum / act / topk           69.0      3.8    0.262 
+norms / rope / elementwise    250.0      2.6    0.648 
+DFlash drafter (all but lm_head)  107.0      7.0    0.753 

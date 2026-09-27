@@ -1,0 +1,50 @@
+
+===== decode-short: 4 ranks, 96 steps each
+step period (GPU start to start): 20.89 ms  per rank [20.89, 20.89, 20.89, 20.89]
+phase busy time (ms): {'target': 17.93, 'logits': 0.283, 'draft': 0.874, 'host-side': 0.748}
+GPU idle inside the step: 1.05 ms
+
+target verify graph, union-partitioned (ms/step, mean over ranks; min-max rank):
+  MoE one-kernel w13             5.60  (5.49-5.65)   31.2%
+  MoE one-kernel w2              3.19  (3.14-3.22)   17.8%
+  MoE one-kernel route/act/finalize   0.83  (0.83-0.84)    4.6%
+  MoE hot Marlin (HBM)           0.00  (0.00-0.00)    0.0%
+  MoE cold Marlin (Grace)        0.00  (0.00-0.00)    0.0%
+  MoE reduce-scatter (SP)        0.00  (0.00-0.00)    0.0%
+  MoE all-gather (SP)            0.00  (0.00-0.00)    0.0%
+  TP all-reduce                  2.54  (2.49-2.58)   14.2%
+  MoE routing/align/sum/act      1.21  (1.20-1.21)    6.7%
+  attention                      1.00  (1.00-1.01)    5.6%
+  dense GEMM                     2.99  (2.99-2.99)   16.7%
+  norm/rope/elementwise          0.56  (0.55-0.57)    3.1%
+  target busy                   17.93
+
+Marlin: hot sum 0.00, cold sum 0.00, union 0.00 ms/step (serial would be 0.00); target span 18.53
+
+collectives in the target graph (ms/step): mean over ranks vs cross-rank min
+  cross_device_reduce    x141.0  mean   2.54  min   0.62  -> waiting  1.92
+
+===== decode-96k: 4 ranks, 95 steps each
+step period (GPU start to start): 21.12 ms  per rank [21.11, 21.13, 21.13, 21.13]
+phase busy time (ms): {'target': 17.974, 'logits': 0.283, 'draft': 0.872, 'host-side': 0.747}
+GPU idle inside the step: 1.25 ms
+
+target verify graph, union-partitioned (ms/step, mean over ranks; min-max rank):
+  MoE one-kernel w13             4.91  (4.78-4.96)   27.3%
+  MoE one-kernel w2              2.90  (2.84-2.94)   16.1%
+  MoE one-kernel route/act/finalize   0.84  (0.83-0.84)    4.6%
+  MoE hot Marlin (HBM)           0.00  (0.00-0.00)    0.0%
+  MoE cold Marlin (Grace)        0.00  (0.00-0.00)    0.0%
+  MoE reduce-scatter (SP)        0.00  (0.00-0.00)    0.0%
+  MoE all-gather (SP)            0.00  (0.00-0.00)    0.0%
+  TP all-reduce                  3.05  (2.42-3.30)   17.0%
+  MoE routing/align/sum/act      1.20  (1.19-1.20)    6.7%
+  attention                      1.53  (1.53-1.54)    8.5%
+  dense GEMM                     2.99  (2.99-3.00)   16.7%
+  norm/rope/elementwise          0.56  (0.55-0.57)    3.1%
+  target busy                   17.97
+
+Marlin: hot sum 0.00, cold sum 0.00, union 0.00 ms/step (serial would be 0.00); target span 18.57
+
+collectives in the target graph (ms/step): mean over ranks vs cross-rank min
+  cross_device_reduce    x141.0  mean   3.05  min   0.62  -> waiting  2.43

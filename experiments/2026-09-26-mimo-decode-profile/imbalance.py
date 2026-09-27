@@ -35,7 +35,9 @@ def layer_rows(rows):
         left = ops[0]["t"]
         for c in collectives:
             seg = [o for o in ops if left <= o["t"] < c["t"]]
-            hot = [o for o in seg if category(o).startswith("MoE hot")]
+            # the one-kernel path runs both tiers in the same launches; it
+            # counts as "hot" here, so the per-tier split reads zero for cold
+            hot = [o for o in seg if category(o).startswith(("MoE hot", "MoE one-kernel"))]
             cold = [o for o in seg if category(o).startswith("MoE cold")]
             if hot or cold:
                 layers.append({"arrive": c["t"], "done": c["end"], "hot": union(hot),

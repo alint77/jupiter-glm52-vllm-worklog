@@ -36,6 +36,11 @@ LAUNCH_CATS = {"cuda_runtime", "cuda_driver"}
 RANK_RE = re.compile(r"_rank(\d+)\.")
 
 CATEGORIES = (
+    # the one-kernel tiered decode path (VLLM_TIERED_MOE_DECODE_KERNEL=1):
+    # both tiers inside one launch per projection
+    ("MoE one-kernel w13", lambda e: "tiered_decode" in e["name"] and "gemm_kernel<0>" in e["name"]),
+    ("MoE one-kernel w2", lambda e: "tiered_decode" in e["name"] and "gemm_kernel<1>" in e["name"]),
+    ("MoE one-kernel route/act/finalize", lambda e: "tiered_decode" in e["name"]),
     ("MoE hot Marlin (HBM)", lambda e: "marlin_moe" in e["name"] and grid(e) == 264),
     ("MoE cold Marlin (Grace)", lambda e: "marlin_moe" in e["name"]),
     ("MoE reduce-scatter (SP)", lambda e: "ReduceScatter" in e["name"]),

@@ -208,3 +208,54 @@ Next: sweep the hot tier's CTAs/SM for mxfp4 (smem is 27 KB/CTA, so 3-4 hot
 items: the replica assign kernel (0.93 ms, single CTA), o_proj in bf16
 (0.36 ms above an fp8 floor if quantized; accuracy question), router gate
 (26%).
+
+## After the one-kernel MoE (jobs 2091898, 2092055)
+
+Same capture as job 2077518 (production serve config, chat endpoint,
+temperature 1.0), with `VLLM_TIERED_MOE_DECODE_KERNEL=1`.
+
+**Capture and profiler distortion**
+- **Job 2091898 (kernel chaining on).** The profiler inflates it badly: 22.1 ms profiled against 20.1 ms unprofiled. Under CUPTI the chained kernels (programmatic dependent launch) sit resident waiting on their predecessor, and their spans absorb the GEMM time.
+- **Job 2092055 (chaining off, `VLLM_TIERED_DECODE_PDL=0`).** This one is clean: 20.9 ms profiled vs 20.2 ms unprofiled. The unprofiled step is the same as with chaining on (20.1 ms), so PDL does nothing end to end.
+- **Comparing captures.** Temperature 1.0 makes each capture route differently, so cross-capture differences of about ±1 ms are noise. The same-node A/B median step (20.2 → 18.4 ms, `../2026-09-27-dak-tiered-moe-kernel`) is the before/after number.
+
+**Short context, ms per step, mean of 4 GPUs** (`breakdown-2092055.txt`,
+`sol-2092055.txt`, `imbalance-2092055.txt`, `figs/remaining-2092055.png`):
+
+| part | ms/step | floor | gap |
+| --- | ---: | ---: | --- |
+| MoE GEMMs, one kernel (w13 81 µs + w2 46 µs per layer) | 8.79 | 6.16 | **2.63** (70% of the hot/cold floor) |
+| waiting in the MoE all-reduce for the slowest GPU | 1.64 | 0 | **1.64**, all of it MoE imbalance |
+| GPU idle inside the step | 1.05 | 0 | **1.05** (CPU / launch gaps) |
+| MoE route/act/finalize (0.83) + topk/sum (0.26) | 1.09 | latency | 4 small kernels × 69 |
+| replica assign + align, 1 CTA × 69 | 0.95 | latency | also builds Marlin metadata the new path never reads |
+| o_proj, bf16 (the checkpoint leaves it unquantized) | 1.32 | 0.96 | 0.36 (fp8 would halve the floor) |
+| TP all-reduce transfer × 141 | 0.90 | 0.61 | 0.29 |
+| qkv_proj fp8 1.06 / router gate bf16 0.34 / lm_head + logits 0.68 | 2.08 | 1.28 | 0.80 |
+| drafter 0.76, host-side kernels 0.75, attention 0.73, norms/rope 0.65 | 2.89 | latency | small kernels |
+
+The MoE floor is E[max(hot bytes / HBM, cold bytes / C2C)] per layer. It uses
+the expert counts recorded on the same prompts in job 2077518: 9.4 hot and 1.6
+cold experts per layer per GPU, hot and cold assumed independent. The whole
+MoE chain is 127 µs per layer, with ~2 µs of gaps between its kernels.
+
+**Findings**
+
+1. **The MoE GEMMs are still the biggest gap: 2.6 ms, at 1.43× the floor.**
+   - Cold is near the C2C roof.
+   - Hot is compute-bound at the sustained clock (see the kernel experiment).
+   - w2, which has only 2 chunks per tile, runs at ~64% vs ~73% for w13.
+2. **The MoE imbalance is the second: 1.64 ms.** The all-reduce's waiting equals
+   each GPU's MoE deficit against the slowest GPU (1.62 ms), spread over all
+   ranks (last to arrive 19–31%). Replicas balance cold work; the per-layer
+   hot/cold mix still varies per GPU.
+3. **Latency-bound glue is ~3.9 ms in total:**
+   - MoE helpers 1.09 ms;
+   - replica assign + align 0.95 ms;
+   - drafter 0.76 ms;
+   - host-side kernels 0.75 ms;
+   - norms/rope 0.65 ms.
+
+   Cheapest fix: the new path only needs the assign part of `tiered_moe_assign_align`, so skipping the Marlin alignment and folding list building into it would take most of the 0.95 ms and some of the route kernel.
+4. **GPU idle is 1.05 ms per step** between the drafter, sampling and the verify graph.
+5. **Dense projections are at 73–76% of HBM.** o_proj is bf16 in the checkpoint; fp8 would save ~0.5 ms but changes numerics.

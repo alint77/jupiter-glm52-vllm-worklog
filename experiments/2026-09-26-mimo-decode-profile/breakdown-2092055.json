@@ -1,0 +1,256 @@
+{
+  "decode-short": {
+    "ranks": {
+      "0": {
+        "steps": 96,
+        "period_ms": {
+          "mean": 20.88550552725792,
+          "p50": 20.028042793273926
+        },
+        "phase_busy_ms": {
+          "draft": 0.8610362609227499,
+          "host-side": 0.7562844554583231,
+          "target": 17.69300565123558,
+          "logits": 0.28503795464833576
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 0.5608299771944681,
+          "TP all-reduce": 2.4854520757993064,
+          "dense GEMM": 2.9880883495012918,
+          "attention": 1.0058977901935577,
+          "MoE routing/align/sum/act": 1.1989803115526836,
+          "MoE one-kernel route/act/finalize": 0.826641450325648,
+          "MoE one-kernel w13": 5.4900181889534,
+          "MoE one-kernel w2": 3.137097507715225
+        },
+        "marlin_ms": {
+          "hot sum": 0.0,
+          "cold sum": 0.0,
+          "union": 0.0,
+          "target span": 18.30185303092003
+        }
+      },
+      "1": {
+        "steps": 96,
+        "period_ms": {
+          "mean": 20.887620826562245,
+          "p50": 20.02852487564087
+        },
+        "phase_busy_ms": {
+          "draft": 0.8764058947563171,
+          "host-side": 0.7453622420628866,
+          "target": 18.009426722923916,
+          "logits": 0.28219067056973773
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 0.5487704128026962,
+          "TP all-reduce": 2.556515097618103,
+          "dense GEMM": 2.9871248801549277,
+          "attention": 1.0003372530142467,
+          "MoE routing/align/sum/act": 1.2114602377017338,
+          "MoE one-kernel route/act/finalize": 0.8323745330174764,
+          "MoE one-kernel w13": 5.650076697270076,
+          "MoE one-kernel w2": 3.2227676113446555
+        },
+        "marlin_ms": {
+          "hot sum": 0.0,
+          "cold sum": 0.0,
+          "union": 0.0,
+          "target span": 18.60359858473142
+        }
+      },
+      "2": {
+        "steps": 96,
+        "period_ms": {
+          "mean": 20.887705494960148,
+          "p50": 20.025291919708252
+        },
+        "phase_busy_ms": {
+          "draft": 0.8757007519404093,
+          "host-side": 0.7442321280638377,
+          "target": 18.016500423351925,
+          "logits": 0.2814094324906667
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 0.5661668678124746,
+          "TP all-reduce": 2.551506201426188,
+          "dense GEMM": 2.993596081932386,
+          "attention": 1.0087888141473134,
+          "MoE routing/align/sum/act": 1.2076995521783829,
+          "MoE one-kernel route/act/finalize": 0.8375542064507803,
+          "MoE one-kernel w13": 5.630812207857768,
+          "MoE one-kernel w2": 3.220376491546631
+        },
+        "marlin_ms": {
+          "hot sum": 0.0,
+          "cold sum": 0.0,
+          "union": 0.0,
+          "target span": 18.60700225830078
+        }
+      },
+      "3": {
+        "steps": 96,
+        "period_ms": {
+          "mean": 20.8879172205925,
+          "p50": 20.02701473236084
+        },
+        "phase_busy_ms": {
+          "draft": 0.8847147623697916,
+          "host-side": 0.7464443643887838,
+          "target": 18.000156333049137,
+          "logits": 0.2827106813589732
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 0.5697775979836782,
+          "TP all-reduce": 2.5823994974295297,
+          "dense GEMM": 2.986052304506302,
+          "attention": 1.0021684269110362,
+          "MoE routing/align/sum/act": 1.2107601662476857,
+          "MoE one-kernel route/act/finalize": 0.8323854704697927,
+          "MoE one-kernel w13": 5.621988356113434,
+          "MoE one-kernel w2": 3.19462451338768
+        },
+        "marlin_ms": {
+          "hot sum": 0.0,
+          "cold sum": 0.0,
+          "union": 0.0,
+          "target span": 18.610708733399708
+        }
+      }
+    },
+    "collectives": {
+      "cross_device_reduce": {
+        "per_step": 141.0,
+        "mean_ms_per_step": 2.5439701353510222,
+        "cross_rank_min_ms_per_step": 0.6200488011042277
+      }
+    }
+  },
+  "decode-96k": {
+    "ranks": {
+      "0": {
+        "steps": 95,
+        "period_ms": {
+          "mean": 21.108212932787442,
+          "p50": 20.504096031188965
+        },
+        "phase_busy_ms": {
+          "draft": 0.8599491721705387,
+          "host-side": 0.7546232524671053,
+          "target": 17.147486977828176,
+          "logits": 0.28489160035785877
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 0.5636023772390265,
+          "TP all-reduce": 2.423533108359889,
+          "dense GEMM": 2.99307370436819,
+          "attention": 1.5337585750379061,
+          "MoE routing/align/sum/act": 1.1890326248972038,
+          "MoE one-kernel route/act/finalize": 0.8295625335291812,
+          "MoE one-kernel w13": 4.777905444095009,
+          "MoE one-kernel w2": 2.8370186103017705
+        },
+        "marlin_ms": {
+          "hot sum": 0.0,
+          "cold sum": 0.0,
+          "union": 0.0,
+          "target span": 17.75538501739502
+        }
+      },
+      "1": {
+        "steps": 95,
+        "period_ms": {
+          "mean": 21.126083333868728,
+          "p50": 20.507614135742188
+        },
+        "phase_busy_ms": {
+          "draft": 0.8736977426629318,
+          "host-side": 0.743577063711066,
+          "target": 18.250916410747326,
+          "logits": 0.2818843640779194
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 0.5502640172054893,
+          "TP all-reduce": 3.2973531271281997,
+          "dense GEMM": 2.9924749524969805,
+          "attention": 1.5262866572329872,
+          "MoE routing/align/sum/act": 1.199915936118678,
+          "MoE one-kernel route/act/finalize": 0.8347914093419125,
+          "MoE one-kernel w13": 4.9339777243764775,
+          "MoE one-kernel w2": 2.9158525868466025
+        },
+        "marlin_ms": {
+          "hot sum": 0.0,
+          "cold sum": 0.0,
+          "union": 0.0,
+          "target span": 18.845410939266806
+        }
+      },
+      "2": {
+        "steps": 95,
+        "period_ms": {
+          "mean": 21.126038420827765,
+          "p50": 20.506563186645508
+        },
+        "phase_busy_ms": {
+          "draft": 0.8710900959215666,
+          "host-side": 0.7445152282714844,
+          "target": 18.25576864543714,
+          "logits": 0.28108069771214533
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 0.5680898264834755,
+          "TP all-reduce": 3.216017612658049,
+          "dense GEMM": 3.0007544668097244,
+          "attention": 1.5356223658511514,
+          "MoE routing/align/sum/act": 1.1985517702604596,
+          "MoE one-kernel route/act/finalize": 0.8407575155559339,
+          "MoE one-kernel w13": 4.960545700474789,
+          "MoE one-kernel w2": 2.9354293873435573
+        },
+        "marlin_ms": {
+          "hot sum": 0.0,
+          "cold sum": 0.0,
+          "union": 0.0,
+          "target span": 18.845142585352846
+        }
+      },
+      "3": {
+        "steps": 95,
+        "period_ms": {
+          "mean": 21.12624972494025,
+          "p50": 20.506242752075195
+        },
+        "phase_busy_ms": {
+          "draft": 0.8817853325291684,
+          "host-side": 0.7442421461406507,
+          "target": 18.241019168652986,
+          "logits": 0.2822802091899671
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 0.570895717018529,
+          "TP all-reduce": 3.254309804815995,
+          "dense GEMM": 2.9919458288895457,
+          "attention": 1.526687873037238,
+          "MoE routing/align/sum/act": 1.1991578855012592,
+          "MoE one-kernel route/act/finalize": 0.8360137337132504,
+          "MoE one-kernel w13": 4.953002984900223,
+          "MoE one-kernel w2": 2.9090053407769454
+        },
+        "marlin_ms": {
+          "hot sum": 0.0,
+          "cold sum": 0.0,
+          "union": 0.0,
+          "target span": 18.85095644499126
+        }
+      }
+    },
+    "collectives": {
+      "cross_device_reduce": {
+        "per_step": 141.0,
+        "mean_ms_per_step": 3.04780488767122,
+        "cross_rank_min_ms_per_step": 0.6211087578221371
+      }
+    }
+  }
+}

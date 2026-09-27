@@ -1,0 +1,9 @@
+decode-short: 96 steps
+per rank, ms/step: waiting in the MoE-closing collective vs (slowest rank's Marlin - own Marlin)
+  rank 0: waiting  1.81   Marlin deficit  1.79
+  rank 1: waiting  1.58   Marlin deficit  1.54
+  rank 2: waiting  1.57   Marlin deficit  1.56
+  rank 3: waiting  1.59   Marlin deficit  1.60
+mean waiting 1.64, mean Marlin deficit 1.62 ms/step
+per-layer spread (max - mean over ranks), summed per step: cold 0.00 ms, hot 1.62 ms
+last to arrive, share of layers: {0: '19%', 1: '26%', 2: '31%', 3: '24%'}
