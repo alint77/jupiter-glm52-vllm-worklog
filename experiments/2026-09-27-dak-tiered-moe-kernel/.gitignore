@@ -2,6 +2,8 @@
 *
 !*/
 !*.cu
+!*.py
+!*.json
 !*.sh
 !*.sbatch
 !*.md

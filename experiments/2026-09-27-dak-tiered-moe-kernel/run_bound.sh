@@ -4,5 +4,6 @@
 #   run_bound.sh <gpu> <binary> <args...>
 set -uo pipefail
 gpu=$1; shift
-node="$(.venv/bin/python agent_space/experiments/2026-07-29-marlin-smem-monopoly/detect_numa.py "${gpu}")"
+repo=/e/project1/profound/alint77/vllm
+node="$("${repo}"/.venv/bin/python "${repo}"/agent_space/experiments/2026-07-29-marlin-smem-monopoly/detect_numa.py "${gpu}")"
 CUDA_VISIBLE_DEVICES=${gpu} exec numactl --cpunodebind="${node}" --membind="${node}" "$@"

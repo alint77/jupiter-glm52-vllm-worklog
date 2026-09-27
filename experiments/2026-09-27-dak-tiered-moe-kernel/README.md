@@ -72,14 +72,56 @@ every token sum (w2) against a dequantized fp32 reference, on hot-only,
 cold-only and mixed MiMo cases, with both the GEMV and mma paths exercised.
 Max relative error is about 3e-4.
 
+## Fixed-clock regime (supersedes the power-cap tuning above)
+
+The clock under sustained MoE load settles at about 1410 MHz: ~567 W on the
+GPU, with the 680 W module cap (Grace included) and the SW power cap active.
+We can't lock clocks without root, but `ncu --clock-control base` pins the SMs
+at 1.41–1.52 GHz, the same regime. From here on, every comparison uses that
+pinned clock, and kernels are optimized for it as the worst case:
+- `fixedclock_sweep.sh` sweeps both kernels.
+- `marlin_mimo.py` runs production `fused_marlin_moe` with MXFP4, MiMo shapes, the tight smem policy, hot SMs×2 / cold SMs×1 grids and the decode token mix.
+- `ncu_sum.py` and `compare_fixedclock.py` summarize the results.
+
+**Production Marlin per tier** (w13 + act + w2 + sum; align kernels, ~8.5 µs, excluded):
+
+| active experts | 1 | 3 | 5 | 7 | 9 | 11 | 13 | 16 |
+|---|---|---|---|---|---|---|---|---|
+| hot (µs) | 50.1 | 60.4 | 81.3 | 103.7 | 125.8 | 144.0 | 175.0 | 209.3 |
+
+Cold: 1 → 79.9, 2 → 127.5, 3 → 179.3, 4 → 225.4 µs.
+
+**Tiered v7 vs Marlin**, with Marlin taken as max(hot, cold), i.e. perfect overlap, its best case (`fixedclock-v7.json`):
+- 1.5× in hot-only cells.
+- 1.3–1.4× with 1 cold.
+- 1.07–1.09× with 2–3 cold, where C2C bounds both kernels.
+
+Trace-weighted over 81% of cases, Marlin takes 150.3 µs per layer and tiered 128.0 µs (1.17×), about 1.5 ms per decode step. The tiered time still leaves out its two activation-prep kernels.
+
+## Accuracy (`acc_check.py`, a real MiMo expert, outlier-heavy activations)
+
+| vs fp64 reference | rms rel | bf16 output equal to bf16(ref) |
+|---|---|---|
+| Marlin numerics (fp32 accumulate, bf16 out) | 1.67e-3 | 99.99% |
+| v7, fp32 out | 1.1e-7 | – |
+| v7, bf16 out | 1.67e-3 | 99.99% |
+| v6 one-token f16x2-FMA path, bf16 out (removed) | 1.71e-3 | 86.5% |
+
+The f16 FMA path was not lossless. At the pinned clock it was also no faster
+than the mma (w13 at 9 hot: 52.4 vs 51.0 µs), so v7 uses the exact mma path for
+every token count. The f16 cross-group accumulation experiment (1% gain) was
+dropped for the same reason.
+
 ## Next
 
-- Consumer energy per byte is the limit (clock around 1.6–1.8 GHz under full load):
-  - fewer ALU ops in the dequant (reg_b costs 6);
-  - cheaper group scaling;
-  - 128-bit shared loads.
-- Pick cold CTAs from (hot, cold) on the device; the current value is a host argument.
-- Run the probability-weighted grid against the Marlin fits.
+- **Cold-bound cells (60% of cases).** w13+w2 at 2 cold takes 115 µs against a
+  98 µs C2C SOL. The fix is one fused layer kernel:
+  - w13 is followed by the act-prep of each expert's route rows, run by the
+    CTA that finishes that expert's last w13 unit;
+  - then w2. The producers stream w2 weights, which don't depend on
+    activations, while w13 drains, so C2C never idles between the GEMMs;
+  - this also removes a launch and the prep kernels.
+- **Hot cells.** At 1.45 GHz the consumer is compute-bound (w13 at 9 hot is 51 µs, 65% of SOL).
 
 ## Files
 

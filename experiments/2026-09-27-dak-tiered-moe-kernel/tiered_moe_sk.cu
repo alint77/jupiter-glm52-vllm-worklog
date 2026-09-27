@@ -1,13 +1,21 @@
-// Tiered mxfp4 MoE GEMM for MiMo decode (v6: stream-K, sync-free epilogue).
+// Tiered mxfp4 MoE GEMM for MiMo decode (v7: stream-K, sync-free epilogue).
+//
+// Numerics match production Marlin: exact e2m1 weights and activations
+// (bf16 -> f16 with a power-of-two per-row scale is exact), exact products in
+// the tensor core, fp32 accumulation. v6 had an f16x2-FMA path for one-token
+// experts; it lost bf16 rounding agreement (86.5% vs 99.99% on a real MiMo
+// expert, acc_check.py) and was no faster at the sustained clock, so it is gone.
+//
+// v7 over v6 trims consumer instructions: slot b sits at bits {s:5, e1:6, e0:1, m:0} so it decodes with
+// two shifts, the 2^6 of the e4m3 placement moves into the activation scale,
+// and weights / activations are laid out for 128-bit shared loads.
 //
 // v6 over v5: CTAs of a tier split that tier's (tile, chunk) units into equal
 // contiguous ranges (stream-K), and every consumer warp adds its partial sums
 // straight into fp32 outputs with red.global.add, so there is no inter-warp
 // reduction, named barrier, or wave-quantization tail. w13 therefore returns
 // raw gate/up sums (silu * up moves into w2's activation prep, which has to
-// run anyway); w2 adds weight * y into the per-token sum. One-token experts
-// (74% in MiMo decode) take an f16x2-FMA path: an mma would waste 7 of its 8
-// columns, and the tensor pipe is what drives the chip into its 680 W cap.
+// run anyway); w2 adds weight * y into the per-token sum.
 //
 // Hopper has no native FP8 mma.sync (ptxas emulates it; see v4), but it has
 // F2FP.F16.E4M3.UNPACK_B: two e4m3 bytes -> f16x2 in one instruction. So:
@@ -15,15 +23,17 @@
 //  * e2m1 is packed as e4m3 bit placements (value * 2^-6, exact, zero and the
 //    0.5 subnormal included): per k16 block a thread's 32-bit word carries its
 //    row-g values in slot a (bits {7,4,3,2} of each byte, 1 AND) and its
-//    row-g+8 values in slot b (bits {6,1,0,5}, a few shifts), in the order
-//    {k 2tq, 2tq+1, 2tq+8, 2tq+9}.
+//    row-g+8 values in slot b (s:5 e1:6 e0:1 m:0, two shifts), in the order
+//    {k 2tq, 2tq+1, 2tq+8, 2tq+9}. Words are [mb][kb/4][lane][kb%4]: one
+//    LDS.128 per lane covers 4 k16 blocks.
 //  * cvt.rn.f16x2.e4m3x2 turns each byte pair into an exact f16x2 A register,
 //    and a native f16 mma.m16n8k16 (f32 accumulate) consumes it.
 //  * Block scales are applied in fp32 once per 32-K group (2 mma):
-//    acc += 2^(e-121) * mma_group.
+//    acc += 2^(e-127) * mma_group (the 2^6 rides in the activation scale).
 //  * Activations are f16 with a per-token power-of-two scale (10-bit mantissa,
-//    more precise than bf16); B layout per token row, per k16 block, per tq:
-//    8 bytes = {b0 = k 2tq..2tq+1, b1 = k 2tq+8..2tq+9}: one LDS.64 per mma.
+//    more precise than bf16); B layout per token row, per 32-K group, per tq:
+//    16 bytes = {kb even: b0, b1; kb odd: b0, b1}, b0 = k 2tq..2tq+1,
+//    b1 = k 2tq+8..2tq+9: one LDS.128 per group.
 //
 //   tiered_moe_sk check | bench <w13|w2> hot cold cold_ctas stages ntok(0=dist)
 
@@ -37,6 +47,7 @@
 #include <cstdint>
 #include <cmath>
 #include <string>
+#include <chrono>
 #include <vector>
 #include <random>
 #include <algorithm>
@@ -56,7 +67,7 @@ constexpr int S_BYTES = TILE_N * GROUPS;              // 2048
 constexpr int CHUNK_BYTES = W_BYTES + S_BYTES;        // 34816
 constexpr int MAX_TOK = 8;
 constexpr int XROW_BYTES = CHUNK_K * 2;               // f16 per chunk per token
-constexpr int XROW_STRIDE = XROW_BYTES + 32;          // rows land 8 banks apart
+constexpr int XROW_STRIDE = XROW_BYTES + 64;          // rows g, g+1 (one LDS.128 phase) on disjoint banks
 constexpr int X_BYTES = MAX_TOK * XROW_STRIDE;
 constexpr int STAGE_BYTES = CHUNK_BYTES + X_BYTES;    // 51200
 #ifndef CONSUMER_WARPS_DEF
@@ -70,9 +81,6 @@ constexpr int SMEM_HEAD = 256;
 #define DIAG 0
 #endif
 
-#ifndef GEMV_PATH
-#define GEMV_PATH 1
-#endif
 #ifndef PROF
 #define PROF 0
 #endif
@@ -150,34 +158,27 @@ __device__ __forceinline__ uint32_t e4m3x2_hi(uint32_t v) {
   asm("{ .reg .b16 lo, hi; mov.b32 {lo, hi}, %1; cvt.rn.f16x2.e4m3x2 %0, hi; }" : "=r"(out) : "r"(v));
   return out;
 }
-__device__ __forceinline__ __half2 u32_h2(uint32_t v) { return *reinterpret_cast<__half2*>(&v); }
 __device__ __forceinline__ uint32_t reg_a(uint32_t w) { return w & 0x9C9C9C9Cu; }
 __device__ __forceinline__ uint32_t reg_b(uint32_t w) {
-  return ((w << 1) & 0x80808080u) | ((w << 3) & 0x18181818u) | ((w >> 3) & 0x04040404u);
+  return ((w << 2) & 0x8C8C8C8Cu) | ((w >> 2) & 0x10101010u);
 }
-// fp32 2^(e-127) * 2^6: undo the e4m3 placement's 2^-6.
-__device__ __forceinline__ float group_scale(uint32_t e) { return __uint_as_float((e + 6u) << 23); }
+// fp32 2^(e-127); the placement's 2^-6 is undone by the activation scale.
+__device__ __forceinline__ float group_scale(uint32_t e) { return __uint_as_float(e << 23); }
 
 // ---------------------------------------------------------------- the kernel
 template <int EPI>
 __device__ __forceinline__ void flush(const Params& p, const Expert& e, int ntok, int n0, int g, int tq, float* acc) {
   constexpr int N = SHAPE_N<EPI>;
-  if (GEMV_PATH && ntok == 1) {
-#pragma unroll
-    for (int i = 0; i < 4; i += 2) {
-      acc[i] += __shfl_xor_sync(0xffffffffu, acc[i], 1);
-      acc[i] += __shfl_xor_sync(0xffffffffu, acc[i], 2);
-    }
-    if (tq) { acc[0] = acc[2] = 0.f; return; }
-  }
 #pragma unroll
   for (int i = 0; i < 4; ++i) {
     const int tok = 2 * tq + (i & 1);
     if (tok < ntok) {
       const int n = n0 + g + (i >> 1) * 8;
-      const float v = acc[i] * p.xscale[e.tok[tok]];
-      if constexpr (EPI == RAW) atomicAdd(&p.y[static_cast<size_t>(e.route[tok]) * N + n], v);
-      else atomicAdd(&p.y[static_cast<size_t>(e.tok[tok]) * N + n], e.wt[tok] * v);
+      // w13 reads token rows and writes route rows; w2 reads route rows and sums into token rows
+      if constexpr (EPI == RAW)
+        atomicAdd(&p.y[static_cast<size_t>(e.route[tok]) * N + n], acc[i] * p.xscale[e.tok[tok]]);
+      else
+        atomicAdd(&p.y[static_cast<size_t>(e.tok[tok]) * N + n], e.wt[tok] * acc[i] * p.xscale[e.route[tok]]);
     }
     acc[i] = 0.f;
   }
@@ -231,7 +232,8 @@ __global__ void __launch_bounds__(THREADS, 1) tiered_moe_sk_kernel(Params p) {
         bulk_g2s(dst, tile + static_cast<size_t>(c) * CHUNK_BYTES, CHUNK_BYTES, &full[s]);
         for (int j = 0; j < e.ntok; ++j)
           bulk_g2s(dst + CHUNK_BYTES + j * XROW_STRIDE,
-                   p.x8 + static_cast<size_t>(e.tok[j]) * xrow_bytes + static_cast<size_t>(c) * XROW_BYTES,
+                   p.x8 + static_cast<size_t>(EPI == RAW ? e.tok[j] : e.route[j]) * xrow_bytes +
+                       static_cast<size_t>(c) * XROW_BYTES,
                    XROW_BYTES, &full[s]);
       }
       if (PROF) { atomicAdd(&g_prof[2], (unsigned long long)pw); atomicAdd(&g_prof[3], (unsigned long long)(clock64() - pt0)); }
@@ -260,51 +262,30 @@ __global__ void __launch_bounds__(THREADS, 1) tiered_moe_sk_kernel(Params p) {
     }
     if (DIAG == 1) { __syncwarp(); if (lane == 0) mbar_arrive(&empty[s]); continue; }
     const unsigned char* st = ring + static_cast<size_t>(s) * STAGE_BYTES;
-    const uint32_t* wq = reinterpret_cast<const uint32_t*>(st) + (mb * KB + 2 * g0) * 32 + lane;
+    const uint4* wq = reinterpret_cast<const uint4*>(st) + (mb * (KB / 4) + g0 / 2) * 32 + lane;
     const uint16_t* sc = reinterpret_cast<const uint16_t*>(st + W_BYTES) + (mb * GROUPS + g0) * 8 + g;
-    if (GEMV_PATH && ntok == 1) {
-      // f16x2 FMAs on rows g and g+8 over this lane's k pairs; f16 sums span one group
-      const uint2* x0 = reinterpret_cast<const uint2*>(st + CHUNK_BYTES) + 2 * g0 * 4 + tq;
+    const uint4* xs = reinterpret_cast<const uint4*>(st + CHUNK_BYTES + g * XROW_STRIDE) + g0 * 4 + tq;
+    const bool has_tok = g < ntok;
 #pragma unroll
-      for (int j = 0; j < GS; ++j) {
-        uint32_t sp = sc[j * 8];
-        __half2 h0 = __float2half2_rn(0.f), h1 = h0;
+    for (int j = 0; j < GS; ++j) {
+      uint32_t sp = sc[j * 8];
+      const uint4 wv = wq[(j / 2) * 32];
+      const uint4 xv = has_tok ? xs[j * 4] : make_uint4(0u, 0u, 0u, 0u);
+      const float zero[4] = {0.f, 0.f, 0.f, 0.f};
+      float d[4];
 #pragma unroll
-        for (int v = 0; v < 2; ++v) {
-          uint32_t w = wq[(2 * j + v) * 32];
-          uint2 xb = x0[(2 * j + v) * 4];
-          uint32_t ra = reg_a(w), rb = reg_b(w);
-          h0 = __hfma2(u32_h2(e4m3x2_lo(ra)), u32_h2(xb.x), h0);
-          h1 = __hfma2(u32_h2(e4m3x2_lo(rb)), u32_h2(xb.x), h1);
-          h0 = __hfma2(u32_h2(e4m3x2_hi(ra)), u32_h2(xb.y), h0);
-          h1 = __hfma2(u32_h2(e4m3x2_hi(rb)), u32_h2(xb.y), h1);
-        }
-        float2 f0 = __half22float2(h0), f1 = __half22float2(h1);
-        acc[0] = fmaf(group_scale(sp & 0xFFu), f0.x + f0.y, acc[0]);
-        acc[2] = fmaf(group_scale(sp >> 8), f1.x + f1.y, acc[2]);
+      for (int v = 0; v < 2; ++v) {
+        const uint32_t w = (j & 1) ? (v ? wv.w : wv.z) : (v ? wv.y : wv.x);
+        const uint2 xb = v ? make_uint2(xv.z, xv.w) : make_uint2(xv.x, xv.y);
+        uint32_t ra = reg_a(w), rb = reg_b(w);
+        uint32_t a[4] = {e4m3x2_lo(ra), e4m3x2_lo(rb), e4m3x2_hi(ra), e4m3x2_hi(rb)};
+        mma_f16(d, a, xb.x, xb.y, v ? d : zero);
       }
-    } else {
-      const uint2* xs = reinterpret_cast<const uint2*>(st + CHUNK_BYTES + g * XROW_STRIDE) + 2 * g0 * 4 + tq;
-      const bool has_tok = g < ntok;
-#pragma unroll
-      for (int j = 0; j < GS; ++j) {
-        uint32_t sp = sc[j * 8];
-        const float zero[4] = {0.f, 0.f, 0.f, 0.f};
-        float d[4];
-#pragma unroll
-        for (int v = 0; v < 2; ++v) {
-          uint32_t w = wq[(2 * j + v) * 32];
-          uint2 xb = has_tok ? xs[(2 * j + v) * 4] : make_uint2(0u, 0u);
-          uint32_t ra = reg_a(w), rb = reg_b(w);
-          uint32_t a[4] = {e4m3x2_lo(ra), e4m3x2_lo(rb), e4m3x2_hi(ra), e4m3x2_hi(rb)};
-          mma_f16(d, a, xb.x, xb.y, v ? d : zero);
-        }
-        float s0 = group_scale(sp & 0xFFu), s1 = group_scale(sp >> 8);
-        acc[0] = fmaf(s0, d[0], acc[0]);
-        acc[1] = fmaf(s0, d[1], acc[1]);
-        acc[2] = fmaf(s1, d[2], acc[2]);
-        acc[3] = fmaf(s1, d[3], acc[3]);
-      }
+      float s0 = group_scale(sp & 0xFFu), s1 = group_scale(sp >> 8);
+      acc[0] = fmaf(s0, d[0], acc[0]);
+      acc[1] = fmaf(s0, d[1], acc[1]);
+      acc[2] = fmaf(s1, d[2], acc[2]);
+      acc[3] = fmaf(s1, d[3], acc[3]);
     }
     __syncwarp();
     if (lane == 0) mbar_arrive(&empty[s]);
@@ -322,7 +303,7 @@ __global__ void __launch_bounds__(THREADS, 1) tiered_moe_sk_kernel(Params p) {
 }
 
 // bf16 rows -> f16 B-fragment layout + per-row power-of-two scale.
-// One block per row. Scale t: x / 2^t puts max|x| at <= 256 (e4m3 max 448).
+// One block per row. Scale t: x / 2^t puts max|x| at <= 2^13.
 __global__ void prep_kernel(const __nv_bfloat16* x, int K, uint8_t* x8, float* xscale) {
   const int row = blockIdx.x;
   const __nv_bfloat16* xr = x + static_cast<size_t>(row) * K;
@@ -341,13 +322,13 @@ __global__ void prep_kernel(const __nv_bfloat16* x, int K, uint8_t* x8, float* x
   m = red[0];
   int t = m > 0.f ? static_cast<int>(ceilf(log2f(m))) - 13 : 0;
   float inv = exp2f(static_cast<float>(-t));
-  if (threadIdx.x == 0) xscale[row] = exp2f(static_cast<float>(t));
+  if (threadIdx.x == 0) xscale[row] = exp2f(static_cast<float>(t + 6));  // x 2^6: weights sit at 2^-6
   __half* out = reinterpret_cast<__half*>(x8 + static_cast<size_t>(row) * K * 2);
   // element k: kb = k/16, r = k%16; tq = (r%8)/2, reg = r/8, half = r%2
   for (int k = threadIdx.x; k < K; k += blockDim.x) {
     float v = __bfloat162float(xr[k]) * inv;
     int kb = k / 16, r = k % 16, tq = (r % 8) / 2, reg = r / 8, h = r % 2;
-    out[(static_cast<size_t>(kb) * 4 + tq) * 4 + reg * 2 + h] = __float2half_rn(v);
+    out[((static_cast<size_t>(kb / 2) * 4 + tq) * 2 + kb % 2) * 4 + reg * 2 + h] = __float2half_rn(v);
   }
 }
 
@@ -369,9 +350,9 @@ __global__ void reference_kernel(const uint8_t* codes, const uint8_t* scales, in
 // ---------------------------------------------------------------- host side
 // Byte encodings of one e2m1 code (s,e1,e0,m) for the two register slots.
 static inline uint8_t enc_a(int c) { return uint8_t(((c & 8) << 4) | ((c & 7) << 2)); }     // {7,4,3,2}
-static inline uint8_t enc_b(int c) {                                                        // {6,1,0,5}
-  int s = (c >> 3) & 1, e = (c >> 1) & 3, m = c & 1;
-  return uint8_t((s << 6) | e | (m << 5));
+static inline uint8_t enc_b(int c) {                                                        // s:5 e1:6 e0:1 m:0
+  int s = (c >> 3) & 1, e1 = (c >> 2) & 1, e0 = (c >> 1) & 1, m = c & 1;
+  return uint8_t((s << 5) | (e1 << 6) | (e0 << 1) | m);
 }
 
 static std::vector<uint8_t> pack(const std::vector<uint8_t>& codes, const std::vector<uint8_t>& scales,
@@ -392,7 +373,7 @@ static std::vector<uint8_t> pack(const std::vector<uint8_t>& codes, const std::v
             const int ks[4] = {k0, k0 + 1, k0 + 8, k0 + 9};
             uint32_t w = 0;
             for (int b = 0; b < 4; ++b) w |= uint32_t(enc_a(code(r0, ks[b])) | enc_b(code(r1, ks[b]))) << (8 * b);
-            reinterpret_cast<uint32_t*>(blob)[(mbk * KB + kb) * 32 + ln] = w;
+            reinterpret_cast<uint32_t*>(blob)[((mbk * (KB / 4) + kb / 4) * 32 + ln) * 4 + kb % 4] = w;
           }
       uint8_t* sb = blob + W_BYTES;   // [mb][group][8 g][row g, row g+8]
       for (int mbk = 0; mbk < 4; ++mbk)
@@ -412,9 +393,12 @@ static Host make_expert(int N, int K, std::mt19937& rng) {
   Host h;
   h.codes.resize(static_cast<size_t>(N) * K);
   h.scales.resize(static_cast<size_t>(N) * (K / 32));
-  std::uniform_int_distribution<int> nib(0, 15), sc(118, 126);
+  // e8m0 exponents drawn from MiMo-V2.6's expert scales (60 tensors, layers 3-68): 111..124
+  std::uniform_int_distribution<int> nib(0, 15);
+  std::discrete_distribution<int> sc({6.61e-06, 3.59e-04, 3.13e-03, 1.43e-02, 3.28e-02, 7.83e-02, 5.18e-02,
+                                      1.49e-02, 1.37e-02, 6.70e-01, 1.20e-01, 4.26e-04, 1.55e-05, 5.51e-07});
   for (auto& v : h.codes) v = nib(rng);
-  for (auto& v : h.scales) v = sc(rng);
+  for (auto& v : h.scales) v = 111 + sc(rng);
   h.packed = pack(h.codes, h.scales, N, K);
   return h;
 }
@@ -481,7 +465,7 @@ static int check(int N, int K, int n_hot, int n_cold, int cold_ctas) {
     CK(cudaMemcpy(d, hs[i].packed.data(), bytes, cudaMemcpyHostToDevice));
     ex[i].w = d;
   }
-  Acts a = make_acts(tokens, K, rng);
+  Acts a = make_acts(std::max(tokens, routes), K, rng);  // w2 reads route rows
   Expert* ed; CK(cudaMalloc(&ed, sizeof(Expert) * n));
   CK(cudaMemcpy(ed, ex.data(), sizeof(Expert) * n, cudaMemcpyHostToDevice));
   // per (expert, token) reference outputs
@@ -493,7 +477,8 @@ static int check(int N, int K, int n_hot, int n_cold, int cold_ctas) {
     CK(cudaMemcpy(cd, hs[i].codes.data(), hs[i].codes.size(), cudaMemcpyHostToDevice));
     CK(cudaMemcpy(sd, hs[i].scales.data(), hs[i].scales.size(), cudaMemcpyHostToDevice));
     for (int j = 0; j < ex[i].ntok; ++j) {
-      reference_kernel<<<(N + 127) / 128, 128>>>(cd, sd, N, K, a.x, ex[i].tok[j], yr);
+      const int xrow = N == SHAPE_N<WSUM> ? ex[i].route[j] : ex[i].tok[j];
+      reference_kernel<<<(N + 127) / 128, 128>>>(cd, sd, N, K, a.x, xrow, yr);
       CK(cudaMemcpy(ref[ex[i].route[j]].data(), yr, sizeof(float) * N, cudaMemcpyDeviceToHost));
     }
   }
@@ -575,6 +560,13 @@ static void bench(int N, int K, int n_hot, int n_cold, int cold_ctas, int stages
     float ms; CK(cudaEventElapsedTime(&ms, e0, e1)); best = std::min(best, ms);
   }
   double us = best * 1000.0 / reps;
+  if (const char* secs = getenv("BENCH_SECS")) {   // sustained run for nvidia-smi power sampling
+    auto t0 = std::chrono::steady_clock::now();
+    while (std::chrono::duration<double>(std::chrono::steady_clock::now() - t0).count() < atof(secs)) {
+      for (int i = 0; i < 50; ++i) CK(cudaGraphLaunch(exec, st));
+      CK(cudaStreamSynchronize(st));
+    }
+  }
   double hb = double(n_hot) * bytes, cb = double(n_cold) * bytes;
   double sol = std::max(hb / 3.626e12, cb / 0.409e12) * 1e6;
   printf("sk %s hot=%2d cold=%d tok=%s cold_ctas=%2d stages=%d: %7.1f us  (SOL %6.1f us, %3.0f%%)  %.0f GB/s total\n",
@@ -593,7 +585,58 @@ static void bench(int N, int K, int n_hot, int n_cold, int cold_ctas, int stages
   }
 }
 
+// Accuracy on given data: <dir>/codes.bin (N*K e2m1 codes), scales.bin (N*K/32
+// e8m0), x.bin (8*K bf16). Writes y_gemv.bin (8 one-token experts) and
+// y_mma.bin (one 8-token expert), both [8][N] fp32.
+template <int EPI>
+static void accuracy(const std::string& dir) {
+  constexpr int N = SHAPE_N<EPI>, K = SHAPE_K<EPI>, T = 8;
+  auto load = [&](const char* name, size_t bytes) {
+    std::vector<uint8_t> v(bytes);
+    FILE* f = fopen((dir + "/" + name).c_str(), "rb");
+    if (!f || fread(v.data(), 1, bytes, f) != bytes) { printf("cannot read %s\n", name); exit(1); }
+    fclose(f);
+    return v;
+  };
+  std::vector<uint8_t> codes = load("codes.bin", size_t(N) * K), sc = load("scales.bin", size_t(N) * K / 32);
+  std::vector<uint8_t> xb = load("x.bin", size_t(T) * K * 2);
+  std::vector<uint8_t> packed = pack(codes, sc, N, K);
+  uint8_t* w; CK(cudaMalloc(&w, packed.size())); CK(cudaMemcpy(w, packed.data(), packed.size(), cudaMemcpyHostToDevice));
+  Acts a;
+  CK(cudaMalloc(&a.x, xb.size())); CK(cudaMemcpy(a.x, xb.data(), xb.size(), cudaMemcpyHostToDevice));
+  CK(cudaMalloc(&a.x8, xb.size())); CK(cudaMalloc(&a.xs, T * sizeof(float)));
+  prep_kernel<<<T, 256>>>(a.x, K, a.x8, a.xs);
+  float* y; CK(cudaMalloc(&y, sizeof(float) * T * N));
+  for (int mode = 0; mode < 2; ++mode) {
+    std::vector<Expert> ex(mode == 0 ? T : 1);
+    for (int i = 0; i < (int)ex.size(); ++i) {
+      ex[i].w = w;
+      ex[i].ntok = mode == 0 ? 1 : T;
+      for (int j = 0; j < ex[i].ntok; ++j) {
+        int t = mode == 0 ? i : j;
+        ex[i].tok[j] = t; ex[i].route[j] = t; ex[i].wt[j] = 1.f;
+      }
+    }
+    Expert* ed; CK(cudaMalloc(&ed, sizeof(Expert) * ex.size()));
+    CK(cudaMemcpy(ed, ex.data(), sizeof(Expert) * ex.size(), cudaMemcpyHostToDevice));
+    CK(cudaMemset(y, 0, sizeof(float) * T * N));
+    Params p{ed, (int)ex.size(), nullptr, 0, 0, N, K, a.x8, a.xs, y, 4};
+    launch<EPI>(p, 132, 0);
+    CK(cudaDeviceSynchronize());
+    std::vector<float> out(size_t(T) * N);
+    CK(cudaMemcpy(out.data(), y, sizeof(float) * out.size(), cudaMemcpyDeviceToHost));
+    FILE* f = fopen((dir + (mode == 0 ? "/y_gemv.bin" : "/y_mma.bin")).c_str(), "wb");
+    fwrite(out.data(), sizeof(float), out.size(), f);
+    fclose(f);
+  }
+  printf("accuracy outputs written to %s\n", dir.c_str());
+}
+
 int main(int argc, char** argv) {
+  if (argc >= 4 && !strcmp(argv[1], "accuracy")) {
+    if (!strcmp(argv[2], "w13")) accuracy<RAW>(argv[3]); else accuracy<WSUM>(argv[3]);
+    return 0;
+  }
   if (argc < 2) { printf("usage: tiered_moe_sk check | bench <w13|w2> hot cold cold_ctas stages ntok\n"); return 1; }
   if (!strcmp(argv[1], "check")) {
     int rc = 0;
