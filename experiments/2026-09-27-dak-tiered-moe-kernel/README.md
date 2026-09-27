@@ -98,6 +98,12 @@ Cold: 1 → 79.9, 2 → 127.5, 3 → 179.3, 4 → 225.4 µs.
 
 Trace-weighted over 81% of cases, Marlin takes 150.3 µs per layer and tiered 128.0 µs (1.17×), about 1.5 ms per decode step. The tiered time still leaves out its two activation-prep kernels.
 
+**Current v7** (e5m2/PRMT decode, unconditional activation loads;
+`fixedclock-v71.json`):
+- Trace-weighted: Marlin 150.3 µs vs tiered 124.0 µs per layer (1.21×), about 1.8 ms per decode step.
+- 1.4–1.6× when hot dominates, e.g. (9,1) 125.8 → 85.4 µs and (11,0) 144.0 → 90.4 µs.
+- 1.06–1.09× in C2C-bound cells, e.g. (9,2) 127.5 → 116.9 µs.
+
 ## Accuracy (`acc_check.py`, a real MiMo expert, outlier-heavy activations)
 
 | vs fp64 reference | rms rel | bf16 output equal to bf16(ref) |

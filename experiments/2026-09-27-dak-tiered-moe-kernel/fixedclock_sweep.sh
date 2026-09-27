@@ -24,8 +24,10 @@ jobs_for_gpu() {
   done
 }
 all=()
-for n in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 16; do all+=("marlin,hot,${n}"); done
-for n in 1 2 3 4 5; do all+=("marlin,cold,${n}"); done
+if [[ -z ${SKIP_MARLIN:-} ]]; then   # SKIP_MARLIN=1: kernel grid only (copy marlin-*.csv in)
+  for n in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 16; do all+=("marlin,hot,${n}"); done
+  for n in 1 2 3 4 5; do all+=("marlin,cold,${n}"); done
+fi
 for g in w13 w2; do
   for h in 0 3 5 7 9 11 13 16; do all+=("sk,${g},${h},0,0"); done
   for h in 0 5 7 9 11 13; do for c in 1 2 3 4; do
