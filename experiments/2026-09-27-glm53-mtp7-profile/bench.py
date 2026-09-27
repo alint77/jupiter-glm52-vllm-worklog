@@ -39,17 +39,25 @@ def one(prompt: str, max_tokens: int) -> dict:
     return mimo.rate(first, last)
 
 
+def ttft(prompt: str) -> float:
+    """Wall time of a one-token request: prefill plus one sampling step."""
+    start = time.perf_counter()
+    mimo.completion(prompt, 1, 0.0)
+    return time.perf_counter() - start
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", type=Path, required=True)
-    parser.add_argument("--reps", type=int, default=3)
+    parser.add_argument("--reps", type=int, default=4)
     parser.add_argument("--contexts", nargs="+", default=["short", "96k"])
     parser.add_argument("--max-tokens", type=int, default=1500)
+    parser.add_argument("--ttft-reps", type=int, default=0)  # decode is the focus
     args = parser.parse_args()
     harness.MODEL = "glm53-w4a16-tiered"
     one(prompt_for("short"), 64)  # warm-up
     result = {}
-    for context in args.contexts:
+    for context in args.contexts if args.reps else ():
         prompt = prompt_for(context)
         runs = [one(prompt, args.max_tokens) for _ in range(args.reps)]
         result[context] = {
@@ -58,6 +66,16 @@ def main() -> None:
             "tokens_per_step": runs[0]["tokens_per_step"],
         }
         print(context, json.dumps(result[context]), flush=True)
+    for context in args.contexts if args.ttft_reps else ():
+        prompt = prompt_for(context)
+        times = [ttft(prompt) for _ in range(args.ttft_reps if context == "short" else 2)]
+        if context == "short":  # a pause between samples, so each starts idle
+            times = []
+            for _ in range(args.ttft_reps):
+                times.append(ttft(prompt))
+                time.sleep(0.5)
+        result[f"ttft_{context}"] = {"runs": times, "median_s": statistics.median(times)}
+        print(f"ttft_{context}", json.dumps(result[f"ttft_{context}"]), flush=True)
     args.out.write_text(json.dumps(result, indent=2) + "\n")
 
 

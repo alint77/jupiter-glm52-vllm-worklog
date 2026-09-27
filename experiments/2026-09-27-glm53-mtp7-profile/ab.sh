@@ -22,7 +22,7 @@ for arm in "$@"; do
   done
   if [[ "${ok}" == true ]]; then
     grep -m1 -ohE "Tiered MoE residency: [0-9]+ hot" "${E}/server-ab-${tag}-${name}.err" || true
-    .venv/bin/python "${E}/bench.py" --out "${E}/ab-${tag}-${name}.json" || true
+    .venv/bin/python "${E}/bench.py" --out "${E}/ab-${tag}-${name}.json" ${BENCH_ARGS:-} || true
   else
     echo "server failed"; grep -ohE "[A-Za-z]*Error: .{0,160}" "${E}/server-ab-${tag}-${name}.err" | sort -u | head -3
   fi

@@ -18,21 +18,28 @@ export TRITON_CACHE_DIR=${c}/triton
 export TORCHINDUCTOR_CACHE_DIR=${c}/inductor
 export FLASHINFER_CACHE_DIR=${c}/flashinfer
 export TIERED_MOE_MODEL_PATH=/e/fscratch/profound/${USER}/models/GLM-5.3-W4A16
-export TIERED_MOE_PLACEMENT_PROFILE=${PWD}/agent_space/profiles/glm53-w4a16-2496.json
-export TIERED_MOE_HBM_RESERVE_GB="${RESERVE_GB:-10}"
+export TIERED_MOE_PLACEMENT_PROFILE=${PWD}/agent_space/profiles/${PROFILE:-glm53-w4a16-2496.json}
+export TIERED_MOE_HBM_RESERVE_GB="${RESERVE_GB:-7}"  # 10 was for DFlash2's draft KV
 export VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS=1024
 # [1, 8]: 8 is the verify step; 1 is MTP's draft-decode passes (positions
 # 1..K-1, one token each at c=1). Without a size-1 entry the speculator's
 # decode graph is silently skipped and those passes run eagerly.
 export TIERED_MOE_COMPILATION_CONFIG="{\"mode\":3,\"cudagraph_mode\":\"FULL_AND_PIECEWISE\",\"cudagraph_capture_sizes\":[${CAPTURE_SIZES:-1,8}],\"compile_sizes\":[8],\"cudagraph_num_of_warmups\":1,\"pass_config\":{\"fuse_allreduce_rms\":false}}"
 extra=()
+# REPLICAS=exact activates the profile's Grace replicas (985 per rank in
+# glm53-w4a16-2496.json). Replicas add pinned Grace the planner does not see
+# each worker's own share of, hence the larger host reserve (as for MiMo).
+if [[ -n "${REPLICAS:-}" ]]; then
+  extra+=(--tiered-moe-replica-assignment "${REPLICAS}"
+          --tiered-moe-host-reserve-gb "${HOST_RESERVE_GB:-16}")
+fi
 if [[ -n "${TRACE_ROOT:-}" ]]; then
   mkdir -p "${TRACE_ROOT}"
   extra+=(--profiler-config "{\"profiler\":\"torch\",\"torch_profiler_dir\":\"${TRACE_ROOT}\",\"torch_profiler_with_stack\":false,\"torch_profiler_record_shapes\":true,\"ignore_frontend\":true}")
 fi
 exec agent_space/experiments/2026-07-17-end-to-end-tuning/run-server.sh \
   --speculative-config '{"method":"mtp","num_speculative_tokens":7}' \
-  --decode-context-parallel-size 1 \
+  --decode-context-parallel-size "${DCP:-1}" \
   --max-num-seqs 1 \
   --gpu-memory-utilization 0.90 \
   --max-model-len 400000 \

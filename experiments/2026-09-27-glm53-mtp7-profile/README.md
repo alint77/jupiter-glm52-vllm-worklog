@@ -90,8 +90,9 @@ Context length does not move the step: 288K costs what short does.
    0.5), but the time saved turns into waiting for the slowest rank. It is a
    prerequisite for in-kernel time balancing, not a win by itself.
 4. **The DSA indexer does grow with context** (0.28 -> 1.28 ms), but is small.
-5. Prefill ran at **9,565 tok/s** (96K in ~10 s), against 4,145 tok/s in the
-   09-04 MTP3 profile.
+5. ~~Prefill ran at 9,565 tok/s~~ -- wrong: that was the server's 10 s
+   logging average. Timed directly (`bench.py`), a 96K prompt takes 19.7 s to
+   first token, ~4.9K tok/s, against 4,145 tok/s (23.2 s) on 09-04.
 
 ### MTP drafted eagerly: a capture-size gap, not a choice
 
@@ -147,3 +148,79 @@ squares over all 24 runs, `step_ms ~ tokens_per_step + arm + node + context`:
   than any other effect in the table.
 - The earlier one-kernel vs Marlin comparison used single sampled windows and
   is inside this spread; it needs the same treatment before being quoted.
+
+## Cold imbalance: activating the replicas (jobs 2097277, 2097278)
+
+The production profile `glm53-w4a16-2496.json` already carries **985 Grace
+replicas per rank**; the launchers leave assignment off. The earlier campaign's
+OOMs with replicas came from PyTorch's pinned allocator rounding every cold
+tier up to a power of two; cold tiers are now pinned with `cudaHostRegister`
+(the MiMo work), so replicas cost their logical size (20.3 MiB each). The
+campaign's pinned-rounding accounting patch is therefore obsolete and was not
+applied: it would charge phantom bytes and refuse valid plans.
+
+Offline first (`glm_replicas.py`, 5,173 held-out 8-position steps, units are
+active cold experts on the busiest rank summed over layers):
+
+| replicas | busiest rank | mean rank | excess |
+|---|---|---|---|
+| none | 354.8 | 226.7 | 128.0 (~7 ms at ~55 us per cold expert) |
+| profile's 985 | 276.0 | 226.7 | 49.3 |
+| greedy 1500 | 266.6 | 226.7 | 39.8 |
+| greedy 2000 | 263.7 | 226.7 | 37.0 |
+
+Served, two nodes, arms in opposite orders, greedy, fitted at matched
+acceptance (`fit_ab.py off rA rB`, 48 runs, residual sd 0.69 ms):
+
+| vs replicas off (MTP7, [1, 8], reserve 7) | ms per step |
+|---|---|
+| exact replicas, Triton assignment, Marlin | **-4.09 +- 0.25** |
+| **exact replicas + INT4 one-kernel, balanced by time in the kernel** | **-5.51 +- 0.25** |
+| node 2097278 vs 2097277 | +0.16 +- 0.20 |
+
+The offline count model predicted ~-4.3 ms for exact; the one-kernel path adds
+~1.4 ms on top even with MiMo's cost table (GLM's per-layer loads sit inside it;
+INT4 experts are ~6% larger).
+
+**The old TTFT blocker was a measurement artifact.** With back-to-back requests
+the short-prompt TTFT is bimodal (0.195 / 0.235 s) and replicas land in the slow
+mode more often; with a 0.5 s pause between 30 samples per arm it is 192-194 ms
+off against ~196 ms exact, i.e. ~+3 ms, and the first request after boot is
+slow in every arm. (Prefill is not the focus now; recorded for the rollout.)
+
+Grace headroom, measured per NUMA node in the off arm: ~56 GiB anonymous (cold
+tier ~47 + worker), ~45-50 GiB reclaimable page cache, 8-9 GiB free of 119 --
+room for roughly 2,000-2,400 replicas per rank. 985 vs 2000 is measured next
+(`glm53-w4a16-2496-r2000.json`, greedy minmax-cold on the training split).
+
+## Verify-step GEMMs at M=8 (`bench_gemm.py`, bench-gemm-2097277.txt)
+
+Per rank the verify step reads ~10.9 GB of bf16 weights -- more than the 7.8 GiB
+an all-sharded count gives, because `fused_qkv_a_proj`, the router and the
+indexer projections are replicated. Plain `F.linear` at M=8, 64 calls in a CUDA
+graph over rotating weights, streaming read 3.65 TB/s:
+
+| projection | us | floor | eff. | x/step | ms/step (floor) |
+|---|---|---|---|---|---|
+| o_proj 4096x6144 | 17.8 | 13.8 | 78% | 78 | 1.38 (1.08) |
+| fused_qkv_a 6144x2624 (replicated) | 13.5 | 8.8 | 66% | 78 | 1.05 (0.69) |
+| shared gate_up 6144x1024 | 7.8 | 3.5 | 44% | 75 | 0.58 (0.26) |
+| shared down 512x6144 | 4.1 | 1.7 | 42% | 75 | 0.31 (0.13) |
+| q_b 2048x4096 | 7.2 | 4.6 | 64% | 78 | 0.56 (0.36) |
+| indexer wq_b / wk (replicated) | 7.6 / 5.6 | 4.6 / 0.5 | 61% / 10% | 21 | 0.28 (0.11) |
+| lm_head 6144x38720 | 140 | 131 | 93% | 1 | 0.14 |
+
+The fp32 router row of the raw file (19.5 us, 9%) is not what serving runs:
+`GateLinear` sends M <= 16 to the cute-DSL `ll_bf16` GEMM, ~4 us x 75 in the
+trace. Realistic GEMM headroom is ~1.2-1.8 ms/step, mostly the small-N shared
+expert, the replicated qkv_a and o_proj.
+
+## Attention: 16 heads padded to 64
+
+`FlashMLASparseImpl`: the FP8 sparse decode kernel supports only h_q = 64 or
+128, so each GPU's 16 heads are padded to 64 -- four times the attention work.
+The 8-token verify reads only ~10.7 MB of KV per layer (~0.25 ms/step at HBM
+speed) yet the kernel takes ~1.4 ms plus a 0.6 ms combine. Under DCP4 the
+queries are all-gathered to 64 real heads and each GPU reads a quarter of the
+(still on-GPU) KV, which also frees ~16 GiB per GPU for hot experts. Being
+measured (`ab-dA`).

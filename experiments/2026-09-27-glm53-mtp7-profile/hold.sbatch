@@ -10,4 +10,4 @@
 
 # Standby allocation: work is run on it with `srun --jobid=<id> --overlap`.
 echo "holding $(hostname) from $(date +%T)"
-sleep 3590
+sleep infinity  # the job time limit ends the hold
