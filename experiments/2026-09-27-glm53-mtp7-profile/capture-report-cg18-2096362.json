@@ -1,0 +1,20 @@
+{
+  "decode-96k": {
+    "prompt_tokens": 96005.0,
+    "unprofiled": {
+      "seconds": 6.004,
+      "steps": 149.0,
+      "tokens": 313.0,
+      "step_ms": 40.296,
+      "tokens_per_step": 2.101
+    },
+    "profiled_window": {
+      "seconds": 2.005,
+      "steps": 48.0,
+      "tokens": 129.0,
+      "step_ms": 41.768,
+      "tokens_per_step": 2.688
+    },
+    "trace_files": 4
+  }
+}

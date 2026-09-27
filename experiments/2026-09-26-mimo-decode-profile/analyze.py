@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Break down MiMo-V2.6 decode steps from torch-profiler traces.
+"""Break down tiered-MoE decode steps (MiMo-V2.6, GLM-5.3) from torch-profiler traces.
 
 Kernels are attributed to a step by launch correlation (the CPU launch that
 produced them), not by where their GPU timestamps fall. Within a step:
@@ -38,8 +38,8 @@ RANK_RE = re.compile(r"_rank(\d+)\.")
 CATEGORIES = (
     # the one-kernel tiered decode path (VLLM_TIERED_MOE_DECODE_KERNEL=1):
     # both tiers inside one launch per projection
-    ("MoE one-kernel w13", lambda e: "tiered_decode" in e["name"] and "gemm_kernel<0>" in e["name"]),
-    ("MoE one-kernel w2", lambda e: "tiered_decode" in e["name"] and "gemm_kernel<1>" in e["name"]),
+    ("MoE one-kernel w13", lambda e: "tiered_decode" in e["name"] and "gemm_kernel<0" in e["name"]),
+    ("MoE one-kernel w2", lambda e: "tiered_decode" in e["name"] and "gemm_kernel<1" in e["name"]),
     ("MoE one-kernel route/act/finalize", lambda e: "tiered_decode" in e["name"]),
     ("MoE hot Marlin (HBM)", lambda e: "marlin_moe" in e["name"] and grid(e) == 264),
     ("MoE cold Marlin (Grace)", lambda e: "marlin_moe" in e["name"]),
@@ -49,8 +49,13 @@ CATEGORIES = (
     ("MoE routing/align/sum/act", lambda e: any(k in e["name"] for k in (
         "grouped_topk", "moe_align", "count_and_sort", "moe_sum", "act_and_mul",
         "_assign_kernel", "_route_fingerprint"))),
+    # GLM's DSA: the indexer scores every cached token, then picks 2048
+    ("DSA indexer", lambda e: any(k in e["name"] for k in (
+        "mqa_logits", "topKPerRow", "top_k_per_row", "indexer",
+        "convert_req_index_to_global"))),
     ("attention", lambda e: any(k in e["name"] for k in (
-        "flash", "Flash", "reshape_and_cache", "prepare_varlen", "slot_mapping"))),
+        "flash", "Flash", "reshape_and_cache", "prepare_varlen", "slot_mapping",
+        "MLA", "mla"))),
     ("dense GEMM", lambda e: any(k in e["name"] for k in (
         "nvjet", "deep_gemm", "cutlass", "splitKreduce", "fp8_blockscale", "gemm"))),
     ("norm/rope/elementwise", lambda e: True),

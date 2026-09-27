@@ -1,0 +1,20 @@
+{
+  "decode-short": {
+    "prompt_tokens": 512.0,
+    "unprofiled": {
+      "seconds": 6.005,
+      "steps": 138.0,
+      "tokens": 295.0,
+      "step_ms": 43.511,
+      "tokens_per_step": 2.138
+    },
+    "profiled_window": {
+      "seconds": 2.004,
+      "steps": 41.0,
+      "tokens": 117.0,
+      "step_ms": 48.883,
+      "tokens_per_step": 2.854
+    },
+    "trace_files": 4
+  }
+}

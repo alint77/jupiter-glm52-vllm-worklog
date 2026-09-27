@@ -1,0 +1,56 @@
+{
+  "decode-short": {
+    "prompt_tokens": 512.0,
+    "unprofiled": {
+      "seconds": 6.004,
+      "steps": 130.0,
+      "tokens": 323.0,
+      "step_ms": 46.184,
+      "tokens_per_step": 2.485
+    },
+    "profiled_window": {
+      "seconds": 2.004,
+      "steps": 34.0,
+      "tokens": 77.0,
+      "step_ms": 58.94,
+      "tokens_per_step": 2.265
+    },
+    "trace_files": 4
+  },
+  "decode-96k": {
+    "prompt_tokens": 96005.0,
+    "unprofiled": {
+      "seconds": 6.005,
+      "steps": 148.0,
+      "tokens": 444.0,
+      "step_ms": 40.572,
+      "tokens_per_step": 3.0
+    },
+    "profiled_window": {
+      "seconds": 2.004,
+      "steps": 32.0,
+      "tokens": 79.0,
+      "step_ms": 62.634,
+      "tokens_per_step": 2.469
+    },
+    "trace_files": 4
+  },
+  "decode-290k": {
+    "prompt_tokens": 288050.0,
+    "unprofiled": {
+      "seconds": 6.004,
+      "steps": 146.0,
+      "tokens": 412.0,
+      "step_ms": 41.125,
+      "tokens_per_step": 2.822
+    },
+    "profiled_window": {
+      "seconds": 2.005,
+      "steps": 31.0,
+      "tokens": 72.0,
+      "step_ms": 64.663,
+      "tokens_per_step": 2.323
+    },
+    "trace_files": 4
+  }
+}

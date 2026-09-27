@@ -1,0 +1,2 @@
+50M	/e/project1/profound/alint77/traces/glm53-mtp7-marlin-r7-2096391/decode-96k
+50M	/e/project1/profound/alint77/traces/glm53-mtp7-marlin-r7-2096391/decode-short
