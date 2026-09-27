@@ -11,7 +11,8 @@
 
 # MiMo-V2.6-Pro-RL tiered MoE as a claude-local.sh backend: 250K context,
 # c=1, DFlash k=7, 3 GB HBM reserve, text only, cold-expert prefill prefetch,
-# routing-profile placement with 1500 replicas per rank (serve.sbatch defaults).
+# routing-profile placement with 1500 replicas per rank, one-kernel decode MoE
+# that assigns the replicas itself (serve.sbatch defaults).
 #
 # The serving flags are serve.sbatch's (the measured best config, see the
 # README), run in the background here instead of exec'd so the two cannot

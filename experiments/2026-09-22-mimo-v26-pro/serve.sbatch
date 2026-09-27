@@ -16,9 +16,12 @@
 # rank keeps 1500 Grace copies of other ranks' busy cold experts, assigned per
 # layer at decode time to balance cold work (exact replica assignment). Decode
 # step 34.7 ms (linear) -> 25.0 (profile) -> 20.7 (with replicas and the
-# non-sequence-parallel MoE path, which is automatic under tiered MoE).
+# non-sequence-parallel MoE path, which is automatic under tiered MoE) -> 18.4
+# (one-kernel decode MoE) -> 17.1 (replicas assigned inside that kernel,
+# balancing predicted per-GPU time; ../2026-09-27-dak-tiered-moe-kernel).
 #   MIMO_PROFILE=   linear placement (no profile)
 #   MIMO_REPLICAS=  keep the profile but no replica assignment
+#   VLLM_TIERED_MOE_DECODE_KERNEL=0  decode MoE on Marlin instead
 #
 # Differences from the GLM launcher, all forced by the architecture:
 #   * kv-cache-dtype auto, not fp8_ds_mla -- that dtype is MLA-only and MiMo is
@@ -46,6 +49,10 @@ export PYTHONFAULTHANDLER=1
 # Stage each layer's cold experts into a 784 MiB HBM slot during prefill
 # chunks (>= 1024 tokens; decode batches are at most 8): -17..-23% TTFT.
 export VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS="${VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS:-1024}"
+# Decode steps (<= 8 tokens) run MoE as one kernel over both tiers, which also
+# assigns the replicas: -1.8 then -1.0 ms per step against Marlin. An explicit
+# 0 (the A/B's Marlin arm) still wins.
+export VLLM_TIERED_MOE_DECODE_KERNEL="${VLLM_TIERED_MOE_DECODE_KERNEL:-1}"
 reserve_gb="${MIMO_HBM_RESERVE_GB:-3}"
 profile="${MIMO_PROFILE-${PWD}/agent_space/profiles/mimo26-profile-3827-r1500.json}"
 replicas="${MIMO_REPLICAS-exact}"
