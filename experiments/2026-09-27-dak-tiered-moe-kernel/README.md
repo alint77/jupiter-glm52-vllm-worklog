@@ -112,6 +112,60 @@ than the mma (w13 at 9 hot: 52.4 vs 51.0 µs), so v7 uses the exact mma path for
 every token count. The f16 cross-group accumulation experiment (1% gain) was
 dropped for the same reason.
 
+## Negative result: mixing tiers inside every CTA
+
+Tried giving every CTA an equal, evenly interleaved share of both tiers, with a
+separate accumulator per tier, so all 132 SMs share the dequant and the C2C
+demand. At the pinned clock it was worse: w13 (9,2) took 82.3 µs vs 75.9
+dedicated, and w2 48.6 vs 42.7.
+- With every CTA pulling cold chunks, about 4.5 MB is queued on C2C, so each cold chunk waits ~11 µs. That is more than the 4-stage ring's ~7 µs of prefetch, and the in-order ring stalls behind it.
+- The scheduler also cost 7% on hot-only runs.
+
+Dedicated cold CTAs stay.
+
+## What limits v7 at the pinned clock (w13, 9 hot / 33 hot)
+
+| run | 9 hot | 33 hot |
+|---|---|---|
+| loads only (DIAG=1) | 36.9 µs | 129.6 µs (94% SOL) |
+| compute only (DIAG=2) | 44.0 µs | 146.1 µs |
+| full | 51.2 µs | 182.7 µs |
+
+The consumer is the bottleneck, and overlapping it with the loads costs a
+further ~25%.
+- **ncu at the pinned clock:** issue active 55%, ALU pipe 61%, tensor 16%.
+- **Stall samples:** ~58% are issuing, not-selected or math-throttle. The long-scoreboard stalls sit at the full-barrier TRYWAIT.
+- **Issue costs** (`pipe_rate.cu`, cycles per warp-instruction per SMSP): F2FP 2.63, LOP3 2.06, PRMT 2.06, HMUL2 1.13, IMAD.HI 4.0.
+
+Tried, and the reason each did or didn't help:
+
+| change | result | why |
+|---|---|---|
+| e2m1 at e5m2 bit positions (value × 2^-14), f16x2 built by PRMT | exact; equal speed | kept as the default |
+| unconditional x loads (stale rows only feed unflushed columns) | −3–4% hot | kept: drops 2 CS2R and a predicate per group |
+| 16 consumer warps | compute-only 146 → 164 µs | a shared per-SM resource saturates |
+| FP8 wgmma | not pursued | Hopper's FP8 tensor-core accumulator keeps ~14 bits (DeepSeek-V3), and activations would need a hi/lo split: lossy like the removed f16 path |
+
+## Negative result so far: one fused layer kernel (`tiered_moe_layer.cu`, v8)
+
+A single cooperative launch runs w13, then silu×up, then w2. Correctness is
+verified end to end against fp32, including a second pass that confirms the
+in-kernel reset; error is 2.3e-4 max relative.
+- **Handoff:** w13 tiles interleave 32 gate rows with their 32 up rows. The warp that completes a tile queues it for a helper warp, which writes f16 activations with a per-(route, 32-group) scale, applied in fp32 next to the e8m0 weight scale. w2's producer streams weight chunks ahead and adds rows once the 32 tiles behind that K half are done.
+- **Speed:** still slower than the two v7 kernels at the pinned clock:
+
+| cell | fused | separate v7 |
+|---|---|---|
+| (9,0) | 121–142 µs | 78 µs |
+| (0,2) | 127 µs | 115 µs |
+
+- **Why:**
+  - Per-flush fences and tile counters cost more than the one kernel boundary they remove.
+  - act latency is 2–7 µs per tile.
+  - The ring holds only ~8 µs of C2C prefetch across the w13→w2 transition.
+  - Expert-major ordering, which should have made early experts ready early, made hot worse by splitting tiles across more CTAs.
+- **Status:** kept for reference, not the path forward as is.
+
 ## Next
 
 - **Cold-bound cells (60% of cases).** w13+w2 at 2 cold takes 115 µs against a

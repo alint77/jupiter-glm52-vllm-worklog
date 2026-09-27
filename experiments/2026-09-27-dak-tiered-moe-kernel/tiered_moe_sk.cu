@@ -147,13 +147,34 @@ __device__ __forceinline__ void mma_f16(float* d, const uint32_t* a, uint32_t b0
       : "r"(a[0]), "r"(a[1]), "r"(a[2]), "r"(a[3]), "r"(b0), "r"(b1),
         "f"(c[0]), "f"(c[1]), "f"(c[2]), "f"(c[3]));
 }
-// Two e4m3 in the low / high 16 bits -> f16x2.
-__device__ __forceinline__ uint32_t e4m3x2_lo(uint32_t v) {
+#ifndef E5M2
+#define E5M2 1
+#endif
+#if E5M2
+// e2m1 at e5m2 bit positions (value * 2^-14, exact; 0.5 is an f16 subnormal):
+// e5m2 is the high byte of an f16, so a byte permute with zeros builds the
+// f16x2 A register (PRMT, 2.1 cycles/warp-instr vs 2.6 for the e4m3 F2FP).
+// Slot a: s:7 e1:3 e0:2 m:1. Slot b: s:6 e1:5 e0:4 m:0.
+constexpr int PLACEMENT_EXP = 14;
+__device__ __forceinline__ uint32_t f16x2_lo(uint32_t v) {
+  uint32_t out; asm("prmt.b32 %0, %1, 0, 0x1404;" : "=r"(out) : "r"(v)); return out;
+}
+__device__ __forceinline__ uint32_t f16x2_hi(uint32_t v) {
+  uint32_t out; asm("prmt.b32 %0, %1, 0, 0x3424;" : "=r"(out) : "r"(v)); return out;
+}
+__device__ __forceinline__ uint32_t reg_a(uint32_t w) { return w & 0x8E8E8E8Eu; }
+__device__ __forceinline__ uint32_t reg_b(uint32_t w) {
+  return ((w << 1) & 0x82828282u) | ((w >> 2) & 0x0C0C0C0Cu);
+}
+#else
+// e2m1 at e4m3 bit positions (value * 2^-6): two e4m3 in the low / high 16 bits -> f16x2.
+constexpr int PLACEMENT_EXP = 6;
+__device__ __forceinline__ uint32_t f16x2_lo(uint32_t v) {
   uint32_t out;
   asm("{ .reg .b16 lo, hi; mov.b32 {lo, hi}, %1; cvt.rn.f16x2.e4m3x2 %0, lo; }" : "=r"(out) : "r"(v));
   return out;
 }
-__device__ __forceinline__ uint32_t e4m3x2_hi(uint32_t v) {
+__device__ __forceinline__ uint32_t f16x2_hi(uint32_t v) {
   uint32_t out;
   asm("{ .reg .b16 lo, hi; mov.b32 {lo, hi}, %1; cvt.rn.f16x2.e4m3x2 %0, hi; }" : "=r"(out) : "r"(v));
   return out;
@@ -162,7 +183,8 @@ __device__ __forceinline__ uint32_t reg_a(uint32_t w) { return w & 0x9C9C9C9Cu; 
 __device__ __forceinline__ uint32_t reg_b(uint32_t w) {
   return ((w << 2) & 0x8C8C8C8Cu) | ((w >> 2) & 0x10101010u);
 }
-// fp32 2^(e-127); the placement's 2^-6 is undone by the activation scale.
+#endif
+// fp32 2^(e-127); the placement's 2^-PLACEMENT_EXP is undone by the activation scale.
 __device__ __forceinline__ float group_scale(uint32_t e) { return __uint_as_float(e << 23); }
 
 // ---------------------------------------------------------------- the kernel
@@ -265,12 +287,12 @@ __global__ void __launch_bounds__(THREADS, 1) tiered_moe_sk_kernel(Params p) {
     const uint4* wq = reinterpret_cast<const uint4*>(st) + (mb * (KB / 4) + g0 / 2) * 32 + lane;
     const uint16_t* sc = reinterpret_cast<const uint16_t*>(st + W_BYTES) + (mb * GROUPS + g0) * 8 + g;
     const uint4* xs = reinterpret_cast<const uint4*>(st + CHUNK_BYTES + g * XROW_STRIDE) + g0 * 4 + tq;
-    const bool has_tok = g < ntok;
 #pragma unroll
     for (int j = 0; j < GS; ++j) {
       uint32_t sp = sc[j * 8];
       const uint4 wv = wq[(j / 2) * 32];
-      const uint4 xv = has_tok ? xs[j * 4] : make_uint4(0u, 0u, 0u, 0u);
+      // rows g >= ntok hold stale data; they only feed output columns never flushed
+      const uint4 xv = xs[j * 4];
       const float zero[4] = {0.f, 0.f, 0.f, 0.f};
       float d[4];
 #pragma unroll
@@ -278,7 +300,7 @@ __global__ void __launch_bounds__(THREADS, 1) tiered_moe_sk_kernel(Params p) {
         const uint32_t w = (j & 1) ? (v ? wv.w : wv.z) : (v ? wv.y : wv.x);
         const uint2 xb = v ? make_uint2(xv.z, xv.w) : make_uint2(xv.x, xv.y);
         uint32_t ra = reg_a(w), rb = reg_b(w);
-        uint32_t a[4] = {e4m3x2_lo(ra), e4m3x2_lo(rb), e4m3x2_hi(ra), e4m3x2_hi(rb)};
+        uint32_t a[4] = {f16x2_lo(ra), f16x2_lo(rb), f16x2_hi(ra), f16x2_hi(rb)};
         mma_f16(d, a, xb.x, xb.y, v ? d : zero);
       }
       float s0 = group_scale(sp & 0xFFu), s1 = group_scale(sp >> 8);
@@ -322,7 +344,7 @@ __global__ void prep_kernel(const __nv_bfloat16* x, int K, uint8_t* x8, float* x
   m = red[0];
   int t = m > 0.f ? static_cast<int>(ceilf(log2f(m))) - 13 : 0;
   float inv = exp2f(static_cast<float>(-t));
-  if (threadIdx.x == 0) xscale[row] = exp2f(static_cast<float>(t + 6));  // x 2^6: weights sit at 2^-6
+  if (threadIdx.x == 0) xscale[row] = exp2f(static_cast<float>(t + PLACEMENT_EXP));  // weights sit at 2^-PLACEMENT_EXP
   __half* out = reinterpret_cast<__half*>(x8 + static_cast<size_t>(row) * K * 2);
   // element k: kb = k/16, r = k%16; tq = (r%8)/2, reg = r/8, half = r%2
   for (int k = threadIdx.x; k < K; k += blockDim.x) {
@@ -349,11 +371,19 @@ __global__ void reference_kernel(const uint8_t* codes, const uint8_t* scales, in
 
 // ---------------------------------------------------------------- host side
 // Byte encodings of one e2m1 code (s,e1,e0,m) for the two register slots.
+#if E5M2
+static inline uint8_t enc_a(int c) { return uint8_t(((c & 8) << 4) | ((c & 7) << 1)); }     // s:7 e1:3 e0:2 m:1
+static inline uint8_t enc_b(int c) {                                                        // s:6 e1:5 e0:4 m:0
+  int s = (c >> 3) & 1, e1 = (c >> 2) & 1, e0 = (c >> 1) & 1, m = c & 1;
+  return uint8_t((s << 6) | (e1 << 5) | (e0 << 4) | m);
+}
+#else
 static inline uint8_t enc_a(int c) { return uint8_t(((c & 8) << 4) | ((c & 7) << 2)); }     // {7,4,3,2}
 static inline uint8_t enc_b(int c) {                                                        // s:5 e1:6 e0:1 m:0
   int s = (c >> 3) & 1, e1 = (c >> 2) & 1, e0 = (c >> 1) & 1, m = c & 1;
   return uint8_t((s << 5) | (e1 << 6) | (e0 << 1) | m);
 }
+#endif
 
 static std::vector<uint8_t> pack(const std::vector<uint8_t>& codes, const std::vector<uint8_t>& scales,
                                  int N, int K) {
