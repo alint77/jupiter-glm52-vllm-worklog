@@ -199,8 +199,32 @@ c=1, same node, arms alternating:
 | 3 Marlin | – | 158.0 | 6.13 ms | 0.900 |
 | 4 tiered | `b0d13f8699` | 190.1 | 5.05 ms | 0.900 |
 
-The committed build is +18.5% output throughput over the two Marlin arms, with GSM8K unchanged (Marlin 0.880 and 0.900; tiered 0.905 and 0.900). PDL
-(`5077b2dced`) came after this run and is not in it.
+The committed build is +18.5% output throughput over the two Marlin arms, with GSM8K unchanged.
+
+**Rerun with PDL** (`5077b2dced`, job 2091191, another node):
+
+| arm | output tok/s | mean TPOT | median ITL | GSM8K-400 |
+|---|---|---|---|---|
+| 1 Marlin | 175.4 | 5.49 ms | 20.22 ms | 0.890 |
+| 2 tiered | 185.8 | 5.18 ms | 18.37 ms | 0.895 |
+| 3 Marlin | 166.6 | 5.80 ms | 20.13 ms | 0.892 |
+| 4 tiered | 186.0 | 5.17 ms | 18.35 ms | 0.900 |
+
+**The stable metric is median ITL**, the wall time of one decode step (an
+8-token verify).
+- Marlin: 20.13–20.22 ms over 4 arms on 2 nodes.
+- Tiered: 18.35–18.37 ms over 3 arms (both final builds).
+- Difference: **1.82 ms (9.0%) saved per step**, matching the kernel-level
+  estimate of ~1.8 ms per step.
+
+Output tok/s also depends on draft acceptance, which drifts between arms even
+with the same kernel (Marlin 158.0–175.4). Averaged, it is 165.7 vs 187.3
+tok/s (+13%).
+
+PDL made no measurable difference end to end: 18.35 ms per step without it,
+18.35–18.37 ms with it.
+
+GSM8K-400: Marlin 0.880–0.900, tiered 0.895–0.905.
 
 ## What limits v7 at the pinned clock (w13, 9 hot / 33 hot)
 

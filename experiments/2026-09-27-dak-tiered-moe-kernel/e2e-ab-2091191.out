@@ -1,0 +1,29 @@
+=== 1-marlin ready at 11:15:25
+Output token throughput (tok/s):         175.45    
+Mean TPOT (ms):                          5.49      
+Median TPOT (ms):                        5.34      
+Per-position acceptance (%):
+Accuracy: 0.890
+Invalid responses: 0.003
+=== 2-tiered ready at 11:29:47
+Output token throughput (tok/s):         185.76    
+Mean TPOT (ms):                          5.18      
+Median TPOT (ms):                        5.21      
+Per-position acceptance (%):
+Accuracy: 0.895
+Invalid responses: 0.003
+=== 3-marlin ready at 11:43:41
+Output token throughput (tok/s):         166.59    
+Mean TPOT (ms):                          5.80      
+Median TPOT (ms):                        5.80      
+Per-position acceptance (%):
+Accuracy: 0.892
+Invalid responses: 0.003
+=== 4-tiered ready at 11:57:49
+Output token throughput (tok/s):         185.98    
+Mean TPOT (ms):                          5.17      
+Median TPOT (ms):                        5.26      
+Per-position acceptance (%):
+Accuracy: 0.900
+Invalid responses: 0.003
+AB DONE
