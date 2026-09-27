@@ -14,3 +14,5 @@
 !ncu_f16_hot33.ncu-rep
 !ncu_f16b_hot33.ncu-rep
 sass_*.txt
+!figs/
+!figs/*.png
