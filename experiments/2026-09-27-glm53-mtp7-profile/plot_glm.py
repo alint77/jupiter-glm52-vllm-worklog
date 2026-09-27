@@ -246,6 +246,7 @@ LADDER = [
     ("Grace replicas\n(exact, Marlin)", -4.09, 0.25),
     ("INT4 one-kernel,\nbalanced by\ntime", -1.42, 0.25),
     ("DCP4", -1.12, 0.25),
+    ("one-shot DCP\ncollectives", -3.07, 0.20),
 ]
 # The no-replica arm fitted at 6 accepted tokens (fit_ab.py off rA rB: 35.06 +
 # 1.81 x 6 = 45.9 ms, short context), plus the capture fix it already includes.
@@ -258,7 +259,7 @@ def fig_ladder(out: Path) -> None:
     for name, delta, _ in LADDER[1:]:
         values.append(values[-1] + delta)
         labels.append(name)
-    fig, ax = plt.subplots(figsize=(9.5, 4.6))
+    fig, ax = plt.subplots(figsize=(10.5, 4.6))
     x = np.arange(len(values))
     ax.bar(x, values, width=0.62, color=[MUTED] + [HBM] * (len(values) - 1),
            edgecolor=SURFACE, linewidth=2)
@@ -270,7 +271,7 @@ def fig_ladder(out: Path) -> None:
     ax.set_xticks(x, labels, fontsize=9)
     ax.set_ylim(0, 55)
     ax.set_ylabel("decode step, ms (8-token verify, at 6 accepted tokens)")
-    ax.set_title("GLM-5.3 decode on one 4x GH200 node: ~129 -> ~153 tok/s on the greedy "
+    ax.set_title("GLM-5.3 decode on one 4x GH200 node: ~129 -> ~166 tok/s on the greedy "
                  "bench\n(inside the bars: each change against its own same-node control)",
                  pad=10, loc="left")
     fig.tight_layout()
@@ -283,7 +284,8 @@ BUCKETS = [  # (label, analyze.py categories, kind)
                      "MoE one-kernel w2", "MoE one-kernel route/act/finalize",
                      "MoE routing/align/sum/act"), "moe"),
     ("all-reduce (waiting + transfer)", ("TP all-reduce",), "wait"),
-    ("DCP all-gather / reduce-scatter", ("MoE all-gather (SP)", "MoE reduce-scatter (SP)"), "comm"),
+    ("DCP all-gather / reduce-scatter", ("MoE all-gather (SP)", "MoE reduce-scatter (SP)",
+                                         "DCP one-shot collectives"), "comm"),
     ("dense GEMMs", ("dense GEMM",), "other"),
     ("norms, rope, glue", ("norm/rope/elementwise",), "other"),
     ("attention + indexer", ("attention", "DSA indexer"), "other"),
@@ -291,10 +293,10 @@ BUCKETS = [  # (label, analyze.py categories, kind)
 
 
 def fig_breakdown(out: Path) -> None:
-    runs = [("this morning: DCP1, no replicas,\nMarlin, eager draft decodes",
+    runs = [("this morning: DCP1, no replicas, Marlin,\neager draft decodes (2.3 tokens/step)",
              "breakdown-marlin-2096362.json"),
-            ("now: DCP4, replicas, INT4 one-kernel,\ncaptured draft decodes",
-             "breakdown-dcp4-2097699.json")]
+            ("now: DCP4 + one-shot collectives, replicas,\none-kernel, graphed drafts (6.6 tokens/step)",
+             "breakdown-oneshot-2097699.json")]
     palette = {"MoE experts": HBM, "all-reduce (waiting + transfer)": DDR,
                "DCP all-gather / reduce-scatter": "#e8a33d", "dense GEMMs": "#5b8a72",
                "norms, rope, glue": "#9fb8a9", "attention + indexer": "#8e6fb3",
@@ -324,7 +326,7 @@ def fig_breakdown(out: Path) -> None:
     ax.set_xlim(0, 66)
     ax.set_xlabel("ms per decode step (mean of 4 GPUs, short context, profiler on)")
     ax.set_title("Where one GLM-5.3 decode step goes, before and after", loc="left", pad=10)
-    ax.legend(loc="upper center", bbox_to_anchor=(0.42, -0.2), ncol=4, fontsize=8.5)
+    ax.legend(loc="upper center", bbox_to_anchor=(0.42, -0.22), ncol=4, fontsize=8.5)
     fig.tight_layout()
     fig.savefig(out / "glm-step-breakdown.png", dpi=160)
     plt.close(fig)

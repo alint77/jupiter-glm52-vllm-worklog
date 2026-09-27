@@ -1,0 +1,20 @@
+streaming read 3.65 TB/s
+fused_qkv_a     M=1 K= 6144 N= 2624  skinny   13.6 us  F.linear   13.5  floor    8.8 ( 65%)  err 2.7e-03 (lib 2.7e-03) repeat-equal True
+fused_qkv_a     M=8 K= 6144 N= 2624  skinny   14.9 us  F.linear   13.6  floor    8.8 ( 59%)  err 2.2e-03 (lib 2.2e-03) repeat-equal True
+q_b             M=1 K= 2048 N= 4096  skinny    9.4 us  F.linear    7.7  floor    4.6 ( 49%)  err 2.3e-03 (lib 2.3e-03) repeat-equal True
+q_b             M=8 K= 2048 N= 4096  skinny   10.6 us  F.linear    7.7  floor    4.6 ( 44%)  err 2.1e-03 (lib 2.1e-03) repeat-equal True
+o_proj          M=1 K= 4096 N= 6144  skinny   18.4 us  F.linear   17.4  floor   13.8 ( 75%)  err 3.1e-03 (lib 3.1e-03) repeat-equal True
+o_proj          M=8 K= 4096 N= 6144  skinny   19.6 us  F.linear   17.6  floor   13.8 ( 70%)  err 2.7e-03 (lib 2.7e-03) repeat-equal True
+shared gate_up  M=1 K= 6144 N= 1024  skinny    8.1 us  F.linear    7.8  floor    3.4 ( 43%)  err 2.5e-03 (lib 2.5e-03) repeat-equal True
+shared gate_up  M=8 K= 6144 N= 1024  skinny    9.2 us  F.linear    7.8  floor    3.4 ( 37%)  err 2.2e-03 (lib 2.2e-03) repeat-equal True
+shared down     M=1 K=  512 N= 6144  skinny    6.6 us  F.linear    4.2  floor    1.7 ( 26%)  err 2.0e-03 (lib 2.0e-03) repeat-equal True
+shared down     M=8 K=  512 N= 6144  skinny    7.6 us  F.linear    4.3  floor    1.7 ( 23%)  err 1.9e-03 (lib 1.9e-03) repeat-equal True
+dense gate_up   M=1 K= 6144 N= 6144  skinny   25.5 us  F.linear   24.2  floor   20.7 ( 81%)  err 2.8e-03 (lib 2.8e-03) repeat-equal True
+dense gate_up   M=8 K= 6144 N= 6144  skinny   27.2 us  F.linear   24.5  floor   20.7 ( 76%)  err 2.2e-03 (lib 2.2e-03) repeat-equal True
+dense down      M=1 K= 3072 N= 6144  skinny   15.3 us  F.linear   13.7  floor   10.3 ( 68%)  err 3.0e-03 (lib 3.0e-03) repeat-equal True
+dense down      M=8 K= 3072 N= 6144  skinny   16.4 us  F.linear   13.9  floor   10.3 ( 63%)  err 3.0e-03 (lib 3.0e-03) repeat-equal True
+indexer wq_b    M=1 K= 2048 N= 4096  skinny    9.5 us  F.linear    7.6  floor    4.6 ( 48%)  err 2.4e-03 (lib 2.4e-03) repeat-equal True
+indexer wq_b    M=8 K= 2048 N= 4096  skinny   10.4 us  F.linear    7.7  floor    4.6 ( 44%)  err 2.0e-03 (lib 2.0e-03) repeat-equal True
+indexer wk      M=1 K= 6144 N=  160  skinny    4.2 us  F.linear    5.5  floor    0.5 ( 13%)  err 2.5e-03 (lib 2.5e-03) repeat-equal True
+indexer wk      M=8 K= 6144 N=  160  skinny    5.3 us  F.linear    5.5  floor    0.5 ( 10%)  err 2.9e-03 (lib 2.9e-03) repeat-equal True
+M=8, per verify step at these call counts: skinny saves -0.90 ms over F.linear (floor would save 1.63)

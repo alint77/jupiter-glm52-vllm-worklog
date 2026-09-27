@@ -1,0 +1,137 @@
+{
+  "decode-short": {
+    "ranks": {
+      "0": {
+        "steps": 50,
+        "period_ms": {
+          "mean": 39.898060131072995,
+          "p50": 39.90825319290161
+        },
+        "phase_busy_ms": {
+          "draft": 3.6841000938415527,
+          "host-side": 0.2691478729248047,
+          "target": 33.907533740997316,
+          "logits": 0.16665327072143554
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 2.9003891849517824,
+          "TP all-reduce": 3.6792309379577635,
+          "dense GEMM": 4.243413982391357,
+          "DSA indexer": 0.7923336601257325,
+          "DCP one-shot collectives": 1.5667866706848144,
+          "attention": 1.8926981353759766,
+          "MoE routing/align/sum/act": 0.193382625579834,
+          "MoE one-kernel route/act/finalize": 0.6231234645843506,
+          "MoE one-kernel w13": 11.754051065444946,
+          "MoE one-kernel w2": 6.262124013900757
+        },
+        "marlin_ms": {
+          "hot sum": 0.0,
+          "cold sum": 0.0,
+          "union": 0.0,
+          "target span": 35.073325080871584
+        }
+      },
+      "1": {
+        "steps": 50,
+        "period_ms": {
+          "mean": 39.90195230484009,
+          "p50": 39.907358169555664
+        },
+        "phase_busy_ms": {
+          "draft": 3.6864216995239256,
+          "host-side": 0.2695987892150879,
+          "target": 33.91237550735474,
+          "logits": 0.16660093307495116
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 4.443283996582031,
+          "TP all-reduce": 3.436295356750488,
+          "dense GEMM": 2.688657293319702,
+          "DSA indexer": 0.7935621356964111,
+          "DCP one-shot collectives": 1.634734115600586,
+          "attention": 1.88523344039917,
+          "MoE routing/align/sum/act": 0.1873689079284668,
+          "MoE one-kernel route/act/finalize": 0.610302562713623,
+          "MoE one-kernel w13": 11.888335313796997,
+          "MoE one-kernel w2": 6.344602384567261
+        },
+        "marlin_ms": {
+          "hot sum": 0.0,
+          "cold sum": 0.0,
+          "union": 0.0,
+          "target span": 35.078364543914795
+        }
+      },
+      "2": {
+        "steps": 50,
+        "period_ms": {
+          "mean": 39.901920566558836,
+          "p50": 39.90767192840576
+        },
+        "phase_busy_ms": {
+          "draft": 3.685942840576172,
+          "host-side": 0.2695837593078613,
+          "target": 33.89661764144898,
+          "logits": 0.16657636642456056
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 2.6085731410980224,
+          "TP all-reduce": 3.747605199813843,
+          "dense GEMM": 4.692631845474243,
+          "DSA indexer": 0.7894194412231446,
+          "DCP one-shot collectives": 1.4214423942565917,
+          "attention": 1.881862392425537,
+          "MoE routing/align/sum/act": 0.19414003372192382,
+          "MoE one-kernel route/act/finalize": 0.6250419616699219,
+          "MoE one-kernel w13": 11.707207956314086,
+          "MoE one-kernel w2": 6.22869327545166
+        },
+        "marlin_ms": {
+          "hot sum": 0.0,
+          "cold sum": 0.0,
+          "union": 0.0,
+          "target span": 35.076105213165285
+        }
+      },
+      "3": {
+        "steps": 50,
+        "period_ms": {
+          "mean": 39.90188499450684,
+          "p50": 39.90774202346802
+        },
+        "phase_busy_ms": {
+          "draft": 3.703081588745117,
+          "host-side": 0.26971576690673826,
+          "target": 33.916910552978514,
+          "logits": 0.16732778549194335
+        },
+        "target_categories_ms": {
+          "norm/rope/elementwise": 2.396624870300293,
+          "TP all-reduce": 3.396625337600708,
+          "dense GEMM": 4.674844551086426,
+          "DSA indexer": 0.7924998378753663,
+          "DCP one-shot collectives": 1.6195182228088378,
+          "attention": 1.888249912261963,
+          "MoE routing/align/sum/act": 0.1925172710418701,
+          "MoE one-kernel route/act/finalize": 0.647066707611084,
+          "MoE one-kernel w13": 11.945611581802368,
+          "MoE one-kernel w2": 6.3633522605896
+        },
+        "marlin_ms": {
+          "hot sum": 0.0,
+          "cold sum": 0.0,
+          "union": 0.0,
+          "target span": 35.08117736816406
+        }
+      }
+    },
+    "collectives": {
+      "cross_device_reduce": {
+        "per_step": 157.0,
+        "mean_ms_per_step": 3.564940333366394,
+        "cross_rank_min_ms_per_step": 0.6768177032470704
+      }
+    }
+  }
+}

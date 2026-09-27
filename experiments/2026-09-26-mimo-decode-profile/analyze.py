@@ -43,6 +43,7 @@ CATEGORIES = (
     ("MoE one-kernel route/act/finalize", lambda e: "tiered_decode" in e["name"]),
     ("MoE hot Marlin (HBM)", lambda e: "marlin_moe" in e["name"] and grid(e) == 264),
     ("MoE cold Marlin (Grace)", lambda e: "marlin_moe" in e["name"]),
+    ("DCP one-shot collectives", lambda e: "one_shot::" in e["name"]),
     ("MoE reduce-scatter (SP)", lambda e: "ReduceScatter" in e["name"]),
     ("MoE all-gather (SP)", lambda e: "AllGather" in e["name"]),
     ("TP all-reduce", lambda e: "cross_device_reduce" in e["name"]),
