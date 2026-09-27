@@ -1,0 +1,37 @@
+=== 1-prev ready at 15:36:53
+Output token throughput (tok/s):         203.50    
+Mean TPOT (ms):                          4.71      
+Median TPOT (ms):                        4.69      
+Per-position acceptance (%):
+Output token throughput (tok/s):         165.30    
+Median TPOT (ms):                        5.92      
+Accuracy: 0.905
+Invalid responses: 0.005
+=== 2-tiered ready at 15:51:52
+Output token throughput (tok/s):         198.97    
+Mean TPOT (ms):                          4.82      
+Median TPOT (ms):                        4.66      
+Per-position acceptance (%):
+Output token throughput (tok/s):         157.12    
+Median TPOT (ms):                        5.98      
+Accuracy: 0.915
+Invalid responses: 0.005
+=== 3-prev ready at 16:06:09
+Output token throughput (tok/s):         188.86    
+Mean TPOT (ms):                          5.09      
+Median TPOT (ms):                        5.00      
+Per-position acceptance (%):
+Output token throughput (tok/s):         167.39    
+Median TPOT (ms):                        5.92      
+Accuracy: 0.900
+Invalid responses: 0.005
+=== 4-tiered ready at 16:20:26
+Output token throughput (tok/s):         196.63    
+Mean TPOT (ms):                          4.88      
+Median TPOT (ms):                        4.92      
+Per-position acceptance (%):
+Output token throughput (tok/s):         166.00    
+Median TPOT (ms):                        5.91      
+Accuracy: 0.900
+Invalid responses: 0.005
+AB DONE

@@ -1,0 +1,14 @@
+=== 1-tiered-sortp ready at 16:24:07
+Output token throughput (tok/s):         193.79    
+Mean TPOT (ms):                          4.89      
+Median TPOT (ms):                        5.07      
+Per-position acceptance (%):
+Output token throughput (tok/s):         153.86    
+Median TPOT (ms):                        6.32      
+=== 2-tiered ready at 16:35:54
+Output token throughput (tok/s):         188.63    
+Mean TPOT (ms):                          5.09      
+Median TPOT (ms):                        5.21      
+Per-position acceptance (%):
+Output token throughput (tok/s):         167.25    
+Median TPOT (ms):                        5.79      

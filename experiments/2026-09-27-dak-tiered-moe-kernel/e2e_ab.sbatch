@@ -56,9 +56,11 @@ for arm in ${ORDER:-marlin tiered marlin tiered}; do
   run=$((run + 1))
   tag="${run}-${arm}"
   case "${arm}" in
-    tiered) export VLLM_TIERED_MOE_DECODE_KERNEL=1; unset PYTHONPATH ;;
+    tiered) export VLLM_TIERED_MOE_DECODE_KERNEL=1 VLLM_USE_FLASHINFER_SAMPLER=1; unset PYTHONPATH ;;
+    # the working tree with the sort-path top-p (FlashInfer sampler off)
+    tiered-sortp) export VLLM_TIERED_MOE_DECODE_KERNEL=1 VLLM_USE_FLASHINFER_SAMPLER=0; unset PYTHONPATH ;;
     marlin) export VLLM_TIERED_MOE_DECODE_KERNEL=0; unset PYTHONPATH ;;
-    prev) export VLLM_TIERED_MOE_DECODE_KERNEL=1 PYTHONPATH="${PREV_WT:?}" ;;
+    prev) export VLLM_TIERED_MOE_DECODE_KERNEL=1 VLLM_USE_FLASHINFER_SAMPLER=1 PYTHONPATH="${PREV_WT:?}" ;;
     *) echo "unknown arm ${arm}"; exit 1 ;;
   esac
   setsid bash "${out}/serve-inline.sh" >"${out}/server-${tag}.out" 2>"${out}/server-${tag}.err" &

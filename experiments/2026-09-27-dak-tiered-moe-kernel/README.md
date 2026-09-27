@@ -301,6 +301,22 @@ The wait drops by 0.24 ms, as the replay predicted (0.26). Temperature-1
 captures route differently, so the GEMM rows (8.79 → 7.65 ms) are mostly
 capture noise; the A/B above is the before/after number.
 
+**End to end, sampler + `fc`** (job 2094883; "prev" = `b558fc64c8`, "tiered"
+= `f02d8f85f4`, i.e. with both; greedy pass, then temperature 1 / top-p 0.95):
+
+| arm | greedy median ITL | temp-1 median ITL | temp-1 tokens/step | GSM8K-200 |
+|---|---|---|---|---|
+| 1 prev | 17.28 ms | 17.66 ms | 3.160 | 0.905 |
+| 2 tiered | 17.24 ms | 17.27 ms | 2.882 | 0.915 |
+| 3 prev | 16.97 ms | 17.65 ms | 3.167 | 0.900 |
+| 4 tiered | 17.30 ms | 17.41 ms | 3.094 | 0.900 |
+
+At temperature 1 the step is **−0.32 ms** (the sort-free top-p); greedy is
+unchanged within noise. Job 2095236 (cancelled after two arms) ran the same
+tree with the sort path (`VLLM_USE_FLASHINFER_SAMPLER=0`) and with FlashInfer:
+2.908 vs 3.120 tokens/step and 17.88 vs 17.44 ms, so the sampler does not
+lower acceptance. The `fc` sharding was reverted instead of being cleared.
+
 **4: the small MoE kernels.**
 - **silu×up** (`bcb772a619`): blocks for routes that run on other GPUs return at
   once (route_prep marks live routes); live ones load float4. 7.5 → 3.0 µs.
@@ -321,13 +337,16 @@ capture noise; the A/B above is the before/after number.
   and `apply_top_k_top_p` only takes its Triton path from 8 rows, so top-p ran
   the sort path. At 7 rows the Triton path is no faster anyway (359 vs 392 µs,
   `bench_topp.py`). FlashInfer's pivot-search `top_p_renorm_probs` keeps the
-  same nucleus (checked at the full 152K vocabulary): constraints + softmax
-  456 → 204 µs, **−0.25 ms per step** at temperature > 0 (branch
-  `sampler-topp-renorm`, `110fb49988`).
-- **DFlash `fc` was replicated.** The drafter's context projection
-  ([8, 5×6144] → 6144, 377 MB bf16) was a `ReplicatedLinear`, so every GPU read
-  all of it each step (120 µs); now it is a `ColumnParallelLinear` with a
-  gathered output.
+  same nucleus on fp32 logits; on bf16-valued logits it keeps whole tied
+  groups at the boundary (0.950–0.952 of the mass where the sort path cuts
+  ties arbitrarily at 0.950). Constraints + softmax 456 → 204 µs
+  (`f09a830fb0`).
+- **Reverted: sharding DFlash's `fc`.** The drafter's context projection
+  ([8, 5×6144] → 6144, 377 MB bf16) is a `ReplicatedLinear`, so every GPU reads
+  all of it each step (120 µs). As a `ColumnParallelLinear` (`f02d8f85f4`) it
+  would save ~0.08 ms, below the median-step noise, and every arm that had it
+  showed lower temperature-1 acceptance (below). Reverted in `9499a76bde`
+  rather than spend another A/B clearing it.
 - **Launch gaps.** About 60 gaps of 3–6 µs (0.69 ms per step) sit around ~240
   eager ops: 34 host-to-device copies and 15 slot-mapping kernels of input prep
   before the verify graph (~0.26 ms), then sampling. Async scheduling is on, but
