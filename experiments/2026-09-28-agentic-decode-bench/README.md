@@ -140,3 +140,58 @@ is worth <=~1 ms.
 All-reduce + RMSNorm fusion (FUSE_AR_RMS=true, MTP7): crashes at profile_run
 with cudaErrorIllegalAddress (surfacing in the drafter's router ll_bf16 GEMM);
 not pursued.
+
+## Verify-graph kernel dive (traces/glm53-agentic-df2-prof-2108844)
+
+`verify_graph_dive.py` pools the four profile windows (280 steps, all 4 ranks)
+and dissects the target/verify graph: launch tables, solo/critical-path time
+(the union segment where exactly one kernel runs), internal idle with recurring
+gap sites, the 41-kernel per-layer sequence, the tiered chain's PDL overlap
+structure, and cross-rank wait per all-reduce ordinal. The profiled run is
+DFlash2/DCP4, c=1 (`max_num_seqs: 1`), capture sizes [8] so M=8 unpadded,
+**reserve 10** (2,951 hot/GPU) with the agentic-3239-r2000 profile already
+loaded -- one config behind serve.sh's reserve-7 default, whose fitted step is
+26.0 ms against this trace's 27.61.
+
+Budget of the 23.44 ms busy (24.49 ms span, 1.06 ms internal idle; solo time
+13.38 ms of it, the rest >=2-way concurrent):
+
+| wall box | ms/step | note |
+|---|---:|---|
+| tiered MoE chain (union) | 9.42 | w13 78.5 us + w2 43.3 us serial; act 77.1 and finalize 38.1 launch 5-7 us in and stay PDL-hidden inside those windows (+0.28 exposed); the shared expert (1.44 ms, stream 306) hides here too |
+| TP all-reduce | 2.81 | x157, all exposed; cross-rank min 0.69 -> 2.74 waiting |
+| dense GEMMs | ~4.4 exposed / 5.9 launched | 640+ launches at grid 2-4: nvjet TNT x336 @9.7 us, splitK x174 @10, splitKreduce x252 @1.7, NNT x78 @3.7, cute-dsl router x75 @4.8 |
+| DCP one-shots | 1.47 | 177 gathers @6.2 us + 78 reduce-scatters @4.9 us, all exposed; c=1 pays DCP for capacity it does not use |
+| flash MLA + combine | 1.75 | 78 x (18.3 + 7.9 us), near floor |
+| DSA indexer | 0.37 | 21 layers x (mqa_logits + StableTopK) |
+| in-graph glue | ~1.3 solo | 252 int zero-fills, 78 int-bool casts, 78 CatArray, 82 memcpy32_post, 153 elementwise, convert_req_index, index-soup triton_poi |
+
+Findings, ranked by measured headroom:
+
+1. **Step-entry all-reduce #0 wait is bursty, not steady**: per-step max over
+   ranks p50 0.022 ms but p90 4.92, max 10.85, mean 0.955 -- ~18% of steps
+   (49/280) eat 0.9-11 ms before layer 0 completes. Rank 3 is last to enter
+   (126/280), then rank 2; rank 1 is nearly always first (lowest 249/280).
+   Same bucket as the parked draft-graph (<=~1 ms) item plus host jitter on
+   one rank; per-step spike correlation (e.g. steps after a prefill) is the
+   next probe.
+2. **The mid-layer AR wait (~30 us/layer, rotating: rank 2 98 / rank 3 90 / 1
+   48 / 0 44 as the laggard)** is the cold-count imbalance mirror of the MoE
+   chain; ~2 ms/step recovers only via balancing (in-kernel time balancing
+   of the one-kernel path, replicas), not via comm tuning -- per-op wire time
+   is already 4.4 us.
+3. **w13 at 78.5 us is C2C-gated**: with hot reads (~430 MB/layer HBM, ~32 us
+   under it) that matches ~1.6 cold experts/layer at ~380 GB/s. The chain's
+   floor is the cold-byte budget; residency (reserve) and the profile do the
+   work. Fusing act/finalize into the GEMMs (DAK v7 style) buys <=0.28 ms --
+   they are PDL-hidden already, a dead end at this shape.
+4. **DCP one-shots, 1.47 ms**: DCP1-250K already measured only 1.1 ms worse
+   fitted; an adaptive DCP-off at c=1 (or UVA direct-read attention instead
+   of 78 staged gathers) recovers most of it for Claude-Code-shaped traffic.
+5. **Dense GEMMs**: ~3.0 ms of the 4.4 is the bf16 weight-streaming floor
+   (24.7 GiB attn + 5.3 shared per model at TP4; further quantization is
+   excluded). The gap is small-grid launch latency, 640+ ops of grid<=4 --
+   MiMo's Inductor `triton_tem_fused_mm` route is the fit here.
+6. **Internal idle 1.06 ms is sub-us boundary bubbles** (largest single sites
+   35-50 us/step, in the attention-metadata region); the bursty part of the
+   step's idle is item 1, host-side.
