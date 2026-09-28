@@ -25,16 +25,18 @@ export TIERED_MOE_MODEL_PATH=/e/fscratch/profound/${USER}/models/GLM-5.3-W4A16
 # frequency-ranked, up to 2,000 replicas; -0.94 +- 0.12 ms/step against
 # glm53-w4a16-2496.json (ab-gA, ab-gB)
 export TIERED_MOE_PLACEMENT_PROFILE=${PWD}/agent_space/profiles/${PROFILE:-glm53-w4a16-agentic-3239-r2000.json}
-# SPEC=dflash2: the DFlash2 drafter (7 tokens in one pass) instead of MTP7. Its
-# own KV cache takes the 10 GB reserve MTP does not need; it has no size-1
-# draft passes to capture; and compile_sizes stays empty as in production
+# SPEC=dflash2: the DFlash2 drafter (7 tokens in one pass) instead of MTP7. The
+# tiered planner now budgets its KV, so it runs at MTP's 7 GB reserve (free HBM
+# stayed flat at 6.5 GiB over the task set; 10 GB cost ~150 hot experts and
+# ~0.8 ms/step); it has no size-1 draft passes to capture; and compile_sizes
+# stays empty as in production
 # (../2026-09-04-glm53-c1-df2/server.sbatch: Triton autotune runs out of shared
 # memory, and a compiled selector breaks the draft's captured region).
 SPEC="${SPEC:-mtp}"
 if [[ "${SPEC}" == dflash2 ]]; then
   drafter=/e/fscratch/profound/${USER}/models/GLM-5.3-DFlash2
   spec_config="{\"method\":\"dflash\",\"model\":\"${drafter}\",\"num_speculative_tokens\":7,\"kv_cache_dtype\":\"auto\",\"attention_backend\":\"FLASH_ATTN\",\"draft_sample_method\":\"greedy\"}"
-  : "${RESERVE_GB:=10}" "${CAPTURE_SIZES:=8}" "${COMPILE_SIZES:=}"
+  : "${CAPTURE_SIZES:=8}" "${COMPILE_SIZES:=}"
 else
   spec_config='{"method":"mtp","num_speculative_tokens":7}'
 fi

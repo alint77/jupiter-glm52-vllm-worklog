@@ -111,3 +111,32 @@ End to end (rows-glm-dcp4-prefix, job 2106177): DCP4 400K prefix caching on,
 166 requests, no errors, 77.9% prefix hit rate. Decode unchanged -- 28.08 ms at
 3.5 tok / 8K (prefix off: 27.70; 28.16 vs 27.87 step-weighted, within run
 noise) -- and total prefill 70 s against 298 s without the cache.
+
+## DFlash2 under DCP4 (vLLM 3660714b5b)
+
+DCP4 cost DFlash2 ~38% of its acceptance: in the full-allocation fallback group
+(MLA + drafter pages can't be unified) the group is DCP-sharded, but the
+replicated drafter kept 64-token pages and was addressed per 64 positions, so it
+only held KV for positions 0-63. Fixed by giving replicated layers in a sharded
+group block_size * dcp pages (grouping, cache reshape, drafter slot prep, tiered
+planner budget). Acceptance at DCP4 now matches DCP1 request for request.
+
+Task set, DCP4, eager drafter (rows-df2-eager-fix2{,b}, rows-df2-r7, -r8):
+
+| | reserve | hot/GPU | step at 3.5 tok, 8K | tok/s |
+|---|---:|---:|---:|---:|
+| DFlash2 | 10 GB | 2,951 | 26.8 ms | 125 |
+| DFlash2 | 8 GB | 3,046 | 26.6 ms | 129 |
+| DFlash2 | **7 GB** | 3,094-3,127 | **26.0 ms** | 126 |
+| MTP7 | 7 GB | 3,208 | 28.1 ms | 124 |
+
+7 GB: free HBM flat at 6.52 GiB (floor 5.59) over ~150 requests; now the
+`SPEC=dflash2` default in serve.sh. DFlash2 accepts ~3.3-3.4/step on this data
+against MTP7's 3.5. Profile (traces/glm53-agentic-df2-prof-2108844,
+launch_starve.py, glm-step-gantt.png): drafter 1.1 ms eager, host-starved idle
+~0-1 ms/step; the idle is sub-µs kernel-boundary bubbles, so a draft CUDA graph
+is worth <=~1 ms.
+
+All-reduce + RMSNorm fusion (FUSE_AR_RMS=true, MTP7): crashes at profile_run
+with cudaErrorIllegalAddress (surfacing in the drafter's router ll_bf16 GEMM);
+not pursued.
