@@ -25,6 +25,19 @@ export TIERED_MOE_MODEL_PATH=/e/fscratch/profound/${USER}/models/GLM-5.3-W4A16
 # frequency-ranked, up to 2,000 replicas; -0.94 +- 0.12 ms/step against
 # glm53-w4a16-2496.json (ab-gA, ab-gB)
 export TIERED_MOE_PLACEMENT_PROFILE=${PWD}/agent_space/profiles/${PROFILE:-glm53-w4a16-agentic-3239-r2000.json}
+# SPEC=dflash2: the DFlash2 drafter (7 tokens in one pass) instead of MTP7. Its
+# own KV cache takes the 10 GB reserve MTP does not need; it has no size-1
+# draft passes to capture; and compile_sizes stays empty as in production
+# (../2026-09-04-glm53-c1-df2/server.sbatch: Triton autotune runs out of shared
+# memory, and a compiled selector breaks the draft's captured region).
+SPEC="${SPEC:-mtp}"
+if [[ "${SPEC}" == dflash2 ]]; then
+  drafter=/e/fscratch/profound/${USER}/models/GLM-5.3-DFlash2
+  spec_config="{\"method\":\"dflash\",\"model\":\"${drafter}\",\"num_speculative_tokens\":7,\"kv_cache_dtype\":\"auto\",\"attention_backend\":\"FLASH_ATTN\",\"draft_sample_method\":\"greedy\"}"
+  : "${RESERVE_GB:=10}" "${CAPTURE_SIZES:=8}" "${COMPILE_SIZES:=}"
+else
+  spec_config='{"method":"mtp","num_speculative_tokens":7}'
+fi
 export TIERED_MOE_HBM_RESERVE_GB="${RESERVE_GB:-7}"  # 10 was for DFlash2's draft KV
 export VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS=1024
 # one-kernel INT4 decode MoE, replicas balanced by time in the kernel
@@ -35,7 +48,7 @@ export VLLM_DCP_ONE_SHOT_COLLECTIVES="${VLLM_DCP_ONE_SHOT_COLLECTIVES:-1}"
 # [1, 8]: 8 is the verify step; 1 is MTP's draft-decode passes (positions
 # 1..K-1, one token each at c=1). Without a size-1 entry the speculator's
 # decode graph is silently skipped and those passes run eagerly.
-export TIERED_MOE_COMPILATION_CONFIG="{\"mode\":3,\"cudagraph_mode\":\"FULL_AND_PIECEWISE\",\"cudagraph_capture_sizes\":[${CAPTURE_SIZES:-1,8}],\"compile_sizes\":[8],\"cudagraph_num_of_warmups\":1,\"pass_config\":{\"fuse_allreduce_rms\":false}}"
+export TIERED_MOE_COMPILATION_CONFIG="{\"mode\":3,\"cudagraph_mode\":\"FULL_AND_PIECEWISE\",\"cudagraph_capture_sizes\":[${CAPTURE_SIZES:-1,8}],\"compile_sizes\":[${COMPILE_SIZES-8}],\"cudagraph_num_of_warmups\":1,\"pass_config\":{\"fuse_allreduce_rms\":${FUSE_AR_RMS:-false}}}"
 extra=()
 # REPLICAS=exact activates the profile's Grace replicas (1,351-1,962 per rank
 # in the agentic profile). Replicas add pinned Grace the planner does not see
@@ -50,7 +63,7 @@ if [[ -n "${TRACE_ROOT:-}" ]]; then
   extra+=(--profiler-config "{\"profiler\":\"torch\",\"torch_profiler_dir\":\"${TRACE_ROOT}\",\"torch_profiler_with_stack\":false,\"torch_profiler_record_shapes\":true,\"ignore_frontend\":true}")
 fi
 exec agent_space/experiments/2026-07-17-end-to-end-tuning/run-server.sh \
-  --speculative-config '{"method":"mtp","num_speculative_tokens":7}' \
+  --speculative-config "${spec_config}" \
   --decode-context-parallel-size "${DCP:-4}" \
   --dcp-comm-backend "${DCP_COMM:-ag_rs}" \
   --max-num-seqs 1 \
