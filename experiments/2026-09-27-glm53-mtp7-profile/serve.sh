@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
-# GLM-5.3 W4A16 + MTP K=7, c=1, 400K context. Defaults are the settled
-# baseline: DCP4, exact replicas, the INT4 one-kernel decode MoE, reserve 7,
-# capture [1, 8] (REPLICAS= / DCP=1 / VLLM_TIERED_MOE_DECODE_KERNEL=0 undo them).
+# GLM-5.3 W4A16, c=1, 400K context. Defaults are the settled baseline: the
+# DFlash2 drafter (7 tokens, eager), DCP4, exact replicas, the INT4 one-kernel
+# decode MoE, reserve 7, capture [8] (SPEC=mtp / DCP=1 / REPLICAS= /
+# VLLM_TIERED_MOE_DECODE_KERNEL=0 undo them; SPEC=mtp captures [1, 8]).
 # Started from the spec-comparison
 # mtp7 arm (../2026-09-04-spec-comparison/arm.sh) plus the production
 # launcher's cold prefetch, with
 #   * prefix caching off, so a repeated prompt really prefills
 #   * --profiler-config when TRACE_ROOT is set
-# MTP verifies 8 tokens per step, the same shape as MiMo's DFlash K=7.
+# Both drafters verify 8 tokens per step, the same shape as MiMo's DFlash K=7.
 # Run on the node from the repo root with the environment loaded.
 set -euo pipefail
 cd /e/project1/profound/alint77/vllm
@@ -32,7 +33,7 @@ export TIERED_MOE_PLACEMENT_PROFILE=${PWD}/agent_space/profiles/${PROFILE:-glm53
 # stays empty as in production
 # (../2026-09-04-glm53-c1-df2/server.sbatch: Triton autotune runs out of shared
 # memory, and a compiled selector breaks the draft's captured region).
-SPEC="${SPEC:-mtp}"
+SPEC="${SPEC:-dflash2}"
 if [[ "${SPEC}" == dflash2 ]]; then
   drafter=/e/fscratch/profound/${USER}/models/GLM-5.3-DFlash2
   spec_config="{\"method\":\"dflash\",\"model\":\"${drafter}\",\"num_speculative_tokens\":7,\"kv_cache_dtype\":\"auto\",\"attention_backend\":\"FLASH_ATTN\",\"draft_sample_method\":\"greedy\"}"
