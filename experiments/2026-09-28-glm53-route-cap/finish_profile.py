@@ -45,7 +45,7 @@ def main() -> None:
     ordered = [sorted(ids, key=lambda e, li=li: -freq[li, e]) for li, ids in enumerate(p["hot_experts"])]
     secondary = place(score(train, owners, hot), owners, args.replicas)
     out = dict(p, hot_experts=[[int(e) for e in ids] for ids in ordered],
-               secondary_ranks=secondary.tolist(),
+               secondary_ranks=secondary.tolist(), profile_version=2,
                optimizer=p["optimizer"] + f"+frequency-ordered+replicas-minmax-cold-{args.replicas}")
     args.out.write_text(json.dumps(out) + "\n")
     served = json.loads(SERVED.read_text())

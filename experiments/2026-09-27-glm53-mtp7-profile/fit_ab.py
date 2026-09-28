@@ -1,20 +1,28 @@
 #!/usr/bin/env python3
 """Least-squares A/B over ab-*.json runs: step_ms ~ arm + tokens/step + node + context.
 
-    fit_ab.py BASE_ARM TAG... (e.g. fit_ab.py off rA rB)
+    fit_ab.py [--pool] BASE_ARM TAG... (e.g. fit_ab.py off rA rB)
+
+--pool drops a trailing repeat number, so old1 and old2 fit as one arm "old".
 """
 import json
+import re
 import sys
 from pathlib import Path
 
 import numpy as np
 
 HERE = Path(__file__).resolve().parent
-base, tags = sys.argv[1], sys.argv[2:]
+args = sys.argv[1:]
+pool = "--pool" in args
+args = [a for a in args if a != "--pool"]
+base, tags = args[0], args[1:]
 rows = []
 for tag in tags:
     for f in sorted(HERE.glob(f"ab-{tag}-*.json")):
         arm = f.stem.split("-", 2)[2]
+        if pool:
+            arm = re.sub(r"\d+$", "", arm)
         for ctx, v in json.loads(f.read_text()).items():
             if ctx.startswith("ttft"):
                 continue

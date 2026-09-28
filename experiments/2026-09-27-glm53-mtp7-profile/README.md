@@ -377,3 +377,25 @@ vs old gives [-1.20, +1.50]: one paired run cannot resolve differences under
 ~1.3 pts here. No detectable regression; both runs lean slightly the same way
 (and the two "new" runs differ by the one-shot collectives), so two more
 repeats per arm are queued.
+
+## The agentic profile, served (ab-gA, ab-gB; jobs 2100774, 2100775)
+
+`profiles/glm53-w4a16-agentic-3239-r2000.json`, built from the MiMo-workload
+capture (`../2026-09-28-glm53-route-cap`): 3,239 hot per GPU ranked by
+frequency (runtime 3,208, so the planner only demotes the least-used), up to
+2,000 replicas per GPU. Against the served `glm53-w4a16-2496.json` on the DCP4
+baseline, four arms per node in opposite orders (gB's first new arm died on a
+`profile_version` 1 / `secondary_ranks` mismatch, rerun as `new3`; gA's `new2`
+JSON hit the project inode quota and was rebuilt from `ab-gA.log`):
+
+    fit_ab.py --pool old gA gB      64 runs; residual sd 0.47 ms
+      tokens/step      1.51 +- 0.08
+      new vs old      -0.94 +- 0.12
+      node gB          0.10 +- 0.12
+      96k vs short    -1.59 +- 0.15
+
+**-0.94 ± 0.12 ms per step** (by hand, ~-0.5 short, ~-1.0 at 96k). Offline it
+predicts ~37 fewer cold experts on the busiest GPU (~2 ms at 55 us): the bench
+text is not the capture workload, and the one-kernel overlaps part of the cold
+reads with the hot ones. Unlike `freq-3250` (~0 on this bench), it wins on both
+held-out workloads offline (`glm-profiles.png`), so it becomes the default.

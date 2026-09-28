@@ -1,19 +1,22 @@
 #!/usr/bin/env python3
 """Figures for the GLM-5.3 part of the gh200-tiered-moe write-up (glm/README.md).
 
-    plot_glm.py --trace-dir .../snap-1535650-a --profile glm53-w4a16-2496.json \
+    plot_glm.py --trace-dir .../glm53-route-cap/merged \
+        --profile glm53-w4a16-agentic-3239-r2000.json \
         --out <gh200-tiered-moe>/glm/figs [--only NAME...]
 
 skew          how skewed GLM-5.3's routing is (training split)
 coverage      held-out routes served from HBM vs experts kept there
 residency     active cold experts per GPU per step vs hot experts per GPU
-replicas      one held-out layer's per-GPU cold load, and the replica budgets
+replicas      one held-out layer's per-GPU cold load, with and without replicas
+profiles      served vs agentic profile at the runtime budget, on both workloads
 ab            every greedy A/B run: step time vs accepted tokens, per arm
 ladder        decode step across the changes, each against its own control
 breakdown     one decode step this morning vs now (profiles 2096362, 2097699)
 gemm          dense projections at M=8 against their HBM floor
 
-Routing figures rank on the training split and measure on the held-out one.
+Routing figures rank on the training split and measure on the held-out one, of
+the agentic capture (the MiMo workload) unless --trace-dir says otherwise.
 Held-out 8-position windows stand in for MTP7's 8-token verify steps.
 """
 
@@ -38,6 +41,38 @@ COLD_US = 55.0  # one 20.3 MiB INT4 expert over C2C at ~380 GB/s
 # (hot experts per GPU, label, label offset in points)
 MARKS = ((2284, "start: reserve 10", (12, 10)), (2427, "reserve 7", (12, -30)),
          (3211, "DCP4", (10, 8)))
+COVERAGE_OFFSETS = ((-235, 8), (12, -22), (-40, 12))  # the first two points are close
+RUNTIME_HOT = 3211  # hot experts per GPU at DCP4, reserve 7
+CLAUDE_TRACES = Path("/e/fscratch/profound/naeimitabiei1/caches/routes/snap-1535650-a")
+PROFILES = HERE.parents[1] / "profiles"
+
+
+def runtime_hot(profile: dict, slots: int) -> np.ndarray:
+    """The planner's hot set for a profile at a runtime budget: each GPU's list
+    is demoted from its tail, or promoted in expert-id order, round-robin over
+    layers (tiered_moe_planner._promote/_demote_*_residency)."""
+    owners = np.asarray(profile["owners"])
+    num_layers, n = owners.shape
+    hot = np.zeros(owners.shape, dtype=bool)
+    for r in range(EP):
+        lists = [[e for e in profile["hot_experts"][li] if owners[li, e] == r]
+                 for li in range(num_layers)]
+        extra = slots - sum(map(len, lists))
+        while extra:
+            for li in range(num_layers):
+                if not extra:
+                    break
+                if extra < 0:
+                    lists[li].pop()
+                    extra += 1
+                else:
+                    have = set(lists[li])
+                    lists[li].append(next(e for e in range(n)
+                                          if owners[li, e] == r and e not in have))
+                    extra -= 1
+        for li in range(num_layers):
+            hot[li, lists[li]] = True
+    return hot
 
 
 def routes(trace_dir: Path, layers: list[int], n: int, split: str) -> np.ndarray:
@@ -91,7 +126,7 @@ def fig_coverage(train: np.ndarray, held: np.ndarray, out: Path) -> None:
             label="keep each layer's most-used experts")
     ax.plot([0, 100], [0, 100], color=MUTED, linewidth=1.5, linestyle="--",
             label="keep arbitrary experts")
-    for hot, name, offset in MARKS:
+    for (hot, name, _), offset in zip(MARKS, COVERAGE_OFFSETS):
         frac = hot / EXPERTS_PER_GPU * 100
         value = float(np.median(cum[:, int(round(frac / 100 * n)) - 1]))
         ax.plot([frac], [value], "o", color=HBM, markersize=7, markeredgecolor=SURFACE,
@@ -177,13 +212,14 @@ def fig_replicas(held_act: np.ndarray, owners: np.ndarray, hot: np.ndarray,
     a1.set_xticks(x, [f"GPU {r}" for r in range(EP)])
     a1.set_ylabel("active cold experts in the layer")
     a1.set_title("One held-out layer and step", fontsize=12)
-    a1.legend(loc="upper right")
+    a1.set_ylim(0, before.max() * 1.4)
+    a1.legend(loc="upper left")
     names = list(budgets)
     busiest = [budgets[k]["critical_cold_per_step"] for k in names]
     mean = budgets[names[0]]["mean_cold_per_rank_per_step"]
     a2.bar(range(len(names)), busiest, color=[DDR] + [HBM] * (len(names) - 1), width=0.6)
     a2.axhline(mean, color=INK2, linestyle="--", linewidth=1.2)
-    a2.text(-0.45, mean - 4, f"mean GPU: {mean:.0f}", ha="left", va="top", color="white",
+    a2.text(-0.28, mean - 4, f"mean GPU: {mean:.0f}", ha="left", va="top", color="white",
             fontsize=10, fontweight="bold")
     for i, v in enumerate(busiest):
         a2.text(i, v + 3, f"{v:.0f}\n(+{v - mean:.0f})", ha="center", fontsize=9.5, color=INK)
@@ -195,6 +231,38 @@ def fig_replicas(held_act: np.ndarray, owners: np.ndarray, hot: np.ndarray,
                  x=0.01, ha="left", fontweight="bold", fontsize=13, color=INK)
     fig.tight_layout()
     fig.savefig(out / "glm-replicas.png", dpi=160)
+    plt.close(fig)
+
+
+def fig_profiles(layers: list[int], out: Path) -> None:
+    served = json.loads((PROFILES / "glm53-w4a16-2496.json").read_text())
+    agentic = json.loads((PROFILES / "glm53-w4a16-agentic-3239-r2000.json").read_text())
+    arms = (("served\n(2,496 ranked, 985 replicas)", served, DDR),
+            ("agentic\n(3,239 ranked, 2,000 replicas)", agentic, HBM))
+    workloads = (("agentic capture\n(MiMo workload)", Path("/e/fscratch/profound/"
+                  "naeimitabiei1/glm53-route-cap/merged")),
+                 ("Claude-Code traffic\n(the served profile's own)", CLAUDE_TRACES))
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.6), sharey=True)
+    for ax, (wname, tdir) in zip(axes, workloads):
+        held = active_mask(load_steps(tdir, "heldout", layers), 256)
+        for i, (aname, prof, color) in enumerate(arms):
+            owners = np.asarray(prof["owners"])
+            r = evaluate(held, owners, runtime_hot(prof, RUNTIME_HOT),
+                         np.asarray(prof["secondary_ranks"]))
+            busiest, mean = r["critical_cold_per_step"], r["mean_cold_per_rank_per_step"]
+            ax.bar(i, busiest, 0.6, color=color)
+            ax.plot([i - 0.3, i + 0.3], [mean] * 2, color=INK2, linestyle="--", linewidth=1.2)
+            ax.text(i, busiest + 3, f"{busiest:.0f}", ha="center", fontsize=10, color=INK)
+            ax.text(i, mean - 4, f"mean {mean:.0f}", ha="center", va="top", fontsize=9.5,
+                    color="white", fontweight="bold")
+        ax.set_xticks(range(len(arms)), [a[0] for a in arms], fontsize=9.5)
+        ax.set_title(f"held-out steps: {wname}", fontsize=11.5)
+    axes[0].set_ylabel("cold experts on the busiest GPU,\nsummed over layers, per step")
+    fig.suptitle(f"At DCP4's {RUNTIME_HOT} hot experts per GPU, ranking all of them beats "
+                 "filling the rest by expert id", x=0.01, ha="left", fontweight="bold",
+                 fontsize=12.5, color=INK)
+    fig.tight_layout()
+    fig.savefig(out / "glm-profiles.png", dpi=160)
     plt.close(fig)
 
 
@@ -376,16 +444,13 @@ def main() -> None:
         if want("residency"):
             fig_residency(train_act, held_act, owners, args.out)
         if want("replicas"):
-            hot = np.zeros(owners.shape, dtype=bool)
-            for li, ids in enumerate(profile["hot_experts"]):
-                hot[li, ids] = True
+            hot = runtime_hot(profile, RUNTIME_HOT)
             secondary = np.asarray(profile["secondary_ranks"])
-            r2000 = json.loads((args.profile.parent / "glm53-w4a16-2496-r2000.json").read_text())
             budgets = {"none": evaluate(held_act, owners, hot, np.full(owners.shape, -1)),
-                       "985 (served)": evaluate(held_act, owners, hot, secondary),
-                       "2000": evaluate(held_act, owners, hot,
-                                        np.asarray(r2000["secondary_ranks"]))}
+                       "up to 2,000 per GPU": evaluate(held_act, owners, hot, secondary)}
             fig_replicas(held_act, owners, hot, secondary, budgets, args.out)
+    if want("profiles"):
+        fig_profiles(layers, args.out)
     for name, fn in (("ab", fig_ab), ("ladder", fig_ladder), ("breakdown", fig_breakdown),
                      ("gemm", fig_gemm)):
         if want(name):

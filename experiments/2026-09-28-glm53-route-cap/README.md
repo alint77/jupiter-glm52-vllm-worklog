@@ -21,14 +21,22 @@ and adds replicas with MiMo's `mimo_replicas.py` at a budget of 2000 per GPU.
 The builder places one copy per expert and only where it lowers the min-max
 cold load, so it placed 1962 / 1467 / 1351 / 1462.
 
-`profiles/glm53-w4a16-agentic-3239-r2000.json`. Held out (26,483 steps; train
-43,718):
+`profiles/glm53-w4a16-agentic-3239-r2000.json` (`profile_version` 2: the first
+build said 1 while carrying `secondary_ranks`, and the loader refused it --
+fixed in `finish_profile.py`).
 
-| per 8-token step | served profile (2496 listed) | new profile |
+Offline, at the runtime DCP4 budget of 3211 hot per GPU, with the planner's
+promotion / demotion emulated (`plot_glm.py runtime_hot`: the served profile's
+last 715 hot experts per GPU are filled in expert-id order):
+
+| per 8-token step, held out | served (2496 listed, 985 repl.) | agentic (3239, 2000) |
 |---|---|---|
-| mean cold experts per GPU | 214.9 | **114.0** |
-| busiest-GPU cold experts | 262.6 | **152.4** |
+| agentic capture: mean cold per GPU | 145.3 | **117.3** |
+| agentic capture: busiest GPU | 193.0 | **156.1** |
+| Claude-Code traffic (served's own split): mean | 152.3 | **122.7** |
+| Claude-Code traffic: busiest GPU | 201.6 | **162.1** |
 
-(The served profile is promoted to ~3211 hot at runtime under DCP4, in
-expert-id order; this table is at its listed 2496.) Served A/B: `ab-gA`,
-`ab-gB` in `../2026-09-27-glm53-mtp7-profile`.
+It wins by as much on the served profile's own held-out traffic, so the gain
+is ranking the whole budget, not fitting the workload. (The served profile
+with 2000 replicas: busiest 183.7 / 189.8.) Figure: `glm-profiles.png`.
+Served A/B: `ab-gA`, `ab-gB` in `../2026-09-27-glm53-mtp7-profile`.

@@ -21,7 +21,10 @@ export TRITON_CACHE_DIR=${c}/triton
 export TORCHINDUCTOR_CACHE_DIR=${c}/inductor
 export FLASHINFER_CACHE_DIR=${c}/flashinfer
 export TIERED_MOE_MODEL_PATH=/e/fscratch/profound/${USER}/models/GLM-5.3-W4A16
-export TIERED_MOE_PLACEMENT_PROFILE=${PWD}/agent_space/profiles/${PROFILE:-glm53-w4a16-2496.json}
+# agentic-3239-r2000: built from the MiMo-workload capture, all 3,239 hot per GPU
+# frequency-ranked, up to 2,000 replicas; -0.94 +- 0.12 ms/step against
+# glm53-w4a16-2496.json (ab-gA, ab-gB)
+export TIERED_MOE_PLACEMENT_PROFILE=${PWD}/agent_space/profiles/${PROFILE:-glm53-w4a16-agentic-3239-r2000.json}
 export TIERED_MOE_HBM_RESERVE_GB="${RESERVE_GB:-7}"  # 10 was for DFlash2's draft KV
 export VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS=1024
 # one-kernel INT4 decode MoE, replicas balanced by time in the kernel
@@ -34,8 +37,8 @@ export VLLM_DCP_ONE_SHOT_COLLECTIVES="${VLLM_DCP_ONE_SHOT_COLLECTIVES:-1}"
 # decode graph is silently skipped and those passes run eagerly.
 export TIERED_MOE_COMPILATION_CONFIG="{\"mode\":3,\"cudagraph_mode\":\"FULL_AND_PIECEWISE\",\"cudagraph_capture_sizes\":[${CAPTURE_SIZES:-1,8}],\"compile_sizes\":[8],\"cudagraph_num_of_warmups\":1,\"pass_config\":{\"fuse_allreduce_rms\":false}}"
 extra=()
-# REPLICAS=exact activates the profile's Grace replicas (985 per rank in
-# glm53-w4a16-2496.json). Replicas add pinned Grace the planner does not see
+# REPLICAS=exact activates the profile's Grace replicas (1,351-1,962 per rank
+# in the agentic profile). Replicas add pinned Grace the planner does not see
 # each worker's own share of, hence the larger host reserve (as for MiMo).
 REPLICAS="${REPLICAS-exact}"
 if [[ -n "${REPLICAS}" ]]; then
