@@ -399,3 +399,17 @@ predicts ~37 fewer cold experts on the busiest GPU (~2 ms at 55 us): the bench
 text is not the capture workload, and the one-kernel overlaps part of the cold
 reads with the hot ones. Unlike `freq-3250` (~0 on this bench), it wins on both
 held-out workloads offline (`glm-profiles.png`), so it becomes the default.
+
+## GSM8K, four runs per arm (gD, gF, gG, gH)
+
+`gsm_pool.py gD gF gG gH`: every run of each arm pooled over the 1,000
+questions all share, bootstrapped over questions. gG/gH (jobs 2101098/9) ran
+the full 1,319 in opposite orders, `new` = DCP4 baseline with the served
+2496 profile (gD's `new` predates the one-shot collectives).
+
+    new: 0.9120, 0.9070, 0.9140, 0.9080; pooled 0.9103
+    old: 0.9140, 0.9160, 0.9180, 0.9060; pooled 0.9135
+    new - old: -0.33 pts, 95% CI [-0.92, +0.27]
+    old against itself: 43 answers differ per pair of runs
+
+No detectable regression, now bounded within about a point.
