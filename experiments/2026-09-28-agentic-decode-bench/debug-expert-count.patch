@@ -1,0 +1,65 @@
+diff --git a/vllm/model_executor/layers/fused_moe/tiered_decode/__init__.py b/vllm/model_executor/layers/fused_moe/tiered_decode/__init__.py
+index 1c15fd0cca..271f91f6a0 100644
+--- a/vllm/model_executor/layers/fused_moe/tiered_decode/__init__.py
++++ b/vllm/model_executor/layers/fused_moe/tiered_decode/__init__.py
+@@ -64,6 +64,51 @@ class Placement(NamedTuple):
+     schedule: bool  # False: every expert runs on its primary
+ 
+ 
++_COUNTS: list = []
++_DUMP: dict = {}
++
++
++def _count(topk_ids, hot_map, cold_map, placement) -> None:
++    """DEBUG: per call, this rank's distinct routed experts that it runs hot and
++    holds cold (own copy or replica); rank 0 appends means every 750 calls."""
++    rank = placement.ep_rank if placement is not None else 0
++    if rank != 0 or topk_ids.shape[0] != MAX_TOKENS:
++        return
++    ids = topk_ids[topk_ids >= 0].long().unique()
++    hot = hot_map[ids] >= 0
++    cold = cold_map[ids] >= 0
++    if placement is not None:
++        hot &= placement.primary[ids] == rank
++        own_cold = cold & (placement.primary[ids] == rank)
++    else:
++        own_cold = cold
++    _COUNTS.append((len(ids), int(hot.sum()), int(own_cold.sum()), int(cold.sum())))
++    maps = _DUMP.setdefault("maps", {})
++    key = hot_map.data_ptr()
++    if key not in maps:
++        maps[key] = (len(maps), hot_map.cpu().numpy(), cold_map.cpu().numpy(),
++                     None if placement is None else placement.primary.cpu().numpy())
++    _DUMP.setdefault("calls", []).append((maps[key][0], topk_ids.cpu().numpy()))
++    if len(_COUNTS) == 6000:
++        import numpy as np
++
++        np.savez(os.environ["VLLM_TIERED_DECODE_COUNT_FILE"] + ".npz",
++                 order=np.array([v[0] for v in maps.values()]),
++                 hot=np.stack([v[1] for v in maps.values()]),
++                 cold=np.stack([v[2] for v in maps.values()]),
++                 primary=np.stack([v[3] for v in maps.values()])
++                 if placement is not None else np.zeros(0),
++                 call_map=np.array([c[0] for c in _DUMP["calls"]]),
++                 topk=np.stack([c[1] for c in _DUMP["calls"]]))
++    if len(_COUNTS) % 750 == 0:
++        import numpy as np
++
++        a = np.asarray(_COUNTS[-750:], dtype=float).mean(0)
++        with open(os.environ["VLLM_TIERED_DECODE_COUNT_FILE"], "a") as f:
++            f.write(f"calls {len(_COUNTS)}: distinct {a[0]:.1f} hot-run {a[1]:.2f} "
++                    f"own-cold {a[2]:.2f} cold-held {a[3]:.2f}\n")
++
++
+ def supported(device: torch.device) -> bool:
+     return torch.cuda.get_device_capability(device) == (9, 0)
+ 
+@@ -105,6 +150,8 @@ def tiered_decode_moe(
+             s13, s2 = s13.view(torch.uint8), s2.view(torch.uint8)
+         return tier[f"w13_weight{packed}"], s13, tier[f"w2_weight{packed}"], s2
+ 
++    if os.environ.get("VLLM_TIERED_DECODE_COUNT_FILE"):  # DEBUG, eager only
++        _count(topk_ids, hot_map, cold_map, placement)
+     out = torch.empty_like(x)
+     _extension().forward(
+         out,

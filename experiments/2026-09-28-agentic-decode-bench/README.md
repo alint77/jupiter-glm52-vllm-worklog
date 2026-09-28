@@ -88,3 +88,26 @@ MLA cache per GPU, so 2,815 hot experts per GPU against DCP4's 3,208, and pads
 with acceptance (+0.83 ms/token, DCP4 +0.09), consistent with more cold experts
 per step. Profile windows: the first profile node failed to launch its step
 (Slurm), rerun as `launch_dcp1_prof.sh`.
+
+## Prefix caching under DCP4: fixed (vLLM 9526fb671f)
+
+Sparse MLA takes dense (MHA) prefill when the whole sequence fits in
+`index_topk` (2,048), so a prefix-cache hit on a short prompt reads its cached
+context through `_compute_prefill_context` / `_context_parallel_compute_prefill_context`.
+Neither generic gather understands fp8_ds_mla's 656-byte entry (512 fp8 values,
+four fp32 tile scales, 64 bf16 rope values). `probe_ds_mla_gather.py`, one GPU:
+
+    (b) cp_gather_and_upconvert_fp8_kv_cache (sparse backend's reader): rel err kv_c 0.0259, k_pe 0
+    (a) gather_and_maybe_dequant_cache('fp8_ds_mla') (non-DCP path):     rel err kv_c 321, k_pe NaN
+    (fix) _gather_ds_mla_context, 2 requests, mid-sequence starts:     rel err kv_c 0.0258, k_pe 0
+
+So without DCP the context was silently garbage -- this is the path the current
+DCP1 production launcher runs with prefix caching on -- and with DCP it failed
+the dtype check. The fix gathers the raw entries (`cp_gather_cache`, uint8) and
+decodes them; regression test `tests/kernels/attention/test_cache.py::
+test_gather_ds_mla_context`.
+
+End to end (rows-glm-dcp4-prefix, job 2106177): DCP4 400K prefix caching on,
+166 requests, no errors, 77.9% prefix hit rate. Decode unchanged -- 28.08 ms at
+3.5 tok / 8K (prefix off: 27.70; 28.16 vs 27.87 step-weighted, within run
+noise) -- and total prefill 70 s against 298 s without the cache.
