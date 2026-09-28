@@ -1,0 +1,257 @@
+
+\documentclass[11pt, a4paper, logo, copyright, nonumbering]{deepseek}
+\usepackage[authoryear, sort&compress, round]{natbib}
+\usepackage{dblfloatfix}
+\usepackage{ulem}
+\usepackage{caption}
+\usepackage{amsthm}
+\newtheorem{proposition}{Proposition}
+\usepackage{subcaption}
+\usepackage{graphicx}
+\usepackage{makecell}
+\usepackage[utf8]{inputenc}
+% \usepackage{listings}
+% \lstset{breaklines=true}
+\usepackage{dramatist}
+\usepackage{xspace}
+\usepackage{pifont}% http://ctan.org/pkg/pifont
+\usepackage{multirow}
+\usepackage{tcolorbox}
+\usepackage{tabularx}
+\usepackage{xltabular}
+\usepackage{longtable}
+\usepackage{hyperref}
+\AtBeginDocument{
+    \def\sectionautorefname{Section}
+    \def\subsectionautorefname{Section}
+    \def\subsubsectionautorefname{Section}
+}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue,
+    filecolor=blue
+}
+\usepackage{xcolor}
+\usepackage{array}
+\interfootnotelinepenalty=10000
+
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{lineno}
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage{ragged2e}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+
+\usepackage[bottom]{footmisc}
+% \linenumbers
+
+\usepackage{CJKutf8}
+% \usepackage{subfigure}
+\usepackage{setspace}
+
+\usepackage{dsfont}
+
+\makeatletter
+\def\@BTrule[#1]{%
+  \ifx\longtable\undefined
+    \let\@BTswitch\@BTnormal
+  \else\ifx\hline\LT@hline
+    \nobreak
+    \let\@BTswitch\@BLTrule
+  \else
+     \let\@BTswitch\@BTnormal
+  \fi\fi
+  \global\@thisrulewidth=#1\relax
+  \ifnum\@thisruleclass=\tw@\vskip\@aboverulesep\else
+  \ifnum\@lastruleclass=\z@\vskip\@aboverulesep\else
+  \ifnum\@lastruleclass=\@ne\vskip\doublerulesep\fi\fi\fi
+  \@BTswitch}
+\makeatother
+
+\addto\extrasenglish{
+    \def\chapterautorefname{Chapter}%
+    \def\sectionautorefname{Section}%
+    \def\paragraphautorefname{Section}
+    \def\subparagraphautorefname{Section}
+    \def\paragraphautorefname{Paragraph}%
+    \def\tableautorefname{Table}%
+    \def\equationautorefname{Equation}%
+    \def\algorithmautorefname{Algorithm}%
+}
+
+\newenvironment{indentchunk}[1]%
+ {\begin{list}{}%
+         {\setlength{\leftmargin}{#1}}%
+         \item[]%
+ }
+ {\end{list}}
+ 
+\bibliographystyle{abbrvnat}
+% \bibliography{main}
+
+\reportnumber{001} % Leave blank if n/a
+
+% \renewcommand{\today}{2021-12-08}
+\renewcommand{\today}{}
+
+
+\title{
+\centering DSpark: Confidence-Scheduled Speculative Decoding with Semi-Autoregressive Generation
+}
+
+
+\author[]{
+Xin Cheng$^{1,2,*}$, Xingkai Yu$^{2,*}$, Chenze Shao$^{2,*}$, Jiashi Li$^{2,*}$, Yunfan Xiong$^{2,*}$
+
+\vspace{-0.1in}
+Yi Qian$^{2}$, Jiaqi Zhu$^{2}$, Shirong Ma$^{2}$, Xiaokang Zhang$^{2}$, Jiasheng Ye$^{2}$, Qinyu Chen$^{2}$,
+
+\vspace{-0.1in}
+Chengqi Deng$^{2}$, Jiping Yu$^{2}$, Damai Dai$^{2}$,  Zhengyan Zhang$^{2}$, Yixuan Wei$^{2}$, Yixuan Tan$^{2}$,
+
+\vspace{-0.1in}
+Wenkai Yang$^{2}$, Runxin Xu$^{2}$, Yu Wu$^{2}$, Zhean Xu$^{2}$, Xuanyu Wang$^{2}$, Muyang Chen$^{2}$,
+
+\vspace{-0.1in}
+Rui Tian$^{2}$,  Xiao Bi$^{2}$, Zhewen Hao$^{2}$, Shaoyuan Chen$^{2}$, Huanqi Cao$^{2}$, Wentao Zhang$^{2}$,
+
+\vspace{-0.1in}
+Anyi Xu$^{2}$, Huishuai Zhang$^{1}$, Dongyan Zhao$^{1}$, Wenfeng Liang$^{2}$ \\
+\vspace{-0.1in}
+\small
+$^1$Peking University  \quad $^2$DeepSeek-AI \\
+\small
+\{chengxin, xingkai, shaochenze, js.li, yunfanxiong\}@deepseek.com
+
+
+\vspace{-0.2in}
+}
+
+\input{commands.tex}
+
+\newcommand{\fix}{\marginpar{FIX}}
+\newcommand{\new}{\marginpar{NEW}}
+
+\begin{abstract}
+Speculative decoding accelerates Large Language Model (LLM) inference by decoupling draft generation from target verification. While recent parallel drafters efficiently propose long token sequences in a single forward pass, they suffer from rapid acceptance decay due to a lack of inter-token dependencies. Furthermore, indiscriminately verifying these extended blocks wastes critical batch capacity on tokens with high rejection risks, severely degrading throughput in high-concurrency serving systems. We introduce DSpark, a speculative decoding framework that unifies high-throughput parallel generation with adaptive, load-aware verification. To maintain draft quality, DSpark utilizes a semi-autoregressive architecture—coupling a parallel backbone with a lightweight sequential module—to introduce intra-block dependency modeling and mitigate suffix decay. To optimize system efficiency, DSpark employs confidence-scheduled verification, dynamically tailoring the verification length for each request based on estimated prefix survival probabilities and engine-specific throughput profiles. On offline benchmarks across diverse domains, DSpark substantially improves the accepted length over state-of-the-art autoregressive and parallel drafters. When deployed within the DeepSeek-V4 serving system under live user traffic, DSpark successfully mitigates verification waste. 
+Compared to the established production baseline~(MTP-1), DSpark accelerates per-user generation speeds by 60\%--85\% at matched throughput levels. 
+More importantly, by preventing severe throughput degradation under strict interactivity constraints, it enables performance tiers that were previously unattainable, shifting the Pareto frontier of our serving system.
+To facilitate community progress, we open-source the \href{https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro-DSpark/tree/main}{DSpark checkpoints} alongside \href{https://github.com/deepseek-ai/DeepSpec}{DeepSpec}, an algorithm-driven training repository for speculative decoding.
+\end{abstract}
+
+\begin{document}
+\begin{CJK*}{UTF8}{gbsn}
+
+\maketitle
+
+\renewcommand{\thefootnote}{*}
+\footnotetext{Equal contribution.}
+\renewcommand{\thefootnote}{\arabic{footnote}}
+
+% \tableofcontents
+
+\input{sections/intro}
+\input{sections/background}
+\input{sections/arch}
+\input{sections/exp}
+\input{sections/infra}
+\input{sections/related_work}
+\input{sections/conclusion}
+\bibliography{ref}
+
+\newpage
+\appendix
+\section*{Appendices}
+\section{Counterexample: Selection Bias Without Early-Stopping}
+\label{app:counterexample}
+We provide a simple counterexample to illustrate how an offline global search, i.e., operating without the \texttt{break} condition in \autoref{alg:prefix-scheduler}, violates the non-anticipating property required by lossless speculative decoding. Formally, the admission event for the $k$-th draft token, $\ell_r \ge k$, must be determined by scheduler-visible information available before the token $x_{r,k}$ is sampled. It must not depend on the realization of $x_{r,k}$ itself.
+Consider a scenario with a single request ($R=1$) and maximum draft length ($\gamma=2$). Suppose the pre-token confidence for the first position is $a_1 = 0.8$, and the profiled capacity curve is
+\[
+\mathrm{SPS}(1) = 1.0,\qquad
+\mathrm{SPS}(2) = 0.5,\qquad
+\mathrm{SPS}(3) = 0.45.
+\]
+The expected throughputs for verifying $0$ and $1$ draft tokens are
+\begin{align*}
+\Theta_0 &= 1 \cdot \mathrm{SPS}(1) = 1.0, \\
+\Theta_1 &= (1 + 0.8) \cdot \mathrm{SPS}(2) = 0.9.
+\end{align*}
+Without early-stopping, the scheduler proceeds to evaluate $\Theta_2$ before committing any admission decisions. Because the Markov confidence head uses the previously sampled token, the next confidence score $c_2$ explicitly depends on the realization of $x_1$. Consequently, the second-prefix survival probability
+\[
+a_2 = a_1 c_2
+\]
+also depends on $x_1$. Consider two possible realizations of $x_1$:
+\begin{itemize}
+\item \textbf{Case 1 ($x_1$ yields a high $c_2$):}
+Suppose $x_1$ results in $c_2 = 0.9$. Then
+\[
+a_2 = 0.8 \times 0.9 = 0.72.
+\]
+The expected throughput for length $2$ is
+\[
+\Theta_2 = (1 + 0.8 + 0.72) \times 0.45 = 1.134.
+\]
+Since $\Theta_2$ is the global maximum among $\{1.0, 0.9, 1.134\}$, the scheduler returns $\ell=2$. The first token $x_1$ is admitted into the verification prefix.
+\item \textbf{Case 2 ($x_1$ yields a low $c_2$):}
+Suppose $x_1$ results in $c_2 = 0$. Then
+\[
+    a_2 = 0.
+\]
+The expected throughput for length $2$ is
+\[
+    \Theta_2 = (1 + 0.8 + 0) \times 0.45 = 0.81.
+\]
+Here, the global maximum remains $\Theta_0 = 1.0$, so the scheduler returns $\ell=0$. The first token $x_1$ is not admitted into the verification prefix.
+\end{itemize}
+Thus, the admission of the first draft token dynamically depends on the value of the first draft token itself. This retrospective dependence introduces selection bias: the scheduler favors tokens that lead to highly confident continuations, even though the admission decision for $x_1$ should have been made before observing $x_1$.
+We now make the distributional bias explicit. Let the vocabulary be $\{A,B\}$, and consider the target and draft distributions at the first position:
+\[
+p_{\mathrm{t}}(A)=0.7,\qquad p_{\mathrm{t}}(B)=0.3,
+\]
+\[
+p_{\mathrm{d}}(A)=0.5,\qquad p_{\mathrm{d}}(B)=0.5.
+\]
+The standard speculative acceptance probability at the first position is
+\[
+\sum_{x\in\{A,B\}} \min\bigl(p_{\mathrm{t}}(x),p_{\mathrm{d}}(x)\bigr)
+=
+\min(0.7,0.5)+\min(0.3,0.5)
+=
+0.8,
+\]
+matching the assumed value ($a_1=0.8$).
+Suppose the retrospective scheduler behaves as above: $x_1=A$ yields a high continuation confidence and hence $\ell=2$, while $x_1=B$ yields a low continuation confidence and hence $\ell=0$. Then the first output token is distributed as follows. If $x_1=A$, the draft token is admitted and accepted with probability
+\[
+\min\left(1,\frac{p_{\mathrm{t}}(A)}{p_{\mathrm{d}}(A)}\right)
+=
+\min\left(1,\frac{0.7}{0.5}\right)
+=
+1,
+\]
+so the output token is $A$. If $x_1=B$, the draft token is not admitted; the target model instead generates a fresh token from $p_{\mathrm{t}}$. Therefore,
+\[
+\Pr(Y=A)
+=
+\Pr(x_1=A)\cdot 1
++
+\Pr(x_1=B)\cdot p_{\mathrm{t}}(A)
+=
+0.5 + 0.5 \times 0.7
+=
+0.85,
+\]
+and hence
+\[
+\Pr(Y=B)=0.15.
+\]
+This output distribution ($(0.85,0.15)$) differs from the target distribution ($(0.7,0.3)$), proving that the retrospective scheduler is not lossless.
+The early-stopping mechanism prevents this issue in the causal greedy scheduler. Since $\Theta_1 < \Theta_0$, the scheduler halts immediately and returns $\ell=0$ before evaluating any continuation-dependent quantity such as $c_2$. The admission decision for the first position therefore depends only on pre-token information and cannot be biased by the realization of $x_1$. This restores the non-anticipating property required by the standard losslessness argument.
+
+\end{CJK*}
+\end{document} 
