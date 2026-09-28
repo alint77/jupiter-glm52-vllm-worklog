@@ -12,7 +12,7 @@
 set -euo pipefail
 cd /e/project1/profound/alint77/vllm
 export CUDA_VISIBLE_DEVICES=0,1,2,3
-export VLLM_USE_V2_MODEL_RUNNER=1
+export VLLM_USE_V2_MODEL_RUNNER="${VLLM_USE_V2_MODEL_RUNNER:-1}"
 export VLLM_SERVER_DEV_MODE=1
 c=/e/fscratch/profound/${USER}/caches
 export VLLM_CACHE_ROOT=${c}/marlin/vllm-cache-glm53-mtp7

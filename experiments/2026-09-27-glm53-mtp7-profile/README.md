@@ -360,3 +360,20 @@ Offline, held-out 8-position steps, 3,211 hot per GPU, 985 replicas:
 DCP4 budget), each layer's list in descending frequency so any demotion drops
 the least-used first, 985 replicas recomputed for the new hot set; owners and
 checkpoint fingerprint unchanged. Measuring in `ab-hP`.
+
+## Full GSM8K, and how noisy a single run is (job 2098312)
+
+All 1,319 questions, new baseline (DCP4, 985 replicas, INT4 one-kernel,
+**one-shot collectives**) against the old configuration (DCP1, no replicas,
+Marlin): 0.9098 vs 0.9212, -1.14 pts, naive paired 95% CI [-2.12, -0.15]
+(15 new-only, 30 old-only). But the naive CI assumes a configuration answers a
+question the same way every run, and greedy decoding here is not reproducible:
+on the same 1,000 questions the **old configuration flipped 48 answers against
+its own earlier run** (new: 33), more than new vs old (37).
+
+Pooled over both runs of each arm on the shared 1,000 questions, bootstrapping
+over questions: **-0.55 pts, 95% CI [-1.50, +0.40]**. The same bootstrap on old
+vs old gives [-1.20, +1.50]: one paired run cannot resolve differences under
+~1.3 pts here. No detectable regression; both runs lean slightly the same way
+(and the two "new" runs differ by the one-shot collectives), so two more
+repeats per arm are queued.
