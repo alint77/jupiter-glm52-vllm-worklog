@@ -54,17 +54,19 @@ chain's total is meaningful. `triton_tem_fused_mm_*` (Inductor matmul templates
 with a fused norm, 0.74 ms on GLM) are GEMMs that `analyze.py` files under
 norm/rope/elementwise; moved here.
 
+`pool_windows.py`, all four windows each (1,000 GLM / 1,220 MiMo rank-steps):
+
 | | GLM | MiMo | diff |
 |---|---:|---:|---:|
-| MoE: one-kernel chain + routing | 8.2 | 8.8 | -0.6 |
-| drafter (MTP7: 7 sequential passes; DFlash: 1) | 3.6 | 0.9 | +2.8 |
-| dense GEMM (incl. Inductor mm templates) | 5.0 | 3.0 | +2.0 |
-| small unfused glue kernels | 2.3 | 0.6 | +1.8 |
-| DCP one-shot collectives | 1.7 | 0 | +1.7 |
-| attention + DSA indexer | 2.5 | 1.1 | +1.4 |
-| TP all-reduce | 2.2 | 2.3 | 0 |
-| idle + host-side + logits | 2.1 | 1.9 | +0.2 |
-| step period | 27.6 | 18.4 | +9.2 |
+| MoE: one-kernel chain + routing | 8.17 | 8.88 | -0.71 |
+| drafter (MTP7: 7 sequential passes; DFlash: 1) | 3.63 | 0.87 | +2.76 |
+| dense GEMM (incl. Inductor mm templates) | 5.05 | 2.97 | +2.08 |
+| small unfused glue kernels | 2.31 | 0.56 | +1.75 |
+| DCP one-shot collectives | 1.72 | 0 | +1.72 |
+| attention + DSA indexer | 2.47 | 1.07 | +1.40 |
+| TP all-reduce | 2.26 | 2.37 | -0.11 |
+| GPU idle + host-side + logits | 2.16 | 1.85 | +0.31 |
+| step period | 27.78 | 18.58 | +9.20 |
 
 GLM's glue, per step: 252 `FillFunctor<int>` zero-fills, 153 `elementwise_kernel`,
 78 `CatArrayBatchedCopy`, 78 int->bool casts, 78 `_correct_attn_cp_out_kernel`
