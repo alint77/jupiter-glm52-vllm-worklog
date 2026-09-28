@@ -7,7 +7,7 @@ E=agent_space/experiments/2026-09-27-glm53-mtp7-profile
 B=agent_space/experiments/2026-09-28-agentic-decode-bench
 model="$1"; job="$2"; shift 2
 case "${model}" in
-  glm) root=/e/project1/profound/alint77/traces/glm53-agentic-${PROF_TAG:+${PROF_TAG}-}${job}; export PREFIX_CACHING="${PREFIX_CACHING-}" ;;
+  glm) root=/e/project1/profound/alint77/traces/glm53-agentic-${PROF_TAG:+${PROF_TAG}-}${job} ;;
   mimo) root=/e/project1/profound/alint77/traces/mimo26-agentic-${job} ;;
 esac
 TRACE_ROOT="${root}" HOLD_JOB="${job}" nohup "${E}/onnode.sh" \

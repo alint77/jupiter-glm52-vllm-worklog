@@ -13,7 +13,7 @@ B=agent_space/experiments/2026-09-28-agentic-decode-bench
 model="$1"; tag="$2"; shift 2
 case "${model}" in
   glm)
-    export PREFIX_CACHING="${PREFIX_CACHING-1}"  # PREFIX_CACHING= : off (DCP4 + prefix hit crashes, cp_gather_cache dtype)
+    export PREFIX_CACHING="${PREFIX_CACHING-1}"  # PREFIX_CACHING= : off
     export SERVE_EXTRA="--enable-auto-tool-choice --tool-call-parser glm47 --reasoning-parser glm45 ${SERVE_EXTRA:-}"
     cmd=(bash agent_space/experiments/2026-09-27-glm53-mtp7-profile/serve.sh)
     name=glm53-w4a16-tiered ;;

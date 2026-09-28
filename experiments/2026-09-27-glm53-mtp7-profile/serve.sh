@@ -6,7 +6,8 @@
 # Started from the spec-comparison
 # mtp7 arm (../2026-09-04-spec-comparison/arm.sh) plus the production
 # launcher's cold prefetch, with
-#   * prefix caching off, so a repeated prompt really prefills
+#   * prefix caching on (PREFIX_CACHING= turns it off, so a repeated prompt
+#     really prefills)
 #   * --profiler-config when TRACE_ROOT is set
 # Both drafters verify 8 tokens per step, the same shape as MiMo's DFlash K=7.
 # Run on the node from the repo root with the environment loaded.
@@ -72,7 +73,7 @@ exec agent_space/experiments/2026-07-17-end-to-end-tuning/run-server.sh \
   --max-num-seqs 1 \
   --gpu-memory-utilization 0.90 \
   --max-model-len "${MAX_MODEL_LEN:-400000}" \
-  $([[ -n "${PREFIX_CACHING:-}" ]] && echo --enable-prefix-caching || echo --no-enable-prefix-caching) \
+  $([[ -n "${PREFIX_CACHING-1}" ]] && echo --enable-prefix-caching || echo --no-enable-prefix-caching) \
   --generation-config vllm \
   --served-model-name glm53-w4a16-tiered \
   "${extra[@]}" ${SERVE_EXTRA:-}
