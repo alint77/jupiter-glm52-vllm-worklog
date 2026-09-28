@@ -35,12 +35,16 @@ export TIERED_MOE_PLACEMENT_PROFILE=${PWD}/agent_space/profiles/${PROFILE:-glm53
 # (../2026-09-04-glm53-c1-df2/server.sbatch: Triton autotune runs out of shared
 # memory, and a compiled selector breaks the draft's captured region).
 SPEC="${SPEC:-dflash2}"
+# SPEC_K draft tokens per step; the verify step is SPEC_K + 1 tokens.
+SPEC_K="${SPEC_K:-7}"
+verify=$((SPEC_K + 1))
 if [[ "${SPEC}" == dflash2 ]]; then
   drafter=/e/fscratch/profound/${USER}/models/GLM-5.3-DFlash2
-  spec_config="{\"method\":\"dflash\",\"model\":\"${drafter}\",\"num_speculative_tokens\":7,\"kv_cache_dtype\":\"auto\",\"attention_backend\":\"FLASH_ATTN\",\"draft_sample_method\":\"greedy\"}"
-  : "${CAPTURE_SIZES:=8}" "${COMPILE_SIZES:=}"
+  spec_config="{\"method\":\"dflash\",\"model\":\"${drafter}\",\"num_speculative_tokens\":${SPEC_K},\"kv_cache_dtype\":\"auto\",\"attention_backend\":\"FLASH_ATTN\",\"draft_sample_method\":\"greedy\"}"
+  : "${CAPTURE_SIZES:=${verify}}" "${COMPILE_SIZES:=}"
 else
-  spec_config='{"method":"mtp","num_speculative_tokens":7}'
+  spec_config="{\"method\":\"mtp\",\"num_speculative_tokens\":${SPEC_K}}"
+  : "${CAPTURE_SIZES:=1,${verify}}" "${COMPILE_SIZES:=${verify}}"
 fi
 export TIERED_MOE_HBM_RESERVE_GB="${RESERVE_GB:-7}"  # 10 was for DFlash2's draft KV
 export VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS=1024

@@ -195,3 +195,29 @@ Findings, ranked by measured headroom:
 6. **Internal idle 1.06 ms is sub-us boundary bubbles** (largest single sites
    35-50 us/step, in the attention-metadata region); the bursty part of the
    step's idle is item 1, host-side.
+
+## Draft length: k=3 (4-token verify) vs k=7 (jobs 2110110-3, rows-{df2,mtp}-k{3,7})
+
+`SPEC_K` in serve.sh (capture [K+1]; MTP [1, K+1], compile K+1). DCP4, 400K,
+prefix on, reserve 7, full task set. On the 144 requests all four ran (same
+seeds, none looping):
+
+| arm | accepted/step | step | decode tok/s |
+|---|---:|---:|---:|
+| MTP3 | 2.93 | 22.3 ms | 131.2 |
+| MTP7 | 3.68 | 28.2 ms | 130.4 |
+| DFlash2 k=7 | 3.32 | 26.2 ms | 126.6 |
+| DFlash2 k=3 | 2.69 | 22.4 ms | 119.7 |
+
+Run-to-run noise on this set is ~+-3% (MTP7 122 / 124 / 131; DFlash2 k=7
+125-129), so MTP3, MTP7 and DFlash2 k=7 are tied; DFlash2 k=3 is worst, since
+its drafter costs the same ~188 kernels / ~1.1 ms at any k.
+
+Profiles of the 4-token step (traces/glm53-agentic-{mtpk3,df2k3}-prof-*):
+MTP3 21.6 ms against MTP7's 27.8 -- MoE 5.44 vs 8.17 (-33%, fewer distinct
+experts), drafter 1.56 vs 3.63 (3 passes vs 7); everything else barely moves:
+dense GEMM 5.01 vs 5.05, glue 2.04 vs 2.31, AR 1.94 vs 2.26, attention 1.70 vs
+1.89, DCP 1.52 vs 1.72, indexer 0.58 both. ~12.6 ms of the verify step is
+independent of the token count. The DFlash2 k=3 profile is distorted (26.3 ms
+profiled vs 22.0 unprofiled): profiler overhead slows its eager drafter,
+host-starving 4 ms/step and skewing the ranks into the all-reduce.
