@@ -221,3 +221,31 @@ dense GEMM 5.01 vs 5.05, glue 2.04 vs 2.31, AR 1.94 vs 2.26, attention 1.70 vs
 independent of the token count. The DFlash2 k=3 profile is distorted (26.3 ms
 profiled vs 22.0 unprofiled): profiler overhead slows its eager drafter,
 host-starving 4 ms/step and skewing the ranks into the all-reduce.
+
+## DSpark on GLM-5.3 (rows-dspark-*)
+
+Two GLM-5.3 DSpark drafters (HF, 2026-09): RedHatAI/GLM-5.3-speculator.dspark
+(3 layers, speculators format, trained on zai-org/GLM-5.3) and
+AlayaNeW/GLM-5.3-DSpark (5 layers, native Qwen3DSparkModel). `SPEC=dspark-redhat |
+dspark-alaya` in serve.sh; DSpark requires k >= its block size 8, so the verify
+is 9 tokens and falls off the one-kernel MoE (8 max) onto the two-tier Marlin path.
+
+Getting them to run: vLLM e76a28de43 (the KV planner reads speculators configs'
+nested transformer_layer_config), and two upstream fixes cherry-picked onto
+dflash2-backport: 5456e20a0d (#48524, drafter fc sized for 3 target layers
+instead of 5) and cb11a804ee (#48639, sample_from_anchor read from the config;
+without it RedHat got the 1+N layout and accepted ~1.0/step). Under DCP4 DSpark
+still collapses to ~1.0/step (a DSpark-specific DCP4 bug, not pursued), so the
+comparison is at DCP1.
+
+33 requests common to all three, DCP1, same seeds:
+
+| drafter | accepted/step | step | decode tok/s |
+|---|---:|---:|---:|
+| DFlash2 k=7 | 3.57 | 35.1 ms | 102 |
+| DSpark AlayaNeW, k=8 | 2.93 | 37.7 ms | 78 |
+| DSpark RedHat, k=8 | 2.67 | 37.6 ms | 71 |
+
+Both DSpark drafters accept 18-25% less than DFlash2 on agentic text while
+drafting one more token, and their 9-token Marlin-path step is slower. Not
+pursued further.

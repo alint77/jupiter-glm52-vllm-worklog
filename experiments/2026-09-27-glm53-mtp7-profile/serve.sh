@@ -42,6 +42,16 @@ if [[ "${SPEC}" == dflash2 ]]; then
   drafter=/e/fscratch/profound/${USER}/models/GLM-5.3-DFlash2
   spec_config="{\"method\":\"dflash\",\"model\":\"${drafter}\",\"num_speculative_tokens\":${SPEC_K},\"kv_cache_dtype\":\"auto\",\"attention_backend\":\"FLASH_ATTN\",\"draft_sample_method\":\"greedy\"}"
   : "${CAPTURE_SIZES:=${verify}}" "${COMPILE_SIZES:=}"
+elif [[ "${SPEC}" == dspark-* ]]; then
+  # SPEC=dspark-redhat | dspark-alaya: GLM-5.3 DSpark drafters (block size 8,
+  # so vLLM requires SPEC_K >= 8; the verify step is then 9 tokens, past the
+  # one-kernel MoE's 8, and takes the two-tier Marlin path).
+  drafter=/e/fscratch/profound/${USER}/models/GLM-5.3-DSpark-${SPEC#dspark-}
+  [[ "${SPEC}" == dspark-redhat ]] && drafter=/e/fscratch/profound/${USER}/models/GLM-5.3-DSpark-RedHatAI
+  [[ "${SPEC}" == dspark-alaya ]] && drafter=/e/fscratch/profound/${USER}/models/GLM-5.3-DSpark-AlayaNeW
+  SPEC_K="${SPEC_K_DSPARK:-8}"; verify=$((SPEC_K + 1))
+  spec_config="{\"method\":\"dspark\",\"model\":\"${drafter}\",\"num_speculative_tokens\":${SPEC_K},\"kv_cache_dtype\":\"auto\",\"attention_backend\":\"FLASH_ATTN\",\"draft_sample_method\":\"greedy\"}"
+  : "${CAPTURE_SIZES:=${verify}}" "${COMPILE_SIZES:=}"
 else
   spec_config="{\"method\":\"mtp\",\"num_speculative_tokens\":${SPEC_K}}"
   : "${CAPTURE_SIZES:=1,${verify}}" "${COMPILE_SIZES:=${verify}}"
