@@ -55,7 +55,7 @@ exec agent_space/experiments/2026-07-17-end-to-end-tuning/run-server.sh \
   --dcp-comm-backend "${DCP_COMM:-ag_rs}" \
   --max-num-seqs 1 \
   --gpu-memory-utilization 0.90 \
-  --max-model-len 400000 \
+  --max-model-len "${MAX_MODEL_LEN:-400000}" \
   $([[ -n "${PREFIX_CACHING:-}" ]] && echo --enable-prefix-caching || echo --no-enable-prefix-caching) \
   --generation-config vllm \
   --served-model-name glm53-w4a16-tiered \

@@ -71,3 +71,20 @@ norm/rope/elementwise; moved here.
 GLM's glue, per step: 252 `FillFunctor<int>` zero-fills, 153 `elementwise_kernel`,
 78 `CatArrayBatchedCopy`, 78 int->bool casts, 78 `_correct_attn_cp_out_kernel`
 (DCP's attention merge), shared-expert silu, ... MiMo's: 3 fused norm kernels.
+
+## GLM with DCP off at MiMo's 250K context (rows-glm-dcp1-250k, job 2104973)
+
+`launch_dcp1.sh`: DCP=1, MAX_MODEL_LEN=250000 (VLLM_TIERED_MOE_RELAX_SHAPE=1 lifts
+the 400K pin), prefix caching on (the crash is DCP-only), everything else as the
+DCP4 run. 178 requests, no errors; 6 ran to the output cap (DCP4: 0 -- sampling).
+
+    DCP1 250K  122 requests, 21,591 steps: 28.95 ms/step at 3.35 tok/step, 116 tok/s
+               fit 25.43 + 0.83/token + 0.62/10K ctx -> 28.83 ms at 3.5 tok, 8K
+    DCP4 400K  (above) -> 27.70 ms;  MiMo -> 16.90 ms
+
+DCP4 stays ~1.1 ms/step faster even at the shorter context. DCP1 holds the full
+MLA cache per GPU, so 2,815 hot experts per GPU against DCP4's 3,208, and pads
+16 local heads to 64 in the sparse FlashMLA kernel; its step time also rises
+with acceptance (+0.83 ms/token, DCP4 +0.09), consistent with more cold experts
+per step. Profile windows: the first profile node failed to launch its step
+(Slurm), rerun as `launch_dcp1_prof.sh`.
