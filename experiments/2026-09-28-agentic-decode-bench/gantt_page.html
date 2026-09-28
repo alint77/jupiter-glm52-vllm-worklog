@@ -1,0 +1,360 @@
+<title>DFlash2 Step Timeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root {
+  --surface: #fcfcfb;
+  --panel: #f3f2ee;
+  --lane: #f7f6f3;
+  --grid: #e4e3df;
+  --ink: #0b0b0b;
+  --ink2: #52514e;
+  --muted: #8a8984;
+  --idle: #b9b7b0;
+  --starved: #e34948;
+  --focus: #2a78d6;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
+  --s5: #e87ba4; --s6: #008300; --s7: #4a3aa7; --s8: #e34948;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --surface: #1a1a19; --panel: #232321; --lane: #20201e; --grid: #34342f;
+    --ink: #ffffff; --ink2: #c3c2b7; --muted: #8e8d85; --idle: #5d5c56;
+    --starved: #e66767; --focus: #3987e5;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
+    --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface: #1a1a19; --panel: #232321; --lane: #20201e; --grid: #34342f;
+  --ink: #ffffff; --ink2: #c3c2b7; --muted: #8e8d85; --idle: #5d5c56;
+  --starved: #e66767; --focus: #3987e5;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
+  --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
+}
+body {
+  background: var(--surface); color: var(--ink);
+  font: 14px/1.5 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding: 24px 20px 48px;
+}
+.wrap { max-width: 1280px; margin: 0 auto; display: grid; gap: 20px; }
+h1 { font-size: 22px; font-weight: 600; margin: 0; text-wrap: balance; }
+.sub { color: var(--ink2); margin: 4px 0 0; max-width: 78ch; }
+.mono, .num { font-family: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace; font-variant-numeric: tabular-nums; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.stat { background: var(--panel); border-radius: 6px; padding: 10px 12px; }
+.stat .k { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink2); }
+.stat .v { font-size: 20px; font-weight: 500; }
+.stat .n { font-size: 12px; color: var(--ink2); }
+.bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.bar button {
+  font: inherit; font-size: 13px; color: var(--ink); background: var(--panel);
+  border: 1px solid var(--grid); border-radius: 6px; padding: 4px 10px; cursor: pointer;
+}
+.bar button[aria-pressed="true"] { border-color: var(--focus); color: var(--focus); }
+.bar button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.bar .hint { color: var(--muted); font-size: 12px; margin-left: auto; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--ink2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+.chart { position: relative; background: var(--surface); border: 1px solid var(--grid); border-radius: 8px; overflow: hidden; }
+canvas { display: block; width: 100%; touch-action: none; cursor: grab; }
+canvas.dragging { cursor: grabbing; }
+.tip {
+  position: absolute; pointer-events: none; background: var(--panel); color: var(--ink);
+  border: 1px solid var(--grid); border-radius: 6px; padding: 8px 10px; font-size: 12px;
+  max-width: 420px; box-shadow: 0 4px 16px rgba(0,0,0,.12); z-index: 2;
+}
+.tip b { font-weight: 600; }
+.tip .nm { font-family: "IBM Plex Mono", monospace; word-break: break-all; color: var(--ink2); }
+.notes { display: grid; gap: 10px; max-width: 80ch; color: var(--ink2); }
+.notes p { margin: 0; }
+.notes strong { color: var(--ink); font-weight: 600; }
+details { background: var(--panel); border-radius: 6px; padding: 10px 14px; }
+summary { cursor: pointer; font-weight: 500; }
+.tbl { overflow-x: auto; }
+table { border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+th, td { padding: 4px 12px 4px 0; text-align: left; border-bottom: 1px solid var(--grid); }
+td.num, th.num { text-align: right; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>DFlash2 Step Timeline</h1>
+    <p class="sub">Two consecutive decode steps of GLM-5.3 W4A16 with the DFlash2 drafter (7 tokens, eager), DCP4, one user, on an agentic coding request. Every GPU kernel on all four GPUs, rank 0's CPU launch calls, and every idle gap on rank 0's GPU. Steps picked at the window's median period.</p>
+  </header>
+
+  <section class="stats" id="stats" aria-label="Step summary"></section>
+
+  <div class="bar" role="toolbar" aria-label="Zoom">
+    <button id="z-all" type="button" aria-pressed="true">Both steps</button>
+    <button id="z-step" type="button">One step</button>
+    <button id="z-tail" type="button">Sample + drafter</button>
+    <button id="z-layer" type="button">One layer (~330 µs)</button>
+    <button id="z-100" type="button">100 µs</button>
+    <span class="hint">Scroll to zoom, drag to pan, hover a bar for the kernel</span>
+  </div>
+
+  <div class="legend" id="legend" aria-label="Legend"></div>
+
+  <div class="chart" id="chart">
+    <canvas id="cv" aria-label="Gantt chart of GPU kernels, CPU launches and idle gaps over two decode steps" role="img"></canvas>
+    <div class="tip" id="tip" hidden></div>
+  </div>
+
+  <div class="notes">
+    <p><strong>Where the step goes.</strong> About 25 ms of each ~27 ms step is the verify pass: one CUDA graph of ~3,400 kernels on the main stream, with DCP's one-shot collectives on a side stream. Then ~0.5 ms of sampling, then the drafter: 188 eager kernels in ~1.3 ms.</p>
+    <p><strong>Where the idle is.</strong> Almost none of it is in visible holes. It is ~5,400 bubbles per two steps, nearly all under 1 µs, at the boundary between one kernel and the next inside the graphs. Zoom to 100 µs to see them. None of the idle in these two steps is host-starved (the CPU had always issued the next kernel before the GPU went idle), so a CUDA graph for the drafter would not remove it; fewer, fused kernels would.</p>
+    <p><strong>Reading the MoE bars.</strong> The MoE's five kernels per layer are chained with programmatic dependent launch: each starts early and waits on its predecessor, so their bars overlap and look longer than the work they do.</p>
+  </div>
+
+  <details>
+    <summary>Table view: time per category, both steps, rank 0</summary>
+    <div class="tbl"><table id="tbl"></table></div>
+  </details>
+</div>
+
+<script id="gantt-data" type="application/json">__DATA__</script>
+<script>
+(() => {
+  const D = JSON.parse(document.getElementById("gantt-data").textContent);
+  const css = () => getComputedStyle(document.documentElement);
+  const colors = () => {
+    const s = css();
+    return {
+      cat: [1, 2, 3, 4, 5, 6, 7, 8].map(i => s.getPropertyValue(`--s${i}`).trim()),
+      ink: s.getPropertyValue("--ink").trim(), ink2: s.getPropertyValue("--ink2").trim(),
+      muted: s.getPropertyValue("--muted").trim(), grid: s.getPropertyValue("--grid").trim(),
+      lane: s.getPropertyValue("--lane").trim(), idle: s.getPropertyValue("--idle").trim(),
+      starved: s.getPropertyValue("--starved").trim(), surface: s.getPropertyValue("--surface").trim(),
+    };
+  };
+  let C = colors();
+  const mq = window.matchMedia("(prefers-color-scheme: dark)");
+  const recolor = () => { C = colors(); buildLegend(); draw(); };
+  mq.addEventListener?.("change", recolor);
+  new MutationObserver(recolor).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+  // ---- lanes -------------------------------------------------------------
+  const r0 = D.ranks["0"];
+  const streams = {};
+  for (const k of r0.kernels) (streams[k[4]] ||= []).push(k);
+  const streamIds = Object.keys(streams).sort((a, b) => streams[b].length - streams[a].length);
+  const streamLabel = id => id === streamIds[0] ? "main stream" : `stream ${id}`;
+  const lanes = [
+    { label: "Rank 0 · CPU launches", kind: "host", items: r0.host, h: 22 },
+    ...streamIds.map(id => ({ label: `Rank 0 · GPU ${streamLabel(id)}`, kind: "kern", items: streams[id], h: id === streamIds[0] ? 34 : 22 })),
+    { label: "Rank 0 · GPU idle gaps", kind: "gap", items: r0.gaps, h: 22 },
+    ...["1", "2", "3"].map(r => ({ label: `Rank ${r} · GPU (all streams)`, kind: "kern", items: D.ranks[r].kernels, h: 26 })),
+  ];
+
+  // phases for the top band (rank 0)
+  const stepStarts = D.steps.map(s => s.start);
+  const phases = [];
+  D.steps.forEach((s, si) => {
+    const lo = s.start, hi = si + 1 < D.steps.length ? D.steps[si + 1].start : D.t1;
+    const ext = {};
+    for (const k of r0.kernels) {
+      if (k[0] < lo || k[0] >= hi) continue;
+      const e = (ext[k[5]] ||= [Infinity, -Infinity]);
+      e[0] = Math.min(e[0], k[0]); e[1] = Math.max(e[1], k[0] + k[1]);
+    }
+    const name = { target: "verify graph", draft: "drafter", logits: "sample" };
+    for (const [p, e] of Object.entries(ext)) if (name[p]) phases.push({ label: name[p], a: e[0], b: e[1], step: si });
+  });
+
+  // ---- stats ---------------------------------------------------------------
+  const gaps = r0.gaps;
+  const gapSum = gaps.reduce((s, g) => s + g[1], 0);
+  const starvedSum = gaps.reduce((s, g) => s + (g[2] ? g[1] : 0), 0);
+  const small = gaps.filter(g => g[1] < 1).length;
+  const statsEl = document.getElementById("stats");
+  const stat = (k, v, n) => `<div class="stat"><div class="k">${k}</div><div class="v num">${v}</div><div class="n">${n}</div></div>`;
+  const ver = phases.filter(p => p.label === "verify graph");
+  const dr = phases.filter(p => p.label === "drafter");
+  const avg = arr => arr.reduce((s, x) => s + x, 0) / arr.length;
+  statsEl.innerHTML = [
+    stat("Step period", `${avg(D.steps.map(s => s.period_ms)).toFixed(2)} ms`, D.steps.map(s => s.period_ms.toFixed(2)).join(" / ") + " ms"),
+    stat("Verify graph", `${(avg(ver.map(p => p.b - p.a)) / 1000).toFixed(2)} ms`, "one CUDA graph, ~3,400 kernels"),
+    stat("Drafter", `${(avg(dr.map(p => p.b - p.a)) / 1000).toFixed(2)} ms`, "188 eager kernels"),
+    stat("GPU idle, rank 0", `${(gapSum / D.steps.length / 1000).toFixed(2)} ms`, `${gaps.length.toLocaleString()} gaps, ${Math.round(100 * small / gaps.length)}% under 1 µs`),
+    stat("Host-starved", `${(starvedSum / D.steps.length / 1000).toFixed(2)} ms`, "idle waiting on a CPU launch, per step"),
+  ].join("");
+
+  // ---- legend + table -------------------------------------------------------
+  const legendEl = document.getElementById("legend");
+  function buildLegend() {
+    legendEl.innerHTML = D.buckets.map((b, i) => `<span><i style="background:${C.cat[i]}"></i>${b}</span>`).join("")
+      + `<span><i style="background:${C.idle}"></i>idle gap</span><span><i style="background:${C.starved}"></i>idle, host-starved</span>`;
+  }
+  buildLegend();
+  const tbl = document.getElementById("tbl");
+  const byCat = D.buckets.map(() => [0, 0]);
+  for (const k of r0.kernels) { byCat[k[2]][0] += k[1]; byCat[k[2]][1] += 1; }
+  tbl.innerHTML = `<thead><tr><th>Category</th><th class="num">kernels</th><th class="num">kernel time (ms)</th></tr></thead><tbody>`
+    + D.buckets.map((b, i) => `<tr><td>${b}</td><td class="num">${byCat[i][1].toLocaleString()}</td><td class="num">${(byCat[i][0] / 1000).toFixed(2)}</td></tr>`).join("")
+    + `<tr><td>idle gaps</td><td class="num">${gaps.length.toLocaleString()}</td><td class="num">${(gapSum / 1000).toFixed(2)}</td></tr></tbody>`
+    + `<caption style="caption-side:bottom;text-align:left;padding-top:8px;color:var(--ink2)">Kernel time is summed per kernel, so the PDL-chained MoE kernels count their waiting too; the per-step breakdown in the write-up uses the union of overlapping spans instead.</caption>`;
+
+  // ---- drawing ----------------------------------------------------------------
+  const cv = document.getElementById("cv"), ctx = cv.getContext("2d"), tip = document.getElementById("tip");
+  const LABEL_W = 190, AXIS_H = 28, PHASE_H = 22, GAP = 6;
+  let view = { a: 0, b: D.t1 };
+  let W = 0, H = 0, dpr = 1;
+  const laneTop = [];
+  function layout() {
+    let y = AXIS_H + PHASE_H + 8;
+    lanes.forEach((l, i) => { laneTop[i] = y; y += l.h + GAP; });
+    H = y + 4;
+    W = cv.clientWidth;
+    dpr = window.devicePixelRatio || 1;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    cv.style.height = H + "px";
+  }
+  const plotW = () => Math.max(40, W - LABEL_W - 12);
+  const xOf = t => LABEL_W + (t - view.a) / (view.b - view.a) * plotW();
+  const tOf = x => view.a + (x - LABEL_W) / plotW() * (view.b - view.a);
+  const lowerBound = (arr, t) => { let lo = 0, hi = arr.length; while (lo < hi) { const m = (lo + hi) >> 1; if (arr[m][0] < t) lo = m + 1; else hi = m; } return lo; };
+  const fmt = us => us >= 1000 ? `${(us / 1000).toFixed(us >= 10000 ? 1 : 2)} ms` : `${us.toFixed(us >= 10 ? 0 : 1)} µs`;
+
+  function niceStep(span) {
+    const raw = span / 8, p = Math.pow(10, Math.floor(Math.log10(raw)));
+    for (const m of [1, 2, 5, 10]) if (raw <= m * p) return m * p;
+    return 10 * p;
+  }
+
+  function draw() {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = C.surface; ctx.fillRect(0, 0, W, H);
+    ctx.font = '12px "IBM Plex Sans", system-ui, sans-serif';
+    // axis
+    const step = niceStep(view.b - view.a);
+    ctx.fillStyle = C.ink2; ctx.strokeStyle = C.grid; ctx.lineWidth = 1;
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    for (let t = Math.ceil(view.a / step) * step; t <= view.b; t += step) {
+      const x = Math.round(xOf(t)) + 0.5;
+      ctx.beginPath(); ctx.moveTo(x, AXIS_H - 4); ctx.lineTo(x, H); ctx.stroke();
+      ctx.fillText(fmt(t), x, 12);
+    }
+    // step boundaries
+    ctx.strokeStyle = C.muted; ctx.setLineDash([4, 4]);
+    stepStarts.forEach((s, i) => {
+      if (s < view.a || s > view.b) return;
+      const x = Math.round(xOf(s)) + 0.5;
+      ctx.beginPath(); ctx.moveTo(x, AXIS_H); ctx.lineTo(x, H); ctx.stroke();
+    });
+    ctx.setLineDash([]);
+    // phase band
+    const py = AXIS_H + 2;
+    phases.forEach(p => {
+      const a = Math.max(xOf(p.a), LABEL_W), b = Math.min(xOf(p.b), W - 12);
+      if (b <= a) return;
+      ctx.fillStyle = C.lane; ctx.fillRect(a, py, b - a, PHASE_H);
+      ctx.strokeStyle = C.grid; ctx.strokeRect(a + 0.5, py + 0.5, b - a - 1, PHASE_H - 1);
+      if (b - a > 60) {
+        ctx.fillStyle = C.ink; ctx.textAlign = "center";
+        ctx.fillText(`${p.label} · ${fmt(p.b - p.a)}`, (a + b) / 2, py + PHASE_H / 2);
+      }
+    });
+    ctx.textAlign = "left"; ctx.fillStyle = C.ink2; ctx.fillText("Phase", 8, py + PHASE_H / 2);
+    // lanes
+    lanes.forEach((l, i) => {
+      const y = laneTop[i];
+      ctx.fillStyle = C.lane; ctx.fillRect(LABEL_W, y, plotW(), l.h);
+      ctx.fillStyle = C.ink2; ctx.textAlign = "left";
+      ctx.fillText(l.label, 8, y + l.h / 2);
+      const items = l.items;
+      const i0 = Math.max(0, lowerBound(items, view.a - 2000)), px = (view.b - view.a) / plotW();
+      for (let j = i0; j < items.length; j++) {
+        const it = items[j];
+        if (it[0] > view.b) break;
+        if (it[0] + it[1] < view.a) continue;
+        let x = xOf(it[0]), w = it[1] / px;
+        if (w < 1) w = 1;
+        if (l.kind === "kern") ctx.fillStyle = C.cat[it[2]];
+        else if (l.kind === "gap") ctx.fillStyle = it[2] ? C.starved : C.idle;
+        else ctx.fillStyle = it[2] ? C.cat[0] : C.ink2;
+        const inset = l.kind === "host" ? (it[2] ? 2 : 6) : 3;
+        ctx.fillRect(x, y + inset, w, l.h - 2 * inset);
+      }
+    });
+  }
+
+  // ---- hit testing & tooltip ----------------------------------------------------
+  function hit(mx, my) {
+    for (let i = 0; i < lanes.length; i++) {
+      const y = laneTop[i], l = lanes[i];
+      if (my < y || my > y + l.h || mx < LABEL_W) continue;
+      const t = tOf(mx), tol = 3 * (view.b - view.a) / plotW();
+      const items = l.items;
+      let best = null, bestD = Infinity;
+      for (let j = Math.max(0, lowerBound(items, t - 2000)); j < items.length; j++) {
+        const it = items[j];
+        if (it[0] > t + tol) break;
+        const d = t < it[0] ? it[0] - t : t > it[0] + it[1] ? t - it[0] - it[1] : 0;
+        if (d <= tol && d < bestD) { best = it; bestD = d; }
+      }
+      return best ? { lane: l, it: best } : null;
+    }
+    return null;
+  }
+  function showTip(h, mx, my) {
+    const { lane: l, it } = h;
+    let html;
+    if (l.kind === "kern") html = `<b>${D.buckets[it[2]]}</b> · ${fmt(it[1])} · starts ${fmt(it[0])}<div class="nm">${D.names[it[3]]}</div><div>${l.label} · phase: ${it[5]}</div>`;
+    else if (l.kind === "gap") html = `<b>${it[2] ? "Idle, host-starved" : "Idle gap"}</b> · ${fmt(it[1])} · at ${fmt(it[0])}<div>${it[2] ? "the next kernel had not been launched yet" : "the next kernel was already issued"}</div>`;
+    else html = `<b>${it[2] ? "CUDA graph launch" : "Kernel launch"}</b> · CPU call ${fmt(it[1])} · at ${fmt(it[0])}`;
+    tip.innerHTML = html; tip.hidden = false;
+    const box = document.getElementById("chart").getBoundingClientRect();
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    tip.style.left = Math.min(mx + 14, box.width - tw - 8) + "px";
+    tip.style.top = (my + 14 + th > box.height ? my - th - 10 : my + 14) + "px";
+  }
+
+  // ---- interaction --------------------------------------------------------------
+  const clampView = () => {
+    const span = Math.min(Math.max(view.b - view.a, 5), D.t1);
+    if (view.a < 0) view.a = 0;
+    view.b = view.a + span;
+    if (view.b > D.t1) { view.b = D.t1; view.a = D.t1 - span; }
+  };
+  const buttons = ["z-all", "z-step", "z-tail", "z-layer", "z-100"].map(id => document.getElementById(id));
+  const press = id => buttons.forEach(b => b.setAttribute("aria-pressed", String(b.id === id)));
+  const setView = (a, b, id) => { view = { a, b }; clampView(); press(id); draw(); };
+  const v0 = ver[0], d0 = dr[0];
+  document.getElementById("z-all").onclick = () => setView(0, D.t1, "z-all");
+  document.getElementById("z-step").onclick = () => setView(0, D.steps[1].start, "z-step");
+  document.getElementById("z-tail").onclick = () => setView(v0.b - 150, d0.b + 150, "z-tail");
+  document.getElementById("z-layer").onclick = () => { const m = v0.a + (v0.b - v0.a) * 0.45; setView(m, m + 330, "z-layer"); };
+  document.getElementById("z-100").onclick = () => { const m = v0.a + (v0.b - v0.a) * 0.45; setView(m, m + 100, "z-100"); };
+
+  cv.addEventListener("wheel", e => {
+    e.preventDefault();
+    const rect = cv.getBoundingClientRect(), mx = e.clientX - rect.left;
+    if (mx < LABEL_W) return;
+    const t = tOf(mx), f = Math.exp(e.deltaY * 0.0015);
+    view = { a: t - (t - view.a) * f, b: t + (view.b - t) * f };
+    clampView(); press(null); draw(); tip.hidden = true;
+  }, { passive: false });
+  let drag = null;
+  cv.addEventListener("pointerdown", e => { drag = { x: e.clientX, a: view.a, b: view.b }; cv.setPointerCapture(e.pointerId); cv.classList.add("dragging"); tip.hidden = true; });
+  cv.addEventListener("pointerup", e => { drag = null; cv.classList.remove("dragging"); });
+  cv.addEventListener("pointermove", e => {
+    const rect = cv.getBoundingClientRect(), mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    if (drag) {
+      const dt = (e.clientX - drag.x) / plotW() * (drag.b - drag.a);
+      view = { a: drag.a - dt, b: drag.b - dt }; clampView(); press(null); draw(); return;
+    }
+    const h = hit(mx, my);
+    if (h) showTip(h, mx, my); else tip.hidden = true;
+  });
+  cv.addEventListener("pointerleave", () => { tip.hidden = true; });
+  window.addEventListener("resize", () => { layout(); draw(); });
+  layout(); draw();
+  document.fonts?.ready.then(() => draw());
+})();
+</script>
