@@ -315,6 +315,7 @@ LADDER = [
     ("INT4 one-kernel,\nbalanced by\ntime", -1.42, 0.25),
     ("DCP4", -1.12, 0.25),
     ("one-shot DCP\ncollectives", -3.07, 0.20),
+    ("agentic profile,\n2,000 replicas", -0.94, 0.12),
 ]
 # The no-replica arm fitted at 6 accepted tokens (fit_ab.py off rA rB: 35.06 +
 # 1.81 x 6 = 45.9 ms, short context), plus the capture fix it already includes.
@@ -339,11 +340,50 @@ def fig_ladder(out: Path) -> None:
     ax.set_xticks(x, labels, fontsize=9)
     ax.set_ylim(0, 55)
     ax.set_ylabel("decode step, ms (8-token verify, at 6 accepted tokens)")
-    ax.set_title("GLM-5.3 decode on one 4x GH200 node: ~129 -> ~166 tok/s on the greedy "
-                 "bench\n(inside the bars: each change against its own same-node control)",
-                 pad=10, loc="left")
+    ax.set_title("Each change, measured on the old greedy bench (looping text, 6+ accepted "
+                 "tokens/step)\nonly the deltas inside the bars carry over; the heights are "
+                 "not real-traffic step times", pad=10, loc="left", fontsize=11.5)
     fig.tight_layout()
     fig.savefig(out / "glm-ladder.png", dpi=160)
+    plt.close(fig)
+
+
+# ms per decode step on the MiMo agentic task set, pool_windows.py over four
+# profiler windows per model (../2026-09-28-agentic-decode-bench/README.md)
+VS_MIMO = [  # (part, GLM, MiMo)
+    ("MoE (both tiers, routing)", 8.17, 8.88),
+    ("dense GEMMs", 5.05, 2.97),
+    ("drafter", 3.63, 0.87),
+    ("attention + sparse-attention indexer", 2.47, 1.07),
+    ("small unfused kernels", 2.31, 0.56),
+    ("TP all-reduce", 2.26, 2.37),
+    ("idle, host-side, logits", 2.16, 1.85),
+    ("DCP collectives", 1.72, 0.0),
+]
+
+
+def fig_vs_mimo(out: Path) -> None:
+    parts = [p for p, _, _ in VS_MIMO][::-1]
+    glm = np.array([g for _, g, _ in VS_MIMO])[::-1]
+    mimo = np.array([m for _, _, m in VS_MIMO])[::-1]
+    y = np.arange(len(parts))
+    h = 0.36
+    fig, ax = plt.subplots(figsize=(9.5, 5.2))
+    ax.barh(y + h / 2 + 0.01, glm, h, color=HBM, label=f"GLM-5.3 ({glm.sum():.1f} ms)")
+    ax.barh(y - h / 2 - 0.01, mimo, h, color=DDR, label=f"MiMo-V2.6 ({mimo.sum():.1f} ms)")
+    for yi, g, m in zip(y, glm, mimo):
+        ax.text(g + 0.08, yi + h / 2, f"{g:.1f}", va="center", fontsize=9.5, color=INK)
+        ax.text(m + 0.08, yi - h / 2, f"{m:.1f}" if m else "none", va="center",
+                fontsize=9.5, color=INK2)
+    ax.set_yticks(y, parts)
+    ax.set_xlabel("ms per decode step (profiled, mean of 4 GPUs)")
+    ax.set_xlim(0, max(glm.max(), mimo.max()) * 1.12)
+    ax.grid(axis="y", visible=False)
+    ax.legend(loc="lower right")
+    ax.set_title("Same agentic tasks, same harness: the MoE costs the same;\n"
+                 "GLM's extra ~9 ms is everything around it", loc="left", pad=10)
+    fig.tight_layout()
+    fig.savefig(out / "glm-vs-mimo.png", dpi=160)
     plt.close(fig)
 
 
@@ -452,6 +492,7 @@ def main() -> None:
     if want("profiles"):
         fig_profiles(layers, args.out)
     for name, fn in (("ab", fig_ab), ("ladder", fig_ladder), ("breakdown", fig_breakdown),
+                     ("vsmimo", fig_vs_mimo),
                      ("gemm", fig_gemm)):
         if want(name):
             fn(args.out)
