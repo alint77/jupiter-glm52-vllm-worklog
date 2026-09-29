@@ -1388,6 +1388,23 @@ edge exists only at DCP1, where c=4 caps context near 100K, against MTP3's
 keep both. See the [DCP port](experiments/2026-09-02-dflash-dcp-port/README.md)
 and the [c=4 performance run](experiments/2026-09-02-df2-c4-perf/README.md).
 
+**GLM-5.3 verify-step kernel work (2026-09-29).** DFlash2 k=7, DCP4, 400K,
+reserve 7. Nsight Systems (graph-level) shows the host is not the bottleneck:
+the GPU is busy ~99% of a 25.6 ms step and the torch profiler's apparent
+step-entry stalls were its own overhead. Five exact changes on vLLM
+`dflash2-backport` (fused one-shot DCP query gather and LSE combine; the
+upstream #50365 index remap with an in-kernel -1 tail; the LSE read in place
+without a mask that could not change the result; converted indices reused on
+the 57 non-indexer layers; the MoE route kernel dropping padding itself) take
+the task-set step **26.0 -> 24.3 ms (-1.76 ms, CI -2.00 .. -1.50), ~125 -> ~142
+decode tok/s**, and cut the verify graph from 3,407 to 2,576 kernels.
+All-reduce + RMSNorm fusion crashed because these GPUs lack NVLink multicast
+yet `auto` chose FlashInfer's mnnvl backend (fixed: b844ed93ba; plus a compile
+fix, 493acb5744); with trtllm it gains only -0.15 ms and is not enabled. The
+remaining all-reduce cost is ~2 ms/step of waiting on MoE imbalance, which is
+hot-expert imbalance: every cold expert already has a second holder. See
+[the verify-kernel notes](experiments/2026-09-29-glm-verify-kernels/README.md).
+
 ## Reproducing
 
 The scripts expect this directory to be `agent_space/` inside the vLLM checkout

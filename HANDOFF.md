@@ -1,5 +1,13 @@
 # GLM-5.2 on JUPITER: agent handoff
 
+**Latest (2026-09-29): GLM-5.3 verify-step kernel work.** Serving default is
+`experiments/2026-09-27-glm53-mtp7-profile/serve.sh` (DFlash2 k=7, DCP4, 400K,
+reserve 7). vLLM `dflash2-backport` HEAD 493acb5744 (local, unpushed) is
+26.0 -> 24.3 ms/step on the agentic task set. State, results, the queue and
+reproduction commands: `experiments/2026-09-29-glm-verify-kernels/` (README,
+PLAN). Next: hot-expert ownership rebalance (all-reduce waiting ~2 ms/step),
+small dense GEMMs, sampler top-p kernel. The sections below predate this.
+
 **Last updated: 2026-09-04 (Phase 54). MTP3/c=1 is the Claude Code serving
 choice, and both its phases are now profiled at a real 96K context.**
 

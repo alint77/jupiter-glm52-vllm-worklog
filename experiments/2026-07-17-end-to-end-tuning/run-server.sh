@@ -14,7 +14,8 @@ if [[ -n "${placement_profile}" ]]; then
   placement_args=(--tiered-moe-placement-profile "${placement_profile}")
 fi
 
-exec .venv/bin/vllm serve "${model_path}" \
+# SERVER_WRAPPER: an optional command prefix (e.g. nsys profile ...).
+exec ${SERVER_WRAPPER:-} "${VLLM_VENV_DIR:-${PWD}/.venv}/bin/vllm" serve "${model_path}" \
   --served-model-name glm52-w4a16-tiered \
   --host 127.0.0.1 \
   --port 8027 \

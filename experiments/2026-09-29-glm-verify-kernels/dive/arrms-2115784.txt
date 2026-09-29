@@ -1,0 +1,107 @@
+pooled 4 window(s): 309 steps per rank; ranks [0, 1, 2, 3]
+step period 25.38 ms, target busy 21.50 ms
+  target/verify graph     21.50 ms
+  logits                   0.30 ms
+  drafter                  1.08 ms
+  host-side kernels        0.30 ms
+
+kernel launches inside the graph (sum 32.50 ms/step over 2425 launches):
+    5.828 ms  17.9%  x  75.0    77.7 us  void tiered_decode::gemm_kernel<0, 1>(tiered_decode::Params)
+    5.720 ms  17.6%  x  75.0    76.3 us  tiered_decode::act_kernel(tiered_decode::Workspace*)
+    3.695 ms  11.4%  x 336.0    11.0 us  nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT[g4]
+    3.244 ms  10.0%  x  75.0    43.3 us  void tiered_decode::gemm_kernel<1, 1>(tiered_decode::Params)
+    2.835 ms   8.7%  x  75.0    37.8 us  tiered_decode::finalize_kernel(tiered_decode::Workspace*, __nv_bfloat16*)
+    2.549 ms   7.8%  x 151.0    16.9 us  void flashinfer::trtllm_allreduce_fusion::allreduce_fusion_kernel_oneshot_lamport<(flashinfe
+    1.761 ms   5.4%  x 174.0    10.1 us  nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT[g4]
+    1.420 ms   4.4%  x  78.0    18.2 us  void sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_sparse_kernel<sm90::decode::sparse_
+    0.663 ms   2.0%  x  78.0     8.5 us  void one_shot::gather_cat_kernel<4>(vllm::RankData*, vllm::RankData*, long, long, vllm::Rank
+    0.606 ms   1.9%  x  78.0     7.8 us  void smxx::decode::flash_fwd_mla_combine_kernel<cutlass::bfloat16_t, 512, 8, 32, 256>(Combin
+    0.496 ms   1.5%  x  78.0     6.4 us  void one_shot::lse_reduce_scatter_kernel<__nv_bfloat16, 4, true>(vllm::RankData*, vllm::Rank
+    0.448 ms   1.4%  x  75.0     6.0 us  void tiered_decode::route_prep_kernel<int>(tiered_decode::Workspace*, __nv_bfloat16 const*, 
+    0.392 ms   1.2%  x  75.0     5.2 us  void vllm::moe::grouped_topk_fused_small_expert_count_kernel<float, float, int, (vllm::moe::
+    0.352 ms   1.1%  x  75.0     4.7 us  kernel_cutlass_kernel_vllmmodel_executorkernelslinearcute_dsl_ll_bf16_splitkLLBf16SplitK_obj
+    0.298 ms   0.9%  x  78.0     3.8 us  nvjet_sm90_tst_64x8_64x16_2x1_v_bz_NNT[g2]
+    0.266 ms   0.8%  x  21.0    12.7 us  kernel_cutlass_kernel_vllmmodel_executorkernelsattentiondsadcp_indexer_cutedslStableTopKFrom
+    0.189 ms   0.6%  x  75.0     2.5 us  void cublasLt::splitKreduce_kernel<32, 16, int, float, __nv_[g32]
+    0.186 ms   0.6%  x  78.0     2.4 us  triton_poi_fused_mul_silu_slice_0
+    0.156 ms   0.5%  x  72.0     2.2 us  triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_3
+    0.152 ms   0.5%  x  21.0     7.2 us  void one_shot::gather_kernel<4>(vllm::RankData*, vllm::RankSignals, vllm::Signal*, uint4*, i
+    0.151 ms   0.5%  x   6.0    25.1 us  void vllm::cross_device_reduce_1stage<__nv_bfloat16, 4>(vllm::RankData*, vllm::RankSignals, 
+    0.145 ms   0.4%  x  78.0     1.9 us  void vllm::concat_and_cache_ds_mla_kernel<__nv_bfloat16, unsigned char, (vllm::Fp8KVCacheDat
+    0.140 ms   0.4%  x  78.0     1.8 us  void cublasLt::splitKreduce_kernel<32, 16, int, float, __nv_[g82]
+    0.116 ms   0.4%  x  57.0     2.0 us  triton_red_fused_2
+    0.105 ms   0.3%  x  75.0     1.4 us  triton_poi_fused_add_mul_0
+    0.083 ms   0.3%  x  21.0     3.9 us  void vllm::cooperative::cooperative_topk_cs8<2048u>(vllm::cooperative::CooperativeTopKParams
+    0.082 ms   0.3%  x  54.0     1.5 us  triton_poi_fused_1
+    0.076 ms   0.2%  x  21.0     3.6 us  void deep_gemm::sm90_fp8_paged_mqa_logits<1u, 32u, 128u, 64u, true, false, 3u, 3u, 256u, 128
+    0.059 ms   0.2%  x  21.0     2.8 us  _convert_req_index_to_global_index_kernel
+    0.041 ms   0.1%  x  21.0     2.0 us  void vllm::indexer_k_quant_and_cache_kernel<__nv_bfloat16, unsigned char, (vllm::Fp8KVCacheD
+
+solo (critical-path) time per kernel, ms/step. Total solo 11.67 ms of the graph; top:
+    2.816   nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT[g4]
+    2.544   void flashinfer::trtllm_allreduce_fusion::allreduce_fusion_kernel_oneshot_lamport<(flashinfer::t
+    1.135   void sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_sparse_kernel<sm90::decode::sparse_fp8:
+    1.080   nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT[g4]
+    0.663   void one_shot::gather_cat_kernel<4>(vllm::RankData*, vllm::RankData*, long, long, vllm::RankSign
+    0.496   void one_shot::lse_reduce_scatter_kernel<__nv_bfloat16, 4, true>(vllm::RankData*, vllm::RankData
+    0.322   void smxx::decode::flash_fwd_mla_combine_kernel<cutlass::bfloat16_t, 512, 8, 32, 256>(CombinePar
+    0.298   nvjet_sm90_tst_64x8_64x16_2x1_v_bz_NNT[g2]
+    0.292   void tiered_decode::gemm_kernel<1, 1>(tiered_decode::Params)
+    0.266   kernel_cutlass_kernel_vllmmodel_executorkernelsattentiondsadcp_indexer_cutedslStableTopKFromGath
+    0.156   triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_3
+    0.152   void one_shot::gather_kernel<4>(vllm::RankData*, vllm::RankSignals, vllm::Signal*, uint4*, int, 
+    0.151   void vllm::cross_device_reduce_1stage<__nv_bfloat16, 4>(vllm::RankData*, vllm::RankSignals, vllm
+    0.145   void vllm::concat_and_cache_ds_mla_kernel<__nv_bfloat16, unsigned char, (vllm::Fp8KVCacheDataTyp
+    0.140   void cublasLt::splitKreduce_kernel<32, 16, int, float, __nv_[g82]
+    0.119   tiered_decode::finalize_kernel(tiered_decode::Workspace*, __nv_bfloat16*)
+    0.116   triton_red_fused_2
+    0.105   triton_poi_fused_add_mul_0
+
+most-hidden kernels (joint-overlap share, ms/step; near-zero solo):
+  joint   2.743  solo  0.002   void tiered_decode::gemm_kernel<0, 1>(tiered_decode::Params)
+  joint   2.682  solo  0.033   tiered_decode::act_kernel(tiered_decode::Workspace*)
+  joint   1.358  solo  0.119   tiered_decode::finalize_kernel(tiered_decode::Workspace*, __nv_bfloat16*)
+  joint   0.186  solo  0.008   void tiered_decode::route_prep_kernel<int>(tiered_decode::Workspace*, __nv_bfloat16 cons
+  joint   0.179  solo  0.000   void vllm::moe::grouped_topk_fused_small_expert_count_kernel<float, float, int, (vllm::m
+  joint   0.158  solo  0.036   kernel_cutlass_kernel_vllmmodel_executorkernelslinearcute_dsl_ll_bf16_splitkLLBf16SplitK
+  joint   0.076  solo  0.004   triton_poi_fused_mul_silu_slice_0
+  joint   0.071  solo  0.000   void cublasLt::splitKreduce_kernel<32, 16, int, float, __nv_[g32]
+
+GPU idle strictly inside the target graph span: 0.662 ms/step (p50 0.662)
+recurring internal gaps:
+   0.052 ms/step  after void smxx::decode::flash_fwd_mla_combine  ->  void one_shot::lse_reduce_scatter_kernel
+   0.038 ms/step  after void vllm::concat_and_cache_ds_mla_kerne  ->  nvjet_sm90_tst_64x8_64x16_2x1_v_bz_NNT
+   0.037 ms/step  after void one_shot::lse_reduce_scatter_kernel  ->  nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+   0.037 ms/step  after nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT  ->  nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+   0.037 ms/step  after nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT  ->  triton_poi_fused_add_copy_index_select_m
+   0.037 ms/step  after nvjet_sm90_tst_64x8_64x16_2x1_v_bz_NNT  ->  void one_shot::gather_cat_kernel<4>(vllm
+   0.034 ms/step  after void flashinfer::trtllm_allreduce_fusion  ->  nvjet_sm90_tst_64x8_64x16_4x1_v_bz_split
+   0.029 ms/step  after tiered_decode::finalize_kernel(tiered_de  ->  triton_poi_fused_add_mul_0
+
+streams inside the target graph:
+  stream 19:  30.560 ms  x2125 launches
+      x 261.0  nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+      x 151.0  void flashinfer::trtllm_allreduce_fusion::allreduce_fusi
+      x  99.0  nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT
+  stream 308:   1.945 ms  x300 launches
+      x  75.0  nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT
+      x  75.0  void cublasLt::splitKreduce_kernel<32, 16, int, float, _
+      x  75.0  triton_poi_fused_mul_silu_slice_0
+  union busy: 21.500 ms/step
+
+tiered chain, ms of kernel time per step: {'act': 5.72, 'fin': 2.835, 'prep': 0.448, 'w13': 5.828, 'w2': 3.244}
+  launch pattern ('prep', 'w13', 'act', 'w2', 'fin', 'prep') x1/step
+  act -> w2: x75/step  next-start delta   73.3 us  next-dur   43.3 us  overlap    3.0 us  (100% of pairs)
+  fin -> prep: x74/step  next-start delta  198.9 us  next-dur    6.0 us  overlap    0.0 us  (0% of pairs)
+  prep -> w13: x75/step  next-start delta    2.2 us  next-dur   77.7 us  overlap    3.8 us  (100% of pairs)
+  w13 -> act: x75/step  next-start delta    5.1 us  next-dur   76.3 us  overlap   72.6 us  (100% of pairs)
+  w2 -> fin: x75/step  next-start delta    7.0 us  next-dur   37.8 us  overlap   36.2 us  (100% of pairs)
+Traceback (most recent call last):
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-09-28-agentic-decode-bench/verify_graph_dive.py", line 263, in <module>
+    main()
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-09-28-agentic-decode-bench/verify_graph_dive.py", line 257, in main
+    layer_pattern(steps_)
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-09-28-agentic-decode-bench/verify_graph_dive.py", line 187, in layer_pattern
+    length = min(len(s) for s in seqs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: min() iterable argument is empty

@@ -74,8 +74,10 @@ class Profiler:
     decode and held `window` s (or until it ends); each window's traces move to
     trace_root/window-<i> so they can be analysed one window at a time."""
 
-    def __init__(self, base: str, trace_root: Path | None, count: int, window: float):
+    def __init__(self, base: str, trace_root: Path | None, count: int, window: float,
+                 min_steps: int = 40):
         self.base, self.root, self.left, self.window = base, trace_root, count, window
+        self.min_steps = min_steps
         self.done, self.last = 0, False
 
     def call(self, path: str) -> None:
@@ -113,7 +115,7 @@ class Profiler:
             self.call("/stop_profile")
             time.sleep(5)  # let every rank finish writing
             new = set(self.root.glob("*.gz")) - before
-            if steps < 40:  # the request ended too soon: not a decode window
+            if steps < self.min_steps:  # the request ended too soon: not a decode window
                 for f in new:
                     f.unlink()
                 print(f"discarded a window with {steps:.0f} steps", flush=True)
@@ -150,9 +152,11 @@ def main() -> None:
     ap.add_argument("--timeout", type=float, default=900.0)
     ap.add_argument("--profile", type=int, default=0, help="profiler windows to take")
     ap.add_argument("--profile-window", type=float, default=2.0)
+    ap.add_argument("--profile-min-steps", type=int, default=40)
     ap.add_argument("--trace-root", type=Path, default=None)
     args = ap.parse_args()
-    profiler = Profiler(args.base_url, args.trace_root, args.profile, args.profile_window)
+    profiler = Profiler(args.base_url, args.trace_root, args.profile, args.profile_window,
+                        args.profile_min_steps)
     tasks = [t for f in args.tasks for t in json.loads(f.read_text())]
     sandbox = Path(tempfile.mkdtemp(prefix="agentic-bench-"))
     n = 0

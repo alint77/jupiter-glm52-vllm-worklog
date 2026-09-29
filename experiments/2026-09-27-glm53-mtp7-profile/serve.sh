@@ -8,7 +8,8 @@
 # launcher's cold prefetch, with
 #   * prefix caching on (PREFIX_CACHING= turns it off, so a repeated prompt
 #     really prefills)
-#   * --profiler-config when TRACE_ROOT is set
+#   * --profiler-config when TRACE_ROOT is set (TRACE_STACK=true adds Python
+#     stacks; with CUDAGRAPH_MODE=NONE each kernel maps back to its source)
 # Both drafters verify 8 tokens per step, the same shape as MiMo's DFlash K=7.
 # Run on the node from the repo root with the environment loaded.
 set -euo pipefail
@@ -66,7 +67,7 @@ export VLLM_DCP_ONE_SHOT_COLLECTIVES="${VLLM_DCP_ONE_SHOT_COLLECTIVES:-1}"
 # [1, 8]: 8 is the verify step; 1 is MTP's draft-decode passes (positions
 # 1..K-1, one token each at c=1). Without a size-1 entry the speculator's
 # decode graph is silently skipped and those passes run eagerly.
-export TIERED_MOE_COMPILATION_CONFIG="{\"mode\":3,\"cudagraph_mode\":\"FULL_AND_PIECEWISE\",\"cudagraph_capture_sizes\":[${CAPTURE_SIZES:-1,8}],\"compile_sizes\":[${COMPILE_SIZES-8}],\"cudagraph_num_of_warmups\":1,\"pass_config\":{\"fuse_allreduce_rms\":${FUSE_AR_RMS:-false}}}"
+export TIERED_MOE_COMPILATION_CONFIG="{\"mode\":3,\"cudagraph_mode\":\"${CUDAGRAPH_MODE:-FULL_AND_PIECEWISE}\",\"cudagraph_capture_sizes\":[${CAPTURE_SIZES:-1,8}],\"compile_sizes\":[${COMPILE_SIZES-8}],\"cudagraph_num_of_warmups\":1,\"pass_config\":{\"fuse_allreduce_rms\":${FUSE_AR_RMS:-false}}}"
 extra=()
 # REPLICAS=exact activates the profile's Grace replicas (1,351-1,962 per rank
 # in the agentic profile). Replicas add pinned Grace the planner does not see
@@ -76,9 +77,15 @@ if [[ -n "${REPLICAS}" ]]; then
   extra+=(--tiered-moe-replica-assignment "${REPLICAS}"
           --tiered-moe-host-reserve-gb "${HOST_RESERVE_GB:-16}")
 fi
-if [[ -n "${TRACE_ROOT:-}" ]]; then
+# NSYS_OUT=<report path>: Nsight Systems over the profile windows only
+# (cudaProfilerApi range), CUDA graphs as single ranges, so the host overhead
+# is seen without the torch profiler's per-kernel CUPTI cost.
+if [[ -n "${NSYS_OUT:-}" ]]; then
+  export SERVER_WRAPPER="${NSYS_BIN:-/e/software/default/stages/2026/software/Nsight-Systems/2025.5.1-GCCcore-14.3.0/bin/nsys} profile -o ${NSYS_OUT} --force-overwrite=true --trace=cuda,nvtx --cuda-graph-trace=graph --capture-range=cudaProfilerApi --capture-range-end=stop --trace-fork-before-exec=true --sample=none --cpuctxsw=none"
+  extra+=(--profiler-config "{\"profiler\":\"cuda\"}")
+elif [[ -n "${TRACE_ROOT:-}" ]]; then
   mkdir -p "${TRACE_ROOT}"
-  extra+=(--profiler-config "{\"profiler\":\"torch\",\"torch_profiler_dir\":\"${TRACE_ROOT}\",\"torch_profiler_with_stack\":false,\"torch_profiler_record_shapes\":true,\"ignore_frontend\":true}")
+  extra+=(--profiler-config "{\"profiler\":\"torch\",\"torch_profiler_dir\":\"${TRACE_ROOT}\",\"torch_profiler_with_stack\":${TRACE_STACK:-false},\"torch_profiler_record_shapes\":true,\"ignore_frontend\":true}")
 fi
 exec agent_space/experiments/2026-07-17-end-to-end-tuning/run-server.sh \
   --speculative-config "${spec_config}" \
