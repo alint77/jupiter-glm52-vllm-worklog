@@ -41,6 +41,8 @@ METRICS = {
     "steps": "vllm:spec_decode_num_drafts_total",
     "draft_tokens": "vllm:spec_decode_num_draft_tokens_total",
     "accepted": "vllm:spec_decode_num_accepted_tokens_total",
+    "cached_tokens": "vllm:prefix_cache_hits_total",
+    "queried_tokens": "vllm:prefix_cache_queries_total",
 }
 
 
@@ -75,19 +77,54 @@ class Profiler:
     trace_root/window-<i> so they can be analysed one window at a time."""
 
     def __init__(self, base: str, trace_root: Path | None, count: int, window: float,
-                 min_steps: int = 40):
+                 min_steps: int = 40, prefill: bool = False):
         self.base, self.root, self.left, self.window = base, trace_root, count, window
-        self.min_steps = min_steps
+        self.min_steps, self.prefill = min_steps, prefill
         self.done, self.last = 0, False
+
+    def _around_prefill(self, fn):
+        """Profile from just before the request is sent for `window` s: its
+        prefill plus the first decode steps."""
+        before = set(self.root.rglob("*.gz"))
+        self.call("/start_profile")
+        result, error = {}, {}
+
+        def run():
+            try:
+                result["v"] = fn()
+            except Exception as e:  # re-raised below
+                error["e"] = e
+
+        thread = threading.Thread(target=run)
+        thread.start()
+        end = time.monotonic() + self.window
+        while thread.is_alive() and time.monotonic() < end:
+            time.sleep(0.02)
+        self.call("/stop_profile")
+        time.sleep(5)  # let every rank finish writing
+        dest = self.root / f"window-{self.done}"
+        dest.mkdir(parents=True, exist_ok=True)
+        for f in set(self.root.glob("*.gz")) - before:
+            f.rename(dest / f.name)
+        self.done += 1
+        self.left -= 1
+        self.last = True
+        print(f"profiled prefill window {self.done} -> {dest}", flush=True)
+        thread.join()
+        if error:
+            raise error["e"]
+        return result["v"]
 
     def call(self, path: str) -> None:
         urllib.request.urlopen(urllib.request.Request(f"{self.base}{path}", method="POST"),
                                timeout=600).read()
 
-    def around(self, fn):
+    def around(self, fn, eligible: bool = True):
         self.last = False
         if not self.left or self.root is None:
             return fn()
+        if self.prefill:
+            return self._around_prefill(fn) if eligible else fn()
         result, error = {}, {}
 
         def run():
@@ -153,10 +190,13 @@ def main() -> None:
     ap.add_argument("--profile", type=int, default=0, help="profiler windows to take")
     ap.add_argument("--profile-window", type=float, default=2.0)
     ap.add_argument("--profile-min-steps", type=int, default=40)
+    ap.add_argument("--profile-prefill", action="store_true",
+                    help="profile windows open as a request is sent (its prefill), on "
+                    "requests continuing a turn after a tool call")
     ap.add_argument("--trace-root", type=Path, default=None)
     args = ap.parse_args()
     profiler = Profiler(args.base_url, args.trace_root, args.profile, args.profile_window,
-                        args.profile_min_steps)
+                        args.profile_min_steps, args.profile_prefill)
     tasks = [t for f in args.tasks for t in json.loads(f.read_text())]
     sandbox = Path(tempfile.mkdtemp(prefix="agentic-bench-"))
     n = 0
@@ -171,7 +211,8 @@ def main() -> None:
                         seed = int(hashlib.sha256(key.encode()).hexdigest()[:8], 16)
                         before, t0 = scrape(args.base_url), time.monotonic()
                         try:
-                            reply = profiler.around(lambda: post(args, messages, seed))
+                            reply = profiler.around(lambda: post(args, messages, seed),
+                                                    eligible=ri >= 1)
                         except urllib.error.HTTPError as error:
                             out.write(json.dumps({"key": key, "error": f"{error.code}: "
                                                   f"{error.read()[:300]!r}"}) + "\n")

@@ -10,6 +10,8 @@
 set -euo pipefail
 cd /e/project1/profound/alint77/vllm
 B=agent_space/experiments/2026-09-28-agentic-decode-bench
+# Logs and rows go to fscratch: the project1 inode quota is shared and full.
+OUT="${BENCH_OUT:-/e/fscratch/profound/${USER}/agentic-bench}"; mkdir -p "${OUT}"
 model="$1"; tag="$2"; shift 2
 case "${model}" in
   glm)
@@ -31,15 +33,25 @@ if [[ -n "${TRACE_ROOT:-}" ]]; then  # serve.sh reads TRACE_ROOT itself
   [[ "${model}" == mimo ]] && export MIMO_EXTRA_ARGS="${MIMO_EXTRA_ARGS} --profiler-config ${pc}"
   prof=(--profile "${PROFILE_WINDOWS:-4}" --trace-root "${TRACE_ROOT}")
 fi
-"${cmd[@]}" >"${B}/server-${tag}.out" 2>"${B}/server-${tag}.err" &
+"${cmd[@]}" >"${OUT}/server-${tag}.out" 2>"${OUT}/server-${tag}.err" &
 pid=$!
 trap 'pkill -f "bin/vllm [s]erve" 2>/dev/null || true; kill ${pid} 2>/dev/null || true; wait ${pid} 2>/dev/null || true' EXIT
 for _ in $(seq 1 360); do
   curl -fsS http://127.0.0.1:8027/health >/dev/null 2>&1 && break
-  kill -0 "${pid}" 2>/dev/null || { echo "server failed"; grep -ohE "[A-Za-z]*(Error|Exception): .{0,200}" "${B}/server-${tag}".{out,err} | sort -u | head; exit 1; }
+  kill -0 "${pid}" 2>/dev/null || { echo "server failed"; grep -ohE "[A-Za-z]*(Error|Exception): .{0,200}" "${OUT}/server-${tag}".{out,err} | sort -u | head; exit 1; }
   sleep 5
 done
 name=$(curl -fsS http://127.0.0.1:8027/v1/models | .venv/bin/python -c "import json,sys; print(json.load(sys.stdin)['data'][0]['id'])")
 echo "server ready $(date +%T) model ${name}"
-.venv/bin/python "${B}/agentic_bench.py" --model "${name}" --out "${B}/rows-${tag}.jsonl" --tasks agent_space/experiments/2026-09-26-mimo-routing-profile/tasks-{0,1,2,3}.json "${prof[@]}" "$@"
+# PREFILL_SWEEP="512 1024 ...": TTFT on random prompts (1 output token) at each
+# new-token count, before the agentic requests.
+for L in ${PREFILL_SWEEP:-}; do
+  .venv/bin/vllm bench serve --base-url http://127.0.0.1:8027 --model "${name}" \
+    --tokenizer "/e/fscratch/profound/${USER}/models/GLM-5.3-W4A16" \
+    --dataset-name random --random-input-len "${L}" --random-output-len 1 \
+    --num-prompts "${PREFILL_PROMPTS:-10}" --num-warmups 2 --max-concurrency 1 \
+    --seed "${L}" --percentile-metrics ttft --save-result --result-dir "${OUT}" \
+    --result-filename "prefill-${tag}-${L}.json" 2>&1 | grep -E "Mean TTFT|Median TTFT"
+done
+.venv/bin/python "${B}/agentic_bench.py" --model "${name}" --out "${OUT}/rows-${tag}.jsonl" --tasks agent_space/experiments/2026-09-26-mimo-routing-profile/tasks-{0,1,2,3}.json "${prof[@]}" "$@"
 echo "=== done $(date +%T)"

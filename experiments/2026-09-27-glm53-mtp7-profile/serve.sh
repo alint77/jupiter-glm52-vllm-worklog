@@ -42,7 +42,7 @@ verify=$((SPEC_K + 1))
 if [[ "${SPEC}" == dflash2 ]]; then
   drafter=/e/fscratch/profound/${USER}/models/GLM-5.3-DFlash2
   spec_config="{\"method\":\"dflash\",\"model\":\"${drafter}\",\"num_speculative_tokens\":${SPEC_K},\"kv_cache_dtype\":\"auto\",\"attention_backend\":\"FLASH_ATTN\",\"draft_sample_method\":\"greedy\"}"
-  : "${CAPTURE_SIZES:=${verify}}" "${COMPILE_SIZES:=}"
+  : "${CAPTURE_SIZES:=${verify},16,32,64,128,256,384,512,640,768,896,1024}" "${COMPILE_SIZES:=}"
 elif [[ "${SPEC}" == dspark-* ]]; then
   # SPEC=dspark-redhat | dspark-alaya: GLM-5.3 DSpark drafters (block size 8,
   # so vLLM requires SPEC_K >= 8; the verify step is then 9 tokens, past the
@@ -58,7 +58,13 @@ else
   : "${CAPTURE_SIZES:=1,${verify}}" "${COMPILE_SIZES:=${verify}}"
 fi
 export TIERED_MOE_HBM_RESERVE_GB="${RESERVE_GB:-7}"  # 10 was for DFlash2's draft KV
-export VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS=1024
+# Cold prefetch: two slots (vLLM default), so layer L+1's copy runs under layer
+# L's MoE; from 512 tokens (~1.3 ms copy vs ~2 ms of layer compute).
+export VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS="${VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS:-512}"
+# Prefill CUDA graphs (piecewise, up to 1024 tokens) need ~0.5 GB of graph pool
+# the planner does not budget; it comes out of the free-HBM margin (5.5 GB).
+# Median TTFT at 512 new tokens 188-222 -> 174 ms, decode unchanged (2026-10-01).
+export VLLM_TIERED_MOE_OBSERVED_HBM_TOLERANCE_GB="${VLLM_TIERED_MOE_OBSERVED_HBM_TOLERANCE_GB:-1.5}"
 # one-kernel INT4 decode MoE, replicas balanced by time in the kernel
 export VLLM_TIERED_MOE_DECODE_KERNEL="${VLLM_TIERED_MOE_DECODE_KERNEL:-1}"
 # DCP's small gathers / reduce-scatters as one-shot kernels on the custom
@@ -67,7 +73,10 @@ export VLLM_DCP_ONE_SHOT_COLLECTIVES="${VLLM_DCP_ONE_SHOT_COLLECTIVES:-1}"
 # [1, 8]: 8 is the verify step; 1 is MTP's draft-decode passes (positions
 # 1..K-1, one token each at c=1). Without a size-1 entry the speculator's
 # decode graph is silently skipped and those passes run eagerly.
-export TIERED_MOE_COMPILATION_CONFIG="{\"mode\":3,\"cudagraph_mode\":\"${CUDAGRAPH_MODE:-FULL_AND_PIECEWISE}\",\"cudagraph_capture_sizes\":[${CAPTURE_SIZES:-1,8}],\"compile_sizes\":[${COMPILE_SIZES-8}],\"cudagraph_num_of_warmups\":1,\"pass_config\":{\"fuse_allreduce_rms\":${FUSE_AR_RMS:-false}}}"
+# FUSE_AR_RMS (default on): all-reduce + residual + RMSNorm fused (FlashInfer
+# trtllm; auto picks it on these multicast-less nodes): -0.44 ms/step (95% CI
+# -0.59 .. -0.28), acceptance unchanged, same-node pairs on 4 nodes (2026-09-30).
+export TIERED_MOE_COMPILATION_CONFIG="{\"mode\":3,\"cudagraph_mode\":\"${CUDAGRAPH_MODE:-FULL_AND_PIECEWISE}\",\"cudagraph_capture_sizes\":[${CAPTURE_SIZES:-1,8}],\"compile_sizes\":[${COMPILE_SIZES-8}],\"cudagraph_num_of_warmups\":1,\"pass_config\":{\"fuse_allreduce_rms\":${FUSE_AR_RMS:-true}}}"
 extra=()
 # REPLICAS=exact activates the profile's Grace replicas (1,351-1,962 per rank
 # in the agentic profile). Replicas add pinned Grace the planner does not see
