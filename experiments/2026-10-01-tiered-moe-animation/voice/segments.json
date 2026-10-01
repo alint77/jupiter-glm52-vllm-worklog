@@ -1,0 +1,369 @@
+{
+ "S1Hardware": [
+  {
+   "text": "This is one node of the JUPITER supercomputer: four NVIDIA Grace Hopper superchips.",
+   "file": "voice/seg/S1Hardware_00_5a289c5c36.mp3",
+   "dur": 5.642
+  },
+  {
+   "text": "Each one pairs a 72-core Grace CPU and 120 gigabytes of LPDDR5X with a Hopper GPU and 96 gigabytes of HBM.",
+   "file": "voice/seg/S1Hardware_01_1c9dcbcb1c.mp3",
+   "dur": 11.807
+  },
+  {
+   "text": "The two are joined by NVLink C2C, at 450 gigabytes per second each way, so the GPU can read CPU memory directly.",
+   "file": "voice/seg/S1Hardware_02_3454c9a070.mp3",
+   "dur": 9.953
+  },
+  {
+   "text": "Four of these make a node.",
+   "file": "voice/seg/S1Hardware_03_c9b8f56eaa.mp3",
+   "dur": 1.959
+  },
+  {
+   "text": "The four GPUs talk to each other over NVLink, and nodes talk over InfiniBand.",
+   "file": "voice/seg/S1Hardware_04_ef3bebd682.mp3",
+   "dur": 5.956
+  },
+  {
+   "text": "In total, a node has 384 gigabytes of HBM and 480 gigabytes of LPDDR5X.",
+   "file": "voice/seg/S1Hardware_05_e4994c11cd.mp3",
+   "dur": 8.438
+  },
+  {
+   "text": "In practice we get about 3.6 terabytes per second from HBM, and about 420 gigabytes per second over C2C:",
+   "file": "voice/seg/S1Hardware_06_e26cc139b6.mp3",
+   "dur": 9.091
+  },
+  {
+   "text": "the second-fastest way into the GPU.",
+   "file": "voice/seg/S1Hardware_07_93727a1866.mp3",
+   "dur": 2.926
+  }
+ ],
+ "S2Problem": [
+  {
+   "text": "We want to serve MiMo V2.6 Pro: a trillion-parameter mixture-of-experts model, with 69 MoE layers of 384 experts each.",
+   "file": "voice/seg/S2Problem_00_3a83fe116f.mp3",
+   "dur": 10.919
+  },
+  {
+   "text": "Even in MXFP4 that's 566 gigabytes, and the node has 384 gigabytes of HBM.",
+   "file": "voice/seg/S2Problem_01_2ea5cbd360.mp3",
+   "dur": 8.594
+  },
+  {
+   "text": "We could spread it over two nodes, but then every layer talks over InfiniBand.",
+   "file": "voice/seg/S2Problem_02_266a933df6.mp3",
+   "dur": 4.833
+  },
+  {
+   "text": "Or we stay on one node and keep part of the model in Grace memory.",
+   "file": "voice/seg/S2Problem_03_63aec7202a.mp3",
+   "dur": 4.127
+  }
+ ],
+ "S3StockVllm": [
+  {
+   "text": "vLLM can already offload. It moves whole layers to CPU memory,",
+   "file": "voice/seg/S3StockVllm_00_7c48363e5a.mp3",
+   "dur": 5.068
+  },
+  {
+   "text": "and every step streams all of their weights back over the link, including experts no token is routed to.",
+   "file": "voice/seg/S3StockVllm_01_543ad2a351.mp3",
+   "dur": 6.766
+  },
+  {
+   "text": "HBM and the link take turns instead of working together,",
+   "file": "voice/seg/S3StockVllm_02_deec54c5c1.mp3",
+   "dur": 4.127
+  },
+  {
+   "text": "and most of the bytes moved are wasted.",
+   "file": "voice/seg/S3StockVllm_03_ccee1f76a7.mp3",
+   "dur": 2.769
+  },
+  {
+   "text": "With speculative decoding, that gives around 70 to 80 tokens per second.",
+   "file": "voice/seg/S3StockVllm_04_39668b03f3.mp3",
+   "dur": 5.251
+  }
+ ],
+ "S4Layout": [
+  {
+   "text": "Here's our layout.",
+   "file": "voice/seg/S4Layout_00_28dc4d3046.mp3",
+   "dur": 1.306
+  },
+  {
+   "text": "Attention is split by heads across the four GPUs,",
+   "file": "voice/seg/S4Layout_01_afd1a2c2b7.mp3",
+   "dur": 3.553
+  },
+  {
+   "text": "and each GPU owns a quarter of every layer's experts: 96 of the 384.",
+   "file": "voice/seg/S4Layout_02_25eb3e3f04.mp3",
+   "dur": 6.844
+  },
+  {
+   "text": "For one token, the router picks 8 experts per layer.",
+   "file": "voice/seg/S4Layout_03_e251a64406.mp3",
+   "dur": 3.971
+  },
+  {
+   "text": "But we decode with speculative decoding: a drafter proposes 7 tokens, and the model checks all 8 in a single step.",
+   "file": "voice/seg/S4Layout_04_5ea32f8aaf.mp3",
+   "dur": 8.281
+  },
+  {
+   "text": "Now around 49 experts are active per layer, up to 64.",
+   "file": "voice/seg/S4Layout_05_70419042f6.mp3",
+   "dur": 4.911
+  },
+  {
+   "text": "Every weight we read serves several tokens, and with more experts active, the load spreads more evenly.",
+   "file": "voice/seg/S4Layout_06_713ada5c57.mp3",
+   "dur": 6.687
+  }
+ ],
+ "S4bPrefetch": [
+  {
+   "text": "The obvious way to offload is to prefetch: while layer N runs, copy the next layer's offloaded experts into a spare HBM buffer.",
+   "file": "voice/seg/S4bPrefetch_00_ffa5e8f503.mp3",
+   "dur": 9.326
+  },
+  {
+   "text": "In prefill, with thousands of tokens per step, each layer runs long enough to hide its copy, so offloading is free.",
+   "file": "voice/seg/S4bPrefetch_01_0d7dda0133.mp3",
+   "dur": 8.202
+  },
+  {
+   "text": "In decode, with 8 tokens, a layer takes about a quarter of a millisecond, but its copy takes about two. The GPU mostly waits.",
+   "file": "voice/seg/S4bPrefetch_02_e38bee440e.mp3",
+   "dur": 9.482
+  },
+  {
+   "text": "Copies only hide from roughly 256 tokens per step.",
+   "file": "voice/seg/S4bPrefetch_03_253f779495.mp3",
+   "dur": 4.441
+  },
+  {
+   "text": "So prefill prefetches, and decode needs something smarter.",
+   "file": "voice/seg/S4bPrefetch_04_dbd65d22fc.mp3",
+   "dur": 4.441
+  }
+ ],
+ "S5Overlap": [
+  {
+   "text": "Decode is limited by memory bandwidth.",
+   "file": "voice/seg/S5Overlap_00_69fb06cdb2.mp3",
+   "dur": 2.691
+  },
+  {
+   "text": "So keep the frequently used, hot experts in HBM,",
+   "file": "voice/seg/S5Overlap_01_39bd56eba8.mp3",
+   "dur": 4.049
+  },
+  {
+   "text": "put the cold ones in Grace memory, and read both at the same time.",
+   "file": "voice/seg/S5Overlap_02_720c57732b.mp3",
+   "dur": 4.362
+  },
+  {
+   "text": "One after the other, a layer takes hot time plus cold time.",
+   "file": "voice/seg/S5Overlap_03_874655cfbb.mp3",
+   "dur": 4.284
+  },
+  {
+   "text": "Together, it takes only as long as the longer of the two.",
+   "file": "voice/seg/S5Overlap_04_e305aea369.mp3",
+   "dur": 3.788
+  },
+  {
+   "text": "The ratio matters. At three hot experts to one cold, the cold read runs long and the GPU waits on it.",
+   "file": "voice/seg/S5Overlap_05_6d45812700.mp3",
+   "dur": 8.202
+  },
+  {
+   "text": "At six to one, the cold read is fully hidden.",
+   "file": "voice/seg/S5Overlap_06_282bf2efc4.mp3",
+   "dur": 3.474
+  },
+  {
+   "text": "At five to one, both finish together, because HBM is about five times faster than C2C.",
+   "file": "voice/seg/S5Overlap_07_256449404a.mp3",
+   "dur": 6.766
+  },
+  {
+   "text": "Now compare with reading all six experts from HBM alone: that takes longer.",
+   "file": "voice/seg/S5Overlap_08_e541ef178d.mp3",
+   "dur": 5.407
+  },
+  {
+   "text": "Offloading is actually faster than VRAM, because C2C adds its bandwidth on top.",
+   "file": "voice/seg/S5Overlap_09_c2f0ef28ae.mp3",
+   "dur": 6.034
+  },
+  {
+   "text": "Even better, a single kernel can read both tiers:",
+   "file": "voice/seg/S5Overlap_10_1dfd0b45a9.mp3",
+   "dur": 3.553
+  },
+  {
+   "text": "about twenty SMs stream cold experts, enough to saturate C2C, while the rest stream hot ones.",
+   "file": "voice/seg/S5Overlap_11_56d8a31d59.mp3",
+   "dur": 7.079
+  },
+  {
+   "text": "That's 6 to 32 percent faster per layer than two kernels on two streams.",
+   "file": "voice/seg/S5Overlap_12_d7b31b76ba.mp3",
+   "dur": 5.407
+  }
+ ],
+ "S6Problem": [
+  {
+   "text": "The catch: to fit the model, we have to offload far more than one expert in six.",
+   "file": "voice/seg/S6Problem_00_1e63eb26ef.mp3",
+   "dur": 5.878
+  },
+  {
+   "text": "About 42 percent of the experts live in Grace memory.",
+   "file": "voice/seg/S6Problem_01_4e482175bb.mp3",
+   "dur": 3.788
+  },
+  {
+   "text": "If every expert were used equally often,",
+   "file": "voice/seg/S6Problem_02_6f27f0c486.mp3",
+   "dur": 2.926
+  },
+  {
+   "text": "cold reads would take about four times as long as hot ones, and set the pace.",
+   "file": "voice/seg/S6Problem_03_6e23942415.mp3",
+   "dur": 4.911
+  }
+ ],
+ "S7Frequency": [
+  {
+   "text": "But routing isn't uniform.",
+   "file": "voice/seg/S7Frequency_00_1c8bcebac8.mp3",
+   "dur": 2.194
+  },
+  {
+   "text": "Sort one layer's experts by how often they're used:",
+   "file": "voice/seg/S7Frequency_01_c77e9d49fd.mp3",
+   "dur": 3.631
+  },
+  {
+   "text": "a few take most of the traffic, and a long tail barely runs.",
+   "file": "voice/seg/S7Frequency_02_bd9cae3b3a.mp3",
+   "dur": 4.284
+  },
+  {
+   "text": "So we profile on calibration data that looks like our deployment: agentic coding sessions and autoresearch ML tasks.",
+   "file": "voice/seg/S7Frequency_03_7ecdc2e761.mp3",
+   "dur": 8.046
+  },
+  {
+   "text": "Put the least-used half in Grace memory, and it receives only 18.5 percent of routes.",
+   "file": "voice/seg/S7Frequency_04_c08b1f7971.mp3",
+   "dur": 6.034
+  },
+  {
+   "text": "Our production placement brings that down to 12.8 percent, well inside what the overlap can hide.",
+   "file": "voice/seg/S7Frequency_05_3acdbb7737.mp3",
+   "dur": 6.609
+  },
+  {
+   "text": "How skewed routing is depends on the model, though:",
+   "file": "voice/seg/S7Frequency_06_c0dcab14d2.mp3",
+   "dur": 3.161
+  },
+  {
+   "text": "GLM 5.3 is flatter, and its least-used half still gets 23 percent.",
+   "file": "voice/seg/S7Frequency_07_7a59c7de7d.mp3",
+   "dur": 5.956
+  }
+ ],
+ "S8Imbalance": [
+  {
+   "text": "Even then, the GPUs don't finish together. Here's one layer on all four.",
+   "file": "voice/seg/S8Imbalance_00_66ae9ce85e.mp3",
+   "dur": 5.329
+  },
+  {
+   "text": "Each GPU reads its hot and cold experts at the same time.",
+   "file": "voice/seg/S8Imbalance_01_0f505469ef.mp3",
+   "dur": 4.284
+  },
+  {
+   "text": "GPUs one and two drew lots of cold experts, so cold reads set their pace.",
+   "file": "voice/seg/S8Imbalance_02_8bf9671d7f.mp3",
+   "dur": 5.721
+  },
+  {
+   "text": "GPUs zero and three finish early, and sit idle in the collective for about 150 microseconds.",
+   "file": "voice/seg/S8Imbalance_03_db6159cb83.mp3",
+   "dur": 7.079
+  },
+  {
+   "text": "Which GPU is last changes every layer: it's routing luck, not a slow GPU.",
+   "file": "voice/seg/S8Imbalance_04_a2343cc552.mp3",
+   "dur": 6.609
+  }
+ ],
+ "S9Replicas": [
+  {
+   "text": "So, idea three: replicas.",
+   "file": "voice/seg/S9Replicas_00_2bf25f3631.mp3",
+   "dur": 2.847
+  },
+  {
+   "text": "Back to the per-GPU layout: hot experts in HBM, cold ones in each GPU's Grace memory.",
+   "file": "voice/seg/S9Replicas_01_a6c12f116b.mp3",
+   "dur": 7.889
+  },
+  {
+   "text": "In this step, 11 of the active experts are cold,",
+   "file": "voice/seg/S9Replicas_02_2c178738ae.mp3",
+   "dur": 3.396
+  },
+  {
+   "text": "and GPU three drew six of them, so every other GPU waits for it.",
+   "file": "voice/seg/S9Replicas_03_241c16bd97.mp3",
+   "dur": 5.146
+  },
+  {
+   "text": "But Grace memory has room to spare, so we keep copies of other GPUs' cold experts there.",
+   "file": "voice/seg/S9Replicas_04_abc0535e4b.mp3",
+   "dur": 5.956
+  },
+  {
+   "text": "GPU three hands three of its cold reads to GPUs holding a copy, and the layer now waits for three instead of six.",
+   "file": "voice/seg/S9Replicas_05_6c1b9fc97d.mp3",
+   "dur": 8.281
+  },
+  {
+   "text": "Every GPU sees the same routing, so all four make the same choice without talking to each other.",
+   "file": "voice/seg/S9Replicas_06_95905f6e0b.mp3",
+   "dur": 6.531
+  }
+ ],
+ "S10Result": [
+  {
+   "text": "Putting it together: hot and cold experts read at once, in one kernel; placement profiled on deployment-like traffic; and replicas to balance the cold work.",
+   "file": "voice/seg/S10Result_00_1614a95c45.mp3",
+   "dur": 10.762
+  },
+  {
+   "text": "Prefill prefetches the next layer.",
+   "file": "voice/seg/S10Result_01_0ea627f988.mp3",
+   "dur": 2.586
+  },
+  {
+   "text": "On one node, that's around 210 tokens per second for a single user, against 70 to 80 with stock offloading.",
+   "file": "voice/seg/S10Result_02_a1e164f122.mp3",
+   "dur": 7.889
+  }
+ ]
+}
