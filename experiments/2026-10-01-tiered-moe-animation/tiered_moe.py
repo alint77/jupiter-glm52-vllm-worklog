@@ -255,7 +255,7 @@ class S2Problem(Scene):
         gap = DashedLine(hbm.get_right() + UP * 1.2, hbm.get_right() + DOWN * 0.4, color=BAD)
         self.play(Create(gap), run_time=0.6)
         pause(self, "quick")
-        over = T("and KV cache + activations need room too", 20, BAD).next_to(hbm, RIGHT, buff=0.3)
+        over = T("and KV cache + activations need room too", 20, BAD).next_to(hbm, DOWN, buff=0.2).align_to(hbm, LEFT)
         show(self, over)
 
         a = VGroup(T("Option A: two nodes", 26, weight="BOLD"),
