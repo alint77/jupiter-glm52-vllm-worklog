@@ -43,6 +43,26 @@ for _ in $(seq 1 360); do
 done
 name=$(curl -fsS http://127.0.0.1:8027/v1/models | .venv/bin/python -c "import json,sys; print(json.load(sys.stdin)['data'][0]['id'])")
 echo "server ready $(date +%T) model ${name}"
+# GREEDY_CHECK=1: temperature-0 completions of fixed ~600/~900-token prompts,
+# saved for comparing outputs across arms.
+if [[ -n "${GREEDY_CHECK:-}" ]]; then
+  .venv/bin/python - "${name}" "${OUT}/greedy-${tag}.json" <<'PY'
+import json, sys, urllib.request
+text = open("README.md").read()
+out = {}
+for chars in (2400, 3600):
+    body = {"model": sys.argv[1], "prompt": text[:chars], "max_tokens": 48,
+            "temperature": 0}
+    req = urllib.request.Request("http://127.0.0.1:8027/v1/completions",
+                                 data=json.dumps(body).encode(),
+                                 headers={"Content-Type": "application/json"})
+    r = json.loads(urllib.request.urlopen(req, timeout=300).read())
+    out[chars] = {"text": r["choices"][0]["text"],
+                  "prompt_tokens": r["usage"]["prompt_tokens"]}
+json.dump(out, open(sys.argv[2], "w"), indent=1)
+print("greedy", {k: v["prompt_tokens"] for k, v in out.items()})
+PY
+fi
 # PREFILL_SWEEP="512 1024 ...": TTFT on random prompts (1 output token) at each
 # new-token count, before the agentic requests.
 for L in ${PREFILL_SWEEP:-}; do
