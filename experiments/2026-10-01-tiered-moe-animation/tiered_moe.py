@@ -409,6 +409,83 @@ class S4Layout(Scene):
 
 
 # --------------------------------------------------------------------------
+class S4bPrefetch(Scene):
+    def construct(self):
+        title(self, "First idea: prefetch the next layer",
+              "copy layer N+1's cold experts into HBM while layer N runs (two buffers)")
+        x0, y_gpu, y_cp = -4.4, 0.2, -0.75
+        COPY = 2.1  # copying one layer's cold experts (~0.8 GB per GPU over C2C, ~2 ms)
+        cap_y = -2.2
+        l_gpu = lane("GPU compute", HBM, y_gpu, x0=x0)
+        l_cp = lane("C2C copy", DDR, y_cp, x0=x0)
+        self.play(FadeIn(l_gpu), FadeIn(l_cp), run_time=0.6)
+        bs = ValueTracker(4096)
+
+        def width(b):
+            # Illustrative: a layer's compute grows with the tokens per step;
+            # it matches the copy at ~256 tokens.
+            lb = np.log2(b)
+            if lb <= 8:
+                return 0.4 + (COPY - 0.4) * (lb - 3) / 5
+            return COPY + 0.95 * (lb - 8) / 4
+
+        def timeline():
+            w = width(bs.get_value())
+            g = VGroup()
+            start, cp_end, prev_end = 0.0, 0.0, 0.0
+            copy_start = 0.0
+            for i in range(3):
+                if i > 0:
+                    start = max(prev_end, cp_end)
+                    if start > prev_end + 1e-3:
+                        gap = Rectangle(width=start - prev_end, height=0.5, stroke_color=BAD,
+                                        stroke_width=2, fill_color=BAD, fill_opacity=0.12)
+                        gap.move_to([x0 + (prev_end + start) / 2, y_gpu, 0])
+                        g.add(gap)
+                        if start - prev_end > 0.7:
+                            g.add(T("idle", 14, BAD).move_to(gap))
+                g.add(seg(x0 + start, y_gpu, w - 0.05, HBM, f"layer {i + 1}"))
+                # The copy for the next layer starts once the previous copy is
+                # done and its buffer's last reader has started.
+                copy_start = max(cp_end, start)
+                cp_end = copy_start + COPY
+                g.add(seg(x0 + copy_start, y_cp, COPY - 0.05, DDR, f"copy layer {i + 2}"))
+                prev_end = start + w
+            return g
+
+        tl = always_redraw(timeline)
+        tag = always_redraw(lambda: T(f"{int(round(bs.get_value()))} tokens per step", 22, C2C, weight="BOLD")
+                            .move_to([0, 1.25, 0]))
+        self.play(FadeIn(tl), FadeIn(tag), run_time=0.8)
+        pause(self, "look")
+        cap = T("prefill: lots of compute per layer, so each copy hides behind it - offloading is free",
+                21, GOOD).move_to([0, cap_y, 0])
+        show(self, cap)
+        self.play(FadeOut(cap), run_time=0.4)
+
+        self.play(bs.animate.set_value(8), run_time=3.0)
+        pause(self, "study")
+        cap = VGroup(
+            T("decode, 8 tokens per step: a layer takes ~0.25 ms, its copy ~2 ms", 21, BAD),
+            T("the GPU spends most of the step waiting for copies", 21, BAD),
+        ).arrange(DOWN, buff=0.08).move_to([0, cap_y - 0.1, 0])
+        show(self, cap)
+        self.play(FadeOut(cap), run_time=0.4)
+
+        self.play(bs.animate.set_value(256), run_time=2.5)
+        pause(self, "look")
+        cap = T("the copies hide once a step has roughly 256 tokens or more", 21).move_to([0, cap_y, 0])
+        show(self, cap)
+        self.play(FadeOut(cap), run_time=0.4)
+        cap = VGroup(
+            T("so prefill prefetches, and offloading costs it nothing", 22, GOOD, weight="BOLD"),
+            T("decode needs something smarter", 22, weight="BOLD"),
+        ).arrange(DOWN, buff=0.1).move_to([0, cap_y - 0.1, 0])
+        show(self, cap, extra=0.4)
+        clear(self)
+
+
+# --------------------------------------------------------------------------
 class S5Overlap(Scene):
     def construct(self):
         title(self, "Idea 1: read both memories at once", "decode is bandwidth-bound")
