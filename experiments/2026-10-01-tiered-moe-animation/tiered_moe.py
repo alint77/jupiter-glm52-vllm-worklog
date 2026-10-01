@@ -40,6 +40,7 @@ from manim import (
     Scene,
     SurroundingRectangle,
     Text,
+    Transform,
     ValueTracker,
     VGroup,
     Write,
@@ -423,28 +424,90 @@ class S5Overlap(Scene):
         cold = T("cold experts live in Grace RAM: read over C2C at ~420 GB/s", 22, DDR).next_to(hot, DOWN, buff=0.12)
         show(self, cold)
 
-        y1, y2 = -1.25, -2.05
+        # Bar length = time. A hot expert streams from HBM at ~2.2 TB/s, a
+        # cold one over C2C at ~0.42 TB/s, so one cold expert takes as long
+        # as ~5.2 hot ones.
+        x0, k = -4.2, 2.4
+        wh, wc = k / 2.2, k / 0.42
+        y1, y2, y3 = -0.95, -1.65, -2.35
         l1, l2 = lane("HBM", HBM, y1), lane("C2C", DDR, y2)
-        note = T("bar length = time", 16, MUTED).next_to(l2, DOWN, buff=0.12).align_to(l2, RIGHT)
+        note = T("bar length = time", 16, MUTED).next_to(l1, UP, buff=0.3).align_to(l1, RIGHT)
         self.play(FadeIn(l1), FadeIn(l2), FadeIn(note), run_time=0.6)
         pause(self, "quick")
-        seq = VGroup(seg(-4.2, y1, 2.4, HBM, "hot"), seg(-1.8, y2, 2.4, DDR, "cold"))
-        self.play(GrowFromEdge(seq[0], LEFT), run_time=1.4, rate_func=linear)
-        self.play(GrowFromEdge(seq[1], LEFT), run_time=1.4, rate_func=linear)
+
+        def hot_blocks(n, y=y1):
+            return VGroup(*[
+                Rectangle(width=wh - 0.04, height=0.5, fill_color=HBM, fill_opacity=0.85, stroke_width=0)
+                .move_to([x0 + (i + 0.5) * wh, y, 0])
+                for i in range(n)
+            ])
+
+        def hot_label(blocks, n):
+            return T(f"{n} hot experts", 16, HBM).next_to(blocks, UP, buff=0.05).align_to(blocks, LEFT)
+
+        def cold_block(x):
+            return seg(x, y2, wc, DDR, "1 cold expert")
+
+        hb = hot_blocks(5)
+        hl = hot_label(hb, 5)
+        cb = cold_block(x0 + 5 * wh)
+        self.play(LaggedStart(*[GrowFromEdge(b, LEFT) for b in hb], lag_ratio=0.9), run_time=1.2, rate_func=linear)
+        self.play(FadeIn(hl), GrowFromEdge(cb, LEFT), run_time=1.2, rate_func=linear)
         pause(self, "look")
-        st = T("one after the other: time = hot + cold", 22, BAD).to_edge(DOWN, buff=0.25)
-        show(self, st)
-        par = VGroup(seg(-4.2, y1, 2.4, HBM, "hot: 5 units of bytes"), seg(-4.2, y2, 2.4, DDR, "cold: 1 unit"))
-        self.play(ReplacementTransform(seq, par), FadeOut(st), run_time=1.4)
+        cap = T("one after the other: the layer takes hot time + cold time", 22, BAD).to_edge(DOWN, buff=0.3)
+        show(self, cap)
+        self.play(cb.animate.shift(LEFT * 5 * wh), FadeOut(cap), run_time=1.2)
+        pause(self, "look")
+        cap = T("at the same time: the layer takes only as long as the longer of the two", 22, GOOD).to_edge(DOWN, buff=0.3)
+        show(self, cap)
+        self.play(FadeOut(cap), run_time=0.4)
+
+        def case(n, text, color, idle_lane, idle_from, idle_to):
+            nb, nl = hot_blocks(n), None
+            nl = hot_label(nb, n)
+            self.play(Transform(hb, nb), Transform(hl, nl), run_time=1.0)
+            pause(self, "quick")
+            idle = Rectangle(width=idle_to - idle_from, height=0.5, stroke_color=BAD, stroke_width=2, fill_opacity=0)
+            idle.move_to([(idle_from + idle_to) / 2, idle_lane, 0])
+            il = T("idle", 15, BAD).move_to(idle)
+            self.play(Create(idle), FadeIn(il), run_time=0.6)
+            pause(self, "quick")
+            c = T(text, 22, color).to_edge(DOWN, buff=0.3)
+            show(self, c)
+            self.play(FadeOut(VGroup(idle, il, c)), run_time=0.4)
+
+        case(3, "3 hot : 1 cold - the cold read runs longer and the GPU waits on it", BAD,
+             y1, x0 + 3 * wh, x0 + wc)
+        case(6, "6 hot : 1 cold - the cold read finishes early and C2C sits idle", INK2,
+             y2, x0 + wc, x0 + 6 * wh)
+        nb = hot_blocks(5)
+        self.play(Transform(hb, nb), Transform(hl, hot_label(nb, 5)), run_time=1.0)
+        end_line = DashedLine([x0 + wc, y1 + 0.45, 0], [x0 + wc, y2 - 0.35, 0], color=C2C)
+        self.play(Create(end_line), run_time=0.5)
+        pause(self, "look")
+        c = VGroup(
+            T("5 hot : 1 cold - both links stay busy and finish together", 22, C2C, weight="BOLD"),
+            T("one cold expert takes as long as ~5 hot ones (2.2 TB/s vs 0.42 TB/s)", 20, INK2),
+        ).arrange(DOWN, buff=0.08).to_edge(DOWN, buff=0.2)
+        show(self, c, extra=0.6)
+        self.play(FadeOut(c), run_time=0.4)
+
+        # Faster than having everything in HBM.
+        l3 = lane("all in HBM", INK2, y3)
+        ab = hot_blocks(6, y3).set_fill(INK2, opacity=0.6)
+        self.play(FadeIn(l3), run_time=0.4)
+        self.play(LaggedStart(*[GrowFromEdge(b, LEFT) for b in ab], lag_ratio=0.9), run_time=1.4, rate_func=linear)
+        saved = Rectangle(width=6 * wh - wc, height=0.5, stroke_color=GOOD, stroke_width=2, fill_color=GOOD, fill_opacity=0.15)
+        saved.move_to([x0 + (wc + 6 * wh) / 2, y3, 0])
+        self.play(FadeIn(saved), FadeIn(T("saved", 15, GOOD).move_to(saved)), run_time=0.6)
         pause(self, "study")
-        pt = T("on two streams at once: time = max(hot, cold)", 22, GOOD).to_edge(DOWN, buff=0.25)
-        show(self, pt)
-        self.play(FadeOut(pt), run_time=0.4)
-        ratio = T("both finish together when hot : cold bytes = 2.2 : 0.42  ~  5 : 1", 24, C2C, weight="BOLD")
-        free = T("at that ratio offloading is free, and C2C adds bandwidth on top of HBM", 21, GOOD)
-        both = VGroup(ratio, free).arrange(DOWN, buff=0.1).to_edge(DOWN, buff=0.2)
-        show(self, both, extra=0.8)
-        free = both
+        c = VGroup(
+            T("the same 6 experts read only from HBM finish later", 22, GOOD, weight="BOLD"),
+            T("C2C adds its bandwidth to HBM's: ~2.5 TB/s instead of 2.2", 20, INK2),
+        ).arrange(DOWN, buff=0.08).to_edge(DOWN, buff=0.2)
+        show(self, c, extra=0.6)
+        par = VGroup(hb, hl, cb, end_line, l3, ab, saved)
+        free = c
 
         self.play(*[FadeOut(m) for m in (par, l1, l2, note, hot, cold, free)], run_time=0.7)
         better = T("Even better: one kernel that reads from both", 30, weight="BOLD").move_to(UP * 0.2)
