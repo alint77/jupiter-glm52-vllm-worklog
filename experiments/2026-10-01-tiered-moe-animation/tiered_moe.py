@@ -703,11 +703,11 @@ class S9Replicas(Scene):
         cols = gpu_columns(4.3).shift(DOWN * 0.75)
         heads = VGroup(*[T(f"GPU {i}", 22, weight="BOLD").next_to(c, UP, buff=0.08) for i, c in enumerate(cols)])
         cells = owned_grids(cols, 0.5)
-        self.play(FadeIn(cols), FadeIn(heads), FadeIn(VGroup(*cells.values())), run_time=1.0)
+        self.play(FadeIn(cols), FadeIn(heads), FadeIn(VGroup(*cells.values())), run_time=0.8)
         pause(self, "quick")
         cap_y = 2.35
 
-        # Split each GPU's experts into an HBM panel and a Grace panel.
+        # Each GPU's experts split into an HBM panel and a Grace panel.
         grid_w = GRID_COLS * (CELL_W + CELL_GAP) - CELL_GAP
         panels, plabels, origins = VGroup(), VGroup(), []
         for r, col in enumerate(cols):
@@ -725,78 +725,109 @@ class S9Replicas(Scene):
                 moves.append(cells[e].animate.move_to(grid_pos(origins[r][0], k)).set_fill(HBM, opacity=0.55))
             for k, e in enumerate(info["cold"]):
                 moves.append(cells[e].animate.move_to(grid_pos(origins[r][1], k)).set_fill(DDR, opacity=0.55))
-        self.play(FadeIn(panels), FadeIn(plabels), run_time=0.7)
-        self.play(*moves, run_time=1.8)
+        self.play(FadeIn(panels), FadeIn(plabels), run_time=0.6)
+        self.play(*moves, run_time=1.6)
         pause(self, "look")
         cap = T("after placement: hot experts in HBM, cold ones in that GPU's Grace RAM", 21, INK2).move_to([0, cap_y, 0])
         show(self, cap)
         self.play(FadeOut(cap), run_time=0.4)
 
         # The real verify step.
-        cold_act = set(STEP["cold_active"])
-        hot_anims = [cells[e].animate.set_fill(INK, opacity=1) for e in STEP["active"] if e not in cold_act]
-        cold_anims = [cells[e].animate.set_fill(DDR, opacity=1).set_stroke(INK, 1.5) for e in cold_act]
-        self.play(*hot_anims, run_time=0.9)
-        pause(self, "quick")
-        self.play(*cold_anims, run_time=0.9)
+        cold_act = STEP["cold_active"]
+        hot_act = [e for e in STEP["active"] if e not in set(cold_act)]
+        self.play(*[cells[e].animate.set_fill(INK, opacity=1) for e in hot_act], run_time=0.8)
+        self.play(*[cells[e].animate.set_fill(DDR, opacity=1).set_stroke(INK, 1.5) for e in cold_act], run_time=0.8)
         pause(self, "look")
-        cap = T(f"one real verify step (layer {STEP['layer']}): {len(STEP['active'])} experts active, {len(cold_act)} of them cold", 21).move_to([0, cap_y, 0])
+        cap = T(f"one real verify step (layer {STEP['layer']}): {len(STEP['active'])} experts active, {len(cold_act)} of them cold",
+                21).move_to([0, cap_y, 0])
         show(self, cap)
         self.play(FadeOut(cap), run_time=0.4)
 
-        def counters(vals, worst_color):
-            m = max(vals)
-            return VGroup(*[
-                T(f"cold reads: {v}", 18, worst_color if v == m else INK2, weight="BOLD" if v == m else "NORMAL").next_to(cols[i], DOWN, buff=0.12)
-                for i, v in enumerate(vals)
-            ])
-        before = counters(STEP["no_rep"], BAD)
-        self.play(FadeIn(before), run_time=0.7)
-        pause(self, "look")
-        worst = int(np.argmax(STEP["no_rep"]))
-        self.play(Indicate(cols[worst], color=BAD, scale_factor=1.03), run_time=1.0)
-        cap = T(f"the layer waits for GPU {worst} and its {max(STEP['no_rep'])} cold reads", 21, BAD).move_to([0, cap_y, 0])
-        show(self, cap, extra=0.25)
-        self.play(FadeOut(cap), run_time=0.4)
+        # Pull this step's cold experts out into one stack per GPU.
+        BW, BH, GAP = 1.9, 0.4, 0.05
 
-        # Replicas: copies of other GPUs' cold experts in spare Grace RAM.
-        rep_cells, rep_anims = {}, []
+        def slot(r, k):
+            base = cols[r].get_bottom()[1] + 0.2
+            return [cols[r].get_center()[0], base + BH / 2 + k * (BH + GAP), 0]
+
+        def block(e, copy=False):
+            r = Rectangle(width=BW, height=BH, stroke_color=DDR, stroke_width=2,
+                          fill_color=DDR, fill_opacity=0.18 if copy else 0.9)
+            lab = T(f"#{e} copy" if copy else f"#{e}", 15, INK if copy else BG, weight="BOLD")
+            return VGroup(r, lab.move_to(r))
+
+        owner = {int(e): v for e, v in STEP["owner"].items()}
+        stacks = {r: sorted(e for e in cold_act if owner[e] == r) for r in range(4)}
+        blocks = {}
         for r in range(4):
-            info = STEP["ranks"][r]
-            base = len(info["cold"])
-            for k, e in enumerate(info["replicas"]):
-                c = Rectangle(width=CELL_W, height=CELL_W, stroke_color=DDR, stroke_width=1.2, fill_color=DDR, fill_opacity=0.12)
-                c.move_to(grid_pos(origins[r][1], base + k))
-                rep_cells[(e, r)] = c
-                rep_anims.append(FadeIn(c))
-        self.play(LaggedStart(*rep_anims, lag_ratio=0.01), run_time=1.3)
+            for k, e in enumerate(stacks[r]):
+                blocks[e] = block(e).move_to(slot(r, k))
+        rest = [cells[e] for e in cells if e not in set(cold_act)]
+        self.play(FadeOut(panels), FadeOut(plabels), *[FadeOut(c) for c in rest],
+                  *[ReplacementTransform(cells[e], blocks[e]) for e in cold_act], run_time=1.4)
         pause(self, "look")
-        cap = T("spare Grace RAM holds copies (outlined) of other GPUs' cold experts", 21).move_to([0, cap_y, 0])
+        before = STEP["no_rep"]
+        worst = int(np.argmax(before))
+
+        def wait_line(n, color, text):
+            y = slot(0, n)[1] - BH / 2 - GAP / 2 + 0.02
+            line = DashedLine([cols.get_left()[0], y, 0], [cols.get_right()[0], y, 0], color=color)
+            lab = T(text, 18, color, weight="BOLD").next_to(line, UP, buff=0.06).align_to(line, LEFT).shift(RIGHT * 0.15)
+            return VGroup(line, lab)
+
+        wl = wait_line(max(before), BAD, f"the layer waits for {max(before)} cold reads")
+        self.play(Create(wl[0]), FadeIn(wl[1]), run_time=0.7)
+        pause(self, "look")
+        cap = T(f"GPU {worst} drew {max(before)} of the {len(cold_act)} cold experts: the other GPUs wait for it",
+                21, BAD).move_to([0, cap_y, 0])
         show(self, cap)
         self.play(FadeOut(cap), run_time=0.4)
 
-        moved = [(int(e), STEP["owner"][e], r) for e, r in STEP["assigned"].items() if STEP["owner"][e] != r]
-        arrows, anims = VGroup(), []
-        for e, o, r in moved:
-            src, dst = cells[e], rep_cells[(e, r)]
-            arrows.add(Arrow(src.get_center(), dst.get_center(), buff=0.05, stroke_width=3, color=C2C,
-                             max_tip_length_to_length_ratio=0.08))
-            anims += [src.animate.set_fill(DDR, opacity=0.35).set_stroke(width=0),
-                      dst.animate.set_fill(DDR, opacity=1).set_stroke(INK, 1.5)]
-        self.play(LaggedStart(*[Create(a) for a in arrows], lag_ratio=0.25), run_time=1.6)
-        self.play(*anims, run_time=0.9)
-        pause(self, "study")
-        cap = T("each step, every cold expert is read from the copy on the less-loaded GPU", 21).move_to([0, cap_y, 0])
+        # Copies of GPU 3's experts that other GPUs hold.
+        cap = T("spare Grace RAM holds copies of other GPUs' cold experts", 21).move_to([0, cap_y, 0])
         show(self, cap)
-        after = counters(STEP["with_rep"], GOOD)
-        self.play(FadeOut(arrows), ReplacementTransform(before, after), FadeOut(cap), run_time=1.2)
+        assigned = {int(e): r for e, r in STEP["assigned"].items()}
+        moved = sorted((e, owner[e], r) for e, r in assigned.items() if owner[e] != r)
+        extra = {r: 0 for r in range(4)}
+        ghosts, arrows = {}, VGroup()
+        for e, o, r in moved:
+            g = block(e, copy=True).move_to(slot(r, len(stacks[r]) + extra[r]))
+            extra[r] += 1
+            ghosts[e] = g
+            src, dst = (blocks[e].get_left(), g.get_right()) if r < o else (blocks[e].get_right(), g.get_left())
+            arrows.add(Arrow(src, dst, buff=0.05, stroke_width=3, color=C2C,
+                             max_tip_length_to_length_ratio=0.06))
+        self.play(LaggedStart(*[FadeIn(g) for g in ghosts.values()], lag_ratio=0.3), run_time=1.0)
+        pause(self, "quick")
+        self.play(FadeOut(cap), LaggedStart(*[Create(a) for a in arrows], lag_ratio=0.3), run_time=1.2)
         pause(self, "look")
+        cap = T(f"so GPU {worst} hands {len(moved)} of its cold reads to GPUs that hold a copy", 21).move_to([0, cap_y, 0])
+        show(self, cap)
+
+        # The handoff: originals leave, copies run, GPU 3's stack settles.
+        keep = {r: [e for e in stacks[r] if assigned[e] == r] for r in range(4)}
+        anims = [FadeOut(arrows)]
+        for e, o, r in moved:
+            anims.append(FadeOut(blocks[e]))
+            anims.append(ghosts[e][0].animate.set_fill(DDR, opacity=0.55))
+        for r in range(4):
+            for k, e in enumerate(keep[r]):
+                anims.append(blocks[e].animate.move_to(slot(r, k)))
+        after = STEP["with_rep"]
+        wl2 = wait_line(max(after), GOOD, f"now it waits for {max(after)}")
+        self.play(*anims, FadeOut(cap), run_time=1.3)
+        self.play(ReplacementTransform(wl, wl2), run_time=0.9)
+        pause(self, "study")
+        cap = T("every GPU sees the same routing, so all four pick the same copies without talking",
+                21).move_to([0, cap_y, 0])
+        show(self, cap)
+        self.play(FadeOut(cap), run_time=0.4)
         stats = T(
             f"over all steps: busiest GPU {DATA['max_cold_rank_no_replicas_mean']:.2f} -> "
             f"{DATA['max_cold_rank_replicas_mean']:.2f} cold reads (perfect balance {DATA['ideal_max_cold_rank_mean']:.2f})",
             20, INK2,
         ).move_to([0, cap_y, 0])
-        show(self, stats, extra=0.75)
+        show(self, stats, extra=0.5)
         clear(self)
 
 

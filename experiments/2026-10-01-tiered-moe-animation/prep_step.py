@@ -35,17 +35,27 @@ for rec in records:
     a = np.load(TRACE / rec["file"])
     for s in range(0, (a.shape[0] // STEP) * STEP, STEP):
         for li, layer in enumerate(layers):
+            if not 5 <= layer <= 60:
+                continue
             hot = set(prof["hot_experts"][li])
             ids = np.unique(a[s : s + STEP, layer, :])
-            if not 47 <= len(ids) <= 51 or not 10 <= layer <= 55:
+            if not 45 <= len(ids) <= 52:
                 continue
             cold = [int(e) for e in ids if e not in hot]
+            if not 9 <= len(cold) <= 12:
+                continue
             per = np.bincount(owners[li, cold], minlength=4)
             load, where = balance(cold, li)
+            moves = sum(1 for e, r in where.items() if owners[li, e] != r)
+            # A clean example: one clearly overloaded GPU, every GPU busy
+            # afterwards, the loads within one of each other, few handoffs.
+            if per.max() < 5 or load.min() < 2 or load.max() - load.min() > 1 or moves > 3:
+                continue
             gain = per.max() - load.max()
-            if 7 <= len(cold) <= 12 and per.max() >= 4 and gain >= 2 and (best is None or gain > best[0]):
-                best = (gain, li, layer, a[s : s + STEP, layer, :], ids, cold, per, load, where)
-    if best and best[0] >= 3:
+            score = (gain, -moves)
+            if best is None or score > best[0]:
+                best = (score, li, layer, a[s : s + STEP, layer, :], ids, cold, per, load, where)
+    if best and best[0][0] >= 3:
         break
 
 gain, li, layer, toks, ids, cold, per, load, where = best
