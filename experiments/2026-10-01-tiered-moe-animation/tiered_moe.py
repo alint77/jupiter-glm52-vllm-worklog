@@ -205,6 +205,20 @@ def hopper(w=2.3, h=1.55, big=22, small=17):
 
 
 # --------------------------------------------------------------------------
+class S0Intro(Scene):
+    def construct(self):
+        cue(self, 0)
+        t = T("Serving LLMs bigger than VRAM", 46, weight="BOLD")
+        t2 = T("on Grace Hopper", 46, C2C, weight="BOLD")
+        sub = T("MiMo-V2.6-Pro (1T parameters) on one 4x GH200 node", 24, INK2)
+        VGroup(t, t2, sub).arrange(DOWN, buff=0.25).move_to(UP * 0.2)
+        self.play(FadeIn(t, shift=DOWN * 0.2), run_time=0.8)
+        self.play(FadeIn(t2, shift=DOWN * 0.2), run_time=0.6)
+        self.play(FadeIn(sub), run_time=0.6)
+        clear(self)
+
+
+# --------------------------------------------------------------------------
 class S1Hardware(Scene):
     def construct(self):
         cue(self, 0)
@@ -223,7 +237,7 @@ class S1Hardware(Scene):
         pause(self, "look")
         bw = T("900 GB/s total, 450 GB/s each way", 26, C2C).next_to(one, DOWN, buff=0.5)
         show(self, bw)
-        note = T("the GPU reads Grace memory directly, ~7x faster than PCIe Gen5 x16", 22, INK2).next_to(bw, DOWN, buff=0.25)
+        note = T("CUDA unified virtual addressing: GPU kernels read CPU memory directly", 22, INK2).next_to(bw, DOWN, buff=0.25)
         show(self, note)
         seg_hold(self)
         self.play(FadeOut(VGroup(g, h, link, lab, bw, note)), run_time=0.7)
@@ -265,7 +279,7 @@ class S1Hardware(Scene):
         rows = VGroup(
             T("Per node", 28, weight="BOLD"),
             T("384 GB HBM3  (4 x 96)", 24, HBM),
-            T("480 GB LPDDR5X  (4 x 120)", 24, DDR),
+            T("480 GB CPU memory  (4 x 120)", 24, DDR),
             T("~630 of ~990 TFLOPS BF16 (power-limited)", 22, INK2),
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.18).to_edge(RIGHT, buff=0.5).shift(UP * 1.7)
         cue(self, 5)
@@ -709,7 +723,7 @@ class S5Overlap(Scene):
 
         self.play(*[FadeOut(m) for m in (par, l1, l2, note, hot, cold, free)], run_time=0.7)
         better = VGroup(
-            T("Even better: one kernel reads both tiers", 30, weight="BOLD"),
+            T("A better way: one kernel handles both tiers", 30, weight="BOLD"),
             T("instead of two kernels on two streams", 20, INK2),
         ).arrange(DOWN, buff=0.1).move_to(UP * 0.35)
         cue(self, 10)
@@ -807,7 +821,7 @@ class S7Frequency(Scene):
         self.play(FadeOut(c1), run_time=0.4)
         src = VGroup(
             T("profile on a calibration set that looks like deployment", 22, weight="BOLD"),
-            T("for us: agentic coding sessions (Claude Code) + autoresearch ML tasks", 20, INK2),
+            T("for us: agentic coding sessions (Claude Code) + autoresearch on biology ML tasks", 20, INK2),
         ).arrange(DOWN, buff=0.1).move_to([0, 1.55, 0])
         cue(self, 3)
         show(self, src[0])
@@ -1141,3 +1155,20 @@ class S10Result(Scene):
         self.play(GrowFromEdge(b, LEFT), FadeIn(bl), run_time=1.8)
         narr_end(self)
         self.wait(2)
+
+
+# --------------------------------------------------------------------------
+class S11Outro(Scene):
+    def construct(self):
+        cue(self, 0)
+        thanks = T("Thanks for watching!", 46, weight="BOLD")
+        name = T("Ali Naeimi", 30, C2C, weight="BOLD")
+        link = T("github.com/alint77/gh200-tiered-moe", 24, HBM)
+        VGroup(thanks, name, link).arrange(DOWN, buff=0.45).move_to(UP * 0.4)
+        credit = T("Video made with help from Claude Opus 5.5 using Manim  |  voice generated with ElevenLabs v4",
+                   15, MUTED).to_edge(DOWN, buff=0.35)
+        self.play(FadeIn(thanks, shift=UP * 0.2), run_time=0.8)
+        self.play(FadeIn(name), FadeIn(link), run_time=0.8)
+        self.play(FadeIn(credit), run_time=0.6)
+        narr_end(self)
+        self.wait(3.5)

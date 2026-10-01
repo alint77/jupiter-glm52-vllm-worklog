@@ -1,4 +1,11 @@
 {
+ "S0Intro": [
+  {
+   "text": "In this presentation, we'll go through some Grace Hopper specific optimizations for serving a one-trillion-parameter language model when its weights don't fit in VRAM.",
+   "file": "voice/seg/S0Intro_00_dabdfebd5e.mp3",
+   "dur": 9.874
+  }
+ ],
  "S1Hardware": [
   {
    "text": "This is one node of the JUPITER supercomputer: four NVIDIA Grace Hopper superchips.",
@@ -6,14 +13,14 @@
    "dur": 5.642
   },
   {
-   "text": "Each one pairs a 72-core Grace CPU and 120 gigabytes of LPDDR5X with a Hopper GPU and 96 gigabytes of HBM.",
-   "file": "voice/seg/S1Hardware_01_1c9dcbcb1c.mp3",
-   "dur": 11.807
+   "text": "Each pairs a Grace CPU with 120 gigabytes of memory, and a Hopper GPU with 96 gigabytes of HBM.",
+   "file": "voice/seg/S1Hardware_01_64010ce638.mp3",
+   "dur": 8.516
   },
   {
-   "text": "The two are joined by NVLink C2C, at 450 gigabytes per second each way, so the GPU can read CPU memory directly.",
-   "file": "voice/seg/S1Hardware_02_3454c9a070.mp3",
-   "dur": 9.953
+   "text": "They're joined by NVLink C2C, a high-bandwidth link at 450 gigabytes per second each way. And with CUDA's unified virtual addressing, GPU kernels can read CPU memory directly.",
+   "file": "voice/seg/S1Hardware_02_359d8f820f.mp3",
+   "dur": 13.636
   },
   {
    "text": "Four of these make a node.",
@@ -26,9 +33,9 @@
    "dur": 5.956
   },
   {
-   "text": "In total, a node has 384 gigabytes of HBM and 480 gigabytes of LPDDR5X.",
-   "file": "voice/seg/S1Hardware_05_e4994c11cd.mp3",
-   "dur": 8.438
+   "text": "In total, that's 384 gigabytes of HBM and 480 gigabytes of CPU memory.",
+   "file": "voice/seg/S1Hardware_05_8d965f0581.mp3",
+   "dur": 7.549
   },
   {
    "text": "In practice we get about 3.6 terabytes per second from HBM, and about 420 gigabytes per second over C2C:",
@@ -161,14 +168,14 @@
    "dur": 2.691
   },
   {
-   "text": "So keep the frequently used, hot experts in HBM,",
-   "file": "voice/seg/S5Overlap_01_39bd56eba8.mp3",
-   "dur": 4.049
+   "text": "So put about half the experts, the hot ones, in HBM,",
+   "file": "voice/seg/S5Overlap_01_b704abf714.mp3",
+   "dur": 4.206
   },
   {
-   "text": "put the cold ones in Grace memory, and read both at the same time.",
-   "file": "voice/seg/S5Overlap_02_720c57732b.mp3",
-   "dur": 4.362
+   "text": "and the other half, the cold ones, in Grace memory. Then launch the hot and cold kernels on separate CUDA streams. With only 8 tokens per step, decode doesn't saturate the GPU's compute, so the two kernels overlap and share it.",
+   "file": "voice/seg/S5Overlap_02_d0d0c0652c.mp3",
+   "dur": 15.804
   },
   {
    "text": "One after the other, a layer takes hot time plus cold time.",
@@ -176,24 +183,24 @@
    "dur": 4.284
   },
   {
-   "text": "Together, it takes only as long as the longer of the two.",
-   "file": "voice/seg/S5Overlap_04_e305aea369.mp3",
-   "dur": 3.788
+   "text": "Overlapped, it takes only as long as the longer of the two.",
+   "file": "voice/seg/S5Overlap_04_4493d2a78a.mp3",
+   "dur": 4.049
   },
   {
-   "text": "The ratio matters. At three hot experts to one cold, the cold read runs long and the GPU waits on it.",
-   "file": "voice/seg/S5Overlap_05_6d45812700.mp3",
-   "dur": 8.202
+   "text": "The ratio matters. At three hot experts to one cold, the cold kernel runs long and the GPU waits on it.",
+   "file": "voice/seg/S5Overlap_05_c97d8b697b.mp3",
+   "dur": 8.046
   },
   {
-   "text": "At six to one, the cold read is fully hidden.",
-   "file": "voice/seg/S5Overlap_06_282bf2efc4.mp3",
-   "dur": 3.474
+   "text": "At six to one, the cold kernel is fully hidden.",
+   "file": "voice/seg/S5Overlap_06_d56b43df72.mp3",
+   "dur": 3.631
   },
   {
-   "text": "At five to one, both finish together, because HBM is about five times faster than C2C.",
-   "file": "voice/seg/S5Overlap_07_256449404a.mp3",
-   "dur": 6.766
+   "text": "At five to one, both finish together, because the hot kernel runs about five times faster than the cold one.",
+   "file": "voice/seg/S5Overlap_07_8eaa6782a9.mp3",
+   "dur": 6.687
   },
   {
    "text": "Now compare with reading all six experts from HBM alone: that takes longer.",
@@ -206,9 +213,9 @@
    "dur": 6.034
   },
   {
-   "text": "Even better, a single kernel can read both tiers:",
-   "file": "voice/seg/S5Overlap_10_1dfd0b45a9.mp3",
-   "dur": 3.553
+   "text": "But there's a better way: instead of launching two kernels on separate streams, a single kernel can handle both hot and cold experts internally.",
+   "file": "voice/seg/S5Overlap_10_0e72ba3d77.mp3",
+   "dur": 8.986
   },
   {
    "text": "about twenty SMs stream cold experts, enough to saturate C2C, while the rest stream hot ones.",
@@ -223,9 +230,9 @@
  ],
  "S6Problem": [
   {
-   "text": "The catch: to fit the model, we have to offload far more than one expert in six.",
-   "file": "voice/seg/S6Problem_00_1e63eb26ef.mp3",
-   "dur": 5.878
+   "text": "But there's a big problem. To fit the model, we have to offload far more than one expert in six.",
+   "file": "voice/seg/S6Problem_00_6d2fc26a38.mp3",
+   "dur": 6.531
   },
   {
    "text": "About 42 percent of the experts live in Grace memory.",
@@ -250,19 +257,19 @@
    "dur": 2.194
   },
   {
-   "text": "Sort one layer's experts by how often they're used:",
-   "file": "voice/seg/S7Frequency_01_c77e9d49fd.mp3",
-   "dur": 3.631
+   "text": "If we sort one layer's experts by how often they're used,",
+   "file": "voice/seg/S7Frequency_01_239799b6d9.mp3",
+   "dur": 3.788
   },
   {
-   "text": "a few take most of the traffic, and a long tail barely runs.",
-   "file": "voice/seg/S7Frequency_02_bd9cae3b3a.mp3",
-   "dur": 4.284
+   "text": "we'll see that a few take most of the traffic, and a long tail barely runs.",
+   "file": "voice/seg/S7Frequency_02_58d306b9bc.mp3",
+   "dur": 4.989
   },
   {
-   "text": "So we profile on calibration data that looks like our deployment: agentic coding sessions and autoresearch ML tasks.",
-   "file": "voice/seg/S7Frequency_03_7ecdc2e761.mp3",
-   "dur": 8.046
+   "text": "So we profile on calibration data that looks like our deployment: for us, agentic coding sessions and autoresearch on biology-related ML tasks.",
+   "file": "voice/seg/S7Frequency_03_119385ae0c.mp3",
+   "dur": 10.109
   },
   {
    "text": "Put the least-used half in Grace memory, and it receives only 18.5 percent of routes.",
@@ -364,6 +371,13 @@
    "text": "On one node, that's around 210 tokens per second for a single user, against 70 to 80 with stock offloading.",
    "file": "voice/seg/S10Result_02_a1e164f122.mp3",
    "dur": 7.889
+  }
+ ],
+ "S11Outro": [
+  {
+   "text": "Thanks for watching!",
+   "file": "voice/seg/S11Outro_00_2fdc4fb9d1.mp3",
+   "dur": 1.149
   }
  ]
 }

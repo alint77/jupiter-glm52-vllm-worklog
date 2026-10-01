@@ -16,8 +16,8 @@ from pathlib import Path
 HERE = Path(__file__).parent
 MEDIA = Path(f"/e/fscratch/profound/{os.environ['USER']}/manim-media")
 SUB = {"l": "480p15", "m": "720p30", "h": "1080p60", "k": "2160p60"}
-SCENES = ["S1Hardware", "S2Problem", "S3StockVllm", "S4Layout", "S4bPrefetch", "S5Overlap",
-          "S6Problem", "S7Frequency", "S8Imbalance", "S9Replicas", "S10Result"]
+SCENES = ["S0Intro", "S1Hardware", "S2Problem", "S3StockVllm", "S4Layout", "S4bPrefetch", "S5Overlap",
+          "S6Problem", "S7Frequency", "S8Imbalance", "S9Replicas", "S10Result", "S11Outro"]
 
 
 def duration(path):

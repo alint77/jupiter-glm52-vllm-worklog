@@ -12,7 +12,7 @@ export LD_LIBRARY_PATH="$(ls -d $S/*/*GCCcore-14.3.0/lib64 $S/*/*GCCcore-14.3.0/
 export PATH="$S/FFmpeg/7.1.2-GCCcore-14.3.0/bin:$PATH"
 MANIM=/e/fscratch/profound/${USER}/venvs/manim-venv/bin/manim
 MEDIA=/e/fscratch/profound/${USER}/manim-media
-ALL=(S1Hardware S2Problem S3StockVllm S4Layout S4bPrefetch S5Overlap S6Problem S7Frequency S8Imbalance S9Replicas S10Result)
+ALL=(S0Intro S1Hardware S2Problem S3StockVllm S4Layout S4bPrefetch S5Overlap S6Problem S7Frequency S8Imbalance S9Replicas S10Result S11Outro)
 TODO=("${@:-${ALL[@]}}")
 # One media dir per scene: parallel runs would race on the shared text cache.
 printf '%s\n' "${TODO[@]}" | xargs -P "${JOBS:-${#TODO[@]}}" -I{} \

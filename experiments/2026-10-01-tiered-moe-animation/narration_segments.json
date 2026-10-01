@@ -1,11 +1,14 @@
 {
+ "S0Intro": [
+  "In this presentation, we'll go through some Grace Hopper specific optimizations for serving a one-trillion-parameter language model when its weights don't fit in VRAM."
+ ],
  "S1Hardware": [
   "This is one node of the JUPITER supercomputer: four NVIDIA Grace Hopper superchips.",
-  "Each one pairs a 72-core Grace CPU and 120 gigabytes of LPDDR5X with a Hopper GPU and 96 gigabytes of HBM.",
-  "The two are joined by NVLink C2C, at 450 gigabytes per second each way, so the GPU can read CPU memory directly.",
+  "Each pairs a Grace CPU with 120 gigabytes of memory, and a Hopper GPU with 96 gigabytes of HBM.",
+  "They're joined by NVLink C2C, a high-bandwidth link at 450 gigabytes per second each way. And with CUDA's unified virtual addressing, GPU kernels can read CPU memory directly.",
   "Four of these make a node.",
   "The four GPUs talk to each other over NVLink, and nodes talk over InfiniBand.",
-  "In total, a node has 384 gigabytes of HBM and 480 gigabytes of LPDDR5X.",
+  "In total, that's 384 gigabytes of HBM and 480 gigabytes of CPU memory.",
   "In practice we get about 3.6 terabytes per second from HBM, and about 420 gigabytes per second over C2C:",
   "the second-fastest way into the GPU."
  ],
@@ -40,30 +43,30 @@
  ],
  "S5Overlap": [
   "Decode is limited by memory bandwidth.",
-  "So keep the frequently used, hot experts in HBM,",
-  "put the cold ones in Grace memory, and read both at the same time.",
+  "So put about half the experts, the hot ones, in HBM,",
+  "and the other half, the cold ones, in Grace memory. Then launch the hot and cold kernels on separate CUDA streams. With only 8 tokens per step, decode doesn't saturate the GPU's compute, so the two kernels overlap and share it.",
   "One after the other, a layer takes hot time plus cold time.",
-  "Together, it takes only as long as the longer of the two.",
-  "The ratio matters. At three hot experts to one cold, the cold read runs long and the GPU waits on it.",
-  "At six to one, the cold read is fully hidden.",
-  "At five to one, both finish together, because HBM is about five times faster than C2C.",
+  "Overlapped, it takes only as long as the longer of the two.",
+  "The ratio matters. At three hot experts to one cold, the cold kernel runs long and the GPU waits on it.",
+  "At six to one, the cold kernel is fully hidden.",
+  "At five to one, both finish together, because the hot kernel runs about five times faster than the cold one.",
   "Now compare with reading all six experts from HBM alone: that takes longer.",
   "Offloading is actually faster than VRAM, because C2C adds its bandwidth on top.",
-  "Even better, a single kernel can read both tiers:",
+  "But there's a better way: instead of launching two kernels on separate streams, a single kernel can handle both hot and cold experts internally.",
   "about twenty SMs stream cold experts, enough to saturate C2C, while the rest stream hot ones.",
   "That's 6 to 32 percent faster per layer than two kernels on two streams."
  ],
  "S6Problem": [
-  "The catch: to fit the model, we have to offload far more than one expert in six.",
+  "But there's a big problem. To fit the model, we have to offload far more than one expert in six.",
   "About 42 percent of the experts live in Grace memory.",
   "If every expert were used equally often,",
   "cold reads would take about four times as long as hot ones, and set the pace."
  ],
  "S7Frequency": [
   "But routing isn't uniform.",
-  "Sort one layer's experts by how often they're used:",
-  "a few take most of the traffic, and a long tail barely runs.",
-  "So we profile on calibration data that looks like our deployment: agentic coding sessions and autoresearch ML tasks.",
+  "If we sort one layer's experts by how often they're used,",
+  "we'll see that a few take most of the traffic, and a long tail barely runs.",
+  "So we profile on calibration data that looks like our deployment: for us, agentic coding sessions and autoresearch on biology-related ML tasks.",
   "Put the least-used half in Grace memory, and it receives only 18.5 percent of routes.",
   "Our production placement brings that down to 12.8 percent, well inside what the overlap can hide.",
   "How skewed routing is depends on the model, though:",
@@ -89,5 +92,8 @@
   "Putting it together: hot and cold experts read at once, in one kernel; placement profiled on deployment-like traffic; and replicas to balance the cold work.",
   "Prefill prefetches the next layer.",
   "On one node, that's around 210 tokens per second for a single user, against 70 to 80 with stock offloading."
+ ],
+ "S11Outro": [
+  "Thanks for watching!"
  ]
 }
