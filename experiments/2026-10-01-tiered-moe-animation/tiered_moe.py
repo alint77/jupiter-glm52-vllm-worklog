@@ -134,13 +134,24 @@ def narr_end(scene):
             scene.wait(wait)
 
 
+def seg_hold(scene):
+    """With narration, keep what is on screen until the current line ends."""
+    segs = NARR.get(type(scene).__name__)
+    log = scene.__dict__.get("_cue_log")
+    if segs and log:
+        i, t = log[-1]
+        wait = t + segs[i]["dur"] - scene.renderer.time
+        if wait > 0:
+            scene.wait(wait)
+
+
 def read(scene, *mobs, extra=0):
     """Hold for the time it takes to read the text just shown."""
-    if NARR:
-        scene.wait(0.3)
-        return
     n = sum(chars(m) for m in mobs)
-    scene.wait(max(1.1, min(4.0, 0.6 + 0.038 * n)) + extra)
+    t = max(1.1, min(4.0, 0.6 + 0.038 * n))
+    if NARR:
+        t = min(t, 1.5)
+    scene.wait(t + (0 if NARR else extra))
 
 
 # Holds after a visual change, sized to how much there is to take in.
@@ -214,6 +225,7 @@ class S1Hardware(Scene):
         show(self, bw)
         note = T("the GPU reads Grace memory directly, ~7x faster than PCIe Gen5 x16", 22, INK2).next_to(bw, DOWN, buff=0.25)
         show(self, note)
+        seg_hold(self)
         self.play(FadeOut(VGroup(g, h, link, lab, bw, note)), run_time=0.7)
 
         # Four superchips as columns: Grace on top, Hopper below.
@@ -245,6 +257,7 @@ class S1Hardware(Scene):
         pause(self, "look")
         nv = T("NVLink 4: every GPU pair, 150 GB/s each way", 24, NVL).to_edge(DOWN, buff=0.35)
         show(self, nv)
+        seg_hold(self)
         self.play(FadeOut(arcs), FadeOut(nv), run_time=0.7)
 
         node = VGroup(cols, names)
@@ -441,6 +454,7 @@ class S4Layout(Scene):
         pause(self, "quick")
         cap = T("attention is split by heads across the 4 GPUs (TP4)", 22, INK2).to_edge(DOWN, buff=0.35)
         show(self, cap)
+        seg_hold(self)
         self.play(FadeOut(cap), run_time=0.4)
 
         cells = owned_grids(cols, 1.05)
@@ -450,6 +464,7 @@ class S4Layout(Scene):
         pause(self, "quick")
         cap = T("each GPU owns 96 of the 384 experts of every layer (EP4)", 22, INK2).to_edge(DOWN, buff=0.35)
         show(self, cap)
+        seg_hold(self)
         self.play(FadeOut(cap), run_time=0.4)
 
         tok0 = [cells[e] for e in STEP["token0"]]
@@ -458,6 +473,7 @@ class S4Layout(Scene):
         pause(self, "look")
         cap = T("1 token: top-8, so 8 experts per layer", 24, C2C).to_edge(DOWN, buff=0.35)
         show(self, cap, extra=0.25)
+        seg_hold(self)
         self.play(FadeOut(cap), *[c.animate.set_fill(CELL, opacity=0.9) for c in tok0], run_time=0.6)
         pause(self, "quick")
 
@@ -467,6 +483,7 @@ class S4Layout(Scene):
         ).arrange(DOWN, buff=0.08).to_edge(DOWN, buff=0.25)
         cue(self, 4)
         show(self, sd, extra=0.3)
+        seg_hold(self)
         self.play(FadeOut(sd), run_time=0.4)
 
         act = [cells[e] for e in STEP["active"]]
@@ -475,6 +492,7 @@ class S4Layout(Scene):
         pause(self, "study")
         cap = T("8 tokens per step: ~49 experts per layer, up to 64 (8 tokens x top-8)", 22, C2C).to_edge(DOWN, buff=0.35)
         show(self, cap, extra=0.5)
+        seg_hold(self)
         self.play(FadeOut(cap), run_time=0.4)
         why = VGroup(
             T("each weight read serves up to 8 tokens, and with more active experts", 21),
@@ -540,6 +558,7 @@ class S4bPrefetch(Scene):
         cap = T("prefill: lots of compute per layer, so each copy hides behind it - offloading is free",
                 21, GOOD).move_to([0, cap_y, 0])
         show(self, cap)
+        seg_hold(self)
         self.play(FadeOut(cap), run_time=0.4)
 
         cue(self, 2)
@@ -550,6 +569,7 @@ class S4bPrefetch(Scene):
             T("the GPU spends most of the step waiting for copies", 21, BAD),
         ).arrange(DOWN, buff=0.08).move_to([0, cap_y - 0.1, 0])
         show(self, cap)
+        seg_hold(self)
         self.play(FadeOut(cap), run_time=0.4)
 
         cue(self, 3)
@@ -557,6 +577,7 @@ class S4bPrefetch(Scene):
         pause(self, "look")
         cap = T("the copies hide once a step has roughly 256 tokens or more", 21).move_to([0, cap_y, 0])
         show(self, cap)
+        seg_hold(self)
         self.play(FadeOut(cap), run_time=0.4)
         cap = VGroup(
             T("so prefill prefetches, and offloading costs it nothing", 22, GOOD, weight="BOLD"),
@@ -624,6 +645,7 @@ class S5Overlap(Scene):
         pause(self, "look")
         cap = T("at the same time: the layer takes only as long as the longer of the two", 22, GOOD).to_edge(DOWN, buff=0.3)
         show(self, cap)
+        seg_hold(self)
         self.play(FadeOut(cap), run_time=0.4)
 
         def case(n, text, color, mark, i):
@@ -635,6 +657,7 @@ class S5Overlap(Scene):
             pause(self, "quick")
             c = T(text, 22, color).to_edge(DOWN, buff=0.3)
             show(self, c)
+            seg_hold(self)
             self.play(FadeOut(VGroup(mark, c)), run_time=0.4)
 
         idle = Rectangle(width=wc - 3 * wh, height=0.5, stroke_color=BAD, stroke_width=2, fill_opacity=0)
@@ -655,6 +678,7 @@ class S5Overlap(Scene):
             T("one cold expert takes about as long as 5 hot ones (~2.2 vs ~0.42 TB/s)", 20, INK2),
         ).arrange(DOWN, buff=0.08).to_edge(DOWN, buff=0.2)
         show(self, c, extra=0.6)
+        seg_hold(self)
         self.play(FadeOut(c), run_time=0.4)
 
         # Faster than having everything in HBM.
@@ -670,6 +694,7 @@ class S5Overlap(Scene):
         pause(self, "study")
         c1 = T("the same 6 experts, read only from HBM, finish later", 22, INK).to_edge(DOWN, buff=0.35)
         show(self, c1)
+        seg_hold(self)
         self.play(FadeOut(c1), run_time=0.3)
         c = VGroup(
             T("Offloading is faster than VRAM!", 32, GOOD, weight="BOLD"),
@@ -700,6 +725,7 @@ class S5Overlap(Scene):
         l1 = T("~20 SMs stream cold experts from Grace: enough to saturate C2C", 20, DDR).next_to(lbl, DOWN, buff=0.2)
         l2 = T("the other ~112 stream hot experts from HBM, at the same time", 20, HBM).next_to(l1, DOWN, buff=0.1)
         show(self, VGroup(l1, l2), extra=0.5)
+        seg_hold(self)
         self.play(FadeOut(VGroup(l1, l2)), run_time=0.4)
         gain = T("measured per layer: 6-32% faster than two kernels on two streams", 23, GOOD, weight="BOLD").next_to(lbl, DOWN, buff=0.3)
         cue(self, 12)
@@ -777,6 +803,7 @@ class S7Frequency(Scene):
         c1 = T("a few experts take most of the traffic; the long tail barely runs", 22).move_to([0, 1.55, 0])
         cue(self, 2)
         show(self, c1, extra=0.25)
+        seg_hold(self)
         self.play(FadeOut(c1), run_time=0.4)
         src = VGroup(
             T("profile on a calibration set that looks like deployment", 22, weight="BOLD"),
@@ -785,6 +812,7 @@ class S7Frequency(Scene):
         cue(self, 3)
         show(self, src[0])
         show(self, src[1], extra=0.25)
+        seg_hold(self)
         self.play(FadeOut(src), run_time=0.4)
 
         half = n // 2
@@ -793,6 +821,7 @@ class S7Frequency(Scene):
         pause(self, "long")
         lh = T(f"least-used half -> Grace RAM: only {DATA['cold_share_least_used_half']:.1%} of all routes", 23, DDR).move_to([0, 1.55, 0])
         show(self, lh, extra=0.4)
+        seg_hold(self)
         self.play(FadeOut(lh), run_time=0.4)
         fin = VGroup(
             T(f"production placement: {DATA['cold_share_profile']:.1%} of routes go to cold experts", 23, GOOD, weight="BOLD"),
@@ -913,6 +942,7 @@ class S8Imbalance(Scene):
         cap_y = -3.45
         c1 = T("each GPU reads its hot and cold experts at the same time", 21).move_to([0, cap_y, 0])
         show(self, c1)
+        seg_hold(self)
         self.play(FadeOut(c1), run_time=0.4)
         cue(self, 2)
         hl = VGroup(SurroundingRectangle(VGroup(segs[6], segs[10]), color=DDR, buff=0.06))
@@ -920,6 +950,7 @@ class S8Imbalance(Scene):
         pause(self, "quick")
         c2 = T("GPUs 1 and 2 drew lots of cold experts: cold sets their pace", 21, DDR).move_to([0, cap_y, 0])
         show(self, c2)
+        seg_hold(self)
         self.play(FadeOut(c2), FadeOut(hl), run_time=0.4)
         cue(self, 3)
         hl = VGroup(SurroundingRectangle(segs[3], color=WAIT, buff=0.06), SurroundingRectangle(segs[15], color=WAIT, buff=0.06))
@@ -927,6 +958,7 @@ class S8Imbalance(Scene):
         pause(self, "quick")
         c3 = T("GPUs 0 and 3 finish early and sit in the collective, ~150 us doing nothing", 21, WAIT).move_to([0, cap_y, 0])
         show(self, c3, extra=0.25)
+        seg_hold(self)
         self.play(FadeOut(c3), FadeOut(hl), run_time=0.4)
         c4 = T("which GPU is last changes every layer: routing luck, not a slow GPU", 21).move_to([0, cap_y, 0])
         cue(self, 4)
@@ -969,6 +1001,7 @@ class S9Replicas(Scene):
         pause(self, "look")
         cap = T("after placement: hot experts in HBM, cold ones in that GPU's Grace RAM", 21, INK2).move_to([0, cap_y, 0])
         show(self, cap)
+        seg_hold(self)
         self.play(FadeOut(cap), run_time=0.4)
 
         # The real verify step.
@@ -981,6 +1014,7 @@ class S9Replicas(Scene):
         cap = T(f"one real verify step (layer {STEP['layer']}): {len(STEP['active'])} experts active, {len(cold_act)} of them cold",
                 21).move_to([0, cap_y, 0])
         show(self, cap)
+        seg_hold(self)
         self.play(FadeOut(cap), run_time=0.4)
 
         # Pull this step's cold experts out into one stack per GPU.
@@ -1022,6 +1056,7 @@ class S9Replicas(Scene):
         cap = T(f"GPU {worst} drew {max(before)} of the {len(cold_act)} cold experts: the other GPUs wait for it",
                 21, BAD).move_to([0, cap_y, 0])
         show(self, cap)
+        seg_hold(self)
         self.play(FadeOut(cap), run_time=0.4)
 
         # Copies of GPU 3's experts that other GPUs hold.
@@ -1065,6 +1100,7 @@ class S9Replicas(Scene):
                 21).move_to([0, cap_y, 0])
         cue(self, 6)
         show(self, cap)
+        seg_hold(self)
         self.play(FadeOut(cap), run_time=0.4)
         stats = T(
             f"over all steps: busiest GPU {DATA['max_cold_rank_no_replicas_mean']:.2f} -> "
