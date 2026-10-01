@@ -60,7 +60,10 @@ fi
 export TIERED_MOE_HBM_RESERVE_GB="${RESERVE_GB:-7}"  # 10 was for DFlash2's draft KV
 # Cold prefetch: two slots (vLLM default), so layer L+1's copy runs under layer
 # L's MoE; from 512 tokens (~1.3 ms copy vs ~2 ms of layer compute).
-export VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS="${VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS:-512}"
+# 1025, not 512: prefetch inside captured prefill graphs (vllm e3a4143956) fails
+# graph capture at startup (A/B gp-inpf, 2026-10-01); above the largest captured
+# size it only runs eagerly, which works.
+export VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS="${VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS:-1025}"
 # Prefill CUDA graphs (piecewise, up to 1024 tokens) need ~0.5 GB of graph pool
 # the planner does not budget; it comes out of the free-HBM margin (5.5 GB).
 # Median TTFT at 512 new tokens 188-222 -> 174 ms, decode unchanged (2026-10-01).
