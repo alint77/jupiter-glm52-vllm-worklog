@@ -499,14 +499,15 @@ class S5Overlap(Scene):
         self.play(LaggedStart(*[GrowFromEdge(b, LEFT) for b in ab], lag_ratio=0.9), run_time=1.4, rate_func=linear)
         saved = Rectangle(width=6 * wh - wc, height=0.5, stroke_color=GOOD, stroke_width=2, fill_color=GOOD, fill_opacity=0.15)
         saved.move_to([x0 + (wc + 6 * wh) / 2, y3, 0])
-        self.play(FadeIn(saved), FadeIn(T("saved", 15, GOOD).move_to(saved)), run_time=0.6)
+        saved_lab = T("saved", 15, GOOD).move_to(saved)
+        self.play(FadeIn(saved), FadeIn(saved_lab), run_time=0.6)
         pause(self, "study")
         c = VGroup(
             T("the same 6 experts read only from HBM finish later", 22, GOOD, weight="BOLD"),
             T("C2C adds its bandwidth to HBM's: ~2.5 TB/s instead of 2.2", 20, INK2),
         ).arrange(DOWN, buff=0.08).to_edge(DOWN, buff=0.2)
         show(self, c, extra=0.6)
-        par = VGroup(hb, hl, cb, end_line, l3, ab, saved)
+        par = VGroup(hb, hl, cb, end_line, l3, ab, saved, saved_lab)
         free = c
 
         self.play(*[FadeOut(m) for m in (par, l1, l2, note, hot, cold, free)], run_time=0.7)
@@ -522,6 +523,9 @@ class S5Overlap(Scene):
         l1 = T("~20 SMs stream cold experts from Grace: enough to saturate C2C", 20, DDR).next_to(lbl, DOWN, buff=0.2)
         l2 = T("the other ~112 stream hot experts from HBM, at the same time", 20, HBM).next_to(l1, DOWN, buff=0.1)
         show(self, VGroup(l1, l2), extra=0.5)
+        self.play(FadeOut(VGroup(l1, l2)), run_time=0.4)
+        gain = T("measured per layer: 6-32% faster than two kernels on two streams", 23, GOOD, weight="BOLD").next_to(lbl, DOWN, buff=0.3)
+        show(self, gain, extra=0.6)
         clear(self)
 
 
