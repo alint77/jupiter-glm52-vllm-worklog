@@ -424,11 +424,11 @@ class S5Overlap(Scene):
         cold = T("cold experts live in Grace RAM: read over C2C at ~420 GB/s", 22, DDR).next_to(hot, DOWN, buff=0.12)
         show(self, cold)
 
-        # Bar length = time. A hot expert streams from HBM at ~2.2 TB/s, a
-        # cold one over C2C at ~0.42 TB/s, so one cold expert takes as long
-        # as ~5.2 hot ones.
-        x0, k = -4.2, 2.4
-        wh, wc = k / 2.2, k / 0.42
+        # Bar length = time. HBM at ~2.2 TB/s vs C2C at ~0.42 TB/s: one cold
+        # expert takes about as long as 5 hot ones; drawn as exactly 5.
+        x0 = -4.2
+        wh = 1.0
+        wc = 5 * wh
         y1, y2, y3 = -0.95, -1.65, -2.35
         l1, l2 = lane("HBM", HBM, y1), lane("C2C", DDR, y2)
         note = T("bar length = time", 16, MUTED).next_to(l1, UP, buff=0.3).align_to(l1, RIGHT)
@@ -462,24 +462,23 @@ class S5Overlap(Scene):
         show(self, cap)
         self.play(FadeOut(cap), run_time=0.4)
 
-        def case(n, text, color, idle_lane, idle_from, idle_to):
-            nb, nl = hot_blocks(n), None
-            nl = hot_label(nb, n)
-            self.play(Transform(hb, nb), Transform(hl, nl), run_time=1.0)
+        def case(n, text, color, mark):
+            nb = hot_blocks(n)
+            self.play(Transform(hb, nb), Transform(hl, hot_label(nb, n)), run_time=1.0)
             pause(self, "quick")
-            idle = Rectangle(width=idle_to - idle_from, height=0.5, stroke_color=BAD, stroke_width=2, fill_opacity=0)
-            idle.move_to([(idle_from + idle_to) / 2, idle_lane, 0])
-            il = T("idle", 15, BAD).move_to(idle)
-            self.play(Create(idle), FadeIn(il), run_time=0.6)
+            self.play(FadeIn(mark), run_time=0.6)
             pause(self, "quick")
             c = T(text, 22, color).to_edge(DOWN, buff=0.3)
             show(self, c)
-            self.play(FadeOut(VGroup(idle, il, c)), run_time=0.4)
+            self.play(FadeOut(VGroup(mark, c)), run_time=0.4)
 
+        idle = Rectangle(width=wc - 3 * wh, height=0.5, stroke_color=BAD, stroke_width=2, fill_opacity=0)
+        idle.move_to([x0 + (3 * wh + wc) / 2, y1, 0])
         case(3, "3 hot : 1 cold - the cold read runs longer and the GPU waits on it", BAD,
-             y1, x0 + 3 * wh, x0 + wc)
-        case(6, "6 hot : 1 cold - the cold read finishes early and C2C sits idle", INK2,
-             y2, x0 + wc, x0 + 6 * wh)
+             VGroup(idle, T("waiting", 15, BAD).move_to(idle)))
+        hidden = SurroundingRectangle(cb, color=GOOD, buff=0.05)
+        case(6, "6 hot : 1 cold - the cold read is fully overlapped by the hot ones", GOOD,
+             VGroup(hidden, T("fully overlapped", 15, GOOD).next_to(hidden, DOWN, buff=0.05).align_to(hidden, LEFT)))
         nb = hot_blocks(5)
         self.play(Transform(hb, nb), Transform(hl, hot_label(nb, 5)), run_time=1.0)
         end_line = DashedLine([x0 + wc, y1 + 0.45, 0], [x0 + wc, y2 - 0.35, 0], color=C2C)
@@ -487,7 +486,7 @@ class S5Overlap(Scene):
         pause(self, "look")
         c = VGroup(
             T("5 hot : 1 cold - both links stay busy and finish together", 22, C2C, weight="BOLD"),
-            T("one cold expert takes as long as ~5 hot ones (2.2 TB/s vs 0.42 TB/s)", 20, INK2),
+            T("one cold expert takes about as long as 5 hot ones (~2.2 vs ~0.42 TB/s)", 20, INK2),
         ).arrange(DOWN, buff=0.08).to_edge(DOWN, buff=0.2)
         show(self, c, extra=0.6)
         self.play(FadeOut(c), run_time=0.4)
@@ -504,14 +503,17 @@ class S5Overlap(Scene):
         pause(self, "study")
         c = VGroup(
             T("the same 6 experts read only from HBM finish later", 22, GOOD, weight="BOLD"),
-            T("C2C adds its bandwidth to HBM's: ~2.5 TB/s instead of 2.2", 20, INK2),
+            T("C2C adds its bandwidth to HBM's: ~2.6 TB/s instead of 2.2", 20, INK2),
         ).arrange(DOWN, buff=0.08).to_edge(DOWN, buff=0.2)
         show(self, c, extra=0.6)
         par = VGroup(hb, hl, cb, end_line, l3, ab, saved, saved_lab)
         free = c
 
         self.play(*[FadeOut(m) for m in (par, l1, l2, note, hot, cold, free)], run_time=0.7)
-        better = T("Even better: one kernel that reads from both", 30, weight="BOLD").move_to(UP * 0.2)
+        better = VGroup(
+            T("Even better: one kernel reads both tiers", 30, weight="BOLD"),
+            T("instead of two kernels on two streams", 20, INK2),
+        ).arrange(DOWN, buff=0.1).move_to(UP * 0.35)
         show(self, better)
         sms = VGroup(*[Rectangle(width=0.28, height=0.28, stroke_width=0, fill_color=HBM, fill_opacity=0.85) for _ in range(132)])
         sms.arrange_in_grid(6, 22, buff=0.05).next_to(better, DOWN, buff=0.35)
