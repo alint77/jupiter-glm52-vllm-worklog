@@ -386,10 +386,17 @@ class S4Layout(Scene):
         self.play(FadeOut(cap), *[c.animate.set_fill(CELL, opacity=0.9) for c in tok0], run_time=0.6)
         pause(self, "quick")
 
+        sd = VGroup(
+            T("but we decode with speculative decoding: a drafter (MTP or DFlash)", 21),
+            T("proposes 7 tokens, and the model verifies all 8 in a single step", 21),
+        ).arrange(DOWN, buff=0.08).to_edge(DOWN, buff=0.25)
+        show(self, sd, extra=0.3)
+        self.play(FadeOut(sd), run_time=0.4)
+
         act = [cells[e] for e in STEP["active"]]
         self.play(LaggedStart(*[c.animate.set_fill(C2C, opacity=1) for c in act], lag_ratio=0.03), run_time=1.6)
         pause(self, "study")
-        cap = T("verify 8 tokens per step: ~49 experts per layer, up to 64 (8 tokens x top-8)", 22, C2C).to_edge(DOWN, buff=0.35)
+        cap = T("8 tokens per step: ~49 experts per layer, up to 64 (8 tokens x top-8)", 22, C2C).to_edge(DOWN, buff=0.35)
         show(self, cap, extra=0.5)
         self.play(FadeOut(cap), run_time=0.4)
         why = VGroup(
