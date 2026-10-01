@@ -704,6 +704,48 @@ class S7Frequency(Scene):
         ).arrange(DOWN, buff=0.1).move_to([0, 1.55, 0])
         show(self, fin[0])
         show(self, fin[1], extra=0.5)
+
+        # The skew depends on the model: GLM-5.3 next to MiMo, same scale
+        # (multiples of each model's fair share).
+        GLM = json.loads((HERE / "glm.json").read_text())
+        self.play(FadeOut(fin), FadeOut(xl), FadeOut(fl), run_time=0.4)
+        k, base_y = 0.55, -2.1
+        mimo = VGroup(bars, axis, fair)
+        self.play(mimo.animate.scale(k, about_point=axis.get_left()).shift(
+            [-6.3 - axis.get_left()[0], base_y - axis.get_left()[1], 0]), run_time=1.0)
+        gshare = np.array(GLM["sorted_share_layer"])
+        gn = len(gshare)
+        gunit = unit * gn / n  # same height per multiple of fair share
+        gbars = VGroup()
+        for i, sh in enumerate(gshare):
+            r = Rectangle(width=W / gn, height=max(0.005, sh * gunit), stroke_width=0,
+                          fill_color=HBM if i < gn // 2 else DDR, fill_opacity=0.9)
+            r.move_to([x0 + (i + 0.5) * W / gn, y0, 0], aligned_edge=DOWN)
+            gbars.add(r)
+        gaxis = Line([x0, y0, 0], [x0 + W, y0, 0], color=MUTED)
+        gfair = DashedLine([x0, y0 + gunit / gn, 0], [x0 + W, y0 + gunit / gn, 0], color=C2C)
+        glm = VGroup(gbars, gaxis, gfair)
+        glm.scale(k, about_point=gaxis.get_left()).shift([0.5 - gaxis.get_left()[0], base_y - gaxis.get_left()[1], 0])
+        names = VGroup(
+            T("MiMo-V2.6-Pro (384 experts)", 20, weight="BOLD").move_to([mimo.get_center()[0], 0.55, 0]),
+            T("GLM-5.3 (256 experts)", 20, weight="BOLD").move_to([glm.get_center()[0], 0.55, 0]),
+        )
+        self.play(FadeIn(names[0]), run_time=0.4)
+        self.play(Create(gaxis), FadeIn(names[1]), run_time=0.5)
+        self.play(LaggedStart(*[GrowFromEdge(b, DOWN) for b in gbars], lag_ratio=0.006), Create(gfair), run_time=2.0)
+        pause(self, "look")
+        halves = VGroup(
+            T(f"least-used half: {DATA['cold_share_least_used_half']:.1%} of routes", 18, DDR)
+            .move_to([mimo.get_center()[0], base_y - 0.35, 0]),
+            T(f"least-used half: {GLM['cold_share_least_used_half']:.1%} of routes", 18, DDR)
+            .move_to([glm.get_center()[0], base_y - 0.35, 0]),
+        )
+        show(self, halves)
+        cap = VGroup(
+            T("GLM-5.3 routes more evenly than MiMo", 22, weight="BOLD"),
+            T("how much there is to gain from placement depends on the model", 20, INK2),
+        ).arrange(DOWN, buff=0.08).move_to([0, 1.55, 0])
+        show(self, cap, extra=0.5)
         clear(self)
 
 
