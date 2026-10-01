@@ -197,29 +197,36 @@ class S1Hardware(Scene):
         self.play(FadeOut(arcs), FadeOut(nv), run_time=0.7)
 
         node = VGroup(cols, names)
-        self.play(node.animate.scale(0.62).to_edge(LEFT, buff=0.35).shift(DOWN * 0.2), run_time=1.2)
+        self.play(node.animate.scale(0.55).to_edge(LEFT, buff=0.3).shift(DOWN * 0.2), run_time=1.2)
         rows = VGroup(
             T("Per node", 28, weight="BOLD"),
             T("384 GB HBM3  (4 x 96)", 24, HBM),
             T("480 GB LPDDR5X  (4 x 120)", 24, DDR),
-            T("~990 TFLOPS BF16 per GPU", 24, INK2),
-        ).arrange(DOWN, aligned_edge=LEFT, buff=0.2).to_edge(RIGHT, buff=0.7).shift(UP * 1.6)
+            T("~630 of ~990 TFLOPS BF16 (power-limited)", 22, INK2),
+        ).arrange(DOWN, aligned_edge=LEFT, buff=0.18).to_edge(RIGHT, buff=0.5).shift(UP * 1.7)
         self.play(FadeIn(rows[0]), run_time=0.5)
         for r in rows[1:]:
             self.play(FadeIn(r, shift=LEFT * 0.2), run_time=0.6)
             read(self, r, extra=-0.8)
 
-        ladder = [("HBM -> GPU", "4,000", 4000, HBM), ("Grace RAM -> GPU (C2C)", "450", 450, C2C),
-                  ("GPU <-> GPU (NVLink)", "150", 150, NVL), ("node <-> node (IB)", "25", 25, BAD)]
+        # (name, spec GB/s, achievable GB/s or None, colour)
+        ladder = [("HBM -> GPU", 4000, 3600, HBM), ("Grace RAM -> GPU (C2C)", 450, 420, C2C),
+                  ("GPU <-> GPU (NVLink)", 150, None, NVL), ("Grace <-> Grace", 100, 90, DDR),
+                  ("node <-> node (IB)", 25, None, BAD)]
         bars = VGroup()
-        for name, txt, gbs, col in ladder:
-            b = Rectangle(width=max(0.05, 4.3 * gbs / 4000), height=0.26, fill_color=col, fill_opacity=0.9, stroke_width=0)
-            lab = T(f"{name}   {txt} GB/s", 18, INK).next_to(b, UP, buff=0.05, aligned_edge=LEFT)
-            bars.add(VGroup(lab, b))
-        bars.arrange(DOWN, aligned_edge=LEFT, buff=0.15).next_to(rows, DOWN, buff=0.45, aligned_edge=LEFT)
+        for name, spec, got, col in ladder:
+            W = 4.3 / 4000
+            outline = Rectangle(width=max(0.05, W * spec), height=0.24, stroke_color=col, stroke_width=1.5,
+                                fill_color=col, fill_opacity=0.12)
+            fill = Rectangle(width=max(0.045, W * (got or spec)), height=0.24, stroke_width=0, fill_color=col,
+                             fill_opacity=0.9 if got else 0.45).align_to(outline, LEFT)
+            txt = f"~{got:,} of {spec:,} GB/s" if got else f"{spec:,} GB/s (spec)"
+            lab = T(f"{name}   {txt}", 17, INK).next_to(outline, UP, buff=0.04, aligned_edge=LEFT)
+            bars.add(VGroup(lab, VGroup(outline, fill)))
+        bars.arrange(DOWN, aligned_edge=LEFT, buff=0.12).next_to(rows, DOWN, buff=0.45, aligned_edge=LEFT)
         for gb in bars:
             gb[1].align_to(bars, LEFT)
-        hdr = T("bandwidth into one GPU, each way", 18, INK2).next_to(bars, UP, buff=0.12, aligned_edge=LEFT)
+        hdr = T("per GPU, each way: achievable (filled) of spec (outline)", 16, INK2).next_to(bars, UP, buff=0.1, aligned_edge=LEFT)
         self.play(FadeIn(hdr), run_time=0.5)
         for gb in bars:
             self.play(FadeIn(gb[0]), GrowFromEdge(gb[1], LEFT), run_time=0.7)
@@ -578,11 +585,16 @@ class S5Overlap(Scene):
         saved_lab = T("saved", 15, GOOD).move_to(saved)
         self.play(FadeIn(saved), FadeIn(saved_lab), run_time=0.6)
         pause(self, "study")
+        c1 = T("the same 6 experts, read only from HBM, finish later", 22, INK).to_edge(DOWN, buff=0.35)
+        show(self, c1)
+        self.play(FadeOut(c1), run_time=0.3)
         c = VGroup(
-            T("the same 6 experts read only from HBM finish later", 22, GOOD, weight="BOLD"),
-            T("C2C adds its bandwidth to HBM's: ~2.6 TB/s instead of 2.2", 20, INK2),
-        ).arrange(DOWN, buff=0.08).to_edge(DOWN, buff=0.2)
-        show(self, c, extra=0.6)
+            T("Offloading is faster than VRAM!", 32, GOOD, weight="BOLD"),
+            T("C2C adds its bandwidth on top of HBM's: ~2.6 TB/s instead of 2.2", 20, INK2),
+        ).arrange(DOWN, buff=0.1).to_edge(DOWN, buff=0.15)
+        self.play(FadeIn(c[0], scale=1.2), Indicate(saved, color=GOOD, scale_factor=1.15), run_time=1.0)
+        self.play(FadeIn(c[1]), run_time=0.5)
+        read(self, c, extra=0.6)
         par = VGroup(hb, hl, cb, end_line, l3, ab, saved, saved_lab)
         free = c
 
