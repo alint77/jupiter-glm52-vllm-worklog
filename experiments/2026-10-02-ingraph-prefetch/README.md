@@ -80,3 +80,27 @@ Per rank per layer: 64 experts x 21.2 MB = 1.36 GB of W4A16 weights (group
 - Hot/cold attribution by launch order is ambiguous (correlations with cold
   expert count +-0.5). Next: ncu on a standalone Marlin MoE at these shapes
   (dram throughput, tensor pipe active, stall reasons) to name the limiter.
+
+## Isolated Marlin MoE (benchmark_moe_wna16_marlin_prefill.py, marlin_bench.sh)
+
+One tier, 64 experts in HBM, uniform routing, CUDA graph + profiler, jpbo-056-24.
+Raw: fscratch/ingraph-prefetch/marlin/{bench.txt,marlin.ncu-rep,raw.csv}.
+
+| M | bm | pad | w13 us | w2 us | HBM TB/s (w13) | useful TFLOPS (w13) | ncu DRAM % | tensor pipe active % | SM clock |
+|---|---|---|---|---|---|---|---|---|---|
+| 8 | 8 | 7.1x | 82 | 47 | 2.77 | 11 | 71 | 14 | 1.75 GHz |
+| 512 | 32 | 2.07x | 510 | 276 | 1.78 | 98 | 49 | 40 | 1.55 |
+| 1024 | 48 | 1.47x | 646 | 352 | 1.40 | 163 | 38 | 46 | 1.52 |
+| 2048 | 64 | 1.46x | 1186 | 644 | 0.76 | 175 | 23 | 47 | 1.52 |
+| 4096 | 64 | 1.27x | 2047 | 1106 | 0.44 | 203 | 18 | 47 | 1.51 |
+
+- Neither roof: DRAM <=49%, tensor pipe (HMMA/mma.sync; GMMA 0) <=47% active.
+- Latency/issue-bound: 8 warps/SM (12.5% occupancy, limited by 208-255 regs
+  and 115 KB smem/block), 0.5-0.67 eligible warps/scheduler, no warp eligible
+  51-61% of cycles. Stalls per issue: wait 1.1-1.6, short scoreboard 0.3-0.55,
+  dispatch 0.4-0.5, math throttle 0.34-0.41; long scoreboard (DRAM) only
+  0.05-0.27. ALU pipe 34% at 512 (int4 dequant).
+- Register spills from M=2048 (bm 64): 7-12 M local-memory requests.
+- SM clock 1.51-1.62 GHz under prefill load (1.98 max).
+- In the server the two-tier MoE span is 985 us at 512 vs 785 us here for all
+  64 experts in one call: tier split + concurrent cold copy cost ~25%.
