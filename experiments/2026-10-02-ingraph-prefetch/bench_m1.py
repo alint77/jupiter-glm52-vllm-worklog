@@ -30,9 +30,9 @@ for k, f, name in ((6144, 4096, "w13"), (2048, 6144, "w2")):
             for _ in range(20):
                 g.replay()
             torch.accelerator.synchronize()
-        ts = sorted(e.device_time for e in prof.events()
-                    if e.device_type.name == "CUDA" and "gemm_kernel" in e.name)
-        t = ts[len(ts) // 2]
+        # every launch of a call (N > 32 runs in chunks), per replay
+        t = sum(e.device_time for e in prof.events()
+                if e.device_type.name == "CUDA" and "gemm_kernel" in e.name) / 20
         flops = 2 * E * n * k * f
         print(f"{name} N={n:3d}: {t:7.1f} us  {wbytes / t / 1e6:5.2f} TB/s "
               f"({100 * wbytes / t / 1e6 / 3.6:3.0f}% of 3.6)  "

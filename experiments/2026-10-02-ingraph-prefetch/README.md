@@ -169,3 +169,26 @@ graph + profiler; check_m1.py vs marlin_quantize's w_ref: within 1 bf16 ulp).
 - bf16 decode floor ~7.25 ALU/word (3 SHF + 4 LOP3 + PRMT/4): bf16's 7-bit
   mantissa needs the nibble shifted down. fp16 (10-bit) avoids 2 of 3 shifts
   (~5 ALU/word) but rounds w*s to 11 bits instead of Marlin's 8: asked user.
+
+### fp16 (user: "match decode with fp16"), vllm 77ce7f59c7
+
+Exact f16 weights ((code-8)*2^-14, 0x6400 trick: 1 SHF + 4 LOP3 per word),
+f16 activations under a power-of-two row scale, group scale in fp32 on the
+exact group partial sum (a round = one 32-group). check_m1.py vs the exact
+fp32 reference ((code-8)*scale): every output within half a bf16 ulp.
+No producer warp (warp 0 lane 0 issues TMA; 128 threads -> 255-reg cap at
+2 CTAs). Sweep on jpbo-121-12 (sweep.sh), w13 / w2 at N=16:
+
+| config | w13 N=16 | w2 N=16 | w13 N=32 |
+|---|---|---|---|
+| bf16 (prev), same node | 358 | 184 | 420 |
+| 2 CTAs, deferred scaling | 339 | 174 | 412 |
+| 3 CTAs, deferred | 328 | 164 | 411 |
+| **3 CTAs, no deferral (default)** | **321** | **163** | 411 |
+| 4 CTAs (spills) | 754 | 371 | - |
+
+vs Marlin at the same tokens/expert: 16: 510 -> 321, 32: 646 -> 411,
+64: 1186 -> 833 (N>32 still runs as N=32 chunks, re-reading weights).
+ncu N=16: no pipe saturated (DRAM 60%, ALU 35%, tensor 22%, issue 54%),
+latency-bound with few warps.
+Next: a wide-N tile (N 64-128) for long prompts, then grouped routing (M2).

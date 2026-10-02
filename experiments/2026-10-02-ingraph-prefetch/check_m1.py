@@ -1,5 +1,6 @@
 """Milestone 1 correctness: wgmma W4A16 GEMM on Marlin-layout weights vs
-X @ w_ref (marlin_quantize's dequantized weights) in fp32, rounded to bf16."""
+X @ ((code - 8) * scale) in fp32 (exact products, as the kernel): the bf16
+output must be within half a bf16 ulp of it, plus fp32 summation order. The exact weights are checked to round to marlin_quantize's w_ref."""
 
 import sys
 
@@ -8,6 +9,9 @@ import torch
 from vllm.model_executor.layers.fused_moe import tiered_prefill
 from vllm.model_executor.layers.quantization.utils.marlin_utils_test import (
     marlin_quantize,
+)
+from vllm.model_executor.layers.quantization.utils.quant_utils import (
+    gptq_quantize_weights,
 )
 from vllm.scalar_type import scalar_types
 
@@ -19,7 +23,12 @@ for k, f in ((6144, 4096), (2048, 6144)):
     for _ in range(2):
         w = torch.randn((k, f), dtype=torch.bfloat16, device=dev) / k**0.5
         w_ref, q, s, _, _, _ = marlin_quantize(w, scalar_types.uint4b8, 32, False)
-        refs.append(w_ref)
+        _, codes, scales, _, _ = gptq_quantize_weights(
+            w, scalar_types.uint4b8, 32, False
+        )
+        exact = (codes.float() - 8) * scales.float().repeat_interleave(32, dim=0)
+        assert torch.equal(exact.to(torch.bfloat16), w_ref), "exact != w_ref"
+        refs.append(exact)
         qs.append(q)
         ss.append(s)
     q = torch.stack(qs).contiguous()
@@ -29,11 +38,12 @@ for k, f in ((6144, 4096), (2048, 6144)):
         y = tiered_prefill.dense(x, q, s)
         torch.accelerator.synchronize()
         for e in range(2):
-            ref = (x.float() @ refs[e].float()).to(torch.bfloat16).float()
+            ref = x.float() @ refs[e].float()
             got = y[e].float()
             err = (got - ref).abs()
             rel = (err / ref.abs().clamp_min(1e-3)).max().item()
-            bad = (err > 0.02 * ref.abs() + 1e-2).sum().item()
+            # half a bf16 ulp (<= 2^-8 relative) plus fp32 summation order
+            bad = (err > 2**-8 * ref.abs() * 1.01 + 1e-5).sum().item()
             print(f"K={k} F={f} N={n} e={e}: max|d| {err.max().item():.4g} "
                   f"(|ref| max {ref.abs().max().item():.3g}), max rel {rel:.3g}, "
                   f"{bad} outside tolerance")
