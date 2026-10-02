@@ -59,3 +59,24 @@ node on the launch stream; copies are the >=5 MB HtoD at ~400 GB/s.
 - Layer 40: AR 436 us (mostly waiting) -> norm, q/kv GEMMs, cache write, flash
   attention ~40 us -> o_proj -> AR 46 us -> router -> MoE 746..1667 us; cold
   copy for L+1 599..1941 us (starts before o_proj, ends ~270 us after MoE).
+
+## MoE roofline (roofline.py; 630 TFLOPS bf16, 3.6 TB/s HBM; rank 0)
+
+Per rank per layer: 64 experts x 21.2 MB = 1.36 GB of W4A16 weights (group
+32). FLOPs/route 75.5 M. Marlin block_size_m 32 (512, 768) / 48 (1024).
+
+| tokens | useful GFLOP | padded GFLOP | mem SOL | compute SOL useful/padded | measured span | HBM BW | useful / padded TFLOPS |
+|---|---|---|---|---|---|---|---|
+| 512 | 77 | 155 | 377 us | 123 / 245 us | 985 us | 1.38 TB/s (38%) | 78 (12%) / 157 (25%) |
+| 768 | 116 | 155 | 377 | 184 / 245 | 1209 | 1.12 (31%) | 96 (15%) / 128 (20%) |
+| 1024 | 155 | 232 | 377 | 245 / 368 | 1424 | 0.95 (27%) | 109 (17%) / 163 (26%) |
+
+- Below both roofs. The span grows ~0.86 us/token with constant bytes:
+  marginal ~176 TFLOPS useful, intercept ~545 us (~2.5 TB/s with the cold
+  copy's 0.53 GB of writes). Memory and compute look additive, not overlapped.
+- Marlin launch: 128 threads/block, 1-2 blocks/SM (4-8 warps/SM, 208 regs,
+  est. occupancy 6-13%); hot and cold tiers run concurrently on two streams,
+  each with a full-GPU persistent grid (132 or 264).
+- Hot/cold attribution by launch order is ambiguous (correlations with cold
+  expert count +-0.5). Next: ncu on a standalone Marlin MoE at these shapes
+  (dram throughput, tensor pipe active, stall reasons) to name the limiter.
