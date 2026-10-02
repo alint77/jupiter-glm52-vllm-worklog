@@ -4,7 +4,11 @@ profiler. Against the HBM floor (3.6 TB/s) and the 630 TFLOPS roof."""
 import torch
 from torch.profiler import ProfilerActivity, profile
 
+import sys
+
 from vllm.model_executor.layers.fused_moe import tiered_prefill
+
+LOADS = 1 if "--loads-only" in sys.argv else 2 if "--compute-only" in sys.argv else 0
 
 E, GROUP = 64, 32
 dev = torch.device("cuda", 0)
@@ -15,11 +19,11 @@ for k, f, name in ((6144, 4096, "w13"), (2048, 6144, "w2")):
     for n in (8, 16, 24, 32, 48, 64):
         x = torch.randn((n, k), dtype=torch.bfloat16, device=dev)
         for _ in range(3):
-            tiered_prefill.dense(x, q, s)
+            tiered_prefill.dense(x, q, s, LOADS)
         torch.accelerator.synchronize()
         g = torch.cuda.CUDAGraph()
         with torch.cuda.graph(g):
-            tiered_prefill.dense(x, q, s)
+            tiered_prefill.dense(x, q, s, LOADS)
         g.replay()
         torch.accelerator.synchronize()
         with profile(activities=[ProfilerActivity.CUDA]) as prof:
