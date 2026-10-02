@@ -85,3 +85,23 @@ Piecewise capture for prefill sizes (`launch_cg.sh`, `cg_next.sh`,
 
 Next: trace a graphed 512-1024 prefill to see what the eager attention part
 (indexer, sparse MLA, DCP collectives) still costs.
+
+## In-graph prefetch, attempt 1 (e3a4143956)
+
+Fork the next MoE layer's copy at the start of MoE(L), join right after it,
+inside the captured piece. Unit replay test passes; both real servers failed
+graph capture ("operation failed due to a previous error during capture").
+Not root-caused. serve.sh threshold set to 1025 so prefetch only runs eager.
+
+## Plan (2026-10-02)
+
+1. Root-cause the capture crash on one node (`CUDA_LAUNCH_BLOCKING=1`; suspects:
+   pinned-host source during capture, events/streams left over from eager
+   warmup prefetch).
+2. Widen the window to the whole captured piece: fork before o_proj(L), join
+   after the q/kv projections of L+1, as opaque custom ops threaded through
+   `hidden_states` so inductor keeps their order. Slot rotation unchanged
+   (L's slot is overwritten by L+2 once MoE(L) is done).
+3. Stage the first MoE layer during the last dense layer (GLM L2, MiMo L0).
+4. Validate: real server start, byte-check mode, then one-node same-node A/B
+   TTFT sweep at 512/768/1024 (prefetch on vs off, both graphed).
