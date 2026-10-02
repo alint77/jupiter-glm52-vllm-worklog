@@ -257,3 +257,33 @@ dependent launch they overlap (vllm working tree). w13, same node/process:
 | 4096 | 2980 | 1116* | 1077 (-64%) | 85 | 249 |
 
 (* looping capture.) 4096's real floor is compute: 412 GFLOP -> 654 us.
+
+### Whole MoE on the GPU (vllm 455265cc17, ddf0d9e248 + working tree)
+
+tiered_prefill_moe: route (1 CTA) -> gather (sorted f16 rows) -> w13 per
+width -> silu*up in place -> w2 per width -> combine; graph-capturable;
+tests/kernels/moe/test_tiered_prefill_moe.py (9 tests). Error vs fp32 with
+the same intermediate precisions: mean 1.1e-3 of output RMS (Marlin 3.9e-3).
+One class per expert (from its total rows) so results are deterministic
+(atomic route order within an expert no longer changes a route's numerics).
+
+Timeline (512, real chunk): route 4.7, gather 9.2, act 12.4, combine 19.9
+us; w13 phase 317 us, w2 186. The 16-wide launch starts only at ~117 us:
+the GPU dispatches blocks in launch order regardless of stream, so it waits
+for earlier widths' blocks and then runs alone (214 us) as the tail.
+
+Schedules, whole MoE, 16 real chunks, same node (us):
+
+| chunk | Marlin | chained widest-first (default) | narrow-first | streams | persistent |
+|---|---|---|---|---|---|
+| 512 | 831 | 574 (-31%) | 616 | 598 | 769 |
+| 1024 | 1294 | 815 (-37%) | 865 | 805 | 993 |
+| 2048 | 2064 | 1222 (-41%) | 1288 | 1224 | 1373 |
+| 4096 | 3365 | 2231 (-34%) | 2339 | 2143 | 2252 |
+
+Persistent (one CTA/SM walking static items, widest first): SMs balanced
+(active cycles min/avg/max 700K/825K/869K) but per item slow; a producer
+warp (288 thr) capped regs at 168 -> spills; thread-0 issuer starved the
+ring (long_scoreboard 1.26); setmaxnreg producer warpgroup (40/232 regs)
+helped (930 -> 764 at 512) but 2 WGs x T=2 is worse for narrow items than
+the tuned 3 CTAs x T=4.

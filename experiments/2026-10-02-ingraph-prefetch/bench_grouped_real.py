@@ -97,7 +97,7 @@ for chunk in (512, 1024, 2048, 4096):
             for r0 in range(0, n, 128):
                 r = min(128, n - r0)
                 nt = next(c for c in (16, 32, 48, 64, 96, 128) if c >= r)
-                by_nt.setdefault(nt, []).extend((e, b, row + r0, r) for b in range(16))
+                by_nt.setdefault(nt, []).append((e, 0, row + r0, r))
             row += n
         tabs = [(nt, torch.tensor(by_nt[nt], dtype=torch.int32, device=dev))
                 for nt in sorted(by_nt, reverse=True)]
