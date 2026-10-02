@@ -41,3 +41,21 @@ node on the launch stream; copies are the >=5 MB HtoD at ~400 GB/s.
   minority at 1024; the wider window hides all of it from 768 up, and at 512
   still stalls 1-3 ms per prefill (forward ~124 ms first-to-last MoE).
 - Dense-layer copy (first MoE layer): 320-440 us, no stall.
+
+## 512-token prefill breakdown (breakdown.py, rank 0 unless noted)
+
+- GPU window 136.7 ms = setup 5.8 + embed/dense layers/first attention 6.3 +
+  75 MoE layers 123.9 (1.65 ms/layer) + tail 0.7. Host step 85 ms: GPU-bound
+  except setup and the dense part.
+- Idle 10.7 ms (8%), 7.6 ms of it host-bound, almost all in the first 12 ms
+  (input prep, metadata, dense layers, DCP top-k all-gathers); a few 100-230 us
+  join stalls inside the MoE region.
+- Not idle but wasted: the post-MoE all-reduce waits for the slowest rank. MoE
+  end spread across ranks median 337 us/layer, 26.5 ms over the forward; last
+  rank varies (r1 27, r2 25, r0 15, r3 8 layers). Post-MoE AR total 12-22 ms/rank.
+- Kernel time: Marlin 109 ms (hot and cold tiers overlap on two streams; MoE
+  ~0.92 ms/layer for ~1.36 GB of expert weights/rank, ~1.5 TB/s), collectives
+  29.6, dense GEMMs 10.5, MoE act 6.2, attention 3.4, indexer 2.1.
+- Layer 40: AR 436 us (mostly waiting) -> norm, q/kv GEMMs, cache write, flash
+  attention ~40 us -> o_proj -> AR 46 us -> router -> MoE 746..1667 us; cold
+  copy for L+1 599..1941 us (starts before o_proj, ends ~270 us after MoE).
