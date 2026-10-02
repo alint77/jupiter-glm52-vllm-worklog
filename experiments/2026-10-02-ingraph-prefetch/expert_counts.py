@@ -9,7 +9,7 @@ experts] (local order = ascending global id), for the grouped benchmark."""
 import glob, json, sys
 import numpy as np
 
-CAP = "/e/fscratch/profound/naeimitabiei1/glm53-route-cap/merged"
+CAP = "/e/fscratch/profound/naeimitabiei1/glm53-route-cap/merged-noloop"
 prof = json.load(open("agent_space/profiles/glm53-w4a16-agentic-3239-r2000.json"))
 layers = [int(l) for l in prof["routed_layers"]]
 owners = np.array(prof["owners"])            # [75, 256]

@@ -228,3 +228,32 @@ fscratch/ingraph-prefetch/counts_<chunk>.npy [samples, 75 layers, 4, 64].
 Implications: skip empty experts (~20% of weight bytes), per-expert tile
 width in one launch, heaviest-first scheduling. Next: Marlin and our kernel
 on real captured top-k ids, then the grouped kernel.
+
+### Correction: use the no-loop capture
+
+`glm53-route-cap/merged` includes requests that looped during capture: 5/64
+(512) and 11/64 (2048) sampled chunks had <= 8 experts per GPU taking every
+token. `merged-noloop` has none; all real-routing tools now use it. Corrected
+distribution (replaces the table above):
+
+| chunk | 0 tokens | p50 | p90 | p99 | busiest per GPU | busiest GPU / mean |
+|---|---|---|---|---|---|---|
+| 512 | 13% | 9 | 38 | 111 | 106 | 1.14 |
+| 1024 | 6% | 21 | 71 | 199 | 190 | 1.13 |
+| 2048 | 3% | 44 | 139 | 380 | 366 | 1.12 |
+| 4096 | 1% | 92 | 268 | 716 | 690 | 1.11 |
+
+### Grouped kernel on real routing (bench_grouped_real.py, 16 chunks each)
+
+Per-width launches (widest first) serialized and left SMs idle (timeline at
+512: the 128- and 96-wide launches had 16 CTAs each). With programmatic
+dependent launch they overlap (vllm working tree). w13, same node/process:
+
+| chunk | Marlin | ours (before overlap) | ours | sort/gather | weight floor |
+|---|---|---|---|---|---|
+| 512 | 783 | 479* | 346 (-56%) | 12 | 218 |
+| 1024 | 1150 | 524* | 460 (-60%) | 21 | 239 |
+| 2048 | 1821 | 669* | 649 (-64%) | 43 | 245 |
+| 4096 | 2980 | 1116* | 1077 (-64%) | 85 | 249 |
+
+(* looping capture.) 4096's real floor is compute: 412 GFLOP -> 654 us.
