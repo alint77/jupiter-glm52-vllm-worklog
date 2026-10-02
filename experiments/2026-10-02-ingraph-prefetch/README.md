@@ -122,3 +122,33 @@ int4 into registers as Marlin does, wgmma RS with W as A (m64 per warpgroup)
 and expert-sorted activations as B from smem via TMA, tokens on N (8..256 in
 steps of 8, so ~no padding at 16 tokens/expert), persistent grid over
 (expert, n-tile), expert -> weight-pointer table so both tiers go in one launch.
+
+## What overlaps the MoE GEMMs (moe_overlaps.py, ranks 0 and 2, 512 and 1024)
+
+Within first..last Marlin of each layer, the only other SM work is the MoE's
+own other tier (its act_and_mul 6-8 ms, moe_sum 1-2 ms, fills <0.1 ms per
+prefill) -- removed by a single launch over both tiers. No shared-expert,
+attention, indexer or collective kernels overlap. The cold copy overlaps
+65-72 ms of it but runs on the copy engine (no SMs); it does add ~0.5 GB/layer
+of HBM writes, so the memory floor at 512 is ~525 us, not 377.
+
+## Prefill kernel, milestone 1 (vllm/.../fused_moe/tiered_prefill/)
+
+wgmma (register A = decoded Marlin words, B = TMA 128B-swizzled activations),
+256 W rows per CTA, every expert on the same N tokens (bench_m1.py, 64 experts,
+graph + profiler; check_m1.py vs marlin_quantize's w_ref: within 1 bf16 ulp).
+
+| version | w13 N=16 us | w13 N=64 us |
+|---|---|---|
+| Marlin (512 tok, ~16/expert) | 510 | - |
+| 1 CTA/SM, wait<0> each step | 544 | 775 |
+| ld.shared + 2 CTAs/SM (CK 128) | 414 | 770 |
+| CTAs/SM by tile (4/3/2), PRMT scale splat | 402 | 763 |
+| one LOP3 per nibble pair (constants in regs) | 389 (2.33 TB/s) | 742 (278 TF) |
+
+- Double-buffering A registers inside a warpgroup makes ptxas serialize all
+  wgmmas (C7513): overlap must come from other warpgroups/CTAs.
+- ncu (single call) N=16: 314 us, DRAM 2.91 TB/s (72%), ALU 52%, GMMA inst
+  12%, long_scoreboard 1.8 (mbarrier waits); N=64: barrier 2.1 + long
+  scoreboard 1.8, GMMA inst 5%. Sustained SM clock 1.37-1.5 GHz.
+- Next: ping-pong consumer warpgroups (shared X tile), then grouped (M2).
