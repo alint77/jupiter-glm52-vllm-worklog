@@ -287,3 +287,36 @@ warp (288 thr) capped regs at 168 -> spills; thread-0 issuer starved the
 ring (long_scoreboard 1.26); setmaxnreg producer warpgroup (40/232 regs)
 helped (930 -> 764 at 512) but 2 WGs x T=2 is worse for narrow items than
 the tuned 3 CTAs x T=4.
+
+### Persistent v2 with a work queue (vllm 398b45e30d)
+
+Independent consumer-warpgroup pipelines (own ring, T=4, 128-row units as
+two 64-col items), producer warpgroup with setmaxnreg 40/232 (240 hung:
+the producer's decrease must free what the consumers' increase takes),
+items claimed from a queue the route kernel resets. Whole MoE, 16 real
+chunks, same node: 512 643 (chained 599), 1024 860 (808), 2048 1287
+(1227), 4096 2181 (2226). Static assignment was 672/946/1415/2394 (busiest
+SM 16% above average). Default stays chained widest-first.
+
+## State: ready for integration (2026-10-02)
+
+API: tiered_prefill.tiered_prefill_moe(x, topk_ids, topk_weights, hot_map,
+cold_map, hot, cold, scale_exp, schedule=0) -> this rank's routed sum
+(bf16 [T, 6144]); hot / cold are the Marlin tier component dicts the
+decode kernel takes (cold may be the staged HBM slot views or the Grace
+alias); scale_exp = prefill_scale_exponent(hot, cold), once per layer at
+load (host sync). No host sync per call; CUDA-graph capturable; workspace
+~20 KB per routed row (cap T * 8 rows), allocated per call.
+Tests: tests/kernels/moe/test_tiered_prefill_moe.py (11): two tiers vs
+fp32, split experts, one tier, padding / no local routes, graph replay,
+all schedules bit-identical, cold tier in Grace, int64 ids / bf16 weights.
+Numerics: exact products, fp32 sums; mean error 1.1e-3 of output RMS vs
+3.9e-3 for Marlin. Deterministic.
+Perf, whole routed MoE on one GPU, real GLM-5.3 routing (16 chunks each),
+vs Marlin fused_marlin_moe with all 64 experts in one call (production
+Marlin runs two tier calls, so slower): 512 -31%, 1024 -37%, 2048 -41%,
+4096 -34%.
+Limits: GLM-5.3 W4A16 only (INT4 group 32, 6144 x 2048, top-8); MiMo's
+MXFP4 needs its own decode. Known headroom: w13 at 512 ~1.45x and w2 ~1.7x
+the weight-read floor; the narrow width runs last (dispatch order);
+sorted-activation gather (12-85 us) could move into the GEMM producer.

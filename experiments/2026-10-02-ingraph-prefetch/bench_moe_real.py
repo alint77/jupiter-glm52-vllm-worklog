@@ -79,10 +79,10 @@ for chunk in ((512, 1024, 2048, 4096) if __name__ == "__main__" else ()):
         o = replay_us(lambda: tiered_prefill.tiered_prefill_moe(
             x, ids, wts, hmap, cmap, hot, cold, k_exp, 2))
         o3 = replay_us(lambda: tiered_prefill.tiered_prefill_moe(
-            x, ids, wts, hmap, cmap, hot, cold, k_exp, 3))
+            x, ids, wts, hmap, cmap, hot, cold, k_exp, 4))
         rows.append((m, o, o0, o3))
     a = np.array(rows)
     print(f"chunk {chunk}: Marlin MoE {a[:, 0].mean():7.1f} us | chained {a[:, 2].mean():7.1f} | "
-          f"narrow-first {a[:, 3].mean():7.1f} | persistent {a[:, 1].mean():7.1f} us "
+          f"persistent-2 {a[:, 3].mean():7.1f} | persistent {a[:, 1].mean():7.1f} us "
           f"({100 * (a[:, 1].mean() / a[:, 0].mean() - 1):+.0f}%), median ratio "
           f"{np.median(a[:, 1] / a[:, 0]):.2f}")

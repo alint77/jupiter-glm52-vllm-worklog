@@ -14,7 +14,7 @@ x = torch.randn((512, b.H), dtype=torch.bfloat16, device=b.dev)
 local = np.flatnonzero(smp.local_map >= 0)
 hm = torch.full((256,), -1, dtype=torch.int32); cm = torch.full((256,), -1, dtype=torch.int32)
 hm[torch.from_numpy(local[:40])] = torch.arange(40, dtype=torch.int32); cm[torch.from_numpy(local[40:])] = torch.arange(24, dtype=torch.int32)
-for sch in (0, 2):
+for sch in (0, 4):
     tiered_prefill.tiered_prefill_moe(x, ids, wts, hm.to(b.dev), cm.to(b.dev), b.hot, b.cold, b.k_exp, sch)
 torch.accelerator.synchronize()
 PY
