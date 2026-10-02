@@ -152,3 +152,20 @@ graph + profiler; check_m1.py vs marlin_quantize's w_ref: within 1 bf16 ulp).
   12%, long_scoreboard 1.8 (mbarrier waits); N=64: barrier 2.1 + long
   scoreboard 1.8, GMMA inst 5%. Sustained SM clock 1.37-1.5 GHz.
 - Next: ping-pong consumer warpgroups (shared X tile), then grouped (M2).
+
+### Iterations after milestone 1 (see probes)
+
+- Probes (bench_m1.py --loads-only / --compute-only): w13 N=16 loads only 256 us
+  (3.54 TB/s), compute only 217 us, full ~390-400 us: little overlap.
+- ncu per mode (single call): loads 245 us @1.82 GHz, compute 225 us @1.71,
+  full 327 us @1.42 -- the clock drops with both active (user: design for
+  ~1.4-1.5 GHz; clocks cannot be locked, nvidia-smi -lgc is denied).
+- Tried, no gain: decode k+1 under wgmma k (no C7513, but no change); CK 64
+  with up to 8 stages (no change); shifts as IMAD.HI on the FMA pipe (slower).
+- 2 k16 steps per wgmma sync round for N<=32 (3/2 CTAs per SM, no spills),
+  node jpbo-121-12: w13 N=16 358 us (2.53 TB/s), N=32 420; compute only 217 /
+  259. N=64 regressed to 948 (144 B spills). ncu (base clock) N=16 full:
+  ALU 61%, math throttle 0.74, not_selected 0.83, issue 63%: ALU-bound.
+- bf16 decode floor ~7.25 ALU/word (3 SHF + 4 LOP3 + PRMT/4): bf16's 7-bit
+  mantissa needs the nibble shifted down. fp16 (10-bit) avoids 2 of 3 shifts
+  (~5 ALU/word) but rounds w*s to 11 bits instead of Marlin's 8: asked user.
