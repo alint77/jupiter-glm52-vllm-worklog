@@ -320,3 +320,73 @@ Limits: GLM-5.3 W4A16 only (INT4 group 32, 6144 x 2048, top-8); MiMo's
 MXFP4 needs its own decode. Known headroom: w13 at 512 ~1.45x and w2 ~1.7x
 the weight-read floor; the narrow width runs last (dispatch order);
 sorted-activation gather (12-85 us) could move into the GEMM producer.
+
+## Integrated in serving (vllm 23a50e73b2, 2026-10-03)
+
+`VLLM_TIERED_MOE_PREFILL_KERNEL=1` (now serve.sh's default) runs tiered
+GLM-5.3 steps of > 8 tokens through tiered_prefill_moe; the cold tier is the
+prefetch slot's views when staged, else the Grace alias.
+
+Two bugs found on the way, both invisible to the kernel tests:
+- **Wrong maps (integration).** `layer.tiered_cold_expert_map` also maps the
+  rank's Grace replicas of other ranks' experts (slots after its own cold
+  experts). Marlin runs on the execution maps (`tiers[i][3]`), which drop
+  them. With the registered map the kernel computed replicas twice (once
+  here, once at home) and indexed past the slot, which holds only the own
+  cold experts: illegal address in the 8192-token profile run.
+- **NaN rows (kernel).** Real prefill has rows of ~1e-20 (min row max
+  8e-21 in a dumped layer-7 call); the SiLU * up row is then denormal and
+  `exp2f(-e)` overflowed to inf (0 * inf = NaN). Clamped e to [-126, 126]
+  (`row_exp`); regression test `test_tiny_rows_stay_finite` fails without
+  it. The NaNs hung FlashInfer's Lamport all-reduce at capture size 128
+  (cuda-gdb: ranks 0/1/3 spinning in allreduce_fusion_kernel_oneshot_lamport,
+  rank 2 done). Found by dumping the first non-finite call per rank
+  (`replay_nan.py`); the four dumps replay finite and within 0.36-0.39% mean
+  |diff| / RMS of Marlin after the fix. tiered_decode's `row_scale` has the
+  same unclamped exponent (not changed; decode rows have not hit it).
+
+Harness: servers on several nodes shared one VLLM_CACHE_ROOT and one
+FlashInfer JIT cache. Concurrent writers broke the trtllm_comm build (one
+rank without AR fusion, another hung in its barrier) and torch.compile
+artifacts (one rank recompiled alone for 10 min). serve.sh now takes
+SERVE_CACHE_ROOT; launch_pk.sh gives each hold its own. GSM8K needs its data
+pre-fetched (compute nodes have no internet): bench_node.sh points TMPDIR at
+fscratch/caches/gsm8k-data.
+
+### Same-node A/B (launch_pk.sh, passes 5 and 6), median TTFT ms, 20 prompts
+
+| tokens | 512 | 768 | 1024 | 2048 | 4096 |
+|---|---|---|---|---|---|
+| node A Marlin | 134 | 171 | 202 | 327 | 990 |
+| node A kernel | 122 | 135 | 154 | 243 | 873 |
+| node B Marlin | 136 | 175 | 205 | 333 | 1005 |
+| node B kernel | 122 | 137 | 158 | 248 | 889 |
+
+Both arms with in-graph prefetch from 512 (no prefetch was 176/236/240 at
+512/768/1024). GSM8K 400, 5-shot greedy: kernel 90.0%, Marlin 91.25%, 0
+invalid (SE ~1.5 points each; earlier GLM run 91.21%). Greedy text diverges
+after a few dozen chars, as identical configs on two nodes already did.
+
+### Trace, 512/768/1024 (trace-pk, analyze_trace.py / breakdown.py / trace_pk.py)
+
+MoE per layer (route .. combine) vs Marlin's (trace-wide): 512 596 vs 1001
+us, 768 744 vs 1230, 1024 894 vs 1449. Prefetch works: 75 copies per prefill
+(~506 MB, ~1.38 ms each), every MoE layer read the slot (log: 150 from slot,
+0 from Grace), dense-layer copy never stalls. But the copy is now the
+critical path at 512: it outlasts MoE(L) on 69/73 layers and the join
+stalls total 19-22 ms per rank (768: 3-4 ms; 1024: 0.1-0.4 ms). 512 rank 0:
+window 126.9 ms (Marlin 136.7), idle 30.8 ms = 18.6 join stalls + ~10
+host-bound (setup / dense part); copy engine busy 95 of 127 ms. Floor at
+512 is the C2C copy (~1.4 ms/layer), not compute; reading the cold tier
+straight from Grace instead (isolated 1130 us/layer at 512) is estimated
+~1.8 ms/layer vs 1.53 now, so no.
+
+### Why 4096 costs ~3.6x 2048 (trace-big, top_kernels.py)
+
+Not the MoE. GPU busy 187 -> 858 ms: attention 6 -> 256 (dense FA3 72
+us/layer -> flash_fwd_splitkv_mla_fp8_sparse 3.28 ms/layer: DSA top-k 2048
+makes <= 2048 tokens dense), DCP4 sparse-path collectives (all-gather 7.5 ->
+79 ms, reduce-scatter 0 -> 53, _correct_attn_cp_out 17, copies/cat ~80), the
+MoE all-reduce 23 -> 96 ms (NCCL RING_LL, 149 -> 618 us/call for 2x bytes),
+MoE 113 -> 179 (linear). Marlin jumps the same (333 -> 1005). 2048 is 44%
+host-bound in the trace (no graphs above 1024; profiler inflates it).

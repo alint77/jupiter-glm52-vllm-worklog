@@ -73,5 +73,11 @@ for L in ${PREFILL_SWEEP:-}; do
     --seed "${L}" --percentile-metrics ttft --save-result --result-dir "${OUT}" \
     --result-filename "prefill-${tag}-${L}.json" 2>&1 | grep -E "Mean TTFT|Median TTFT"
 done
+# GSM8K_N=400: tests/evals/gsm8k (5-shot, greedy) on that many questions.
+if [[ -n "${GSM8K_N:-}" ]]; then
+  # compute nodes have no internet: the data is pre-fetched to fscratch
+  TMPDIR=/e/fscratch/profound/${USER}/caches/gsm8k-data .venv/bin/python tests/evals/gsm8k/gsm8k_eval.py --port 8027 \
+    --num-questions "${GSM8K_N}" --save-results "${OUT}/gsm8k-${tag}.json" 2>&1 | tail -6
+fi
 [[ -n "${SKIP_AGENTIC:-}" ]] || .venv/bin/python "${B}/agentic_bench.py" --model "${name}" --out "${OUT}/rows-${tag}.jsonl" --tasks agent_space/experiments/2026-09-26-mimo-routing-profile/tasks-{0,1,2,3}.json "${prof[@]}" "$@"
 echo "=== done $(date +%T)"

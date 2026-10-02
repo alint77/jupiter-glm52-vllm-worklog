@@ -22,16 +22,23 @@ for c in copies:
     else:
         bursts.append([c["ts"], end(c), c["args"]["bytes"]])
 
-# MoE spans: moe_align .. moe_sum, two of each per layer (hot, cold tier).
-marks = [e for e in kern if "moe_align_block_size" in e["name"] or "moe_sum" in e["name"]]
+# MoE spans: route_kernel .. combine_kernel (wgmma prefill MoE), else
+# moe_align .. moe_sum, two of each per layer (hot, cold Marlin tiers).
 moes, cur = [], None
-for e in marks:
-    if "moe_align" in e["name"]:
-        if cur is None or cur[2] == 2:
-            cur = [e["ts"], None, 0]; moes.append(cur)
-    else:
-        cur[1] = end(e); cur[2] += 1
-moes = [(s, t) for s, t, n in moes if t is not None]
+for e in kern:
+    if "route_kernel" in e["name"]:
+        cur = [e["ts"], None]
+    elif "combine_kernel" in e["name"] and cur is not None:
+        cur[1] = end(e); moes.append(tuple(cur)); cur = None
+if not moes:
+    marks = [e for e in kern if "moe_align_block_size" in e["name"] or "moe_sum" in e["name"]]
+    for e in marks:
+        if "moe_align" in e["name"]:
+            if cur is None or cur[2] == 2:
+                cur = [e["ts"], None, 0]; moes.append(cur)
+        else:
+            cur[1] = end(e); cur[2] += 1
+    moes = [(s, t) for s, t, n in moes if t is not None]
 
 # Prefills: split MoE spans on >5 ms gaps.
 groups, g = [], []

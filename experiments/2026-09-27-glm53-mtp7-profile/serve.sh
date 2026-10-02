@@ -18,7 +18,9 @@ export CUDA_VISIBLE_DEVICES=0,1,2,3
 export VLLM_USE_V2_MODEL_RUNNER="${VLLM_USE_V2_MODEL_RUNNER:-1}"
 export VLLM_SERVER_DEV_MODE=1
 c=/e/fscratch/profound/${USER}/caches
-export VLLM_CACHE_ROOT=${c}/marlin/vllm-cache-glm53-mtp7
+# SERVE_CACHE_ROOT: a separate compile cache, for servers running at once on
+# several nodes (concurrent writers corrupt shared torch.compile artifacts)
+export VLLM_CACHE_ROOT=${SERVE_CACHE_ROOT:-${c}/marlin/vllm-cache-glm53-mtp7}
 export TRTLLM_DG_CACHE_DIR=${c}/marlin/trtllm-dg-glm53-mtp7
 export TRITON_CACHE_DIR=${c}/triton
 export TORCHINDUCTOR_CACHE_DIR=${c}/inductor
@@ -69,6 +71,10 @@ export VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS="${VLLM_TIERED_MOE_COLD_PREFETCH
 export VLLM_TIERED_MOE_OBSERVED_HBM_TOLERANCE_GB="${VLLM_TIERED_MOE_OBSERVED_HBM_TOLERANCE_GB:-1.5}"
 # one-kernel INT4 decode MoE, replicas balanced by time in the kernel
 export VLLM_TIERED_MOE_DECODE_KERNEL="${VLLM_TIERED_MOE_DECODE_KERNEL:-1}"
+# wgmma prefill MoE for steps of > 8 tokens: median TTFT 512/768/1024/2048/4096
+# 134/171/202/327/990 -> 122/135/154/243/873 ms same node, GSM8K 91.25 -> 90.0%
+# (within noise) (vllm 23a50e73b2, 2026-10-03)
+export VLLM_TIERED_MOE_PREFILL_KERNEL="${VLLM_TIERED_MOE_PREFILL_KERNEL:-1}"
 # DCP's small gathers / reduce-scatters as one-shot kernels on the custom
 # all-reduce buffers instead of NCCL: -3.07 +- 0.20 ms/step (ab-oC, ab-oD)
 export VLLM_DCP_ONE_SHOT_COLLECTIVES="${VLLM_DCP_ONE_SHOT_COLLECTIVES:-1}"

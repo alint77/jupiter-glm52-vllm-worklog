@@ -1,5 +1,12 @@
 # GLM-5.2 on JUPITER: agent handoff
 
+**Latest (2026-10-03): GLM-5.3 prefill.** In-graph cold prefetch plus a new
+wgmma prefill MoE kernel (vllm 23a50e73b2, on by default in serve.sh):
+median TTFT 512/1024/4096 tokens 176/240/- (no prefetch) -> 134/202/990
+(prefetch, Marlin) -> 122/154/873 ms. 512 is now bound by the cold C2C copy;
+above 2048 DSA sparse attention + DCP4 collectives dominate. Details:
+`experiments/2026-10-02-ingraph-prefetch/README.md`.
+
 **Latest (2026-09-29): GLM-5.3 verify-step kernel work.** Serving default is
 `experiments/2026-09-27-glm53-mtp7-profile/serve.sh` (DFlash2 k=7, DCP4, 400K,
 reserve 7). vLLM `dflash2-backport` HEAD 493acb5744 (local, unpushed) is

@@ -23,7 +23,9 @@ cold = sorted((e for e in ev if e.get("cat") == "gpu_memcpy" and inw(e) and is_c
 
 def cat(n):
     n = n.lower()
-    for key, c in [("marlin", "MoE marlin"), ("moe_align", "MoE routing"), ("count_and_sort", "MoE routing"),
+    for key, c in [("marlin", "MoE marlin"), ("gemm_kernel", "MoE wgmma"),
+                   ("route_kernel", "MoE routing"), ("gather_kernel", "MoE routing"),
+                   ("act_kernel", "MoE act"), ("combine_kernel", "MoE routing"), ("moe_align", "MoE routing"), ("count_and_sort", "MoE routing"),
                    ("grouped_topk", "MoE routing"), ("moe_sum", "MoE routing"), ("act_and_mul", "MoE act"),
                    ("nccl", "collective"), ("cross_device_reduce", "collective"), ("allreduce", "collective"),
                    ("flash", "attention"), ("flashmla", "attention"), ("mla", "attention"), ("indexer", "indexer"),
@@ -74,8 +76,12 @@ cb = sum(e["dur"] for e in cold)
 print(f"cold copies: {cb/1e3:.2f} ms of copy-engine time, {sum(e['args']['bytes'] for e in cold)/2**30:.2f} GiB")
 
 # One layer: from the end of MoE(show-1) to the end of MoE(show).
-sums = [e for e in work if "moe_sum" in e["name"]]
-ends = [end(sums[2 * i + 1]) for i in range(len(sums) // 2)]
+comb = [e for e in work if "combine_kernel" in e["name"]]
+if comb:
+    ends = [end(e) for e in comb]
+else:
+    sums = [e for e in work if "moe_sum" in e["name"]]
+    ends = [end(sums[2 * i + 1]) for i in range(len(sums) // 2)]
 a, b = ends[show - 1], ends[show]
 print(f"\n== layer sequence: after MoE #{show-1} to end of MoE #{show} ({(b-a)/1e3:.2f} ms)")
 print(f"{'t(us)':>7} {'dur':>6} {'gap':>5} {'cat':<16} name")
