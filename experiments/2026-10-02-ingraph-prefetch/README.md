@@ -208,3 +208,23 @@ Tried: producer warp for multi-WG CTAs (288 threads -> 168-reg cap, N=128
 spills: worse); non-blocking refill via mbarrier.test_wait (refills later:
 96 903, 128 1047, worse than blocking one-stage-late refill).
 ncu wide (base clock): N=128 tensor active 62% full / 80% compute-only.
+
+## Real per-expert token counts (expert_counts.py; user: "token count per expert isn't uniform")
+
+All kernel benchmarks so far gave every expert the same N; Marlin's baseline
+used uniform random routing. From the agentic route capture (glm53-route-cap,
+657 requests, [tokens, 78, 8] ids), chunks at random offsets past the first
+2048 tokens, experts mapped to GPUs with the served profile's owners:
+
+| chunk | mean/expert | p50 | p90 | p99 | busiest per GPU (median) | 0 tokens | 1-8 |
+|---|---|---|---|---|---|---|---|
+| 512 | 16 | 7 | 35 | 123 | 110 | 22% | 31% |
+| 1024 | 32 | 17 | 67 | 225 | 200 | 18% | 18% |
+| 2048 | 64 | 34 | 130 | 446 | 390 | 18% | 10% |
+| 4096 | 128 | 64 | 246 | 959 | 773 | 22% | 4% |
+
+Busiest GPU / mean routed tokens per layer: 1.21-1.26. Counts saved as
+fscratch/ingraph-prefetch/counts_<chunk>.npy [samples, 75 layers, 4, 64].
+Implications: skip empty experts (~20% of weight bytes), per-expert tile
+width in one launch, heaviest-first scheduling. Next: Marlin and our kernel
+on real captured top-k ids, then the grouped kernel.
