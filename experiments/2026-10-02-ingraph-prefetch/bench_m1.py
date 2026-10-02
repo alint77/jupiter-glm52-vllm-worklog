@@ -14,16 +14,17 @@ E, GROUP = 64, 32
 dev = torch.device("cuda", 0)
 for k, f, name in ((6144, 4096, "w13"), (2048, 6144, "w2")):
     q = torch.randint(-2**31, 2**31 - 1, (E, k // 16, f * 2), dtype=torch.int32, device=dev)
-    s = (torch.rand((E, k // GROUP, f), device=dev) / 64).to(torch.bfloat16)
+    s = ((0.5 + torch.rand((E, k // GROUP, f), device=dev) / 2) / 64).to(torch.bfloat16)
     wbytes = q.numel() * 4 + s.numel() * 2
-    for n in (8, 16, 24, 32, 48, 64):
+    k_exp = tiered_prefill.scale_exponent(s)
+    for n in (16, 32, 48, 64, 96, 128):
         x = torch.randn((n, k), dtype=torch.bfloat16, device=dev)
         for _ in range(3):
-            tiered_prefill.dense(x, q, s, LOADS)
+            tiered_prefill.dense(x, q, s, LOADS, k_exp)
         torch.accelerator.synchronize()
         g = torch.cuda.CUDAGraph()
         with torch.cuda.graph(g):
-            tiered_prefill.dense(x, q, s, LOADS)
+            tiered_prefill.dense(x, q, s, LOADS, k_exp)
         g.replay()
         torch.accelerator.synchronize()
         with profile(activities=[ProfilerActivity.CUDA]) as prof:

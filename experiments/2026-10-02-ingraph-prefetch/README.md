@@ -192,3 +192,19 @@ vs Marlin at the same tokens/expert: 16: 510 -> 321, 32: 646 -> 411,
 ncu N=16: no pipe saturated (DRAM 60%, ALU 35%, tensor 22%, issue 54%),
 latency-bound with few warps.
 Next: a wide-N tile (N 64-128) for long prompts, then grouped routing (M2).
+
+### Wide tiles (vllm 7eae302f55 + working tree)
+
+CTA = 256 W rows over 4/T warpgroups of T tiles, one shared X tile; wide
+tiles scale weights in f16 (exact: bf16 scale 8 bits x |code-8| <= 3 bits <=
+f16's 11; per-call 2^k into f16's normal range; GLM-5.3 scales span 2^5 to
+2^14.5 per layer, sampled layers 3/20/40/60/77), narrow (N <= 32) keep fp32
+per-group scaling (cheaper there). Errors vs exact: mean 1.1e-3 rms-rel
+(the output's bf16 rounding) vs 1.6e-3 for Marlin's numerics; < 5e-5 of
+outputs beyond half an ulp, none beyond one.
+Same-process A/B vs 77ce7f5 (bench_ab.py), w13: N=16 335 -> 334, 32 427 ->
+429, 64 858 -> 546 (T=4, 2 CTAs), 96 1295 -> ~840, 128 1734 -> ~975.
+Tried: producer warp for multi-WG CTAs (288 threads -> 168-reg cap, N=128
+spills: worse); non-blocking refill via mbarrier.test_wait (refills later:
+96 903, 128 1047, worse than blocking one-stage-late refill).
+ncu wide (base clock): N=128 tensor active 62% full / 80% compute-only.
