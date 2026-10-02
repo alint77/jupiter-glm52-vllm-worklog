@@ -3,6 +3,7 @@
 #   ./onnode.sh <D>/marlin_bench.sh
 cd /e/project1/profound/alint77/vllm
 OUT=/e/fscratch/profound/${USER}/ingraph-prefetch/marlin; mkdir -p "${OUT}"
+export TRITON_CACHE_DIR=/e/fscratch/profound/${USER}/cache/triton
 NCU=/e/software/default/stages/2026/software/Nsight-Compute/2025.3.1-GCCcore-14.3.0/ncu
 B=benchmarks/kernels/benchmark_moe_wna16_marlin_prefill.py
 T="8 512 1024 2048 4096"

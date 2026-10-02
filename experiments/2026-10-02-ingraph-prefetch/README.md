@@ -104,3 +104,21 @@ Raw: fscratch/ingraph-prefetch/marlin/{bench.txt,marlin.ncu-rep,raw.csv}.
 - SM clock 1.51-1.62 GHz under prefill load (1.98 max).
 - In the server the two-tier MoE span is 985 us at 512 vs 785 us here for all
   64 experts in one call: tier split + concurrent cold copy cost ~25%.
+
+## Upstream alternatives for INT4 W4A16 MoE on Hopper
+
+- Triton moe_wna16 (upstream fallback, fused_moe_kernel_gptq_awq, default
+  config): w13 1669/1720/2490/4265 us at 512/1024/2048/4096 -- 2-3x slower
+  than Marlin (bench_triton.txt).
+- FlashInfer/TRT-LLM moe_gemm_tma_ws_mixed_input (CUTLASS sm90 array
+  mixed-input, wgmma + TMA): int4 group size hard-coded 128
+  (mixed_input_utils.hpp), GLM is 32; MXFP4 group 32 is supported (MiMo).
+- Both want their own weight layouts; our decode one-kernel reads Marlin's.
+
+Plan: own Hopper kernel that reads the Marlin layout. Marlin packs pairs of
+n8 B-fragments; read as W (rows n, cols k) they are the m16k16 A fragment,
+which is what wgmma's register-sourced A operand takes per warp. So: dequant
+int4 into registers as Marlin does, wgmma RS with W as A (m64 per warpgroup)
+and expert-sorted activations as B from smem via TMA, tokens on N (8..256 in
+steps of 8, so ~no padding at 16 tokens/expert), persistent grid over
+(expert, n-tile), expert -> weight-pointer table so both tiers go in one launch.
