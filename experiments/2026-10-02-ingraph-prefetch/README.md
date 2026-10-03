@@ -554,3 +554,18 @@ other copies 7, correction 17, LSE gather 5); MoE 180-189 ms by rank
 TFLOPS); all-reduce 57 (263 us intrinsic at 50 MB + ~200 us waiting after
 MoE on the slowest rank); dense GEMMs 75; sparse attention 60 (~380 TFLOPS);
 indexer ~35 incl. its all-gather; norms/elementwise ~33; idle 15.
+
+## DCP layout copies removed (vllm 1a03bfd40e) and MoE at 4K (ncu_moe4k.sh)
+
+Head-major query gather (bmm writes into [N, B, L+P], all-gather on dim 0,
+FlashMLA reads the transposed view) and head-major LSE correction feeding the
+reduce-scatter. 20K new on 14K cached, same harness: chunk 683 -> 609 ms,
+TTFT 3.43-3.49 -> 3.09-3.14 s; trace-pout shows the q/out layout copies, the
+cat and the copy back gone (a 16 us q_pe copy per layer remains). Startup
+with the warm caches: 7.5 min (FlashInfer init 1 s, compile 40 s).
+MoE GEMMs at a real 4096-token chunk (base clocks): 128-wide w13/w2 tensor
+pipe active 67% / 58%, stalls barrier 1.5 and wait 1.4 per issue, SM active
+cycles balanced within ~6%: the per-round wgmma wait<0> + barrier structure,
+tuned for the weight-bound 16-1024 token range, leaves the tensor cores idle a
+third of the time once compute-bound (~2.3-2.5x the compute floor at 2K and
+4K alike).
