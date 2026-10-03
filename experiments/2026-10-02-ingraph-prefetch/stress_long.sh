@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Long-context prefill stress like an agentic session: a ~60K-token prompt,
-# then turns growing the same prefix by 2-8K tokens up to ~200K (prefix cache
-# hits; 8192-token chunks on the DSA sparse path). Survival, TTFT per turn,
+# then turns growing the same prefix by 2-8K tokens (every 10th turn by 40K,
+# a long uncached prefill at depth) up to STRESS_MAX_CTX (default 200K). Survival, TTFT per turn,
 # and per-GPU memory sampled every second.
 #   ./onnode.sh <D>/stress_long.sh <tag>      (extra env passes to serve.sh)
 cd /e/project1/profound/alint77/vllm
@@ -17,8 +17,9 @@ done
 echo "ready $(date +%T)"
 nvidia-smi --query-gpu=index,memory.used --format=csv,noheader,nounits -l 1 >"${OUT}/mem-${tag}.csv" &
 smi=$!
-.venv/bin/python - <<'PY'
-import json, random, time, urllib.request
+.venv/bin/python - "${STRESS_MAX_CTX:-200000}" <<'PY'
+import json, random, sys, time, urllib.request
+MAX_CTX = int(sys.argv[1])
 def post(body):
     req = urllib.request.Request("http://127.0.0.1:8027/v1/completions",
         data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
@@ -27,7 +28,7 @@ name = json.loads(urllib.request.urlopen("http://127.0.0.1:8027/v1/models").read
 rng = random.Random(0)
 ids = [rng.randrange(1000, 100000) for _ in range(60000)]
 turn = 0
-while len(ids) < 200000:
+while len(ids) < MAX_CTX:
     t = time.time()
     try:
         r = post({"model": name, "prompt": ids, "max_tokens": 16, "temperature": 0})
@@ -35,7 +36,8 @@ while len(ids) < 200000:
         print(f"turn {turn} at {len(ids)} tokens FAILED: {e}", flush=True); break
     print(f"turn {turn}: {len(ids)} tokens, {time.time() - t:.2f} s, "
           f"cached {r['usage'].get('prompt_tokens_details') or ''}", flush=True)
-    ids += [rng.randrange(1000, 100000) for _ in range(rng.choice((2000, 4000, 8000)))]
+    n = 40000 if turn % 10 == 9 else rng.choice((2000, 4000, 8000))
+    ids += [rng.randrange(1000, 100000) for _ in range(min(n, MAX_CTX - len(ids)))]
     turn += 1
 PY
 kill "${smi}"
