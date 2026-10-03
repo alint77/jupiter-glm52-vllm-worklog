@@ -390,3 +390,22 @@ makes <= 2048 tokens dense), DCP4 sparse-path collectives (all-gather 7.5 ->
 MoE all-reduce 23 -> 96 ms (NCCL RING_LL, 149 -> 618 us/call for 2x bytes),
 MoE 113 -> 179 (linear). Marlin jumps the same (333 -> 1005). 2048 is 44%
 host-bound in the trace (no graphs above 1024; profiler inflates it).
+
+## Long-context OOM and the 9 GB reserve (2026-10-03)
+
+The Claude Code server (job 2150656, then 2150901) died of a CUDA OOM on its
+first long-context 8192-token chunk: FlashMLA's sparse decode kernel (DSA
+path, used once context > 2048) asked for 2 GiB with ~1.7 GiB free and
+~2.3 GiB reserved but fragmented. stress_long.sh (60K-token prompt, then
+turns growing the prefix to ~200K) reproduces it on turn 0 at reserve 7 both
+with the prefill MoE kernel and without it (VLLM_TIERED_MOE_PREFILL_KERNEL=0),
+so the kernel is not the cause; the startup profile runs the dense path and
+never sees that buffer, and the prefill CUDA graphs (1.32 GiB) came out of
+the same margin. Slicing the kernel's workspace (vllm c71d95ea74, steps >
+4096 tokens in slices) is kept but did not fix it. expandable_segments:
+engine init fails. RESERVE_GB=9 (now serve.sh's default): 7.2 GiB free
+after startup (was 5.4), 31 turns to 196K tokens, 0 OOM; ~3% fewer hot
+experts (2963 vs 3061 per rank in the first layers' plan).
+Turn latency at 150-196K context (TTFT + 16 output tokens): 2K new tokens
+~0.9 s, 4K ~1.4 s, 8K ~2.5 s -- several times the zero-context sweep
+(2048 new: 243 ms TTFT); long-context attention dominates real turns.
