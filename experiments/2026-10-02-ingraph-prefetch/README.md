@@ -630,3 +630,28 @@ samples, mode 0 vs 2), moe_timeline.py (per-kernel start/duration).
   combine 73 -> 64, act 18.8 -> 13.0; collectives 803 -> 783 (less waiting
   on the slowest rank's MoE); idle 2%. Collectives are now the largest
   category, then MoE GEMMs, then dense GEMMs (552).
+
+## Prefill breakdown after the MoE work, and the fused DCP combine (vllm 59ae60988e)
+
+4089-token chunk at the real shape (trace-pmoe2, rank 0, 558 ms): collectives
+199 (q all-gather 64, output reduce-scatter 54, AR after MoE 38 of which ~19
+is waiting for rank 2, AR after o_proj 22, indexer candidate gather 17, LSE
+gather 4), MoE 138, dense GEMMs 74, sparse MLA 61, triton/norm/elementwise/
+copies 40, DCP correction 18, indexer 14, idle 12. Rank 2's MoE is ~10%
+slower (more routed tokens); user: no calibrated rank balancing (routing is
+data dependent).
+
+Fused prefill combine: a registered 257 MiB IPC buffer (one step of [T, 64,
+512] bf16 + LSE) that FlashMLA sparse prefill writes into; one full-GPU kernel
+pulls every rank's rows, applies the LSE weights, sums (decode kernel's
+arithmetic) and writes head-major; one-block barrier launches around it.
+- P2P probe (p2p_probe.py): SM loads and stores alike ~124 GB/s per peer
+  link, ~365 GB/s with 3 peers; local ~2.1 TB/s read.
+- First version walked tokens fastest (1 KB rows 64 KB apart in peer memory):
+  1,307-1,368 us, slower than NCCL (TTFT 3.02-3.06 s). Heads fastest
+  (16 KB contiguous per token per rank): 612 us vs NCCL path 942 (RS 682,
+  correction 216, LSE AG 44) in bench_combine.py.
+- Same node (jpbo-039-41) serving A/B: TTFT 2.88-2.95 (off) -> 2.75-2.83 s,
+  4K chunk 567 -> 541 ms. GSM8K 400: 90.75%.
+- Node variance: jpbo-039-41's MoE GEMMs run ~10% slower than jpbo-121-13's
+  (96 tile 476 vs 421 us/call); compare TTFT on the same node only.
