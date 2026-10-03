@@ -12,7 +12,7 @@ import real_routing  # noqa: E402
 import bench_moe_real as b  # noqa: E402  (weights, helpers)
 from vllm.model_executor.layers.fused_moe import tiered_prefill
 
-for chunk in (512, 2048):
+for chunk in [int(a) for a in sys.argv[1:]] or (512, 2048):
     smp = real_routing.samples(chunk, 2, seed=chunk)[1]
     ids = torch.from_numpy(smp.topk_ids).to(b.dev)
     wts = torch.rand(ids.shape, device=b.dev).softmax(-1)
@@ -23,7 +23,7 @@ for chunk in (512, 2048):
     hmap[torch.from_numpy(local[:40])] = torch.arange(40, dtype=torch.int32)
     cmap[torch.from_numpy(local[40:])] = torch.arange(24, dtype=torch.int32)
     hmap, cmap = hmap.to(b.dev), cmap.to(b.dev)
-    fn = lambda: tiered_prefill.tiered_prefill_moe(x, ids, wts, hmap, cmap, b.hot, b.cold, b.k_exp, 2)
+    fn = lambda: tiered_prefill.tiered_prefill_moe(x, ids, wts, hmap, cmap, b.hot, b.cold, b.k_exp, 0)
     for _ in range(2):
         fn()
     g = torch.cuda.CUDAGraph()

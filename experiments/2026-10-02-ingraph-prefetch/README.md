@@ -569,3 +569,34 @@ cycles balanced within ~6%: the per-round wgmma wait<0> + barrier structure,
 tuned for the weight-bound 16-1024 token range, leaves the tensor cores idle a
 third of the time once compute-bound (~2.3-2.5x the compute floor at 2K and
 4K alike).
+
+## MoE prefill kernel at 2-4K tokens (vllm 0b0645c088, 0237c97e75)
+
+Iteration loop on a standby hold: bench_iter.py (128-token tile in modes 0/2/3
++ whole MoE on real routing, 2048/4096), ptx_check.sh (wgmma serialization /
+registers / stack), ncu_src128.sh + src_stalls.py (base-clock per-SASS stall
+samples, mode 0 vs 2), moe_timeline.py (per-kernel start/duration).
+
+| step | 128 tile w13 us | whole MoE 2048 us | whole MoE 4096 us |
+|---|---|---|---|
+| start (4 classes, 128-row units) | 943 | 1,363 | 2,344 |
+| 96-row class + even unit split (0b0645c088) | 945 | 1,300 | 2,156 |
+| scales out of local memory (+ 2 groups/round, producer WG) (0237c97e75) | 819 | 1,207 | 1,984 |
+
+- Even split: an expert's rows go to ceil(n/128) equal units (150 -> 2x75 at
+  width 96, not 128 + 22). Padded rows at 4K 1.31x -> 1.18x of needed.
+- Launch order (schedules 0 / 1 / 3) is not a lever: within 1%.
+- Local memory: math_round indexed the round's 4 scale words by the warp's
+  runtime block offset -> 16 B stack, an STL.128 per round and FMULs waiting
+  on local loads (5-9% of stall samples). Loading only the warp's T words
+  (like the weight words) removed it: tile 945 -> 853, MoE 4K -1.6 ms/layer
+  x 0.08.
+- Base-clock ncu, 128 tile w13: tensor pipe active 68% (compute-only 80%)
+  -> 87% (89%). Full and compute-only now within 2 points.
+- Dead ends: wait<1> with three A register sets (ptxas serializes every wgmma,
+  C7513: it will not let non-wgmma code define A registers while any group is
+  pending); 2 groups/round with 4 tiles/warpgroup (C7512, registers);
+  load-ahead of the next round's smem words (<1%, removed).
+- Timeline at 4096 (one sample): total 1,908 -> 1,748 us. w13 phase ~985 us,
+  of which the last ~250 us run only the 64/32/16 classes (weight-bound);
+  w2 phase ~570 us; route + gather + act + combine 196 us.
