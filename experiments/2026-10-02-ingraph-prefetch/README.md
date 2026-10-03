@@ -512,3 +512,13 @@ CUDA memory snapshots with history (rank 0, temporary hook in gpu_worker),
   (3109 vs 3033 per rank); free HBM after startup drops 7.16 -> 6.0 GiB and
   the fixed observed-free check (reserve - 1.5 GB) fails. Lowering the reserve
   lowers both sides, so 4096 fails at every reserve tried (5-9).
+
+## Planner change validated: 4K chunks, reserve 7 (vllm b41117c34d)
+
+Planner budgets the prefill kernel (0.75 GB at 4096 tokens) instead of four
+full-chunk Marlin arenas (3.22 GB at 8192); the startup check requires the
+measured activation peak (400 KB/token) + 1 GiB. 4096-token chunks:
+reserve 7 -> 3244 hot experts per rank (vs 3033 at 8192/reserve 9, old
+planner), 3.25 GiB free after startup (2.53 required), stress_long.sh to
+388K with 40K uncached jumps: 42 turns, no OOM. Reserve 6: 3291 hot but 2.55
+GB free < 2.71 required, refuses to start. serve.sh now 4096 / reserve 7.
