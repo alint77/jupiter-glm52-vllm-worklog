@@ -655,3 +655,9 @@ arithmetic) and writes head-major; one-block barrier launches around it.
   4K chunk 567 -> 541 ms. GSM8K 400: 90.75%.
 - Node variance: jpbo-039-41's MoE GEMMs run ~10% slower than jpbo-121-13's
   (96 tile 476 vs 421 us/call); compare TTFT on the same node only.
+- Off arm (VLLM_DCP_ONE_SHOT_PREFILL=0, next hold): GSM8K 400 90.50% vs
+  90.75% on. Greedy README continuations (687 / 1006 prompt tokens) diverge
+  after 116 / 19 characters, both coherent ("...beam search, and more" vs
+  "...and speculative decoding"; "## Installation" vs "## Getting
+  Started"): the combine's fp32 rank-order sum vs NCCL's bf16 ring sum
+  flips near-tied greedy tokens. No accuracy change measurable at GSM8K 400.
