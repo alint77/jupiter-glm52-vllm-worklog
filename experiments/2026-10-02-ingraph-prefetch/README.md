@@ -582,6 +582,10 @@ samples, mode 0 vs 2), moe_timeline.py (per-kernel start/duration).
 | start (4 classes, 128-row units) | 943 | 1,363 | 2,344 |
 | 96-row class + even unit split (0b0645c088) | 945 | 1,300 | 2,156 |
 | scales out of local memory (+ 2 groups/round, producer WG) (0237c97e75) | 819 | 1,207 | 1,984 |
+| producer WG for the 96 tile too (84eb54f10b) | 819 | 1,192 | 1,956 |
+| epilogue row scales loaded up front (cd29f4f327) | 749 | 1,123 | 1,841 |
+| epilogue staged through smem, 16 B stores (3f26277b93) | 755 | 1,119 | 1,828 |
+| 16 B accesses in gather / act / combine (99886ea93e) | - | 1,095 | 1,792 |
 
 - Even split: an expert's rows go to ceil(n/128) equal units (150 -> 2x75 at
   width 96, not 128 + 22). Padded rows at 4K 1.31x -> 1.18x of needed.
@@ -600,3 +604,22 @@ samples, mode 0 vs 2), moe_timeline.py (per-kernel start/duration).
 - Timeline at 4096 (one sample): total 1,908 -> 1,748 us. w13 phase ~985 us,
   of which the last ~250 us run only the 64/32/16 classes (weight-bound);
   w2 phase ~570 us; route + gather + act + combine 196 us.
+- Epilogue: each column's row scale was loaded between bf16 stores to y
+  (possible alias), so every load waited a round trip: ~14% of w2 stall
+  samples on the dependent FMULs (ncu_src4k.sh + src_where.py). __ldg'ing
+  the thread's NT/4 scales first: whole MoE 4K -5.9%. Staging the tile in the
+  idle ring (pitch 528 B) for 16 B row stores: w2 tile -4%, MoE -0.7%.
+- Narrow classes (16/32/64) are decode-ALU-bound per SM (~20 GB/s/SM with
+  either a full or a partial grid): 128-row CTAs (2x CTAs, up to 6/SM) were
+  slower (MoE 4K 1,803 -> 1,825-1,833), reverted.
+- Glue kernels moved 4 B per access and gather read rows twice; 16 B vectors
+  with the row in registers: gather 60 -> 51, act 52 -> 36, combine 68 -> 45
+  us; bit-identical to the previous kernel (bitwise_vs.py, 2048/4096/777).
+- Persistent schedules 2/4 (refused since the 96 class) deleted (8c705fd801);
+  planner's workspace mirror had 4 classes, fixed.
+- Base-clock ncu at a real 4K chunk after all of the above, tensor active
+  w13 / w2: 128 82% / 67%, 96 77% / 62%, 64 59% / 55%, 32 31%, 16 21%.
+  w2 wide trails w13 wide: 16 stages per CTA (K 2048) make per-CTA fill and
+  epilogue a bigger share, plus a 64%-full last wave (744 CTAs).
+- Timeline at 4096: 1,908 -> 1,564 us (route 18, gather 51, w13 ~900, act
+  36, w2 ~515, combine 45).

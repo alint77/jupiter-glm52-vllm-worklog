@@ -9,6 +9,6 @@ for d in "$@"; do
     "from vllm.model_executor.layers.fused_moe import tiered_prefill as t; t._extension()" 2>&1 |
     awk '/Compiling entry function/ {k=$0; sub(/.*function ./,"",k); sub(/. for.*/,"",k)}
          /C75[0-9][0-9]/ {print "  " $0}
-         /Used [0-9]+ registers/ && (k ~ /gemm_kernelILi(96|128)ELi0E/) {print "  " k ": " $0}
-         /spill/ && (k ~ /gemm_kernelILi(96|128)ELi0E/) && !/0 bytes spill stores, 0 bytes spill loads/ {print "  SPILL " k ": " $0}' | sort -u
+         /Used [0-9]+ registers/ && (k ~ /gemm_kernelILi[0-9]+ELi0E/) {print "  " k ": " $0}
+         /spill/ && (k ~ /gemm_kernelILi[0-9]+ELi0E/) && !/0 bytes spill stores, 0 bytes spill loads/ {print "  SPILL " k ": " $0}' | sort -u
 done
