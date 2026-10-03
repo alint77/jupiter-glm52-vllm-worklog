@@ -59,12 +59,13 @@ else
   spec_config="{\"method\":\"mtp\",\"num_speculative_tokens\":${SPEC_K}}"
   : "${CAPTURE_SIZES:=1,${verify}}" "${COMPILE_SIZES:=${verify}}"
 fi
-# 9 (was 7): long-context 8192-token chunks take the DSA sparse path, whose
-# FlashMLA kernel allocates 2 GiB the startup profile (dense path) never sees.
-# At 7 the server had 5.4 GiB free and OOMed on the first 60K-token prompt,
-# with or without the prefill MoE kernel; at 9 it has 7.2 GiB free and runs
-# (stress_long.sh, 2026-10-03). Costs ~3% of hot experts.
-export TIERED_MOE_HBM_RESERVE_GB="${RESERVE_GB:-9}"
+# 8 with 4096-token prefill chunks (2026-10-03). At 7 with 8192-token chunks
+# the server OOMed on the first 60K-token prompt: the fp8 sparse decode kernel
+# then ran long-context prefill and allocated 2 GiB the startup profile never
+# sees (stress_long.sh); 9 fixed it. Prefill now takes the sparse prefill
+# kernel (vllm 6217af6c8c) and 4K chunks halve the step's activations, so one
+# of those 2 GB goes back to hot experts. Not stress-tested at 8.
+export TIERED_MOE_HBM_RESERVE_GB="${RESERVE_GB:-8}"
 # Cold prefetch: two slots (vLLM default), so layer L+1's copy runs under layer
 # L's MoE; from 512 tokens (~1.3 ms copy vs ~2 ms of layer compute).
 # Inside captured prefill graphs too (vllm a3e5a9c5f1): median TTFT at 512/768/
@@ -114,6 +115,7 @@ exec agent_space/experiments/2026-07-17-end-to-end-tuning/run-server.sh \
   --decode-context-parallel-size "${DCP:-4}" \
   --dcp-comm-backend "${DCP_COMM:-ag_rs}" \
   --max-num-seqs 1 \
+  --max-num-batched-tokens "${MAX_NUM_BATCHED_TOKENS:-4096}" \
   --gpu-memory-utilization 0.90 \
   --max-model-len "${MAX_MODEL_LEN:-400000}" \
   $([[ -n "${PREFIX_CACHING-1}" ]] && echo --enable-prefix-caching || echo --no-enable-prefix-caching) \
