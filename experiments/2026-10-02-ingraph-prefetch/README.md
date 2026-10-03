@@ -424,7 +424,7 @@ hide under MoE). Union time per category: sparse MLA 159 ms (FlashMLA sparse
 *decode* kernel, 2.04 ms/layer), collectives 135 (all-gather 52 / 120 calls,
 all-reduce 41 / 155, reduce-scatter 33 / 78, one-shot gather 10), MoE 101
 (+11 glue), copies/cat 53 (3 direct_copy per layer, 40 ms), dense GEMM 43,
-indexer 22 (mqa_logits on 42 of 78 layers), DCP combine 10, norm/rope/misc
+indexer 22 (42 mqa_logits calls; the indexer runs on 21 of 78 layers: index_topk_freq 4, layers 0-2 and every 4th from 6), DCP combine 10, norm/rope/misc
 ~25. Attention-side work (sparse MLA + its DCP collectives/copies + indexer)
 is ~60% of the step; MoE ~19%.
 
