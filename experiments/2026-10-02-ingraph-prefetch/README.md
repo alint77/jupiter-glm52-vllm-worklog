@@ -455,3 +455,26 @@ q all-gather ~500 us, output reduce-scatter ~420 us, their layout copies
 (clone/contiguous/cat) ~660 us, LSE gather ~130 us per layer (~130 ms per
 step, now ~3x the kernel). Gathering KV instead would leave 16 heads per
 rank, and the SM90 sparse prefill kernel needs multiples of 64.
+
+## Prefill step breakdown, 2.4K new tokens at 100K context (trace-p100k-sp)
+
+Rank 0, 452 ms GPU wall. Per layer (layer 40, 5.24 ms): AR + norm -> q/kv
+projections, rope, cache write, q cat (~0.47 ms) -> q all-gather 499 us + layout
+copy 248 -> upconvert 14 + sparse attention 449 -> LSE gather 142 + correction
+127 + output layout copy 219 + reduce-scatter 419 + copy 53 -> o_proj 189 ->
+AR 189 -> shared expert + router ~120 -> MoE ~1.33 ms -> next layer's AR.
+
+| item | ms / step | notes |
+|---|---|---|
+| MoE (route..combine) | 107-116 by rank | ~1.5 ms/layer vs ~0.59 compute floor (4928 routed rows x 75.5 MFLOP at 630 TFLOPS) |
+| DCP attention data movement | ~120 | q AG 38, out RS 33, layout copies 44 (19 q, 17 out, 9 cat), correction 10, LSE gather 6.5 |
+| all-reduce | 43 | 162 us intrinsic (probe); after-MoE ARs wait on the slowest rank's MoE (rank 1): rank 0 339 vs 170 us median |
+| dense GEMMs | 42 | |
+| sparse attention + upconvert | 36 | ~390 TFLOPS on its useful work |
+| indexer | 22 + AG 12 + 3 copies | 42 of 78 layers |
+| norm / rope / elementwise / triton | ~23 | |
+| idle | 26 | mostly host-bound step setup |
+
+nccl_probe.py (same sizes, 4 ranks): default = Simple (AR 162, AG 469, RS
+425 us, ~285-290 GB/s bus); LL128 slower, LL 2x slower. The RING_LL in the
+kernel names is NCCL's naming, not the protocol: no protocol win.
