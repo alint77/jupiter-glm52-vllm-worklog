@@ -541,3 +541,16 @@ Cold startup ~16-17 min: launch + planning 0:48, weights 2:11 (78 GiB/rank),
    give an identical traced graph and the same 158 inductor keys; they are
    now out of the key (vllm c5cff5612b).
 Expected warm start now ~5 min.
+
+## Prefill at the real agentic shape (trace-preal, 2026-10-03)
+
+20K new tokens on a 14K cached prefix (the live session averages ~21K new /
+34K prompt), serve.sh defaults (4096-token chunks, reserve 7): TTFT
+3.43-3.49 s (~5.8K tok/s), 5 chunks of ~4089 tokens, 683 ms each, 2% idle.
+Per chunk, rank 0: DCP attention data movement ~218 ms (q all-gather 62,
+output reduce-scatter 54, q layout copy 31, output layout copy 28, cat 14,
+other copies 7, correction 17, LSE gather 5); MoE 180-189 ms by rank
+(2.4-2.5 ms/layer vs ~1 ms compute floor: 8178 routes x 75.5 MFLOP at 630
+TFLOPS); all-reduce 57 (263 us intrinsic at 50 MB + ~200 us waiting after
+MoE on the slowest rank); dense GEMMs 75; sparse attention 60 (~380 TFLOPS);
+indexer ~35 incl. its all-gather; norms/elementwise ~33; idle 15.
