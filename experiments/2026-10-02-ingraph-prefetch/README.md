@@ -493,3 +493,22 @@ Probes: FlashMLA SM90 sparse prefill asserts h_kv == 1, so packing 4 tokens x
 trimming decode index rows to the valid prefix (their "skip empty slots")
 saves 26 -> 20 us/layer at 8 queries (login node), ~0.5 ms/step, not
 graph-safe.
+
+## Where the prefill memory peak is (memprof.sh, memsnap.py, memdiff.py; 2026-10-03)
+
+CUDA memory snapshots with history (rank 0, temporary hook in gpu_worker),
+98K-token uncached prompt in 8192-token chunks then +2K, reserve 9.
+- Old path (VLLM_DCP_SPARSE_PREFILL=0): peak 13.05 GiB of post-startup
+  allocations, set by a 2046 MiB allocation inside flash_mla_with_kvcache
+  (sparse decode kernel's split-KV accumulators; 2.5 GiB live in 6 buffers)
+  during a long-context chunk's attention, on top of the DCP q all-gather
+  (0.56 GiB), the KV cache (7.3) and the prefetch slots (1.38). The 2 GiB
+  allocation that OOMed.
+- New path: peak 11.79 GiB (-1.26), now at the output reduce-scatter in the
+  same layer: q all-gather 0.56, sparse prefill output 0.50, reduce-scatter
+  buffers ~0.75.
+- 4096-token chunks: the planner's MoE runtime-workspace budget scales with
+  max_num_batched_tokens, so it gives 1.5 GiB more to hot experts at load
+  (3109 vs 3033 per rank); free HBM after startup drops 7.16 -> 6.0 GiB and
+  the fixed observed-free check (reserve - 1.5 GB) fails. Lowering the reserve
+  lowers both sides, so 4096 fails at every reserve tried (5-9).
