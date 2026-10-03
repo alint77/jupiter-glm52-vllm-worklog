@@ -623,3 +623,10 @@ samples, mode 0 vs 2), moe_timeline.py (per-kernel start/duration).
   epilogue a bigger share, plus a 64%-full last wave (744 CTAs).
 - Timeline at 4096: 1,908 -> 1,564 us (route 18, gather 51, w13 ~900, act
   36, w2 ~515, combine 45).
+- Serving, same harness as trace-pout (20K new on 14K cached, serve.sh
+  defaults, vllm 99886ea93e): TTFT 3.09-3.14 -> 2.84-2.85 s (-8%). Traced
+  4089-token chunks (trace-pmoe2 vs trace-pout, rank 0, 4 chunks): window
+  2,464 -> 2,260 ms; MoE GEMM kernel time 812 -> 663 ms, routing/gather/
+  combine 73 -> 64, act 18.8 -> 13.0; collectives 803 -> 783 (less waiting
+  on the slowest rank's MoE); idle 2%. Collectives are now the largest
+  category, then MoE GEMMs, then dense GEMMs (552).
