@@ -478,3 +478,18 @@ AR 189 -> shared expert + router ~120 -> MoE ~1.33 ms -> next layer's AR.
 nccl_probe.py (same sizes, 4 ranks): default = Simple (AR 162, AG 469, RS
 425 us, ~285-290 GB/s bus); LL128 slower, LL 2x slower. The RING_LL in the
 kernel names is NCCL's naming, not the protocol: no protocol win.
+
+## Prime Intellect "Prime Inference" post vs our DCP (2026-10-03)
+
+They (GLM-5.3, GB200, NVFP4 KV, TP4) rejected DCP: with DSA top-2048 there is
+little attention to split, and the communication outweighs it. For us DCP
+exists for KV memory, not compute: at 400K context the KV (+ indexer cache)
+would be ~4x per GPU without it (~18 GB more), ~900 fewer hot experts. Our
+decode step pays ~1.9 ms for DCP (q gather_cat 0.80, LSE reduce-scatter
+0.52, indexer top-k gather/merge 0.55); attention costs the same either way
+on SM90 (TP4: 16 heads padded to 64; DCP: 64 heads, 3/4 of slots -1).
+Probes: FlashMLA SM90 sparse prefill asserts h_kv == 1, so packing 4 tokens x
+16 heads as 4 KV heads (KV-gather prefill without head padding) is out;
+trimming decode index rows to the valid prefix (their "skip empty slots")
+saves 26 -> 20 us/layer at 8 queries (login node), ~0.5 ms/step, not
+graph-safe.
