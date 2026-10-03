@@ -589,8 +589,8 @@ samples, mode 0 vs 2), moe_timeline.py (per-kernel start/duration).
 - Local memory: math_round indexed the round's 4 scale words by the warp's
   runtime block offset -> 16 B stack, an STL.128 per round and FMULs waiting
   on local loads (5-9% of stall samples). Loading only the warp's T words
-  (like the weight words) removed it: tile 945 -> 853, MoE 4K -1.6 ms/layer
-  x 0.08.
+  (like the weight words) removed it: tile 945 -> 853 us, whole MoE 4K
+  2,156 -> 1,992 us on its own.
 - Base-clock ncu, 128 tile w13: tensor pipe active 68% (compute-only 80%)
   -> 87% (89%). Full and compute-only now within 2 points.
 - Dead ends: wait<1> with three A register sets (ptxas serializes every wgmma,
