@@ -409,3 +409,26 @@ experts (2963 vs 3061 per rank in the first layers' plan).
 Turn latency at 150-196K context (TTFT + 16 output tokens): 2K new tokens
 ~0.9 s, 4K ~1.4 s, 8K ~2.5 s -- several times the zero-context sweep
 (2048 new: 243 ms TTFT); long-context attention dominates real turns.
+
+## Prefill and decode at 100K context (prof100k.sh, prof_window.py; 2026-10-03)
+
+98K-token prefix of real code (vLLM sources) cached, then 2000 new tokens
+(the step recomputes 2464: the cache matches in 256-token blocks), serve.sh
+defaults (prefill kernel, reserve 9). Unprofiled, 3 reps: TTFT 643-649 ms,
+decode 110-125 tok/s (256 out; 84 on the first, cold rep). Uncached 98K
+prefill: 21.5 s.
+
+Prefill step, rank 0 (ranks within 1 ms): wall 584 ms, busy 559, idle 25
+(mostly host-bound step setup; no prefetch stalls, the 106 ms of cold copies
+hide under MoE). Union time per category: sparse MLA 159 ms (FlashMLA sparse
+*decode* kernel, 2.04 ms/layer), collectives 135 (all-gather 52 / 120 calls,
+all-reduce 41 / 155, reduce-scatter 33 / 78, one-shot gather 10), MoE 101
+(+11 glue), copies/cat 53 (3 direct_copy per layer, 40 ms), dense GEMM 43,
+indexer 22 (mqa_logits on 42 of 78 layers), DCP combine 10, norm/rope/misc
+~25. Attention-side work (sparse MLA + its DCP collectives/copies + indexer)
+is ~60% of the step; MoE ~19%.
+
+Decode (DFlash2 verify, 8 tokens), 34 steps: 27.6 ms/step, ~3.8 tokens
+accepted per step on this code text. Union per step: MoE 14.5 ms (53%),
+dense GEMM 6.4, collectives 4.5, sparse MLA 1.4 + indexer 0.8 (DSA keeps
+attention small at 100K), triton/elementwise/norm/router ~2.1.
