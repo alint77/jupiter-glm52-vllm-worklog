@@ -432,3 +432,26 @@ Decode (DFlash2 verify, 8 tokens), 34 steps: 27.6 ms/step, ~3.8 tokens
 accepted per step on this code text. Union per step: MoE 14.5 ms (53%),
 dense GEMM 6.4, collectives 4.5, sparse MLA 1.4 + indexer 0.8 (DSA keeps
 attention small at 100K), triton/elementwise/norm/router ~2.1.
+
+## Why long-context prefill attention was slow (vllm 6217af6c8c, 2026-10-03)
+
+FlashMLA sparse picks its "mixed batch" path when a rank has < 32 heads
+(upstream logic, unchanged on upstream main 5f30fc7031): every token,
+prefill included, goes through the fp8 sparse **decode** kernel. Under DCP
+(our fork 4e2ccad840; upstream's 63ff748f65 does the same) each rank's top-k
+row keeps only the ~1/4 of slots in its shard, the rest -1. The SM90 decode
+kernel takes no per-query topk_length ("V3.2 does not support dynamic topk
+length") and costs the same with every slot valid as with 3/4 masked
+(sparse_attn_bench.py, Booster, 2464 queries, 100K: 2012 vs 2074 us; trimmed
+to 576 slots 714 us, bit-identical). Fix: single-request prefills (> 64
+tokens) upconvert the local shard to bf16 and run FlashMLA's sparse prefill
+kernel with topk_length = valid count (454 us incl. upconvert; 3.5-4.4x at
+512-8192 queries, 100K-400K). Same node: 2K new on 98K cached, TTFT
+637-683 -> 536-579 ms; prefill step GPU 584 -> 452 ms, sparse MLA 159 ->
+35 ms. Test: test_flashmla_sparse_dcp_prefill_matches_full_index.
+
+What remains in prefill attention at 2.4K/100K is DCP's data movement:
+q all-gather ~500 us, output reduce-scatter ~420 us, their layout copies
+(clone/contiguous/cat) ~660 us, LSE gather ~130 us per layer (~130 ms per
+step, now ~3x the kernel). Gathering KV instead would leave 16 heads per
+rank, and the SM90 sparse prefill kernel needs multiples of 64.
