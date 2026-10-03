@@ -522,3 +522,22 @@ reserve 7 -> 3244 hot experts per rank (vs 3033 at 8192/reserve 9, old
 planner), 3.25 GiB free after startup (2.53 required), stress_long.sh to
 388K with 40K uncached jumps: 42 turns, no OOM. Reserve 6: 3291 hot but 2.55
 GB free < 2.71 required, refuses to start. serve.sh now 4096 / reserve 7.
+
+## Startup time (2026-10-03)
+
+Cold startup ~16-17 min: launch + planning 0:48, weights 2:11 (78 GiB/rank),
+"torch.compile" 12:11, drafter 0:16, profile run 0:12, KV + graph capture
+0:35. The compile phase was three things:
+1. FlashInfer rebuilt trtllm_comm.so (nvcc, 3 files) on every start, ~7.5
+   min: its .ninja_deps was corrupted by concurrent servers sharing the JIT
+   cache (2026-10-02). Rebuilt once with clean deps on the login node; ninja
+   now reports no work.
+2. The AOT-compiled artifact never loads ("load failure" on the Triton
+   indexer kernel inside the graph), so Dynamo re-traces (~17 s) and inductor
+   reloads from its cache (~35 s when the key matches). Not fixed.
+3. The compile key hashed the tiered reserves and every vLLM env var, so each
+   reserve change or kernel A/B recompiled (~4 min of real inductor work).
+   Reserve 7 vs 8, sparse prefill on/off and the prefill MoE kernel on/off all
+   give an identical traced graph and the same 158 inductor keys; they are
+   now out of the key (vllm c5cff5612b).
+Expected warm start now ~5 min.
