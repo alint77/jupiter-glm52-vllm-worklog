@@ -42,3 +42,26 @@ outside the MoE phases (attention, dense GEMMs, all-reduce: ~45% of the step);
 one correctly prefetched cold expert per layer would save ~55 us per layer
 (~4 ms per step). Next: hit rate of a cold-expert predictor (previous step's
 set, early router) on the agentic routing capture.
+
+## Correction: the traced run was out of distribution (hot_vs_random.py)
+
+The per-CTA trace above decoded raw vLLM-source completions (prof100k.sh).
+There, 3.6 of ~11 distinct experts per GPU per layer per step were cold
+(32%), the same as a random hot set of the served size (3,180 per GPU, 66%:
+expected 32.7%). On held-out agentic steps the served profile gives 1.61
+cold per GPU per layer (15.5%) vs 3.39 random, on Claude Code traffic 1.67
+(16.8%) vs 3.26: the profile halves cold experts on real traffic. At ~1.6
+cold the cold stream (~90 us) and hot stream (~80 us) are about balanced,
+so the C2C-bound picture and the ~4 ms/step prefetch estimate above do not
+carry over. Needs a trace on agentic traffic.
+
+## Routing capture on the production config (vllm d08cd57e17)
+
+Routed-expert return existed only in the V1 runner, and the scheduler
+refused DCP (prompt routing is looked up by KV slot). Ported to the V2
+runner (same design as upstream #50721) and made DCP-safe (prompt rows from
+the step's own rows). claude-glm53-df2-dcp4-cap.sh = production launcher +
+capture. Tested on the production config: traces [rows, 78, 8] in whole
+8-row verify steps, 139-159 tok/s. A first test hung after compile: a
+server killed mid JIT build had left torch_extensions/vllm_tiered_prefill/
+lock (py-spy: all workers in file_baton.wait).

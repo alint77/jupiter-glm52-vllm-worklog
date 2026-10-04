@@ -98,5 +98,6 @@ def report(path):
         print(f"     SM-time idle inside the kernel window: median {100 * st.median(agg['idle_frac']):.0f}%")
 
 
-for p in sorted(Path(sys.argv[1]).glob("rank*-stop.pt")):
+if __name__ == "__main__":
+  for p in sorted(Path(sys.argv[1]).glob("rank*-stop.pt")):
     report(p)
