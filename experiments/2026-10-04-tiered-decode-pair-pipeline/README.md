@@ -211,3 +211,56 @@ Anything touching the drafter/target math.
   (known); FlashInfer ninja-deps race under concurrent servers (known).
 * All numeric claims above are model + one trace; don't quote them as results
   until steps 0/3 run.
+
+## Review (2026-10-04, second session)
+
+The design work (launch chain, flags, last-reader reset, ring HOL, residency
+assert) is sound. The speedup model is not, and two inputs are off.
+
+**1. Overlapping w13 and w2 cannot beat the barrier chain beyond fixed
+overhead.** Both tiers have the same 2:1 w13:w2 byte ratio (14.15 / 7.08 MB per
+expert, hot from HBM or cold over C2C), so whichever tier binds w13 also binds
+w2, by the same factor. With per-expert times hot `5.9 + 2.95 us` (~2.4 TB/s)
+and cold `36.3 + 18.2 us` (~390 GB/s):
+
+- today: `max(5.9h, 36.3c) + max(2.95h, 18.2c)`
+- ideal pipeline: `max(8.85h, 54.5c)`
+
+These are identical (both `1.5 * max(5.9h, 36.3c)`). Hot w2 running inside
+w13's cold drain shortens nothing, because w2's binder is again the cold tier.
+The premise that "the link is idle during w13's hot phase (~15 MB headroom)"
+contradicts the CTA trace: cold CTAs stream from w13's first microsecond at
+~387 GB/s and again throughout w2, so the link is busy for both windows. The
+only idle link time inside the MoE window is the w13 -> w2 handoff (act tail
+~5.6 us + w2's cold pipeline refill).
+
+So the bound is **fixed per-layer overhead**: barrier + act tail, each
+kernel's fill/drain latency, and the static hot/cold CTA split. Check against
+the trace: at c ~ 3.6 the chain is ~142 + ~70 = 212 us vs a link-only 3.6 x 54.5
+= 196 us, ~16 us of slack per layer. At the live mix (c ~ 2) expect ~5-10 us per
+layer = **~0.4-0.75 ms/step**, not 0.9-3.4 ms. The "save/layer 15-65 us at c=2"
+row follows from the idle-link premise.
+
+**2. Corrections.**
+- Live capture job 2173771 drew **2.00** cold per GPU per layer (19.3%), not
+  1.61-1.67 (those are the agentic and older Claude Code held-out sets).
+- `trace-pdcp2` was profiled (29.57 ms/step vs 24.5 ms unprofiled in the live
+  `steps.csv`), and its decode ran at ~34K context (14K cached + 20K new), not
+  ~100K. Absolute MoE-window numbers are inflated.
+- Better data now exists: the live capture has exact step times (`steps.csv`,
+  32K+ steps) and real routing; step 0 should model against it.
+
+**3. What survives.** The measured (9,2) cell (w13 alone 127.5 us vs ~73 us
+link-bound, ~53 us hot-bound) shows real schedule slack: static role ranges,
+24 cold CTAs, fill latency. Per-expert release attacks part of that; a better
+role split or work-stealing may attack it more directly.
+
+**4. Proposed step 0 instead of the replay.** An analytic bound over the live
+capture's per-rank, per-layer (h, c) distribution, using measured rates and the
+CTA trace's per-kernel fill/tail latencies, reporting per step: (a) overlap
+saving (expected: only the handoff gaps); (b) schedule slack vs each kernel's
+roof; (c) the cross-rank max, since the post-MoE all-reduce waits for the
+slowest GPU. If (a) is under the 0.8 ms gate, the targets are (b) and moving
+cold reads into the link's idle time outside the MoE window (attention, dense
+GEMMs, AR: ~half the step), i.e. predicted prefetch, which this plan lists as
+out of scope but is the only place the link is actually idle.
