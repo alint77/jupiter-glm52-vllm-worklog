@@ -1,5 +1,16 @@
 # GLM-5.2 on JUPITER: agent handoff
 
+**Latest (2026-10-04): decode MoE pair pipelining — plan.** The production
+step under the current serve.sh (trace-pdcp2, Oct 3) is 29.57 ms with the MoE
+window at 15.16 ms = 51%: w13 (112.6 us/layer) + w2 (59.3) joined by two
+grid-wide PDL barriers, zero launch overhead left. Next kernel: per-expert
+release flags between w13/act/w2 so hot w2 fills the SMs idling in w13's cold
+C2C drain and cold w2 weights ride the link-idle hot phase. Pure scheduling —
+no math, no byte changes. Modeled saving 1.9-3.4 ms/step on the traced (OOD)
+mix, 0.9-1.9 ms at the capture's agentic cold mix; gate 0 is an offline
+replay over the existing TD_CTA_TRACE dumps. Design, gates, risks:
+`experiments/2026-10-04-tiered-decode-pair-pipeline/README.md`.
+
 **Latest (2026-10-03): GLM-5.3 prefill.** In-graph cold prefetch plus a new
 wgmma prefill MoE kernel (vllm 23a50e73b2, on by default in serve.sh):
 median TTFT 512/1024/4096 tokens 176/240/- (no prefetch) -> 134/202/990
