@@ -65,3 +65,14 @@ capture. Tested on the production config: traces [rows, 78, 8] in whole
 8-row verify steps, 139-159 tok/s. A first test hung after compile: a
 server killed mid JIT build had left torch_extensions/vllm_tiered_prefill/
 lock (py-spy: all workers in file_baton.wait).
+
+## First live capture on the production config (job 2173771)
+
+59 requests / 28,698 verify steps from a Claude Code session, kept at
+fscratch/routes-datasets/glm53-cc-20261004-job2173771 (README there).
+hot_vs_random.py, served hot set (3,180 per GPU) vs random of the same size,
+per GPU per layer per step: this session 2.00 cold of 10.34 active (19.3%)
+vs random 3.40 (32.8%); agentic held-out 1.61 (15.5%), older Claude Code
+1.67 (16.8%). The profile cuts cold reads 41% on today's traffic (52% on
+its own data). Next sessions also log exact step times (steps.csv) and
+request timing (vllm 37e14dfd45).

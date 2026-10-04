@@ -42,8 +42,11 @@ def stats(act, h):
 
 
 print(f"hot fraction resident: {hot.mean():.3f} ({hot.sum() / EP:.0f} per GPU)")
-for name, d in (("agentic capture (profile's workload)", "/e/fscratch/profound/naeimitabiei1/glm53-route-cap/merged"),
-                ("Claude Code capture", "/e/fscratch/profound/naeimitabiei1/caches/routes/snap-1535650-a")):
+DATASETS = [("agentic capture (profile's workload)", "/e/fscratch/profound/naeimitabiei1/glm53-route-cap/merged"),
+            ("Claude Code capture", "/e/fscratch/profound/naeimitabiei1/caches/routes/snap-1535650-a")]
+# extra datasets: name=dir arguments (every file in their manifest.json is held out)
+DATASETS += [tuple(a.split("=", 1)) for a in sys.argv[1:]]
+for name, d in DATASETS:
     act = active_mask(load_steps(Path(d), "heldout", layers), owners.shape[1])
     s = stats(act, hot)
     rs = [stats(act, random_hot()) for _ in range(5)]
