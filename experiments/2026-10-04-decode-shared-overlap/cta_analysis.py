@@ -27,7 +27,7 @@ def launches(recs):
     rows = []
     for w0, t0, t1, t2 in recs.tolist():
         ph = w0 & 0xFF
-        if ph >= 100:
+        if ph >= 20:
             continue
         rows.append({"ph": ph % 10, "empty": ph >= 10, "blk": (w0 >> 8) & 0xFF,
                      "sm": (w0 >> 16) & 0xFFFF, "nh": (w0 >> 32) & 0xFFFF,

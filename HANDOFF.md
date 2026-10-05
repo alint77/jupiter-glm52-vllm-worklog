@@ -1,5 +1,16 @@
 # GLM-5.2 on JUPITER: agent handoff
 
+**Latest (2026-10-05): decode MoE vs the C2C roofline.** The link tops out at
+421 GB/s (copy engine and TMA from 8 CTAs). Cold weights stream at that rate;
+a call loses a fixed 10-16 us (cold-only) to ~21 us (mixed, cold-bound) to
+link-idle stretches, now timed per kernel by the extended TD_CTA_TRACE probe
+(vllm bdf4eebec9): route_prep 3.7-4.1, w13 drain 1.7, w13->w2 handoff 2.0-2.2,
+stream ramps, w2 drain + finalize 3.5-4.3. A per-expert w13->w2 cold stream
+would reclaim ~5-8 us per cold-bound call (~0.5-0.7 ms/step); not started (the
+bar was 10 us). The pair-pipeline plan's (9,2) "w13 alone 127.5 us" does not
+reproduce (whole call 117.8). Details: `experiments/2026-10-04-c2c-roofline/`,
+`experiments/2026-10-05-decode-handoff/`.
+
 **Latest (2026-10-04): decode MoE pair pipelining — plan.** The production
 step under the current serve.sh (trace-pdcp2, Oct 3) is 29.57 ms with the MoE
 window at 15.16 ms = 51%: w13 (112.6 us/layer) + w2 (59.3) joined by two
