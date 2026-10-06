@@ -32,16 +32,25 @@ overhead (memory `glm-serving-scope`, 2026-10-06).
 |---|--:|--:|
 | main MLA KV, 21 anchor layers (HBM) | 1.28 GiB | 1.28 GiB |
 | main MLA KV, 57 skip layers | 3.49 GiB HBM | 3.49 GiB Grace |
-| skip-layer HBM buffers, 57 x R rows x 656 B | 0 | 0.14 (R = 4096) - 0.57 GiB (R = 16384) |
-| **freed HBM** | | **~2.9-3.3 GiB = ~145-165 hot experts** |
+| skip-layer HBM buffers: one shared set of 3 x R rows x 656 B (below) | 0 | 32 MB (R = 16384, worst case) |
+| **freed HBM** | | **~3.4 GiB = ~170 hot experts** |
 
-Expected gain, rough: cold experts per GPU per layer ~2.00 -> ~1.90, ~0.3-0.4
-ms/step (1.2-1.6%). To be replaced by gate 0b's replay before any build.
+Expected gain, rough: cold experts per GPU per layer ~2.00 -> ~1.88, ~0.4
+ms/step (~1.6%). To be replaced by gate 0b's replay before any build.
 
 Copy traffic (v1, re-gather every step): 57 x U x 656 B per step, U = this
 rank's union of selected rows over the 8 verify queries. U = 1000 -> 37 MB ->
-~0.1 ms of link per step, issued on a side stream; v2 copies only rows new
-since the last step.
+~0.1 ms of link per step, issued on a side stream. v2 would copy only rows
+new since the last step, but that needs a persistent buffer per layer (57,
+~0.6 GiB at R = 16384) instead of one shared set; take it only if gate 0a's
+churn and gate 4's trace show the v1 copies costing step time.
+
+**One shared buffer set, single-buffered.** Main-stream order is
+skip(g-1) x 3 -> anchor g -> skip(g) x 3. Group g's gather is forked from the
+main stream after anchor g's index conversion, so group g-1's skip layers have
+finished reading the buffers by then: one set of 3 buffers (one per position
+in a group) serves all 19 groups with no double buffering. The skip layers wait
+on the gather's event (e_g).
 
 ## Design
 
@@ -70,10 +79,8 @@ position: 8). FlashMLA's `extra_k_cache` / `extra_indices_in_kvcache`
 whether the sm90 fp8 sparse decode supports it in gate 1.
 
 **Buffer size R.** Worst case U_g = 8 x 2048 = 16384 (no overlap between the 8
-queries, all owned by this rank); with that R no fallback is needed. If gate 0
-shows U_g p99.99 well below 4096, use R = 4096 with a device-side overflow flag
-that makes the group read its Grace store directly for that step (correct but
-slow, counted).
+queries, all owned by this rank). With one shared set that is only 32 MB, so R
+is the worst case and there is no overflow path.
 
 **Other paths, correct and not optimized:**
 - prefill: KV writes go to the Grace store over UVA (4K-token chunk: ~37 MB
@@ -140,7 +147,7 @@ path: no main-stream waits on e_g), TTFT reported.
 - A copy issued inside a cold-bound MoE window takes link time from cold
   experts byte for byte: v1 ~0.1 ms/step at worst, v2 ~0. Gate 4's trace
   shows where they land.
-- 57 event waits in the decode graph: cheap if the copies are done, each one a
+- 57 event waits in the decode graph (one per skip layer on its group's e_g): cheap if the copies are done, each one a
   stall if not. The lead time (>= ~1 layer) vs copy time (~2 us per group at
   U = 1000) leaves wide margin.
 - The FlashMLA metadata (`cache_seqlens`, tile scheduler, dummy block table)
