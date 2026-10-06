@@ -18,6 +18,19 @@ arm() {  # <name> <extra env...>
     "$@" "${E}/onnode.sh" "${B}/bench_node.sh glm ${name} --limit-requests ${n}" \
     >"${OUT}/run-${name}.log" 2>&1 || echo "arm ${name} failed: $?"
 }
-arm skip SERVE_EXTRA="--mla-cache-tier skip_host_uva" VLLM_SKIP_KV_STATS=1
-arm base
+for a in ${ARMS:-skip base}; do
+  case ${a} in
+    skip) arm skip SERVE_EXTRA="--mla-cache-tier skip_host_uva" ;;
+    stats) arm stats SERVE_EXTRA="--mla-cache-tier skip_host_uva" VLLM_SKIP_KV_STATS=1 ;;
+    # the skip tier at about prod's hot count: the copy's cost without the gain
+    skipsame) arm skipsame SERVE_EXTRA="--mla-cache-tier skip_host_uva" RESERVE_GB=10.5 ;;
+    base) arm base ;;
+    # equal residency (3100 hot per GPU, profile count binding): exactness and
+    # the copy's cost, with no hot-set difference between the arms
+    eqbase) arm eqbase PROFILE=glm53-w4a16-agentic-3239-r2000-cap3100.json \
+      VLLM_TIERED_MOE_PROFILE_CAP=1 ;;
+    eqskip) arm eqskip PROFILE=glm53-w4a16-agentic-3239-r2000-cap3100.json \
+      VLLM_TIERED_MOE_PROFILE_CAP=1 SERVE_EXTRA="--mla-cache-tier skip_host_uva" ;;
+  esac
+done
 echo "done $(date +%T): ${OUT}"

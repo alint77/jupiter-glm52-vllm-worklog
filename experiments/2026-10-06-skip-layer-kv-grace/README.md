@@ -264,3 +264,36 @@ bytes. The suite's other 5 tests still pass.
 **Next, on the node** (`run_ab.sh`, hold 2196637 queued): skip arm then prod
 arm on one node, 16 agentic requests each, greedy check, one profiler window,
 the staged-row histogram (gate 0a) via `VLLM_SKIP_KV_STATS`.
+
+## First node runs (2026-10-06 evening, holds 2196637 / 2197782 / 2198220 / 2198399)
+
+Driver `run_ab.sh` (agentic task set via `../2026-09-28-agentic-decode-bench/
+bench_node.sh`, 16 requests per arm, greedy check, one profiler window);
+trace analysis `skipkv_trace.py` (steps segmented by their 78 FlashMLA calls).
+
+- **Planner**: skip_host_uva serves **3,358-3,360 hot experts per GPU vs
+  3,180** (+178), num_blocks unchanged (400,255 tokens).
+- **First start failed** at full decode-graph capture ("capturing stream has
+  unjoined work"): with VLLM_SKIP_KV_STATS the histogram update ran on the side
+  stream after the ready event (vllm a7cfa35412; graph replay test added).
+- **Gate 0a** (staged rows per GPU per group, 4,940 group-steps, ctx 3-9K):
+  mean ~615, p90 <= 1,024, max <= 1,280 of the 16,384 provisioned: ~23 MB,
+  ~60 us of link per step.
+- **Determinism**: prod vs prod (two nodes) greedy identical; prod vs skip
+  differs, but so does the hot set. Equal-residency control: profile capped to
+  3,100 hot per GPU (`agent_space/profiles/glm53-w4a16-agentic-3239-r2000-
+  cap3100.json` + VLLM_TIERED_MOE_PROFILE_CAP=1), arms eqbase / eqskip.
+- **Staging cost, three versions** (same node jpbo-068-47, rank-0 trace,
+  FlashMLA layer 0 -> 77 span per step):
+
+| version | staging per group | effect on the main stream | span vs prod |
+|---|---|---|---|
+| v1 sort-based plan, forked before the anchor's FlashMLA | ~75 us of sort + elementwise kernels | anchor FlashMLA 18 -> 28 us, staging layers 245 -> 281 us | (different node) |
+| v2 Triton claim / remap / gather (16 CTAs), forked after the anchor's FlashMLA | 38.8 us span, never late (slack >= 97 us) | claim overlaps the o_proj GEMM (4 -> 20 us): staging layers +15 us, skip layers +2-6 us | +0.29 ms at equal hot, -0.03 ms with +178 hot |
+| v3 one-CTA claim / remap, 4-CTA gather, reserved map once per step (vllm c53f7c44c6) | | | running |
+
+Step time from the bench rows (v2, same node, small samples): prod 22.37
+ms/step (606 steps), skip 22.99 (359), skipsame 22.83 (1,221). On this
+short-context agentic traffic the +178 hot experts buy only ~0.3 ms (the
+replay's 0.97-1.22 ms was on live Claude Code traffic, with more cold
+traffic), so the copy has to be close to free to win here.
