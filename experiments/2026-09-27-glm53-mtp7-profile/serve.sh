@@ -43,7 +43,10 @@ SPEC_K="${SPEC_K:-7}"
 verify=$((SPEC_K + 1))
 if [[ "${SPEC}" == dflash2 ]]; then
   drafter=/e/fscratch/profound/${USER}/models/GLM-5.3-DFlash2
-  spec_config="{\"method\":\"dflash\",\"model\":\"${drafter}\",\"num_speculative_tokens\":${SPEC_K},\"kv_cache_dtype\":\"auto\",\"attention_backend\":\"FLASH_ATTN\",\"draft_sample_method\":\"greedy\"}"
+  # DRAFT_KV_DTYPE=fp8 / DRAFT_QUANT=fp8: drafter KV cache / weights in fp8
+  # (experiment, 2026-10-06-skip-layer-kv-grace); defaults keep bf16.
+  dq=""; [[ -n "${DRAFT_QUANT:-}" ]] && dq=",\"quantization\":\"${DRAFT_QUANT}\""
+  spec_config="{\"method\":\"dflash\",\"model\":\"${drafter}\",\"num_speculative_tokens\":${SPEC_K},\"kv_cache_dtype\":\"${DRAFT_KV_DTYPE:-auto}\",\"attention_backend\":\"FLASH_ATTN\",\"draft_sample_method\":\"greedy\"${dq}}"
   : "${CAPTURE_SIZES:=${verify},16,32,64,128,256,384,512,640,768,896,1024}" "${COMPILE_SIZES:=}"
 elif [[ "${SPEC}" == dspark-* ]]; then
   # SPEC=dspark-redhat | dspark-alaya: GLM-5.3 DSpark drafters (block size 8,
