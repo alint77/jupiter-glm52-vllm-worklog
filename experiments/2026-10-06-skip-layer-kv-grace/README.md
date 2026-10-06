@@ -125,8 +125,8 @@ is the worst case and there is no overflow path.
 
 **1. Kernels, unit tests (no server).** The plan and gather kernels; test:
 FlashMLA sparse decode on (buffer, remapped) equals (full cache, original
-indices) bit for bit, including -1 tails, DCP compaction, reserved rows, the
-overflow fallback. Gather bench from a NUMA-bound Grace store: target >= 350
+indices) bit for bit, including -1 tails, DCP compaction, reserved rows and
+the worst-case U_g = R. Gather bench from a NUMA-bound Grace store: target >= 350
 GB/s at 656 B rows (prior Triton gather 361-384).
 
 **2. Allocation + planner.** The new tier on the V2 runner; the planner log
