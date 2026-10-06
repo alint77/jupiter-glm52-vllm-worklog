@@ -1,6 +1,6 @@
 # Skip-layer MLA KV on Grace, prefetched from the anchor's top-k (plan v2, 2026-10-06)
 
-Status: **plan, nothing built.** v2 folds in the Codex review of v1
+Status: **implemented (vllm ad589f557c, a6043fad30), awaiting a node** (Booster maintenance, 2026-10-06). v2 folds in the Codex review of v1
 (`codex-review-v1.md`, gpt-6-astra xhigh); the last section maps each finding
 to its change here.
 
@@ -228,3 +228,39 @@ lengthened by overlapping gathers. Also a skip_host_uva run with the
 | 7 | bit-exactness overstated; extra_k_cache additive | kernel-level claim only; determinism baseline first; extra_k_cache dropped |
 | 8 | copy cost / lead time optimistic | worst case 1.5-1.7 ms stated; lead = rest of the anchor layer; go/no-go on U; original-hot-set run |
 | 9 | allocation lifetime, capacity accounting | keep GraceAllocation owners; num_blocks unchanged |
+
+## Progress (2026-10-06)
+
+**Gate 0b passed** (`gate0b_replay.py`, 28,698 live verify steps, 75 MoE layers,
+~51 us per cold expert):
+
+| hot set per GPU | cold / GPU / layer | slowest GPU | saving vs served |
+|---|--:|--:|--:|
+| served, 3,180 | 1.996 | 3.425 | - |
+| +174, the planner's promotion (expert-id order) | 1.743 | 3.073 | 0.97 ms/step mean, 1.35 slowest |
+| +174, frequency-ranked (a rebuilt profile) | 1.676 | 2.964 | 1.22 mean, 1.76 slowest |
+
+Far above the 0.25 ms bar and above the plan's 0.46 ms estimate. The planner
+fills extra slots in expert-id order (`runtime_hot` mirrors it), so a profile
+rebuilt at the larger budget is worth another ~0.25-0.4 ms.
+
+**Implementation** (vllm `ad589f557c`, local): `mla_cache_tier=skip_host_uva`;
+`v1/attention/backends/mla/skip_kv_stage.py` (plan = sort-based dedupe with
+fixed shapes, graph-capturable; Triton row gather bounded by the device-side
+count; reserved-row write); hooks in `flashmla_sparse.py` (stage after the
+anchor's conversion, swap in the buffer for skip layers, impl-level
+`do_kv_cache_update`); planner split (anchors' main cache HBM, skip layers'
+host, 31 MiB staging HBM); V2 host-UVA allocation. `a6043fad30` leaves the
+tier out of the compile hash (no recompile when switching).
+
+**Gate 1 (login-node GPU, correctness only):** `tests/v1/attention/
+test_flashmla_sparse_dcp.py::test_skip_layer_staging_is_bit_identical`
+[1, 8 queries]: FlashMLA output and LSE on (staged buffer, remapped rows)
+equal those on (full cache, original indices) bit for bit, with repeats, -1
+tails, and this step's tokens selected by later queries. A mutation (not
+excluding this step's slots) makes both cases fail, so the test sees stale
+bytes. The suite's other 5 tests still pass.
+
+**Next, on the node** (`run_ab.sh`, hold 2196637 queued): skip arm then prod
+arm on one node, 16 agentic requests each, greedy check, one profiler window,
+the staged-row histogram (gate 0a) via `VLLM_SKIP_KV_STATS`.
