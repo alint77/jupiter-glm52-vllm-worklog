@@ -1,156 +1,230 @@
-# Skip-layer MLA KV on Grace, prefetched from the anchor's top-k (plan, 2026-10-06)
+# Skip-layer MLA KV on Grace, prefetched from the anchor's top-k (plan v2, 2026-10-06)
 
-Status: **plan, nothing built.** Goal: move the main MLA KV of GLM-5.3's 57
-index-share ("skip") layers to Grace and copy each step's selected rows into a
-small HBM buffer before those layers' attention runs, so attention still reads
-HBM and the step pays nothing. The freed HBM (~3 GiB per GPU) goes to hot
-experts. Anchor layers (own indexer) keep their KV in HBM.
+Status: **plan, nothing built.** v2 folds in the Codex review of v1
+(`codex-review-v1.md`, gpt-6-astra xhigh); the last section maps each finding
+to its change here.
 
-The user lifted the "KV stays on GPUs" scope rule for offload that adds no step
-overhead (memory `glm-serving-scope`, 2026-10-06).
+Goal: move the main MLA KV of GLM-5.3's 57 index-share ("skip") layers to
+Grace and copy each step's selected rows into HBM before those layers'
+attention runs, so attention still reads HBM and the step pays (nearly)
+nothing. The freed HBM (~3.4 GiB per GPU) goes to hot experts. Anchor layers
+(own indexer) keep their KV in HBM. The "KV stays on GPUs" scope rule does not
+apply to offload with no step overhead (memory `glm-serving-scope`).
 
 ## Why this can be free when KV-on-Grace was not
 
 - 2026-08-05-kv-grace-attn / 2026-08-06-mla-grace-kernel: FlashMLA sparse
-  reading KV **directly** from Grace gets 157 GB/s (occupancy-bound, not
-  link-bound): +8.5 ms/step at c4. So attention must keep reading HBM.
+  reading KV **directly** from Grace gets 157 GB/s (occupancy-bound): +8.5
+  ms/step at c4. Attention must keep reading HBM.
 - The same work measured plain gathers of 656 B rows from Grace at 361-384
-  GB/s and TMA at 420 GB/s: copying the rows is cheap. The copy just has to
-  happen early enough.
+  GB/s, TMA at 420 GB/s: moving the rows is cheap if it happens early.
 - GLM-5.3 config `index_topk_freq=4, index_skip_topk_offset=3`
   (deepseek_v2.py:1098-1112): anchors are layers {0, 1, 2, 6, 10, ..., 74}
-  (21); each anchor 4k+2 is followed by skip layers 4k+3, 4k+4, 4k+5 (19 groups,
-  57 layers) that reuse its top-k. flashmla_sparse already caches the anchor's
-  DCP-converted indices and reuses them in the skip layers
-  (`_dcp_converted_indices`, `_reuses_topk`, flashmla_sparse.py:917-967). So a
-  group's row set is known once the anchor's indexer and conversion have run,
-  a full layer (~300 us) or more before the first skip layer's attention.
+  (21); anchor 4k+2 is followed by skip layers 4k+3..4k+5 (19 groups, 57
+  layers) that reuse its top-k (confirmed by the review). flashmla_sparse
+  converts an anchor's indices to this rank's physical slots and the skip
+  layers reuse that result (`_dcp_converted_indices`, `_reuses_topk`,
+  flashmla_sparse.py:917-967). Under full-graph capture this is a capture-time
+  reuse: replay reruns the recorded conversion and consumers, never the
+  Python cache, so it stays correct per replay (review point 4).
 
-## Budget (per GPU, 400K, DCP4, from the 2183109 planner log)
+## Budget (per GPU, 400K, DCP4, planner log of job 2183109)
 
 | | today | plan |
 |---|--:|--:|
 | main MLA KV, 21 anchor layers (HBM) | 1.28 GiB | 1.28 GiB |
 | main MLA KV, 57 skip layers | 3.49 GiB HBM | 3.49 GiB Grace |
-| skip-layer HBM buffers: one shared set of 3 x R rows x 656 B (below) | 0 | 32 MB (R = 16384, worst case) |
-| **freed HBM** | | **~3.4 GiB = ~170 hot experts** |
+| HBM staging: 3 buffers x R rows x 656 B, R = 16384 + 64 | 0 | 30.9 MiB |
+| **freed HBM** | | **~3.45 GiB = ~174 hot experts** |
 
-Expected gain, rough: cold experts per GPU per layer ~2.00 -> ~1.88, ~0.4
-ms/step (~1.6%). To be replaced by gate 0b's replay before any build.
+Block capacity must not change: the planner's available-memory figure is
+cross-tier capacity accounting that derives the block count
+(tiered_moe_kv.py:141-235, kv_cache_utils.py:1395), so the skip bytes move
+to the host side of that account with num_blocks unchanged; only the HBM side
+shrinks (review point 9).
 
-Copy traffic (v1, re-gather every step): 57 x U x 656 B per step, U = this
-rank's union of selected rows over the 8 verify queries. U = 1000 -> 37 MB ->
-~0.1 ms of link per step, issued on a side stream. v2 would copy only rows
-new since the last step, but that needs a persistent buffer per layer (57,
-~0.6 GiB at R = 16384) instead of one shared set; take it only if gate 0a's
-churn and gate 4's trace show the v1 copies costing step time.
+Expected gain, rough: cold experts per GPU per layer ~2.00 -> ~1.88 over the
+75 MoE layers at ~51 us each: ~0.46 ms/step (~1.9%). Gate 0b replaces this
+with a replay, including the slowest rank per layer (the all-reduce waits for
+it).
 
-**One shared buffer set, single-buffered.** Main-stream order is
-skip(g-1) x 3 -> anchor g -> skip(g) x 3. Group g's gather is forked from the
-main stream after anchor g's index conversion, so group g-1's skip layers have
-finished reading the buffers by then: one set of 3 buffers (one per position
-in a group) serves all 19 groups with no double buffering. The skip layers wait
-on the gather's event (e_g).
+Copy traffic: 57 x U x 656 B per step, U = this rank's union of selected rows
+over the verify queries.
+
+| U (per rank, per group) | per step | link time at 361-420 GB/s |
+|--:|--:|--:|
+| 1,000 | 37 MB | 0.09-0.10 ms |
+| 16,384 (worst case) | 613 MB | 1.46-1.70 ms |
+
+So "free" holds only for the U distribution real traffic produces; gate 0a
+measures it and sets the go/no-go (review point 8).
 
 ## Design
 
-Per skip group g (anchor a, skip layers a+1..a+3), per decode step:
+### Buffers
 
-1. **Anchor, after `_dcp_converted_indices`** (indices: [8, 2048] global slots,
-   this rank's owned slots compacted to the front, -1 tail), on a side stream:
-   - **plan kernel**: unique rows U_g over the 8 queries -> buffer rows
-     0..U_g-1, plus remapped indices [8, 2048] (buffer row per entry, -1 kept).
-     Deterministic order: a bitmap over this rank's slot space (~100K slots,
-     12.5 KB) and a prefix sum, not hashing. Slots of tokens written *this step*
-     map to reserved rows (below).
-   - **gather kernel**: for each of the 3 layers, copy rows U_g from that
-     layer's Grace store (UVA alias) into its HBM buffer; record event e_g.
-2. **Skip layer**: the KV write (`do_kv_cache_update`, fp8_ds_mla) goes to the
-   Grace store at the usual slots and also into the buffer's reserved rows for
-   this step's tokens (a second write with a reserved-row slot mapping; ~2 rows
-   per rank). Wait e_g, then run the unchanged FlashMLA sparse decode kernel on
-   (buffer, remapped indices). Same bytes and the same kernel give a
-   bit-identical result.
+One shared set of 3 HBM buffers, one per position in a group, each laid out
+like a KV cache of (R/64) blocks x 64 x 656 B:
+- rows [0, 16384): **gathered rows** (worst case: 8 queries x 2048 distinct
+  local rows);
+- rows [16384, 16448): **reserved rows**, a fixed region: verify position j
+  -> row 16384 + j (8 used, padded to one block).
 
-This step's own tokens: their skip-layer KV only exists once that layer runs,
-so it cannot be prefetched. They take the reserved rows (one per verify
-position: 8). FlashMLA's `extra_k_cache` / `extra_indices_in_kvcache`
-(flash_mla_interface.py:70-94) may express this without remapping; check
-whether the sm90 fp8 sparse decode supports it in gate 1.
+Gathered and reserved regions are disjoint, so the reserved-row write and the
+gather never touch the same rows, and R covers the worst case with no
+overflow path (review point 1).
 
-**Buffer size R.** Worst case U_g = 8 x 2048 = 16384 (no overlap between the 8
-queries, all owned by this rank). With one shared set that is only 32 MB, so R
-is the worst case and there is no overflow path.
+Single buffering is enough: main-stream order is skip(g-1) x 3 -> anchor g ->
+skip(g) x 3, and group g's gather forks after anchor g's conversion, so group
+g-1's readers are done (confirmed by the review, including across steps).
 
-**Other paths, correct and not optimized:**
-- prefill: KV writes go to the Grace store over UVA (4K-token chunk: ~37 MB
-  for 57 layers). `dcp_sparse_prefill` upconverts the rank's whole local shard,
-  which now streams from Grace: 57 x L/4 x 656 B per chunk, ~2 ms at 100K and
-  ~10 ms at 400K on a ~540 ms chunk. Report TTFT; prefill is not a priority.
-- eager / non-graph decode: read the Grace store directly.
-- prefix caching and block ids: unchanged; the Grace store is the same tensor
-  shape, only allocated elsewhere.
+### Per step, per group g (decode, full CUDA graph)
 
-**Where it plugs in:**
+1. **Anchor g, right after `_dcp_converted_indices`** (inside its attention,
+   just before its FlashMLA call, flashmla_sparse.py:859): record an event and
+   fork a side stream:
+   - **plan kernel**. Inputs: the converted indices [T, 2048] (this rank's
+     physical slots, compacted prefix, -1 tail), and this step's KV-write slot
+     mapping for the verify tokens. Output: the union of selected slots that
+     are *not* this step's slots, assigned rows 0..U-1 in slot order (a
+     bitmap over the rank's whole physical slot space, num_blocks x 64, then
+     a prefix sum; deterministic). Plus remapped indices [T, 2048] built
+     **elementwise**: each entry keeps its position, multiplicity and -1;
+     historical slots -> their gathered row, this step's slot of verify
+     position j -> reserved row 16384 + j.
+   - **gather kernel**: copy the U rows from each of the 3 skip layers' Grace
+     stores (UVA aliases) into the 3 buffers' gathered region. Record e_g.
+2. **Skip layer** (position p in group g):
+   - KV write: `FlashMLASparseImpl.do_kv_cache_update` (override of
+     backend.py:1025) writes the usual Grace slots and also buffer p's
+     reserved rows with the static mapping j -> 16384 + j. Both call paths
+     reach the impl (direct call, mla_attention.py:611-620; custom op
+     `unified_mla_kv_cache_update`, mla_attention.py:1110-1116), so the hook
+     belongs in the impl, not at a call site (review point 3). The write
+     depends only on this layer's own inputs; the planner never writes
+     reserved rows (review point 2).
+   - Wait e_g, then the unchanged FlashMLA sparse decode on (buffer p,
+     remapped indices, same valid counts and LSE masking as today).
+
+This step's tokens are selectable: the indexer inserts their keys before
+top-k (sparse_attn_indexer.py:380, 538), so a later verify query can select an
+earlier one. Their skip-layer KV only exists once that layer runs, so it can
+never be prefetched: excluding this step's slots from the gather means stale
+bytes left in Grace by an earlier rejected verify are never read (review
+point 2).
+
+Lead time: from the anchor's conversion to the first skip layer's attention
+is the rest of the anchor layer (its FlashMLA, DCP combine, o_proj, all-reduce,
+MoE, ~200 us), not a full layer (review point 8). The copy at U = 1,000 is
+~5 us per group.
+
+### Other paths (correct, not optimized; prefill is not a priority)
+
+- **Eager prefill (dcp_sparse_prefill)**: upconverts the rank's whole local
+  shard, which now streams from Grace (flashmla_sparse.py:278). Its cost on
+  Grace is unmeasured; gate 4 reports TTFT.
+- **Captured prefill pieces (<= 1024 tokens)**: the `dcp_sparse_prefill`
+  branch is skipped while capturing (flashmla_sparse.py:849), so these
+  record the mixed fp8 path, which reads physical slots straight from the
+  cache, i.e. from Grace at FlashMLA's ~157 GB/s. Correct but possibly slow;
+  if gate 4 shows a TTFT regression, stage the chunk's union like decode
+  (review point 6). The decode staging must never key off
+  `_dcp_converted_indices(..., prefill=True)`, whose indices address the bf16
+  workspace, not Grace slots.
+- Eager decode: read the Grace store directly.
+
+### Allocation
+
 - `config/tiered_moe.py` `MLACacheTier`: new `"skip_host_uva"`.
-- `v1/core/kv_cache_utils.py:1405` / `tiered_moe_kv.get_tiered_kv_memory_tier`:
-  tier per KV tensor by layer (skip -> host_uva, anchor -> hbm); today it is per
-  spec kind. `TieredKVCachePlan`: split main bytes into HBM / host, add buffer
-  bytes to HBM, so the planner hands the rest to hot experts.
-- `v1/worker/gpu/attn_utils.py:_allocate_kv_cache` (V2 runner, used in prod):
-  port V1's host_uva branch (`gpu_model_runner.py:7224`: GraceAllocation,
-  NUMA audit), NUMA-bound to the GPU's Grace node.
-- `v1/attention/backends/mla/flashmla_sparse.py`: anchor issues plan+gather
-  after conversion; skip layers swap in (buffer, remapped indices). Buffers,
-  remap tensors and events are static so the decode graph captures them (the
-  side-stream pattern already exists for the indexer and the in-graph cold
-  prefetch).
-- `mla_attention.py:611-620` (`do_kv_cache_update`): the extra reserved-row write
-  for skip layers.
+- `kv_cache_utils.py:1405` / `tiered_moe_kv.get_tiered_kv_memory_tier`: tier
+  per KV tensor by layer (skip -> host_uva, anchor -> hbm); today it is per
+  spec kind.
+- `v1/worker/gpu/attn_utils.py:_allocate_kv_cache` (V2 runner, prod): port V1's
+  host_uva branch (gpu_model_runner.py:7224-7262) including its packed-layout
+  rejection and keeping the `GraceAllocation` owners alive for the cache's
+  lifetime (V2 returns raw tensors today, attn_utils.py:183), NUMA-bound to the
+  GPU's Grace node (review point 9).
+- `TieredKVCachePlan`: skip bytes on the host side, buffers on the HBM side,
+  num_blocks unchanged; the planner hands the HBM difference to hot experts.
+
+## Exactness: what is and is not claimed
+
+- **Kernel level (gate 1): bit-exact.** For the same converted indices,
+  FlashMLA on (buffer, remapped) equals FlashMLA on (full cache, original),
+  since every entry addresses the same 656 bytes in the same position.
+- **End to end: not automatically bit-exact.** The DCP conversion compacts
+  with an atomic allocator and leaves prefix order unspecified
+  (sparse_utils.py:304-310), so even baseline vs baseline may differ in
+  summation order. Gate 3 first measures baseline-vs-baseline determinism; if
+  the baseline itself is not bit-stable, the end-to-end check is acceptance
+  and GSM8K parity, not token identity (review point 7).
+- `extra_k_cache` is dropped: it adds tokens to every query instead of
+  substituting addresses, so it cannot express per-query selection (review
+  point 7).
 
 ## Gates
 
 **0. Measure before building (one capture run, the rest offline).**
-- 0a. Index capture: env-gated dump of the anchors' DCP-converted indices per
-  rank for a few hundred decode steps of agentic task-set traffic (in-graph
-  copy into a preallocated device ring, D2H between steps). Report per group:
-  U_g distribution (p50/p99/p99.99), step-to-step churn (rows not selected
-  last step), and how often this step's own tokens are selected. This sets R,
-  v1 vs v2, and the copy traffic.
-- 0b. Residency replay: replay the live routing capture
-  (routes-datasets/glm53-cc-20261004-job2173771) with the hot set grown by the
-  freed experts per GPU; cold experts per GPU per layer -> expected ms/step at
-  ~51 us per cold expert.
-- **Go** if 0b gives >= 0.25 ms/step and R fits within ~0.6 GiB.
+- 0a. Index capture: env-gated in-graph copy of each anchor's converted
+  indices plus the step's slot mapping into a device ring, D2H between steps,
+  over **thousands** of decode steps of agentic task-set traffic (p99.9 needs
+  them). Per group and rank: U distribution, how often this step's tokens are
+  selected, step-to-step churn.
+- 0b. Residency replay over the live routing capture
+  (routes-datasets/glm53-cc-20261004-job2173771) with ~174 more hot experts per
+  GPU: mean and **slowest-rank** cold experts per layer -> expected ms/step.
+- **Go** if 0b's gain at the slowest rank >= 0.25 ms/step and 0a's U at p99.9
+  keeps the per-group copy well inside the ~200 us lead (U <= ~8,000: ~40 us
+  for 3 layers) with a mean link cost <= 0.15 ms/step.
 
-**1. Kernels, unit tests (no server).** The plan and gather kernels; test:
-FlashMLA sparse decode on (buffer, remapped) equals (full cache, original
-indices) bit for bit, including -1 tails, DCP compaction, reserved rows and
-the worst-case U_g = R. Gather bench from a NUMA-bound Grace store: target >= 350
-GB/s at 656 B rows (prior Triton gather 361-384).
+**1. Kernels and unit tests (no server).** Plan + gather kernels. Bit-exact
+FlashMLA comparison over: -1 tails, DCP compaction, ranks with no selected
+rows (valid count 0, LSE masking), every acceptance length 1..8 and padded
+verifies, this step's slots selected by later queries, stale bytes in this
+step's Grace slots (must not be read), worst-case U = 16,384 + reserved rows,
+block-boundary crossings, arbitrary block ids (recycled / prefix-hit blocks).
+Gather bench from a NUMA-bound Grace store: target >= 350 GB/s at 656 B.
 
-**2. Allocation + planner.** The new tier on the V2 runner; the planner log
-shows the skip bytes in Grace and the extra hot experts; startup and the
-memory-peak check pass; prefix caching still works across turns.
+**2. Graph replay test.** Capture the decode graph once, replay it many times
+with changing metadata contents at the same addresses (block tables, slot
+mappings, lengths, indices); compare each replay to an HBM-resident reference.
+Covers the side-stream fork/join inside capture and the reuse chain
+conversion -> plan/gather -> skip attention (review points 4, 5).
 
-**3. Exactness.** Greedy decode token-identical to prod on fixed prompts:
-attention bytes and kernels are unchanged, and hot vs cold experts run the same
-math. GSM8K 400 sanity.
+**3. Allocation + exactness.** The new tier on V2; planner log shows skip bytes
+in Grace, num_blocks unchanged at 400K, the extra hot experts; startup and the
+memory-peak check pass; prefix caching reuses blocks across turns. Determinism
+baseline first, then the exactness check above. GSM8K 400.
 
 **4. A/B on the node.** Interleaved same-node runs of prod vs skip_host_uva on
-the agentic task set: step time from `VLLM_STEP_TRACE_FILE`, acceptance
-(must match), a profiler trace of each (copies must not land on the critical
-path: no main-stream waits on e_g), TTFT reported.
+the agentic task set: step time (`VLLM_STEP_TRACE_FILE`), acceptance, TTFT. A
+profiler trace of each, read for **exposed** delay: skip attention starting
+later than its predecessor's end because of e_g, and cold-expert C2C streams
+lengthened by overlapping gathers. Also a skip_host_uva run with the
+**original** hot set, to separate the copy overhead from the residency gain
+(the bigger hot set can otherwise mask it) (review point 8).
 
 ## Risks
 
-- A copy issued inside a cold-bound MoE window takes link time from cold
-  experts byte for byte: v1 ~0.1 ms/step at worst, v2 ~0. Gate 4's trace
-  shows where they land.
-- 57 event waits in the decode graph (one per skip layer on its group's e_g): cheap if the copies are done, each one a
-  stall if not. The lead time (>= ~1 layer) vs copy time (~2 us per group at
-  U = 1000) leaves wide margin.
+- U's real distribution (gate 0a): with little overlap across the 8 verify
+  queries, the copies stop being free.
+- Gathers overlapping a cold-bound MoE window take link time from cold experts
+  byte for byte; gate 4's trace and the original-hot-set run show it.
 - The FlashMLA metadata (`cache_seqlens`, tile scheduler, dummy block table)
-  must accept a k_cache with R/64 blocks; check in gate 1.
-- Real top-k overlap across the 8 verify queries is unknown (2026-08-05 had no
-  production index trace); gate 0a measures it.
+  must accept a k_cache of R/64 blocks; gate 1.
+- Captured small prefills reading Grace at ~157 GB/s: possible TTFT regression
+  at 512-1024 tokens; gate 4.
+
+## Review findings -> changes (codex-review-v1.md)
+
+| # | finding | v2 |
+|---|---|---|
+| 1 | R = 16384 leaves no room for reserved rows | R = 16384 + 64, disjoint regions |
+| 2 | reserved-row write ordering; stale rejected bytes | static j -> reserved row mapping, planner never writes it; this step's slots excluded from the gather |
+| 3 | KV-write hook only on the direct-call path | override in the impl's `do_kv_cache_update`, reached by both paths |
+| 4 | "once per anchor" under capture | stated as capture-time reuse; graph replay test (gate 2) |
+| 5 | lifecycle coverage (acceptance lengths, recycled blocks, empty ranks, LSE) | added to gates 1-2; bitmap spans the physical slot space |
+| 6 | captured prefill takes the mixed fp8 path | documented; never key staging off prefill conversion; TTFT gate |
+| 7 | bit-exactness overstated; extra_k_cache additive | kernel-level claim only; determinism baseline first; extra_k_cache dropped |
+| 8 | copy cost / lead time optimistic | worst case 1.5-1.7 ms stated; lead = rest of the anchor layer; go/no-go on U; original-hot-set run |
+| 9 | allocation lifetime, capacity accounting | keep GraceAllocation owners; num_blocks unchanged |
