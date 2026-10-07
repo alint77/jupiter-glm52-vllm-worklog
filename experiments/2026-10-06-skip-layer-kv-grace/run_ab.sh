@@ -14,7 +14,7 @@ arm() {  # <name> <extra env...>
   local name=$1; shift
   mkdir -p "${OUT}/td-${name}" "${OUT}/trace-${name}"
   env PREFIX_CACHING=1 GREEDY_CHECK=1 BENCH_OUT="${OUT}" \
-    TD_TRACE_DIR="${OUT}/td-${name}" TRACE_ROOT="${OUT}/trace-${name}" PROFILE_WINDOWS=1 \
+    TD_TRACE_DIR="${OUT}/td-${name}" TRACE_ROOT="${OUT}/trace-${name}" PROFILE_WINDOWS="${PROFILE_WINDOWS:-1}" \
     "$@" "${E}/onnode.sh" "${B}/bench_node.sh glm ${name} --limit-requests ${n}" \
     >"${OUT}/run-${name}.log" 2>&1 || echo "arm ${name} failed: $?"
 }
@@ -25,6 +25,9 @@ for a in ${ARMS:-skip base}; do
     # the skip tier at about prod's hot count: the copy's cost without the gain
     skipsame) arm skipsame SERVE_EXTRA="--mla-cache-tier skip_host_uva" RESERVE_GB=10.5 ;;
     base) arm base ;;
+    # skip-layer KV on Grace + fp8 drafter KV + fp8 drafter weights
+    combo) arm combo SERVE_EXTRA="--mla-cache-tier skip_host_uva" DRAFT_KV_DTYPE=fp8 \
+      DRAFT_QUANT=fp8_per_channel ;;
     # equal residency (3100 hot per GPU, profile count binding): exactness and
     # the copy's cost, with no hot-set difference between the arms
     eqbase) arm eqbase PROFILE=glm53-w4a16-agentic-3239-r2000-cap3100.json \

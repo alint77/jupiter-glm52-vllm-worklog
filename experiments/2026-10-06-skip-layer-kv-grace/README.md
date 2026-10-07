@@ -297,3 +297,56 @@ ms/step (606 steps), skip 22.99 (359), skipsame 22.83 (1,221). On this
 short-context agentic traffic the +178 hot experts buy only ~0.3 ms (the
 replay's 0.97-1.22 ms was on live Claude Code traffic, with more cold
 traffic), so the copy has to be close to free to win here.
+
+## v4, drafter fp8 and the combined config (2026-10-06 night / 10-07)
+
+**Skip-KV staging v4** (vllm 8ed7e0866f: mark with plain stores, compact with
+one counter add per CTA, remap, 8-CTA gather): 23-25 us per group, never late
+(slack >= 97 us), main-path kernels at prod speed. v3 (one-CTA claim) was
+worse: 201 us per group, slack 0.5 us. The real v2 cost was ~600 adds on one
+shared counter, not CTA count.
+
+**Exactness**: prod vs prod greedy differs across runs too (one run differs at
+the first token), so greedy identity is not a usable end-to-end check. Kernel
+level: bit-exact (tests); FlashMLA and the KV write on Grace vs HBM are
+bit-identical. Model level: GSM8K 200 prod 91.5% vs skip 92.5% (ab5, same node).
+
+**Drafter fp8** (DRAFT_KV_DTYPE=fp8, DRAFT_QUANT=fp8_per_channel in serve.sh):
+online PTPC quantization at load (per-output-channel weight scales, dynamic
+per-token activation scales, CUTLASS fp8 scaled-mm: W8A8) on o_proj, MLP and
+fc; qkv_proj stays bf16 (DFlash's context-KV precompute slices its raw rows),
+conv kernel projections and candidate selector are unquantized by DFlash.
+Needed vllm e3617a0248 (callable hf_overrides in get_quant_config),
+d5bbc36d93 (resolve online shorthands for the draft ModelConfig), d78ce98864
+(qkv_proj). fp8 drafter KV halves the drafter cache (2.29 -> 1.15 GiB per
+GPU), which the planner turns into +59 hot experts; fp8 weights add none (the
+GLM planner does not charge drafter weights).
+
+| arm (32 agentic requests) | accepted/drafted | tokens/step | vs prod, matched requests |
+|---|--:|--:|--:|
+| prod (dfbase) | 0.334 | 3.34 | |
+| fp8 drafter KV (dfkv) | 0.360 | 3.52 | +0.06 +- 0.28 |
+| fp8 drafter weights (dfw4) | 0.369 | 3.59 | +0.03 +- 0.26 |
+| both (dfboth4) | 0.350 | 3.45 | +0.11 +- 0.25 |
+
+No acceptance drop detectable at this sample size.
+
+**Combined config** (skip_host_uva + fp8 drafter KV + fp8 drafter weights,
+skipkv-combo2, same node as its prod arm, 32 requests each): 3,418-3,420 hot
+experts per GPU served vs 3,180 (+238); acceptance 0.373 vs 0.355 (+0.07 +-
+0.10 tokens/step, matched). Step time, joint fit over both arms' requests
+(>= 40 steps, step_ms ~ tokens/step + ctx + arm): **-0.13 +- 0.32 ms/step**,
+not significant (skip tier alone on ab5: +0.33 +- 0.37). Four long matched
+requests: -0.53 +- 0.12 ms/step, but the combo arm reached them at lower
+context. Traces at similar context (prod 5.3K, combo 6.0K): target forward
+21.09 -> 19.38 ms (MoE kernels 9.10 -> 6.86 ms), but the time between target
+forwards (drafter, sampling) 2.30 -> 3.77 ms under the profiler: the fp8
+drafter path launches more small kernels (per-token activation quant) and the
+profiler inflates launches, so the unprofiled bench numbers are the measure.
+
+So on this agentic traffic (the profile's own workload, low cold share) the
+combined config is speed-neutral within +-0.3 ms; the replay predicts its gain
+on live Claude Code traffic (more cold reads). Next: a fixed-prompt long-decode
+probe with per-step server timing (VLLM_STEP_TRACE_FILE) to cut the noise,
+and an unprofiled drafter-time comparison to see whether fp8 W8A8 drafting is
+actually faster than bf16 at 8 tokens.
