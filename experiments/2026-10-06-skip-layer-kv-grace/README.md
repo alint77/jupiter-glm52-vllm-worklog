@@ -366,3 +366,34 @@ provisioned for 400K although all 6 drafter layers are 2,048-token sliding
 window (~2.2 GiB bf16); the planner charges the MTP layer (1.54 GiB) that the
 target never loads under DFlash (the component sum without it matches the
 logged 78.41 GiB of weights).
+
+## Drafter KV on Grace, and the full stack as prod default (2026-10-07)
+
+**MTP charge is not free memory**: dropping the planner's charge for the MTP
+layer (1.54 GiB/rank, never loaded under DFlash) promoted ~80 experts and the
+startup check failed (1.54 GB free, 2.71 required): the charge was covering
+unitemized memory. Reverted. Real headroom = the startup observed-free margin.
+
+**Drafter KV on Grace** (vllm ba5dc7c7aa, VLLM_TIERED_MOE_DRAFT_KV_HOST=1):
+the drafter's KV tensors in pinned Grace memory, block-indexed as before
+(prefix caching unchanged); the drafter's 2,048-token sliding-window attention
+reads them over C2C. A ring with recompute on prefix hits is not possible
+(the drafter's KV comes from target hidden states, which a prefix hit skips),
+and the measured cost made an HBM window unnecessary: drafter FA3 attention
+10.8 -> 13.5 us per call, 65 -> 81 us per step, KV writes 22 -> 25 us per step
+(~+19 us/step, 0.08%) for 2.29 GiB of HBM (bf16 drafter KV): 3,299 hot vs
+3,180, startup 3.03-3.11 GiB free.
+
+**Prod default now** (serve.sh df84a1a): skip_host_uva + fp8 drafter KV +
+fp8 drafter weights + drafter KV on Grace. Run skipkv-newprod (hold 2208236,
+same node as skipkv-dkvhost's old-prod arm, 16 agentic requests each):
+
+| | hot experts / rank | startup free | ms/step | tok/step | accepted/drafted |
+|---|--:|--:|--:|--:|--:|
+| old prod | 3,180 | 3.0-3.1 GiB | 22.69 | 4.22 | 0.460 |
+| drafter KV on Grace only | 3,299 | 3.03-3.11 | 22.51 | 3.52 | 0.359 |
+| **new prod (full stack)** | **3,508-3,510** | 3.13-3.20 | 22.19 | 3.88 | 0.412 |
+
+Joint fit (step_ms ~ tokens/step + ctx + arm, 14 requests >= 40 steps): new vs
+old prod **-0.54 +- 0.10 ms/step** (~2.4%). Short runs (581 / 1,094 steps);
+a longer same-node A/B and live Claude Code traffic should firm it up.
