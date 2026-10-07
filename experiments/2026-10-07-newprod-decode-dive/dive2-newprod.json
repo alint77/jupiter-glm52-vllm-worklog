@@ -1,0 +1,50 @@
+{
+  "H": {
+    "mean_wait_ms": 1.164804137757291,
+    "per_rank_wait_ms": {
+      "0": 1.1060315027185108,
+      "1": 1.2267242035140162,
+      "2": 1.1570274823385736,
+      "3": 1.1694333624580633
+    },
+    "first_arrival_counts": {
+      "0": 38,
+      "1": 14,
+      "2": 21,
+      "3": 19
+    },
+    "ar0_wait": {
+      "mean": 0.028267802751582603,
+      "p90": 0.012240007519721985,
+      "max": 0.6286615133285522,
+      "over_0.5ms": 1
+    },
+    "burst_steps": [
+      0,
+      41,
+      42,
+      71
+    ]
+  },
+  "I": {
+    "in_graph_gap_ms": 0.0,
+    "buckets": {},
+    "gap_ms_by_6layer": {}
+  },
+  "J": {
+    "draft span": 1.2531555107106334,
+    "draft busy": 1.047413495571717,
+    "host-side span": 20.580943182110786,
+    "host-side busy": 0.39316951775032544,
+    "logits span": 0.1659439944702646,
+    "logits busy": 0.1640024923759958,
+    "all busy": 21.019834140720576
+  },
+  "K": {
+    "void flashinfer::trtllm_allreduce_fusion::allreduce_fusion_k": 2.2133878560169884,
+    "void sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_spa": 1.4385131694700406,
+    "void smxx::decode::flash_fwd_mla_combine_kernel<cutlass::bfl": 0.631919787629791,
+    "void vllm::concat_and_cache_ds_mla_kernel<__nv_bfloat16, uns": 0.24247718764388043,
+    "smxx::decode::get_mla_metadata_kernel(GetDecodeSchedMetaPara": 0.004538017770518427
+  }
+}

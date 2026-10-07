@@ -1,5 +1,22 @@
 # GLM-5.2 on JUPITER: agent handoff
 
+**Latest (2026-10-07): new-prod decode dive -- where the 21.8 ms step goes.**
+Kernel-level breakdown of the full-memory-stack prod window
+(`skipkv-newprod`, 92 steps x 4 ranks): target busy 19.44 whose schedule is
+packed (**zero union gaps >= 3 us**; only sub-us PDL bubbles), MoE chain 6.91,
+dense GEMM+glue 6.1, **fused AR+RMS 2.21 of which 1.16 is spin-wait**
+(continuous, diffuse over all 75 layers, rotating laggard: the order
+statistic, not a hot spot), real attention 2.32 (skip-layer staging never
+late, anchor==skip 18.4 us), DCP one-shots 1.35, draft span 1.25, idle ~0.8.
+The 09-28 step-entry burst does not reproduce (AR#0 28 us mean, 1/92 steps).
+Watch the bucket: analyze.py files the trtllm fused ARs under "attention"
+("flash**infer**"). Top actionable item: the planner promotes **271 experts/
+GPU (7.7% of the hot set) in expert-id order** above the profile's 3,239;
+replay on live CC routing puts a frequency-ranked rebuild at the same budget
+**+0.43 mean / +0.66 slowest-GPU ms/step** before the usual ~2x one-kernel
+overlap discount. Details and scripts:
+`experiments/2026-10-07-newprod-decode-dive/`.
+
 **Latest (2026-10-05): decode MoE vs the C2C roofline.** The link tops out at
 421 GB/s (copy engine and TMA from 8 CTAs). Cold weights stream at that rate;
 a call loses a fixed 10-16 us (cold-only) to ~21 us (mixed, cold-bound) to

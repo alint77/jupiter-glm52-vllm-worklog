@@ -1,0 +1,500 @@
+{
+  "A": {
+    "steps": 92,
+    "period_ms": {
+      "mean": 21.836583162779394,
+      "p50": 21.71813401579857,
+      "p90": 22.482888996601105,
+      "p99": 26.259818017482758,
+      "max": 26.259818017482758
+    },
+    "busy_ms_means": {
+      "target": 19.415248635022536,
+      "logits": 0.1640024923759958,
+      "draft": 1.047413495571717,
+      "host-side": 0.39316951775032544
+    },
+    "target_span_ms": 21.83536409035973
+  },
+  "B": {
+    "kernels_per_step": 2581.0,
+    "top": [
+      {
+        "name": "void tiered_decode::gemm_kernel<0, 1>(tiered_decode::Params)",
+        "count_per_step": 75.0,
+        "mean_us": 0.05932362955549489,
+        "shared_us_per_step": 4.449272216662116,
+        "solo_us_per_step": 4.089865966983464
+      },
+      {
+        "name": "tiered_decode::act_kernel(tiered_decode::Workspace*)",
+        "count_per_step": 75.0,
+        "mean_us": 0.05905687739019808,
+        "shared_us_per_step": 4.4292658042648565,
+        "solo_us_per_step": 0.1529009944718817
+      },
+      {
+        "name": "nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT",
+        "count_per_step": 336.0,
+        "mean_us": 0.011015072125579013,
+        "shared_us_per_step": 3.7010642341945483,
+        "solo_us_per_step": 1.9363544738810996
+      },
+      {
+        "name": "void tiered_decode::gemm_kernel<1, 1>(tiered_decode::Params)",
+        "count_per_step": 75.0,
+        "mean_us": 0.03621341027211452,
+        "shared_us_per_step": 2.716005770408589,
+        "solo_us_per_step": 2.281720416053482
+      },
+      {
+        "name": "tiered_decode::finalize_kernel(tiered_decode::Workspace*, __nv_bfloat16*)",
+        "count_per_step": 75.0,
+        "mean_us": 0.030731470463932424,
+        "shared_us_per_step": 2.3048602847949318,
+        "solo_us_per_step": 0.12833634666774585
+      },
+      {
+        "name": "void flashinfer::trtllm_allreduce_fusion::allreduce_fusion_kernel_oneshot_lamport<(flashinfer::trtllm_allreduce_fusion::",
+        "count_per_step": 151.0,
+        "mean_us": 0.01465819772196681,
+        "shared_us_per_step": 2.2133878560169884,
+        "solo_us_per_step": 2.1967609660780947
+      },
+      {
+        "name": "nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT",
+        "count_per_step": 174.0,
+        "mean_us": 0.0099338767030786,
+        "shared_us_per_step": 1.7284945463356765,
+        "solo_us_per_step": 1.4297224671944329
+      },
+      {
+        "name": "void sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_sparse_kernel<sm90::decode::sparse_fp8::KernelTemplate<(ModelTy",
+        "count_per_step": 78.0,
+        "mean_us": 0.01844247653166719,
+        "shared_us_per_step": 1.4385131694700406,
+        "solo_us_per_step": 1.4385086485873098
+      },
+      {
+        "name": "void one_shot::gather_cat_kernel<4>(vllm::RankData*, vllm::RankData*, long, long, vllm::RankSignals, vllm::Signal*, uint",
+        "count_per_step": 78.0,
+        "mean_us": 0.008872438816056736,
+        "shared_us_per_step": 0.6920502276524253,
+        "solo_us_per_step": 0.6920502276524253
+      },
+      {
+        "name": "void smxx::decode::flash_fwd_mla_combine_kernel<cutlass::bfloat16_t, 512, 8, 32, 256>(CombineParams)",
+        "count_per_step": 78.0,
+        "mean_us": 0.008101535738843474,
+        "shared_us_per_step": 0.631919787629791,
+        "solo_us_per_step": 0.3178408197734667
+      },
+      {
+        "name": "void one_shot::lse_reduce_scatter_kernel<__nv_bfloat16, 4, true>(vllm::RankData*, vllm::RankData*, long, long, vllm::Ran",
+        "count_per_step": 78.0,
+        "mean_us": 0.006620541696697307,
+        "shared_us_per_step": 0.51640225234239,
+        "solo_us_per_step": 0.5024574198152708
+      },
+      {
+        "name": "void cublasLt::splitKreduce_kernel<32, 16, int, float, __nv_bfloat16, float, __nv_bfloat16, false, float, __nv_bfloat16,",
+        "count_per_step": 174.0,
+        "mean_us": 0.002578331203177117,
+        "shared_us_per_step": 0.44862962935281836,
+        "solo_us_per_step": 0.15101117543552234
+      },
+      {
+        "name": "void tiered_decode::route_prep_kernel<int>(tiered_decode::Workspace*, __nv_bfloat16 const*, int const*, bool const*, flo",
+        "count_per_step": 75.0,
+        "mean_us": 0.005807561209236366,
+        "shared_us_per_step": 0.4355670906927275,
+        "solo_us_per_step": 0.19788793701192606
+      },
+      {
+        "name": "void vllm::moe::grouped_topk_fused_small_expert_count_kernel<float, float, int, (vllm::moe::ScoringFunc)1, 384, false, 8",
+        "count_per_step": 75.0,
+        "mean_us": 0.005139621625775876,
+        "shared_us_per_step": 0.38547162193319073,
+        "solo_us_per_step": 0.00869970801083938
+      },
+      {
+        "name": "_gather_rows_kernel",
+        "count_per_step": 19.0,
+        "mean_us": 0.01916148412964164,
+        "shared_us_per_step": 0.36406819846319116,
+        "solo_us_per_step": 0.2520122087520102
+      },
+      {
+        "name": "kernel_cutlass_kernel_vllmmodel_executorkernelslinearcute_dsl_ll_bf16_splitkLLBf16SplitK_object_at__tensorptrbf16_gmem_a",
+        "count_per_step": 75.0,
+        "mean_us": 0.004602074234381966,
+        "shared_us_per_step": 0.34515556757864746,
+        "solo_us_per_step": 0.333792635280153
+      },
+      {
+        "name": "nvjet_sm90_tst_64x8_64x16_2x1_v_bz_NNT",
+        "count_per_step": 78.0,
+        "mean_us": 0.003802788546651502,
+        "shared_us_per_step": 0.29661750663881714,
+        "solo_us_per_step": 0.29661750663881714
+      },
+      {
+        "name": "kernel_cutlass_kernel_vllmmodel_executorkernelsattentiondsadcp_indexer_cutedslStableTopKFromGatheredCandidatesKernel_obj",
+        "count_per_step": 21.0,
+        "mean_us": 0.012813536307579736,
+        "shared_us_per_step": 0.26908426245917444,
+        "solo_us_per_step": 0.26908426245917444
+      },
+      {
+        "name": "void vllm::concat_and_cache_ds_mla_kernel<__nv_bfloat16, unsigned char, (vllm::Fp8KVCacheDataType)1>(__nv_bfloat16 const",
+        "count_per_step": 135.0,
+        "mean_us": 0.0017961273158805958,
+        "shared_us_per_step": 0.24247718764388043,
+        "solo_us_per_step": 0.24247718764388043
+      },
+      {
+        "name": "triton_poi_fused_mul_silu_slice_0",
+        "count_per_step": 78.0,
+        "mean_us": 0.0030835445060777822,
+        "shared_us_per_step": 0.24051647147406702,
+        "solo_us_per_step": -0.12305512829967168
+      },
+      {
+        "name": "void one_shot::gather_kernel<4>(vllm::RankData*, vllm::RankSignals, vllm::Signal*, uint4*, int, long, long)",
+        "count_per_step": 21.0,
+        "mean_us": 0.009360804536821433,
+        "shared_us_per_step": 0.1965768952732501,
+        "solo_us_per_step": 0.1965768952732501
+      },
+      {
+        "name": "triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_3",
+        "count_per_step": 71.0,
+        "mean_us": 0.0022650451398815614,
+        "shared_us_per_step": 0.16081820493159088,
+        "solo_us_per_step": 0.16081820493159088
+      },
+      {
+        "name": "void vllm::cross_device_reduce_1stage<__nv_bfloat16, 4>(vllm::RankData*, vllm::RankSignals, vllm::Signal*, __nv_bfloat16",
+        "count_per_step": 6.0,
+        "mean_us": 0.025012215842371403,
+        "shared_us_per_step": 0.15007329505422842,
+        "solo_us_per_step": 0.14996234295160873
+      },
+      {
+        "name": "triton_poi_fused_add_mul_0",
+        "count_per_step": 75.0,
+        "mean_us": 0.0015571020824321803,
+        "shared_us_per_step": 0.11678265618241351,
+        "solo_us_per_step": 0.11574645858743916
+      },
+      {
+        "name": "triton_red_fused_2",
+        "count_per_step": 57.0,
+        "mean_us": 0.002030884942237336,
+        "shared_us_per_step": 0.11576044170752815,
+        "solo_us_per_step": 0.11576044170752815
+      },
+      {
+        "name": "_compact_rows_kernel",
+        "count_per_step": 19.0,
+        "mean_us": 0.004798714028888764,
+        "shared_us_per_step": 0.0911755665488865,
+        "solo_us_per_step": 0.024516495673552803
+      },
+      {
+        "name": "triton_poi_fused_1",
+        "count_per_step": 54.0,
+        "mean_us": 0.0014388627356185237,
+        "shared_us_per_step": 0.07769858772340028,
+        "solo_us_per_step": 0.07763215251590895
+      },
+      {
+        "name": "void deep_gemm::sm90_fp8_paged_mqa_logits<1u, 32u, 128u, 64u, true, false, 3u, 3u, 256u, 128u, 512u, 1u, float>(unsigned",
+        "count_per_step": 21.0,
+        "mean_us": 0.0036768390957119547,
+        "shared_us_per_step": 0.07721362100995105,
+        "solo_us_per_step": 0.07450614221718001
+      },
+      {
+        "name": "_remap_rows_kernel",
+        "count_per_step": 19.0,
+        "mean_us": 0.003310032274139282,
+        "shared_us_per_step": 0.06289061320864636,
+        "solo_us_per_step": 0.0171350350846415
+      },
+      {
+        "name": "_convert_req_index_to_global_index_kernel",
+        "count_per_step": 21.0,
+        "mean_us": 0.002879931566384515,
+        "shared_us_per_step": 0.060478562894074814,
+        "solo_us_per_step": 0.060478562894074814
+      },
+      {
+        "name": "_mark_rows_kernel",
+        "count_per_step": 19.0,
+        "mean_us": 0.0024863935717183336,
+        "shared_us_per_step": 0.04724147786264834,
+        "solo_us_per_step": 0.0
+      },
+      {
+        "name": "void vllm::indexer_k_quant_and_cache_kernel<__nv_bfloat16, unsigned char, (vllm::Fp8KVCacheDataType)1>(__nv_bfloat16 con",
+        "count_per_step": 21.0,
+        "mean_us": 0.0018576174419118751,
+        "shared_us_per_step": 0.039009966280149376,
+        "solo_us_per_step": 0.039009966280149376
+      },
+      {
+        "name": "void vllm::cooperative::cooperative_topk_cs8<2048u>(vllm::cooperative::CooperativeTopKParams<2048u>)",
+        "count_per_step": 21.0,
+        "mean_us": 0.0018212436457351621,
+        "shared_us_per_step": 0.03824611656043841,
+        "solo_us_per_step": 0.03824611656043841
+      },
+      {
+        "name": "triton_red_fused_1",
+        "count_per_step": 18.0,
+        "mean_us": 0.0020907891617305036,
+        "shared_us_per_step": 0.03763420491114906,
+        "solo_us_per_step": 0.03763420491114906
+      },
+      {
+        "name": "void at::native::vectorized_elementwise_kernel<4, at::native::FillFunctor<int>, std::array<char*, 1ul> >(int, at::native",
+        "count_per_step": 40.0,
+        "mean_us": 0.000917467669300411,
+        "shared_us_per_step": 0.03669870677201644,
+        "solo_us_per_step": 0.036671228382898415
+      },
+      {
+        "name": "_fused_indexer_q_rope_quant_kernel",
+        "count_per_step": 21.0,
+        "mean_us": 0.0017387010542749125,
+        "shared_us_per_step": 0.03651272213977316,
+        "solo_us_per_step": 0.03651272213977316
+      },
+      {
+        "name": "_pack_dcp_topk_candidates_triton_kernel",
+        "count_per_step": 21.0,
+        "mean_us": 0.0015289451209654719,
+        "shared_us_per_step": 0.03210784754027491,
+        "solo_us_per_step": 0.03210784754027491
+      },
+      {
+        "name": "triton_poi_fused_2",
+        "count_per_step": 20.0,
+        "mean_us": 0.0013797691334848819,
+        "shared_us_per_step": 0.027595382669697636,
+        "solo_us_per_step": 0.027595382669697636
+      },
+      {
+        "name": "triton_red_fused_add_fused_add_rms_norm_1",
+        "count_per_step": 6.0,
+        "mean_us": 0.0033010288641072702,
+        "shared_us_per_step": 0.01980617318464362,
+        "solo_us_per_step": 0.01980617318464362
+      },
+      {
+        "name": "triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_4",
+        "count_per_step": 6.0,
+        "mean_us": 0.002228357113789821,
+        "shared_us_per_step": 0.013370142682738926,
+        "solo_us_per_step": 0.013370142682738926
+      },
+      {
+        "name": "memcpy32_post",
+        "count_per_step": 8.0,
+        "mean_us": 0.0013131994916045148,
+        "shared_us_per_step": 0.010505595932836119,
+        "solo_us_per_step": 0.010505595932836119
+      },
+      {
+        "name": "triton_red_fused_3",
+        "count_per_step": 3.0,
+        "mean_us": 0.002012723166009654,
+        "shared_us_per_step": 0.006038169498028962,
+        "solo_us_per_step": 0.006038169498028962
+      },
+      {
+        "name": "triton_poi_fused_3",
+        "count_per_step": 4.0,
+        "mean_us": 0.0014296305244383605,
+        "shared_us_per_step": 0.005718522097753442,
+        "solo_us_per_step": 0.005718522097753442
+      },
+      {
+        "name": "smxx::decode::get_mla_metadata_kernel(GetDecodeSchedMetaParams)",
+        "count_per_step": 1.0,
+        "mean_us": 0.004538017770518427,
+        "shared_us_per_step": 0.004538017770518427,
+        "solo_us_per_step": 0.004538017770518427
+      },
+      {
+        "name": "triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_2",
+        "count_per_step": 1.0,
+        "mean_us": 0.001667423092800638,
+        "shared_us_per_step": 0.001667423092800638,
+        "solo_us_per_step": 0.001667423092800638
+      }
+    ]
+  },
+  "C": {
+    "AR": {
+      "count_per_step": 157.0,
+      "mean_us": 0.015268694587738947,
+      "wire_us": 0.005514698741146152,
+      "wait_us_per_step": 1.531377347915069,
+      "wait_p90_step_ms": 0.0016955253779888154,
+      "wait_max_step_ms": 0.0021123697459697723
+    },
+    "one_shot::gather_cat_kernel<": {
+      "count_per_step": 78.0,
+      "mean_us": 0.009068584109063664,
+      "wire_us": 0.007958662076339275,
+      "wait_us_per_step": 0.08657391855250234,
+      "wait_p90_step_ms": 0.00010634404420852661,
+      "wait_max_step_ms": 0.00012308014929294587
+    },
+    "one_shot::gather_kernel<4>(v": {
+      "count_per_step": 21.0,
+      "mean_us": 0.00907116196663977,
+      "wire_us": 0.006589080513634296,
+      "wait_us_per_step": 0.05212371051311493,
+      "wait_p90_step_ms": 7.242348790168762e-05,
+      "wait_max_step_ms": 8.733640611171722e-05
+    },
+    "one_shot::lse_reduce_scatter": {
+      "count_per_step": 78.0,
+      "mean_us": 0.006585247123171653,
+      "wire_us": 0.00619930562167662,
+      "wait_us_per_step": 0.03010343711661256,
+      "wait_p90_step_ms": 3.4529700875282285e-05,
+      "wait_max_step_ms": 3.836633265018463e-05
+    }
+  },
+  "D": {
+    "mla_anchor": {
+      "n": 21.0,
+      "mean_us": 0.018267080804822856,
+      "p50_us": 0.018302977085113525,
+      "p90_us": 0.018495023250579834
+    },
+    "mla_skip": {
+      "n": 57.0,
+      "mean_us": 0.01850709600997826,
+      "p50_us": 0.01849597692489624,
+      "p90_us": 0.018719971179962158
+    },
+    "dsa:kernel_cutlass_kernel_vllmmodel_executorkernelsattentiondsad": {
+      "count_ps": 21.0,
+      "mean_us": 0.012813536307579736
+    },
+    "dsa:void deep_gemm::sm90_fp8_paged_mqa_logits<1u, 32u, 128u, 64u": {
+      "count_ps": 21.0,
+      "mean_us": 0.0036768390957119547
+    },
+    "dsa:_convert_req_index_to_global_index_kernel": {
+      "count_ps": 21.0,
+      "mean_us": 0.002879931566384515
+    },
+    "dsa:void vllm::indexer_k_quant_and_cache_kernel<__nv_bfloat16, u": {
+      "count_ps": 21.0,
+      "mean_us": 0.0018576174419118751
+    },
+    "dsa:_fused_indexer_q_rope_quant_kernel": {
+      "count_ps": 21.0,
+      "mean_us": 0.0017387010542749125
+    }
+  },
+  "E": {
+    "draft_busy_ms": 1.047413495571717,
+    "host_side_busy_ms": 0.39316951775032544,
+    "draft_top": [
+      {
+        "name": "void cutlass::device_kernel<vllm::cutlass_3x_gemm_sm90_fp8<cutlass::float_e4m3_t, cutlass::bfloat16_",
+        "count_ps": 18.0,
+        "mean_us": 0.010156250446314973,
+        "sum_us": 0.18281250803366952
+      },
+      {
+        "name": "nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT",
+        "count_ps": 19.0,
+        "mean_us": 0.009272176525139971,
+        "sum_us": 0.17617135397765948
+      },
+      {
+        "name": "nvjet_sm90_tst_192x8_64x8_2x1_v_bz_TNT",
+        "count_ps": 1.0,
+        "mean_us": 0.14055794542250427,
+        "sum_us": 0.14055794542250427
+      },
+      {
+        "name": "void cutlass::device_kernel<flash::enable_sm90_or_later<flash::FlashAttnFwdSm90<flash::CollectiveMai",
+        "count_ps": 6.0,
+        "mean_us": 0.018034981752651325,
+        "sum_us": 0.10820989051590794
+      },
+      {
+        "name": "void vllm::cross_device_reduce_1stage<__nv_bfloat16, 4>(vllm::RankData*, vllm::RankSignals, vllm::Si",
+        "count_ps": 13.0,
+        "mean_us": 0.005374010889027828,
+        "sum_us": 0.06986214155736177
+      },
+      {
+        "name": "void cutlass::device_kernel<flash::FlashAttnFwdCombine<cute::tuple<cute::C<8>, cute::C<128> >, 5, 25",
+        "count_ps": 6.0,
+        "mean_us": 0.007918073107366976,
+        "sum_us": 0.04750843864420186
+      },
+      {
+        "name": "void vllm::reshape_and_cache_flash_kernel<__nv_bfloat16, unsigned char, (vllm::Fp8KVCacheDataType)1>",
+        "count_ps": 12.0,
+        "mean_us": 0.0035956332433050957,
+        "sum_us": 0.04314759891966115
+      },
+      {
+        "name": "triton_red_fused_add_arange_bitwise_and_constant_pad_nd_fused_add_rms_norm_ge_mul_select_slice_unsqu",
+        "count_ps": 6.0,
+        "mean_us": 0.005968374942523846,
+        "sum_us": 0.035810249655143074
+      },
+      {
+        "name": "void cublasLt::splitKreduce_kernel<32, 16, int, float, __nv_bfloat16, float, __nv_bfloat16, false, f",
+        "count_ps": 20.0,
+        "mean_us": 0.0016377349262652189,
+        "sum_us": 0.03275469852530438
+      },
+      {
+        "name": "triton_red_fused_add_arange_bitwise_and_constant_pad_nd_fused_add_rms_norm_ge_mul_select_slice_unsqu",
+        "count_ps": 6.0,
+        "mean_us": 0.005136541374351667,
+        "sum_us": 0.030819248246110004
+      },
+      {
+        "name": "triton_red_fused__to_copy_abs_add_arange_bitwise_and_clamp_constant_pad_nd_cutlass_scaled_mm_div_ge_",
+        "count_ps": 6.0,
+        "mean_us": 0.003965701961862868,
+        "sum_us": 0.023794211771177208
+      },
+      {
+        "name": "void flashinfer::sampling::RadixTopKKernel_Unified<1024u, 8u, true, true, (flashinfer::sampling::Rad",
+        "count_ps": 1.0,
+        "mean_us": 0.023410107778466267,
+        "sum_us": 0.023410107778466267
+      }
+    ]
+  },
+  "F": {
+    "count_ps": 38.0,
+    "mean_us": 0.011235758201890461,
+    "sum_us_ps": 0.4269588116718375
+  },
+  "G": {
+    "spread_p50_us": 0.001458585262298584,
+    "spread_p90_us": 0.002368927001953125,
+    "laggard_counts": {
+      "3": 25,
+      "0": 20,
+      "2": 28,
+      "1": 19
+    }
+  }
+}
