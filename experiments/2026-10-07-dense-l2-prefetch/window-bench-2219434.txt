@@ -1,0 +1,27 @@
+/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/profiler/profiler.py:224: UserWarning: Warning: Profiler clears events at the end of each cycle.Only events from the current cycle will be reported.To keep events across cycles, set acc_events=True.
+  _warn_once(
+clock 1.98 GHz, L2 60 MiB
+
+window A: o_proj after FlashMLA-like phase (us, median)
+  none                   o_proj  21.90   accum read 11.68
+  bulk                   o_proj  20.86   accum read 12.91
+  bulk evict_last        o_proj  17.39   accum read 13.10
+  bulk evict_last 75%    o_proj  17.28   accum read 12.98
+  bulk evict_last 50%    o_proj  17.36   accum read 12.99
+  line evict_last        o_proj  17.47   accum read 13.28
+
+window B (hbm-bound MoE): qkv_a, q_b of the next layer (us, median)
+  none                   qkv_a  14.11  q_b   7.46   MoE stream  52.13
+  bulk                   qkv_a  14.02  q_b   7.36   MoE stream  58.67
+  bulk evict_last        qkv_a  14.18  q_b   6.11   MoE stream  58.19
+  bulk evict_last 75%    qkv_a  14.18  q_b   6.14   MoE stream  56.72
+  bulk evict_last 50%    qkv_a  13.23  q_b   6.21   MoE stream  56.50
+  line evict_last        qkv_a  14.21  q_b   6.24   MoE stream  51.94
+
+window B (c2c-bound MoE): qkv_a, q_b of the next layer (us, median)
+  none                   qkv_a  18.21  q_b   7.97   MoE stream   1.70
+  bulk                   qkv_a  11.90  q_b   6.08   MoE stream   1.66
+  bulk evict_last        qkv_a  12.48  q_b   6.21   MoE stream   1.66
+  bulk evict_last 75%    qkv_a  13.89  q_b   7.06   MoE stream   1.66
+  bulk evict_last 50%    qkv_a  14.46  q_b   8.03   MoE stream   1.66
+  line evict_last        qkv_a  14.38  q_b   7.01   MoE stream   1.73

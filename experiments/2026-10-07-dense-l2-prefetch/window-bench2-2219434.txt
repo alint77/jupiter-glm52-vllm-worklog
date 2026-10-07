@@ -1,0 +1,20 @@
+window A: o_proj (us, median); fork at FlashMLA start (pre) or after the combine (post)
+  none                   o_proj  21.54   accum read 11.49
+  pre evict_last         o_proj  17.28   accum read 13.22
+  post evict_last        o_proj  14.18   accum read 13.38
+  post evict_last 50%    o_proj  15.33   accum read 13.41
+  post normal            o_proj  14.27   accum read 13.34
+
+window B (hbm-bound MoE): qkv_a, q_b (us, median)
+  none                   qkv_a  13.73  q_b   7.46   MoE stream  51.87
+  q_b only, evict_last   qkv_a  14.24  q_b   6.18   MoE stream  51.47
+  q_b + 50% qkv_a        qkv_a  12.74  q_b   7.49   MoE stream  58.51
+  q_b + 25% qkv_a        qkv_a  12.80  q_b   6.69   MoE stream  56.27
+  both, evict_last       qkv_a  14.24  q_b   6.18   MoE stream  58.49
+
+window B (c2c-bound MoE): qkv_a, q_b (us, median)
+  none                   qkv_a  18.27  q_b   7.68   MoE stream   1.73
+  q_b only, evict_last   qkv_a  17.15  q_b   7.58   MoE stream   1.63
+  q_b + 50% qkv_a        qkv_a  13.89  q_b   8.80   MoE stream   1.63
+  q_b + 25% qkv_a        qkv_a  14.81  q_b   8.53   MoE stream   1.63
+  both, evict_last       qkv_a  12.74  q_b   6.14   MoE stream   1.66

@@ -1,0 +1,8 @@
+window A: o_proj (us, median); normal L2 policy; join after o_proj
+  none             o_proj  21.41   accum read 11.74   window to o_proj end  90.14
+  pre  grid 8      o_proj  21.01   accum read 12.22   window to o_proj end  92.61   prefetch kernel 38.91
+  post grid 8      o_proj  17.18   accum read 11.62   window to o_proj end  88.37   prefetch kernel 35.52
+  pre  grid 32     o_proj  21.33   accum read 11.58   window to o_proj end  91.55   prefetch kernel 11.30
+  post grid 32     o_proj  15.42   accum read 11.65   window to o_proj end  86.27   prefetch kernel 11.20
+  pre  grid 132    o_proj  21.38   accum read 11.57   window to o_proj end  91.69   prefetch kernel 11.90
+  post grid 132    o_proj  15.10   accum read 11.65   window to o_proj end  86.62   prefetch kernel 11.97

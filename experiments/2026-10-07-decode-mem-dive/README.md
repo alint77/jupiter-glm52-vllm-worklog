@@ -80,19 +80,21 @@ caches 0.375 (target 0.125, drafter 0.25); graph pool 0.46 (0.43 free).
 
 The two workspaces shared one buffer (`get_simultaneous` grows a single
 allocation), so removing only FlashMLA's let the indexer regrow it to 1.97
-GiB: ws0 (FlashMLA only) gained +54 hot and +0.2 GiB observed free.
+GiB: ws0 (FlashMLA only) gained only +0.2 GiB observed free. Together they
+free 2.15 GiB (one buffer, sized to the larger), not their sum.
 
 ### Memory fixes measured (startup runs, hold 2216516, uncommitted vLLM edits)
 
 | run | change | hot / rank | startup free (min 2.53) | profile-run max_allocated |
 |---|---|--:|--:|--:|
 | mem | prod | 3,531 | 2.67-2.79 GiB | 89.5 GiB |
-| ws0 | FlashMLA workspace skipped under DCP | 3,585 | 2.88-2.97 | n/a |
-| ws2 | + indexer workspace x min(40, max_num_seqs) + chunked scale exponent | **3,585** | **4.87-4.94** | 85.1 |
+| ws0 | FlashMLA workspace skipped under DCP | 3,531 | 2.88-2.97 | n/a |
+| ws2 | + indexer workspace x min(40, max_num_seqs) + chunked scale exponent | 3,531 | **4.87-4.94** | 85.1 |
 
 (ws1 = ws2's code but the AOT compile cache reloaded the old indexer size;
 ws2 ran with VLLM_DISABLE_COMPILE_CACHE=1.) ws2 keeps ~2.3 GiB more free than
-prod on top of +54 hot: lowering RESERVE_GB by ~2.2 should put it into ~110
+prod (the 3,585 line every run logs is another planner scenario, not the
+plan; residency is unchanged at 3,531): lowering RESERVE_GB by ~2.2 should put it into ~110
 more hot experts (~3,690/rank). The 130K-token request still prefills and
 decodes (3.2 GiB free after it). Not yet done: reserve sweep with the 388K
 stress, GSM8K / acceptance check, NCCL communicator dedupe.
