@@ -75,8 +75,13 @@ fi
 # stress_long.sh to 388K, 40K uncached jumps): 5.14 / 4.9 / 4.7 / 4.55 all run
 # clean (3510 / 3522 / 3531 / 3538 hot per rank); 4.4 refuses to start. 4.7
 # keeps 0.15 GiB over the startup check (4.55 had one rank at +0.01).
+# vllm f3c882485e..794eda5446 (DCP prefill workspaces, one shared NCCL
+# communicator, embedding on Grace, reserve floor 0.5) free ~3.5 GiB; swept
+# again (2026-10-07-mem-reclaim): 2.0 / 1.6 run 388K clean, 1.3 and below
+# refuse to start. 1.7: 3676 hot per rank (+145), ~0.17 GiB over the check;
+# -0.22 ms/step agentic, -0.27 at 50-130K, GSM8K unchanged.
 reserve_default=7
-[[ "${SPEC}" == dflash2 ]] && reserve_default=4.7
+[[ "${SPEC}" == dflash2 ]] && reserve_default=1.7
 export TIERED_MOE_HBM_RESERVE_GB="${RESERVE_GB:-${reserve_default}}"
 # Cold prefetch: two slots (vLLM default), so layer L+1's copy runs under layer
 # L's MoE; from 512 tokens (~1.3 ms copy vs ~2 ms of layer compute).
@@ -109,6 +114,9 @@ extra=()
 # and the drafter's KV on Grace (VLLM_TIERED_MOE_DRAFT_KV_HOST=0 restores it).
 extra+=(--mla-cache-tier "${MLA_CACHE_TIER:-skip_host_uva}")
 export VLLM_TIERED_MOE_DRAFT_KV_HOST="${VLLM_TIERED_MOE_DRAFT_KV_HOST:-1}"
+# Input embedding table on Grace (a step gathers 8 rows; -0.44 GiB HBM);
+# VLLM_TIERED_MOE_EMBED_HOST=0 restores it. Reserve 1.7 assumes it.
+export VLLM_TIERED_MOE_EMBED_HOST="${VLLM_TIERED_MOE_EMBED_HOST:-1}"
 # REPLICAS=exact activates the profile's Grace replicas (1,351-1,962 per rank
 # in the agentic profile). Replicas add pinned Grace the planner does not see
 # each worker's own share of, hence the larger host reserve (as for MiMo).
