@@ -1,0 +1,29 @@
+/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/profiler/profiler.py:224: UserWarning: Warning: Profiler clears events at the end of each cycle.Only events from the current cycle will be reported.To keep events across cycles, set acc_events=True.
+  _warn_once(
+
+o_proj: 50.3 MB, cuBLAS max err 1.56e-02
+  v4 w4 u4          18.00 us   2.80 TB/s
+  v4 w2 u8          18.34 us   2.75 TB/s
+  v4 w2 u4          18.40 us   2.74 TB/s
+  v4 w4 u8          18.69 us   2.69 TB/s
+  v4 w4 u2          18.96 us   2.65 TB/s
+  v4 w8 u2          19.42 us   2.59 TB/s
+  F.linear      22.70 us
+
+fused_qkv_a: 32.2 MB, cuBLAS max err 1.56e-02
+  v4 w4 u4          13.82 us   2.33 TB/s
+  v4 w8 u2          14.06 us   2.29 TB/s
+  v4 w4 u8          14.30 us   2.25 TB/s
+  v4 w8 u4          14.37 us   2.24 TB/s
+  v2 w16 u4         14.82 us   2.18 TB/s
+  v4 w2 u8          15.14 us   2.13 TB/s
+  F.linear      17.28 us
+
+q_b: 16.8 MB, cuBLAS max err 7.81e-03
+  v4 w2 u8           8.46 us   1.98 TB/s
+  v4 w4 u4           8.46 us   1.98 TB/s
+  v4 w2 u4           8.61 us   1.95 TB/s
+  v2 w16 u2          8.70 us   1.93 TB/s
+  v4 w4 u8           8.70 us   1.93 TB/s
+  v4 w8 u2           8.77 us   1.91 TB/s
+  F.linear       8.93 us

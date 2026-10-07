@@ -1,0 +1,12 @@
+/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/profiler/profiler.py:224: UserWarning: Warning: Profiler clears events at the end of each cycle.Only events from the current cycle will be reported.To keep events across cycles, set acc_events=True.
+  _warn_once(
+o_proj          N  6144 K  4096 x78  cuBLAS  22.13  best v6  18.05 (4, 4)  gain  +4.08 us/call  +0.318 ms/step
+fused_qkv_a     N  2624 K  6144 x78  cuBLAS  16.86  best v6  13.92 (4, 4)  gain  +2.94 us/call  +0.230 ms/step
+q_b             N  4096 K  2048 x78  cuBLAS   8.91  best v6   8.46 (2, 8)  gain  +0.45 us/call  +0.035 ms/step
+indexer wq_b    N  4096 K  2048 x21  cuBLAS   8.86  best v6   8.40 (2, 8)  gain  +0.46 us/call  +0.010 ms/step
+indexer wk      N   160 K  6144 x21  cuBLAS   6.21  best v6   5.73 (8, 4)  gain  +0.48 us/call  +0.010 ms/step
+shared gate_up  N  1024 K  6144 x75  cuBLAS   9.17  best v6   8.00 (8, 4)  gain  +1.17 us/call  +0.088 ms/step
+shared down     N  6144 K   512 x75  cuBLAS   5.57  best v6   4.77 (4, 2)  gain  +0.80 us/call  +0.060 ms/step
+dense gate_up   N  6144 K  6144 x 3  cuBLAS  31.71  best v6  26.43 (2, 8)  gain  +5.28 us/call  +0.016 ms/step
+dense down      N  6144 K  3072 x 3  cuBLAS  17.47  best v6  15.26 (2, 4)  gain  +2.21 us/call  +0.007 ms/step
+per verify step: cuBLAS 5.31 ms, best-of 4.53 ms (-0.77 ms)

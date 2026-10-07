@@ -36,16 +36,19 @@ def run(tag):
                 def first(pat, after=0):
                     return next((e for e in ks if pat in e["name"] and e["ts"] >= after), None)
 
-                op = next((e for e in ks if e["name"].startswith("nvjet")
-                           and e["args"].get("grid") == [4, 24, 1]), None)
                 ar1, prep, fin = first("allreduce_fusion"), first("route_prep"), first("finalize_kernel")
-                if not (op and ar1 and prep and fin):
+                if not (ar1 and prep and fin):
+                    continue
+                # o_proj: the last GEMM (cuBLAS or decode_gemm) before attention's AR
+                gemms = [e for e in ks if e["ts"] < ar1["ts"]
+                         and (e["name"].startswith("nvjet") or "decode_gemm" in e["name"])]
+                op = gemms[-1] if gemms else None
+                if not op:
                     continue
                 ar2 = first("allreduce_fusion", fin["ts"])
                 if not ar2:
                     continue
-                uv = [e for e in ks if e["name"].startswith("nvjet") and e["args"].get("grid") == [4, 16, 1]
-                      and e["ts"] < op["ts"]]
+                uv = [e for e in gemms[:-1] if e["name"].startswith("nvjet")]
                 lse = first("lse_reduce_scatter")
                 end = lambda e: e["ts"] + e["dur"]  # noqa: E731
                 out["MLA start -> o_proj start"].append(op["ts"] - t0)

@@ -8,6 +8,7 @@ over agentic requests (>= 20 steps), and the same over the long-context rows.
     compare_ba.py [root]
 """
 import json
+import os
 import re
 import statistics as st
 import sys
@@ -16,12 +17,14 @@ from pathlib import Path
 import numpy as np
 
 root = Path(sys.argv[1] if len(sys.argv) > 1 else "/e/fscratch/profound/naeimitabiei1/mem-reclaim")
-logs = Path(__file__).resolve().parent
+logs = Path(os.environ.get("LOGS", Path(__file__).resolve().parent))
+# arm labels: tag prefixes "<a>-<job>..." / "<b>-<job>..."; the fit is b - a
+A, Bk = os.environ.get("KINDS", "before,after").split(",")
 arms = []
-for d in sorted(root.glob("*-22*")):
+for d in sorted(root.glob(f"[{A[0]}{Bk[0]}]*-22*")):
     kind, job = d.name.split("-")[0], d.name.split("-")[1]
     log = logs / f"run-{d.name}.log"
-    if kind not in ("before", "after") or not log.exists() or "=== done" not in log.read_text():
+    if kind not in (A, Bk) or not log.exists() or "=== done" not in log.read_text():
         continue
     out = (d / "server.out").read_text(errors="ignore")
     tp0 = [l for l in out.splitlines() if "Worker_TP0" in l and "residency:" in l]
@@ -61,7 +64,7 @@ def fit(rows_by_arm, label):
     for a, rows in rows_by_arm:
         for r in rows:
             ctx = r.get("prompt_tokens", r.get("ctx", 0))
-            x = [1.0, r["tokens_per_step"], ctx / 1e4, 1.0 if a["kind"] == "after" else 0.0]
+            x = [1.0, r["tokens_per_step"], ctx / 1e4, 1.0 if a["kind"] == Bk else 0.0]
             x += [1.0 if a["job"] == j else 0.0 for j in jobs[1:]]
             X.append(x)
             y.append(r["step_ms"])
@@ -71,13 +74,13 @@ def fit(rows_by_arm, label):
     res = (y - X @ beta) * w
     dof = len(y) - X.shape[1]
     cov = np.linalg.inv((X * w[:, None]).T @ (X * w[:, None])) * (res @ res) / dof
-    print(f"{label}: after - before = {beta[3]:+.3f} +- {np.sqrt(cov[3, 3]):.3f} ms/step "
+    print(f"{label}: {Bk} - {A} = {beta[3]:+.3f} +- {np.sqrt(cov[3, 3]):.3f} ms/step "
           f"({len(y)} requests, {len(jobs)} nodes; per tok/step {beta[1]:+.2f} ms, per 10K ctx {beta[2]:+.3f} ms)")
 
 
 fit([(a, [r for r in a["rows"] if r["steps"] >= 20 and "step_ms" in r]) for a in arms], "agentic decode")
 fit([(a, a["long"]) for a in arms], "long-context decode (50K/130K)")
-for kind in ("before", "after"):
+for kind in (A, Bk):
     g = [a["gsm"] for a in arms if a["kind"] == kind and a["gsm"] is not None]
     if g:
         print(f"GSM8K {kind}: mean {st.mean(g):.3f} over {len(g)} x 200")

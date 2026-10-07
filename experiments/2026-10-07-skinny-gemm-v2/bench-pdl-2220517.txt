@@ -1,0 +1,17 @@
+/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/profiler/profiler.py:224: UserWarning: Warning: Profiler clears events at the end of each cycle.Only events from the current cycle will be reported.To keep events across cycles, set acc_events=True.
+  _warn_once(
+
+o_proj: GEMM kernel / predecessor start -> GEMM end (us)
+  cuBLAS      21.89   27.20
+  v6          18.21   23.50
+  v6 + PDL    18.14   23.20
+
+fused_qkv_a: GEMM kernel / predecessor start -> GEMM end (us)
+  cuBLAS       1.92   22.78
+  v6          14.05   19.65
+  v6 + PDL    13.76   19.09
+
+q_b: GEMM kernel / predecessor start -> GEMM end (us)
+  cuBLAS       9.47   15.10
+  v6           8.22   13.86
+  v6 + PDL     8.32   13.63

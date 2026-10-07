@@ -1,0 +1,17 @@
+/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/profiler/profiler.py:224: UserWarning: Warning: Profiler clears events at the end of each cycle.Only events from the current cycle will be reported.To keep events across cycles, set acc_events=True.
+  _warn_once(
+
+o_proj: 50.3 MB, cuBLAS max err 1.56e-02
+  v2 w16 u4         22.08 us   2.28 TB/s
+  F.linear          22.18 us   2.27 TB/s
+  v3 w8 u4 b2       23.47 us   2.14 TB/s
+  v3 w16 u2 b1      23.92 us   2.10 TB/s
+  v2 w16 u2         23.95 us   2.10 TB/s
+  v3 w16 u4 b1      23.98 us   2.10 TB/s
+  F.linear      22.18 us
+Traceback (most recent call last):
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-10-07-skinny-gemm-v2/bench_v2.py", line 68, in <module>
+    assert err <= 2 * e_cublas + 1e-2 and torch.equal(y, y2), (name, wp, un, cps, err)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('fused_qkv_a', 16, 2, 2, 1.2793912887573242)
+srun: error: jpbo-099-16: task 0: Exited with exit code 1

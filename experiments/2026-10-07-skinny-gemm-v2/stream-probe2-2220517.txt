@@ -1,0 +1,47 @@
+/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/profiler/profiler.py:224: UserWarning: Warning: Profiler clears events at the end of each cycle.Only events from the current cycle will be reported.To keep events across cycles, set acc_events=True.
+  _warn_once(
+
+o_proj: 50.3 MB; floor at 3.35 TB/s 15.0 us; F.linear 22.6 us
+  ldg g264 t512 u4          17.54 us   2.87 TB/s
+  ldg g264 t256 u4          17.62 us   2.86 TB/s
+  ldg g528 t256 u4          17.62 us   2.86 TB/s
+  ldg g132 t512 u4          17.62 us   2.86 TB/s
+  ldg g264 t256 u8          17.65 us   2.85 TB/s
+  ldg g528 t256 u8          17.65 us   2.85 TB/s
+  ldg g132 t512 u8          17.68 us   2.85 TB/s
+  ldg g132 t256 u8          17.71 us   2.84 TB/s
+  tma 2/SM c32K s2          21.25 us   2.37 TB/s
+  tma 2/SM c16K s4          21.30 us   2.36 TB/s
+  tma 1/SM c64K s2          21.31 us   2.36 TB/s
+  tma 1/SM c32K s6          21.38 us   2.35 TB/s
+  tma 2/SM c16K s6          21.38 us   2.35 TB/s
+
+qkv_a: 32.2 MB; floor at 3.35 TB/s 9.6 us; F.linear 16.9 us
+  ldg g132 t512 u8          12.13 us   2.66 TB/s
+  ldg g528 t512 u4          12.21 us   2.64 TB/s
+  ldg g528 t256 u8          12.24 us   2.63 TB/s
+  ldg g264 t256 u8          12.35 us   2.61 TB/s
+  ldg g264 t512 u4          12.42 us   2.60 TB/s
+  ldg g132 t256 u8          12.42 us   2.60 TB/s
+  ldg g528 t256 u4          12.45 us   2.59 TB/s
+  ldg g264 t512 u8          12.50 us   2.58 TB/s
+  tma 1/SM c64K s2          14.91 us   2.16 TB/s
+  tma 2/SM c32K s2          14.91 us   2.16 TB/s
+  tma 1/SM c32K s4          14.94 us   2.16 TB/s
+  tma 1/SM c32K s6          14.94 us   2.16 TB/s
+  tma 2/SM c16K s4          14.98 us   2.15 TB/s
+
+q_b: 16.8 MB; floor at 3.35 TB/s 5.0 us; F.linear 9.0 us
+  ldg g132 t512 u8           7.49 us   2.24 TB/s
+  ldg g264 t256 u8           7.58 us   2.21 TB/s
+  ldg g264 t512 u4           7.60 us   2.21 TB/s
+  ldg g528 t256 u4           7.68 us   2.18 TB/s
+  ldg g132 t256 u8           7.73 us   2.17 TB/s
+  ldg g132 t512 u4           7.73 us   2.17 TB/s
+  ldg g264 t256 u4           7.74 us   2.17 TB/s
+  ldg g264 t512 u8           7.84 us   2.14 TB/s
+  tma 2/SM c16K s4           8.86 us   1.89 TB/s
+  tma 1/SM c64K s2           8.86 us   1.89 TB/s
+  tma 2/SM c16K s2           8.86 us   1.89 TB/s
+  tma 2/SM c32K s2           8.86 us   1.89 TB/s
+  tma 1/SM c32K s4           8.96 us   1.87 TB/s
