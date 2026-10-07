@@ -350,3 +350,19 @@ on live Claude Code traffic (more cold reads). Next: a fixed-prompt long-decode
 probe with per-step server timing (VLLM_STEP_TRACE_FILE) to cut the noise,
 and an unprofiled drafter-time comparison to see whether fp8 W8A8 drafting is
 actually faster than bf16 at 8 tokens.
+
+## Planner charges the drafter's weights (2026-10-07, vllm 52a12ac227)
+
+The drafter-weight charge was gated to MiMo, so GLM's DFlash2 drafter (1.861 GB
+per rank bf16, 1.220 GB with fp8_per_channel; fc and codebooks replicated) came
+out of the HBM reserve. Now charged for any DFlash drafter, quantization-aware;
+serve.sh's DFlash2 default reserve 7 -> 5.14 GB keeps prod's margin. Startup
+check (skipkv-plancheck, hold 2204579): prod 3,179-3,181 hot (unchanged), 3.00-
+3.09 GiB free (>= 2.53); fp8 drafter weights 3,212 (+32); combo 3,450 (+270 vs
+prod), 3.11-3.22 GiB free.
+
+Remaining HBM slack found in the per-rank breakdown: the drafter's KV is
+provisioned for 400K although all 6 drafter layers are 2,048-token sliding
+window (~2.2 GiB bf16); the planner charges the MTP layer (1.54 GiB) that the
+target never loads under DFlash (the component sum without it matches the
+logged 78.41 GiB of weights).

@@ -25,6 +25,7 @@ for a in ${ARMS:-skip base}; do
     # the skip tier at about prod's hot count: the copy's cost without the gain
     skipsame) arm skipsame SERVE_EXTRA="--mla-cache-tier skip_host_uva" RESERVE_GB=10.5 ;;
     base) arm base ;;
+    dfw) arm dfw DRAFT_QUANT=fp8_per_channel ;;
     # skip-layer KV on Grace + fp8 drafter KV + fp8 drafter weights
     combo) arm combo SERVE_EXTRA="--mla-cache-tier skip_host_uva" DRAFT_KV_DTYPE=fp8 \
       DRAFT_QUANT=fp8_per_channel ;;
