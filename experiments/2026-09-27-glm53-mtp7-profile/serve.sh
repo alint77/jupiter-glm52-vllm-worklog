@@ -67,7 +67,12 @@ fi
 # the old budget), 3.25 GiB free after startup (2.53 required), a 390K-token
 # session with 40K uncached jumps ran clean (plan4k, 2026-10-03). Reserve 6
 # fails the startup check (2.55 GB free, 2.71 required).
-export TIERED_MOE_HBM_RESERVE_GB="${RESERVE_GB:-7}"
+# The planner now charges a DFlash drafter's weights (1.861 GB per rank in bf16,
+# 1.220 GB with DRAFT_QUANT=fp8_per_channel; vllm 2026-10-07) that reserve 7
+# used to absorb, so DFlash2 runs at the same margin with 7 - 1.861.
+reserve_default=7
+[[ "${SPEC}" == dflash2 ]] && reserve_default=5.14
+export TIERED_MOE_HBM_RESERVE_GB="${RESERVE_GB:-${reserve_default}}"
 # Cold prefetch: two slots (vLLM default), so layer L+1's copy runs under layer
 # L's MoE; from 512 tokens (~1.3 ms copy vs ~2 ms of layer compute).
 # Inside captured prefill graphs too (vllm a3e5a9c5f1): median TTFT at 512/768/
