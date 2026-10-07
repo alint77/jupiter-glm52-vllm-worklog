@@ -71,8 +71,12 @@ fi
 # The planner now charges a DFlash drafter's weights (1.861 GB per rank in bf16,
 # 1.220 GB with DRAFT_QUANT=fp8_per_channel; vllm 2026-10-07) that reserve 7
 # used to absorb, so DFlash2 runs at the same margin with 7 - 1.861.
+# DFlash2 with the full memory stack, swept 2026-10-07 (2026-10-07-reserve-sweep,
+# stress_long.sh to 388K, 40K uncached jumps): 5.14 / 4.9 / 4.7 / 4.55 all run
+# clean (3510 / 3522 / 3531 / 3538 hot per rank); 4.4 refuses to start. 4.7
+# keeps 0.15 GiB over the startup check (4.55 had one rank at +0.01).
 reserve_default=7
-[[ "${SPEC}" == dflash2 ]] && reserve_default=5.14
+[[ "${SPEC}" == dflash2 ]] && reserve_default=4.7
 export TIERED_MOE_HBM_RESERVE_GB="${RESERVE_GB:-${reserve_default}}"
 # Cold prefetch: two slots (vLLM default), so layer L+1's copy runs under layer
 # L's MoE; from 512 tokens (~1.3 ms copy vs ~2 ms of layer compute).
