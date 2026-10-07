@@ -87,8 +87,8 @@ GiB: ws0 (FlashMLA only) gained +54 hot and +0.2 GiB observed free.
 | run | change | hot / rank | startup free (min 2.53) | profile-run max_allocated |
 |---|---|--:|--:|--:|
 | mem | prod | 3,531 | 2.67-2.79 GiB | 89.5 GiB |
-| ws0 | FlashMLA workspace skipped under DCP | 3,585 | 2.88-2.97 | 89.5 |
-| ws2 | + indexer workspace x min(40, max_num_seqs) + chunked scale exponent | **3,585** | **4.87-4.94** | 79.2 |
+| ws0 | FlashMLA workspace skipped under DCP | 3,585 | 2.88-2.97 | n/a |
+| ws2 | + indexer workspace x min(40, max_num_seqs) + chunked scale exponent | **3,585** | **4.87-4.94** | 85.1 |
 
 (ws1 = ws2's code but the AOT compile cache reloaded the old indexer size;
 ws2 ran with VLLM_DISABLE_COMPILE_CACHE=1.) ws2 keeps ~2.3 GiB more free than
