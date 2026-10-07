@@ -62,8 +62,9 @@ must stay on cuBLAS: on them the kernel fills every SM and delayed the router
 
 **Served A/B** (VLLM_DECODE_GEMM 0 vs 1, `chain_dg.sh`: 4 nodes alternating,
 `../2026-10-07-mem-reclaim/arm.sh`, `KINDS=dg0,dg1 compare_ba.py`):
--0.54 +- 0.03 ms/step agentic (216 requests), -0.48 +- 0.04 at 50-130K;
-GSM8K 0.913 -> 0.919; TTFT and the 388K stress unchanged.
+-0.47 +- 0.03 ms/step agentic (297 requests, 16 arms), -0.50 +- 0.04 at
+50-130K (64 requests); GSM8K 0.914 -> 0.921 (8 x 200 each); TTFT and the 388K
+stress unchanged (16/16).
 
 vllm 86f871f450 (`model_executor/layers/decode_gemm`, `vllm::decode_unquantized_gemm`,
 `tests/kernels/test_decode_gemm.py`); serve.sh defaults VLLM_DECODE_GEMM=1.

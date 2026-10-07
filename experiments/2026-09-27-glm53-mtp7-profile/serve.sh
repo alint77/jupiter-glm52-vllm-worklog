@@ -118,7 +118,7 @@ export VLLM_TIERED_MOE_DRAFT_KV_HOST="${VLLM_TIERED_MOE_DRAFT_KV_HOST:-1}"
 # VLLM_TIERED_MOE_EMBED_HOST=0 restores it. Reserve 1.7 assumes it.
 export VLLM_TIERED_MOE_EMBED_HOST="${VLLM_TIERED_MOE_EMBED_HOST:-1}"
 # bf16 linears at <= 8 tokens on the weight-streaming kernel (vllm 86f871f450,
-# 2026-10-07-skinny-gemm-v2): -0.54 +- 0.03 ms/step agentic, -0.48 at
+# 2026-10-07-skinny-gemm-v2): -0.47 +- 0.03 ms/step agentic, -0.50 at
 # 50-130K, GSM8K unchanged. VLLM_DECODE_GEMM=0 restores cuBLAS.
 export VLLM_DECODE_GEMM="${VLLM_DECODE_GEMM:-1}"
 # REPLICAS=exact activates the profile's Grace replicas (1,351-1,962 per rank
