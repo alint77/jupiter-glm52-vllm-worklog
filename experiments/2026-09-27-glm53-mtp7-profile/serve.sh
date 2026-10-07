@@ -43,10 +43,11 @@ SPEC_K="${SPEC_K:-7}"
 verify=$((SPEC_K + 1))
 if [[ "${SPEC}" == dflash2 ]]; then
   drafter=/e/fscratch/profound/${USER}/models/GLM-5.3-DFlash2
-  # DRAFT_KV_DTYPE=fp8 / DRAFT_QUANT=fp8: drafter KV cache / weights in fp8
-  # (experiment, 2026-10-06-skip-layer-kv-grace); defaults keep bf16.
-  dq=""; [[ -n "${DRAFT_QUANT:-}" ]] && dq=",\"quantization\":\"${DRAFT_QUANT}\""
-  spec_config="{\"method\":\"dflash\",\"model\":\"${drafter}\",\"num_speculative_tokens\":${SPEC_K},\"kv_cache_dtype\":\"${DRAFT_KV_DTYPE:-auto}\",\"attention_backend\":\"FLASH_ATTN\",\"draft_sample_method\":\"greedy\"${dq}}"
+  # Drafter KV and weights in fp8 (2026-10-06-skip-layer-kv-grace): acceptance
+  # unchanged on the agentic set; frees 1.15 GiB (KV) + 0.64 GB (weights) per
+  # rank for hot experts. DRAFT_KV_DTYPE=auto / DRAFT_QUANT= restore bf16.
+  dq=""; [[ -n "${DRAFT_QUANT-fp8_per_channel}" ]] && dq=",\"quantization\":\"${DRAFT_QUANT-fp8_per_channel}\""
+  spec_config="{\"method\":\"dflash\",\"model\":\"${drafter}\",\"num_speculative_tokens\":${SPEC_K},\"kv_cache_dtype\":\"${DRAFT_KV_DTYPE:-fp8}\",\"attention_backend\":\"FLASH_ATTN\",\"draft_sample_method\":\"greedy\"${dq}}"
   : "${CAPTURE_SIZES:=${verify},16,32,64,128,256,384,512,640,768,896,1024}" "${COMPILE_SIZES:=}"
 elif [[ "${SPEC}" == dspark-* ]]; then
   # SPEC=dspark-redhat | dspark-alaya: GLM-5.3 DSpark drafters (block size 8,
@@ -99,6 +100,11 @@ export VLLM_DCP_ONE_SHOT_COLLECTIVES="${VLLM_DCP_ONE_SHOT_COLLECTIVES:-1}"
 # -0.59 .. -0.28), acceptance unchanged, same-node pairs on 4 nodes (2026-09-30).
 export TIERED_MOE_COMPILATION_CONFIG="{\"mode\":3,\"cudagraph_mode\":\"${CUDAGRAPH_MODE:-FULL_AND_PIECEWISE}\",\"cudagraph_capture_sizes\":[${CAPTURE_SIZES:-1,8}],\"compile_sizes\":[${COMPILE_SIZES-8}],\"cudagraph_num_of_warmups\":1,\"pass_config\":{\"fuse_allreduce_rms\":${FUSE_AR_RMS:-true}}}"
 extra=()
+# KV placement (2026-10-06-skip-layer-kv-grace): the 57 index-share layers' MLA
+# KV on Grace, staged into HBM per decode step (MLA_CACHE_TIER=hbm restores it),
+# and the drafter's KV on Grace (VLLM_TIERED_MOE_DRAFT_KV_HOST=0 restores it).
+extra+=(--mla-cache-tier "${MLA_CACHE_TIER:-skip_host_uva}")
+export VLLM_TIERED_MOE_DRAFT_KV_HOST="${VLLM_TIERED_MOE_DRAFT_KV_HOST:-1}"
 # REPLICAS=exact activates the profile's Grace replicas (1,351-1,962 per rank
 # in the agentic profile). Replicas add pinned Grace the planner does not see
 # each worker's own share of, hence the larger host reserve (as for MiMo).
