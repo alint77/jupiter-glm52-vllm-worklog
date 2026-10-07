@@ -47,3 +47,22 @@ steps):
 
 Predicted -0.9 ms/step of MoE time on the slowest rank. Next: a profile whose
 lists extend in frequency order past the budget, and a served A/B.
+
+## Served A/B (`chain_pf.sh`, 4 nodes x 4 arms alternating, `KINDS=pf0,pf1 compare_ba.py`)
+
+`profiles/glm53-w4a16-agentic-3239-r2000-ccfreq3676.json`: prod's lists plus,
+per rank, the 437 most-routed remaining experts over all 76 live-capture files,
+appended in descending frequency. Owners, replicas and hashes unchanged.
+
+| | prod profile | frequency-promoted |
+|---|--:|--:|
+| hot / rank | 3,676 | 3,670 |
+| tightest-rank startup free | 2.69 GiB | 3.46 |
+| agentic decode (287 requests) | | **-0.20 +- 0.03 ms/step** |
+| 50K / 130K decode (64 requests) | | **-0.32 +- 0.03 ms/step** |
+| GSM8K 200 (8 runs each) | 0.918 | 0.913 |
+
+TTFT, 388K stress (16/16) and peak memory unchanged. Smaller than the replay's
+-0.9: the hot set is ranked on live Claude Code routing, the bench replays the
+MiMo-capture task set. The new profile leaves ~0.75 GiB more free with 6 fewer
+hot experts (not investigated; reserve left at 1.7). serve.sh now defaults to it.

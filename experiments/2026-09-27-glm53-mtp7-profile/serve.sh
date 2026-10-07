@@ -29,7 +29,10 @@ export TIERED_MOE_MODEL_PATH=/e/fscratch/profound/${USER}/models/GLM-5.3-W4A16
 # agentic-3239-r2000: built from the MiMo-workload capture, all 3,239 hot per GPU
 # frequency-ranked, up to 2,000 replicas; -0.94 +- 0.12 ms/step against
 # glm53-w4a16-2496.json (ab-gA, ab-gB)
-export TIERED_MOE_PLACEMENT_PROFILE=${PWD}/agent_space/profiles/${PROFILE:-glm53-w4a16-agentic-3239-r2000.json}
+# Hot set: the agentic profile's 3,239 per rank, then the rest of the 3,676
+# slots by live Claude Code route frequency instead of expert-id order
+# (2026-10-08-moe-cost-table): -0.20 +- 0.03 ms/step agentic, -0.32 at 50-130K.
+export TIERED_MOE_PLACEMENT_PROFILE=${PWD}/agent_space/profiles/${PROFILE:-glm53-w4a16-agentic-3239-r2000-ccfreq3676.json}
 # SPEC=dflash2: the DFlash2 drafter (7 tokens in one pass) instead of MTP7. The
 # tiered planner now budgets its KV, so it runs at MTP's 7 GB reserve (free HBM
 # stayed flat at 6.5 GiB over the task set; 10 GB cost ~150 hot experts and
