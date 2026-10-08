@@ -109,3 +109,22 @@ allows 8); c=8 x 400K with the r2000 replicas exceeds paired Grace capacity
 (the planner had already demoted to 3,180 hot; fewer hot experts would add
 cold ones to Grace). r500 = `profiles/glm53-w4a16-agentic-3239-r500-ccfreq3676.json`
 (the prod profile's replicas re-placed at a budget of 500 per GPU).
+
+## c=8 on a shared 1.6M pool, and r1000 (2026-10-09)
+
+vllm c31885ae2d `VLLM_TIERED_MOE_KV_POOL_SEQS`: the KV pool in max_model_len
+sequences, independent of max_num_seqs (runtime allocation, pooled path and
+planner all read `kv_pool_seqs`). c=8, 400K, pool 4 (1.6M tokens), prod
+r2000 replicas; and the 3.2M pool with the r1000 profile
+(`profiles/glm53-w4a16-agentic-3239-r1000-ccfreq3676.json`). Per request /
+total tok/s, 5K and 50K averaged:
+
+| config | hot | 1 | 2 | 4 | 8 |
+|---|--:|--:|--:|--:|--:|
+| MTP3, 1.6M pool | 3381 | 152 / 142 | 126 / 226 | 97 / 337 | 66 / 444 |
+| DFlash2 k=3, 1.6M pool | 3428 | 144 / 134 | 120 / 216 | 96 / 333 | 65 / 430 |
+| MTP3, 3.2M, r1000 | 3044 | 135 / 126 | 106 / 191 | 81 / 285 | 55 / 377 |
+| DFlash2 k=3, 3.2M, r1000 | 3108 | 134 / 125 | 103 / 189 | 81 / 279 | 55 / 376 |
+
+The 1.6M pool matches the 200K-context runs (same hot set and replicas) at
+full 400K per request; the write-up drops the 200K and no-replica rows.

@@ -132,11 +132,11 @@ def ab(out):
 
 
 CONFIGS = [  # tag, label, color, linestyle
-    ("dflash23-c2", "c=2, 400K", "#9cc3ef", "-"),
-    ("dflash23-c4", "c=4, 400K", HBM, "-"),
-    ("dflash23-c8-200k", "c=8, 200K", "#123f7a", "-"),
-    ("dflash23-c8-400k-r500", "c=8, 400K, 500 replicas", DDR, "-"),
-    ("dflash23-c8-400k-norep", "c=8, 400K, no replicas", "#f2a37f", "-"),
+    ("dflash23-c2", "c=2, 0.8M pool", "#9cc3ef", "-"),
+    ("dflash23-c4", "c=4, 1.6M pool", HBM, "-"),
+    ("dflash23-c8-400k-pool1600k", "c=8, 1.6M pool", "#123f7a", "-"),
+    ("dflash23-c8-400k-r1000", "c=8, 3.2M, 1,000 replicas", DDR, "-"),
+    ("dflash23-c8-400k-r500", "c=8, 3.2M, 500 replicas", "#f2a37f", "-"),
 ]
 
 
@@ -176,14 +176,14 @@ def concurrency(out):
     a2.set_ylabel("decode tok/s per request", color=INK2)
     a1.set_title("Throughput", loc="left", fontsize=10.5, color=INK)
     a2.set_title("Per request", loc="left", fontsize=10.5, color=INK)
-    fig.legend(*a1.get_legend_handles_labels(), loc="lower center", ncol=5, frameon=False,
-               fontsize=7.8, bbox_to_anchor=(0.5, 0.0))
-    fig.suptitle("More users: c=8 reaches ~435 tok/s at 200K, ~370 at 400K (500 replicas)", x=0.01,
+    fig.legend(*a1.get_legend_handles_labels(), loc="lower center", ncol=4, frameon=False,
+               fontsize=8, bbox_to_anchor=(0.5, 0.0))
+    fig.suptitle("More users at 400K context: c=8 reaches ~440 tok/s on a shared 1.6M pool", x=0.01,
                  ha="left", fontsize=13, fontweight="bold", color=INK)
-    fig.text(0.01, 0.885, "GLM-5.3 W4A16, 4x GH200, max_num_seqs = c, 4 tokens verified per "
-             "request; 5K and 50K contexts averaged; solid DFlash2 k=3, dashed MTP3",
+    fig.text(0.01, 0.885, "400K context per request, max_num_seqs = c, 4 tokens verified per request; "
+             "5K / 50K averaged; solid DFlash2 k=3, dashed MTP3; pool = shared KV",
              fontsize=9.5, color=INK2, va="bottom")
-    fig.tight_layout(rect=(0, 0.13, 1, 0.85))
+    fig.tight_layout(rect=(0, 0.16, 1, 0.85))
     fig.savefig(out / "glm-concurrency.png", dpi=160, facecolor=SURFACE)
     plt.close(fig)
 
