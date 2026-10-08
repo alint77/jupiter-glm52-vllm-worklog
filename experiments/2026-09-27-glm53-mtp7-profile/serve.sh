@@ -124,6 +124,10 @@ export VLLM_TIERED_MOE_EMBED_HOST="${VLLM_TIERED_MOE_EMBED_HOST:-1}"
 # 2026-10-07-skinny-gemm-v2): -0.47 +- 0.03 ms/step agentic, -0.50 at
 # 50-130K, GSM8K unchanged. VLLM_DECODE_GEMM=0 restores cuBLAS.
 export VLLM_DECODE_GEMM="${VLLM_DECODE_GEMM:-1}"
+# DFlash2 draft replays its captured FULL graph (vllm 45d1b291ac,
+# 2026-10-08-dflash2-cudagraph): bit-identical to eager, -0.09 ms/step agentic,
+# GSM8K unchanged. VLLM_DFLASH2_EAGER_DRAFT=1 restores the eager draft.
+export VLLM_DFLASH2_EAGER_DRAFT="${VLLM_DFLASH2_EAGER_DRAFT:-0}"
 # REPLICAS=exact activates the profile's Grace replicas (1,351-1,962 per rank
 # in the agentic profile). Replicas add pinned Grace the planner does not see
 # each worker's own share of, hence the larger host reserve (as for MiMo).
