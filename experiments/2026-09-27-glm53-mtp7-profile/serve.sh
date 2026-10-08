@@ -128,6 +128,11 @@ export VLLM_DECODE_GEMM="${VLLM_DECODE_GEMM:-1}"
 # 2026-10-08-dflash2-cudagraph): bit-identical to eager, -0.09 ms/step agentic,
 # GSM8K unchanged. VLLM_DFLASH2_EAGER_DRAFT=1 restores the eager draft.
 export VLLM_DFLASH2_EAGER_DRAFT="${VLLM_DFLASH2_EAGER_DRAFT:-0}"
+# DCP sparse decode: 768-wide index rows instead of 2048 (vllm bfa5e0d112,
+# 2026-10-08-flashmla-split): -0.47 ms/step agentic, -0.48 at 50-130K, GSM8K
+# unchanged; served max 597 live slots per row, 0 over 768 (logged every 1000
+# steps). VLLM_DCP_SPARSE_DECODE_WIDTH=0 restores the full width.
+export VLLM_DCP_SPARSE_DECODE_WIDTH="${VLLM_DCP_SPARSE_DECODE_WIDTH:-768}"
 # REPLICAS=exact activates the profile's Grace replicas (1,351-1,962 per rank
 # in the agentic profile). Replicas add pinned Grace the planner does not see
 # each worker's own share of, hence the larger host reserve (as for MiMo).
