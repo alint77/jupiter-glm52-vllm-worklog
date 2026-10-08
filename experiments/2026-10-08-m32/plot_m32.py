@@ -7,8 +7,9 @@ glm-m32-moe.png          MoE layer time per step size: decode kernel vs the
                          path it replaced (grid-*.jsonl, m8-*.jsonl)
 glm-m32-ab.png           served step time before / after at 8 / 16 / 32
                          tokens (c=4 k=7 A/B, compare_conc.py's pairing)
-glm-concurrency.png      total and per-request decode tok/s vs requests in
-                         flight, every sweep config (m32-sweep/*/sweep.jsonl)
+glm-concurrency.png      throughput per GPU vs interactivity (tok/s per
+                         user), 5K and 50K context, every sweep config
+                         (m32-sweep/*/sweep.jsonl)
 """
 import collections
 import json
@@ -26,7 +27,6 @@ sys.path.insert(0, str(HERE.parent / "2026-09-26-mimo-routing-profile"))
 from plot_routing import DDR, GRID, HBM, INK, INK2, MUTED, SURFACE  # noqa: E402
 
 SCRATCH = Path("/e/fscratch/profound/naeimitabiei1")
-PROD_C1 = 165  # tok/s, c=1 DFlash2 k=7 prod (2026-10-08-flashmla-split A/B)
 
 
 def style(ax, grid_axis="y"):
@@ -131,59 +131,80 @@ def ab(out):
            "per-request tok/s", out / "glm-m32-ab.png")
 
 
-CONFIGS = [  # tag, label, color, linestyle
-    ("dflash23-c2", "c=2, 0.8M pool", "#9cc3ef", "-"),
-    ("dflash23-c4", "c=4, 1.6M pool", HBM, "-"),
-    ("dflash23-c8-400k-pool1600k", "c=8, 1.6M pool", "#123f7a", "-"),
-    ("dflash23-c8-400k-r1000", "c=8, 3.2M, 1,000 replicas", DDR, "-"),
-    ("dflash23-c8-400k-r500", "c=8, 3.2M, 500 replicas", "#f2a37f", "-"),
+CONFIGS = [  # tag, label, color
+    ("c8-400k-pool1600k", "c=8, 1.6M pool", "#123f7a"),
+    ("c8-400k-r1000", "c=8, 3.2M pool, 1,000 replicas", DDR),
+    ("c8-400k-r500", "c=8, 3.2M pool, 500 replicas", "#f2a37f"),
+    ("c4", "c=4, 1.6M pool", HBM),
+    ("c2", "c=2, 0.8M pool", "#9cc3ef"),
 ]
+SPECS = [("mtp3", "MTP3", "--", "s"), ("dflash23", "DFlash2 k=3", "-", "o")]
+GPUS = 4
 
 
-def sweep_rows(tag):
+def sweep_rows(tag, ctx):
     f = SCRATCH / "m32-sweep" / tag / "sweep.jsonl"
     if not f.exists():
         return None
     rows = [json.loads(l) for l in f.read_text().splitlines() if l.strip()]
     out = {}
     for n in sorted({r["n"] for r in rows}):
-        rs = [r for r in rows if r["n"] == n]
-        out[n] = (st.mean(r["agg_tps"] for r in rs), st.mean(r["decode_tps"] for r in rs))
+        rs = [r for r in rows if r["n"] == n and r["ctx_target"] == ctx]
+        out[n] = (st.mean(r["decode_tps"] for r in rs), st.mean(r["agg_tps"] for r in rs) / GPUS)
+    return out
+
+
+def frontier(pts):
+    best, out = -1, []
+    for x, y in sorted(pts, key=lambda p: -p[0]):
+        if y > best:
+            out.append((x, y))
+            best = y
     return out
 
 
 def concurrency(out):
-    fig, (a1, a2) = plt.subplots(1, 2, figsize=(11, 5.4), facecolor=SURFACE)
-    for spec, ls, mk in (("dflash2", "-", "o"), ("mtp", "--", "s")):
-        for tag, label, color, _ in CONFIGS:
-            t = tag.replace("dflash23", f"{spec}3")
-            d = sweep_rows(t)
-            if not d:
-                continue
-            ns = sorted(d)
-            lab = f"{'DFlash2 k=3' if spec == 'dflash2' else 'MTP3'}, {label}"
-            a1.plot(ns, [d[n][0] for n in ns], ls, marker=mk, color=color, label=lab, markersize=5)
-            a2.plot(ns, [d[n][1] for n in ns], ls, marker=mk, color=color, markersize=5)
-    for ax in (a1, a2):
-        ax.axhline(PROD_C1, color=INK2, linestyle=":", linewidth=1.2)
-        ax.set_xscale("log", base=2)
-        ax.set_xticks([1, 2, 4, 8])
-        ax.set_xticklabels(["1", "2", "4", "8"])
-        ax.set_xlabel("requests in flight", color=INK2)
+    """Throughput per GPU vs interactivity: one curve per server config
+    and drafter, one point per number of requests in flight."""
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5.6), facecolor=SURFACE, sharey=True)
+    for ax, ctx in zip(axes, (5000, 50000)):
+        pts = []
+        for spec, name, ls, mk in SPECS:
+            for tag, label, color in CONFIGS:
+                d = sweep_rows(f"{spec}-{tag}", ctx)
+                if not d:
+                    continue
+                ns = sorted(d)
+                xs, ys = [d[n][0] for n in ns], [d[n][1] for n in ns]
+                pts += zip(xs, ys)
+                main = tag == CONFIGS[0][0]
+                ax.plot(xs, ys, ls, marker=mk, color=color, markersize=6 if main else 4.5,
+                        linewidth=2.2 if main else 1.3, label=f"{name}, {label}", zorder=3)
+                if main and spec == "dflash23":
+                    for n, x, y in zip(ns, xs, ys):
+                        ax.annotate(f"{n}", (x, y), xytext=(7, -12), textcoords="offset points",
+                                    fontsize=9, color=INK, fontweight="bold")
+        f = frontier(pts)
+        ax.plot([p[0] for p in f], [p[1] for p in f], color=MUTED, linewidth=9, alpha=0.35,
+                solid_capstyle="round", zorder=1, label="Pareto frontier")
+        ax.set_title(f"{ctx // 1000}K tokens of context per request", loc="left", fontsize=10.5,
+                     color=INK)
+        ax.set_xlabel("interactivity: decode tok/s per user", color=INK2)
+        ax.set_xlim(40, 180)
         style(ax, "both")
-    a2.text(1.05, PROD_C1 - 9, "prod, c=1 (DFlash2 k=7)", fontsize=8.5, color=INK2)
-    a1.set_ylabel("total decode tok/s", color=INK2)
-    a2.set_ylabel("decode tok/s per request", color=INK2)
-    a1.set_title("Throughput", loc="left", fontsize=10.5, color=INK)
-    a2.set_title("Per request", loc="left", fontsize=10.5, color=INK)
-    fig.legend(*a1.get_legend_handles_labels(), loc="lower center", ncol=4, frameon=False,
-               fontsize=8, bbox_to_anchor=(0.5, 0.0))
-    fig.suptitle("More users at 400K context: c=8 reaches ~440 tok/s on a shared 1.6M pool", x=0.01,
-                 ha="left", fontsize=13, fontweight="bold", color=INK)
-    fig.text(0.01, 0.885, "400K context per request, max_num_seqs = c, 4 tokens verified per request; "
-             "5K / 50K averaged; solid DFlash2 k=3, dashed MTP3; pool = shared KV",
+    axes[0].set_ylabel(f"throughput: output tok/s per GPU ({GPUS} GH200)", color=INK2)
+    axes[0].set_ylim(0, 125)
+    axes[0].text(0.98, 0.97, "numbers: requests in flight", transform=axes[0].transAxes,
+                 ha="right", va="top", fontsize=8.5, color=INK2)
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="lower center", ncol=4, frameon=False, fontsize=8,
+               bbox_to_anchor=(0.5, 0.0))
+    fig.suptitle("Throughput vs interactivity at 400K max context: c=8 on a shared 1.6M pool is "
+                 "the frontier", x=0.01, ha="left", fontsize=13, fontweight="bold", color=INK)
+    fig.text(0.01, 0.905, "GLM-5.3 W4A16, TP4 / DCP4; 400 output tokens, temperature 1.0; "
+             "output tok/s includes TTFT on a cached prompt; solid DFlash2 k=3, dashed MTP3",
              fontsize=9.5, color=INK2, va="bottom")
-    fig.tight_layout(rect=(0, 0.16, 1, 0.85))
+    fig.tight_layout(rect=(0, 0.14, 1, 0.95))
     fig.savefig(out / "glm-concurrency.png", dpi=160, facecolor=SURFACE)
     plt.close(fig)
 
