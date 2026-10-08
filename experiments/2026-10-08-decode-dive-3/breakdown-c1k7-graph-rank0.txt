@@ -1,0 +1,13 @@
+92 steps, median period 21.54 ms (mean of parts below)
+    7.58 ms   34.8%  MoE GEMMs (tiered one-kernel w13/w2)
+    3.23 ms   14.8%  dense GEMMs (decode_gemm)
+    3.10 ms   14.3%  all-reduce + RMSNorm (fused, incl. wait)
+    1.74 ms    8.0%  dense GEMMs (cuBLAS / CUTLASS / cute-dsl)
+    1.39 ms    6.4%  attention (FlashMLA main)
+    1.39 ms    6.4%  DCP collectives (gather / LSE reduce-scatter)
+    1.10 ms    5.0%  drafter / sampling / other
+    0.57 ms    2.6%  MoE route/act/finalize + router
+    0.55 ms    2.5%  DSA indexer
+    0.52 ms    2.4%  GPU idle
+    0.32 ms    1.5%  attention (split-KV combine)
+    0.28 ms    1.3%  KV write / skip-KV staging

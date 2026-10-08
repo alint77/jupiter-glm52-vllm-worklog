@@ -40,3 +40,23 @@ stays 16).
 A row whose live count exceeds the width would silently drop keys. With
 `cp_kv_cache_interleave_size = 1` (prod) the per-rank count of a top-2048
 set is ~512 +- ~20; 1024 needs one rank to own half the selection.
+
+## Served A/B (`chain_dw.sh`, 4 nodes x 4 arms alternating, vllm bfa5e0d112)
+
+dw0 = full width, dw1 = `VLLM_DCP_SPARSE_DECODE_WIDTH=768`; prod serve.sh
+otherwise (`KINDS=dw0,dw1 compare_ba.py`, +- is one standard error):
+
+| | full width | 768 |
+|---|---|---|
+| agentic decode, 274 requests | | **-0.472 +- 0.027 ms/step** |
+| same, all 276 requests | | -0.383 +- 0.278 |
+| 50K / 130K decode, 64 requests | | **-0.478 +- 0.021 ms/step** |
+| GSM8K (8 x 200) | 0.913 | 0.919 |
+| hot / startup free / 388K stress | 3670 / 3.46 / 8 of 8 OK | same |
+
+The two excluded requests are short (20-23 steps), one per arm (dw0-2227046-2
+at 72 ms/step, dw1-2227048-2 at 120); cause not found. Overflow monitor
+(`live-slots-per-window.txt`, 248 windows after each rank's startup window):
+max live slots per row 597, 0 rows over 768. The startup window itself counts
+capture / warm-up rows with placeholder indices (up to 2048 on one rank) and
+should be ignored.

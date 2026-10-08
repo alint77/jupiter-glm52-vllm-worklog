@@ -1,0 +1,70 @@
+== window-0
+41 steps, median period 20.56 ms (mean of parts below)
+    7.34 ms   35.5%  MoE GEMMs (tiered one-kernel w13/w2)
+    3.27 ms   15.8%  dense GEMMs (decode_gemm)
+    2.40 ms   11.6%  all-reduce + RMSNorm (fused, incl. wait)
+    1.77 ms    8.5%  dense GEMMs (cuBLAS / CUTLASS / cute-dsl)
+    1.40 ms    6.7%  DCP collectives (gather / LSE reduce-scatter)
+    1.18 ms    5.7%  drafter / sampling / other
+    1.16 ms    5.6%  attention (FlashMLA main)
+    0.57 ms    2.8%  DSA indexer
+    0.57 ms    2.8%  MoE route/act/finalize + router
+    0.53 ms    2.5%  GPU idle
+    0.30 ms    1.4%  KV write / skip-KV staging
+    0.21 ms    1.0%  attention (split-KV combine)
+== window-1
+96 steps, median period 20.98 ms (mean of parts below)
+    7.67 ms   36.4%  MoE GEMMs (tiered one-kernel w13/w2)
+    3.27 ms   15.5%  dense GEMMs (decode_gemm)
+    2.36 ms   11.2%  all-reduce + RMSNorm (fused, incl. wait)
+    1.76 ms    8.4%  dense GEMMs (cuBLAS / CUTLASS / cute-dsl)
+    1.42 ms    6.7%  DCP collectives (gather / LSE reduce-scatter)
+    1.17 ms    5.6%  attention (FlashMLA main)
+    1.15 ms    5.4%  drafter / sampling / other
+    0.68 ms    3.2%  DSA indexer
+    0.57 ms    2.7%  MoE route/act/finalize + router
+    0.50 ms    2.4%  GPU idle
+    0.30 ms    1.4%  KV write / skip-KV staging
+    0.22 ms    1.0%  attention (split-KV combine)
+== window-2
+66 steps, median period 20.63 ms (mean of parts below)
+    7.39 ms   35.4%  MoE GEMMs (tiered one-kernel w13/w2)
+    3.28 ms   15.7%  dense GEMMs (decode_gemm)
+    2.40 ms   11.5%  all-reduce + RMSNorm (fused, incl. wait)
+    1.77 ms    8.5%  dense GEMMs (cuBLAS / CUTLASS / cute-dsl)
+    1.40 ms    6.7%  DCP collectives (gather / LSE reduce-scatter)
+    1.17 ms    5.6%  drafter / sampling / other
+    1.17 ms    5.6%  attention (FlashMLA main)
+    0.66 ms    3.1%  GPU idle
+    0.58 ms    2.8%  MoE route/act/finalize + router
+    0.57 ms    2.7%  DSA indexer
+    0.30 ms    1.4%  KV write / skip-KV staging
+    0.22 ms    1.0%  attention (split-KV combine)
+== window-10
+140 steps, median period 21.54 ms (mean of parts below)
+    7.93 ms   36.8%  MoE GEMMs (tiered one-kernel w13/w2)
+    3.28 ms   15.2%  dense GEMMs (decode_gemm)
+    2.34 ms   10.9%  all-reduce + RMSNorm (fused, incl. wait)
+    1.76 ms    8.2%  dense GEMMs (cuBLAS / CUTLASS / cute-dsl)
+    1.42 ms    6.6%  DCP collectives (gather / LSE reduce-scatter)
+    1.18 ms    5.5%  attention (FlashMLA main)
+    1.15 ms    5.3%  drafter / sampling / other
+    0.87 ms    4.1%  DSA indexer
+    0.58 ms    2.7%  MoE route/act/finalize + router
+    0.51 ms    2.4%  GPU idle
+    0.30 ms    1.4%  KV write / skip-KV staging
+    0.21 ms    1.0%  attention (split-KV combine)
+== window-11
+141 steps, median period 21.26 ms (mean of parts below)
+    7.79 ms   36.4%  MoE GEMMs (tiered one-kernel w13/w2)
+    3.28 ms   15.3%  dense GEMMs (decode_gemm)
+    2.35 ms   11.0%  all-reduce + RMSNorm (fused, incl. wait)
+    1.77 ms    8.2%  dense GEMMs (cuBLAS / CUTLASS / cute-dsl)
+    1.40 ms    6.5%  DCP collectives (gather / LSE reduce-scatter)
+    1.17 ms    5.5%  attention (FlashMLA main)
+    1.14 ms    5.3%  drafter / sampling / other
+    0.91 ms    4.3%  DSA indexer
+    0.58 ms    2.7%  MoE route/act/finalize + router
+    0.52 ms    2.4%  GPU idle
+    0.30 ms    1.4%  KV write / skip-KV staging
+    0.22 ms    1.0%  attention (split-KV combine)
