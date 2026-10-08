@@ -155,4 +155,5 @@ def main():
               f"{sum(r['agg_tps'] for r in rs) / len(rs):16.1f} {sum(r['acc_len'] for r in rs) / len(rs):8.2f}")
 
 
-main()
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,42 @@
+######## /e/fscratch/profound/naeimitabiei1/c2-k3/c2k3-graph/trace/alone-5K/
+108 steps over 1 window(s): period 18.40 ms, GPU busy 17.72 ms, idle 0.68 ms per step
+kernel time 25.86 ms per step (sum, overlaps counted twice)
+    3.394 ms  void tiered_decode::gemm_kernel<0, 1>(tiered_decode::Params)
+    3.323 ms  tiered_decode::act_kernel(tiered_decode::Workspace*)
+    2.419 ms  void decode_gemm_kernel<4, 4, true>(__nv_bfloat16 const*, __nv_bfloat16 const*, __nv_bfloat16*, int, int, int)
+    1.953 ms  void flashinfer::trtllm_allreduce_fusion::allreduce_fusion_kernel_oneshot_lamport<(flashinfer::trtllm_allreduc
+    1.944 ms  void tiered_decode::gemm_kernel<1, 1>(tiered_decode::Params)
+    1.545 ms  tiered_decode::finalize_kernel(tiered_decode::Workspace*, __nv_bfloat16*)
+    1.138 ms  void sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_sparse_kernel<sm90::decode::sparse_fp8::KernelTemplat
+    0.887 ms  nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+    0.805 ms  void decode_gemm_kernel<2, 8, true>(__nv_bfloat16 const*, __nv_bfloat16 const*, __nv_bfloat16*, int, int, int)
+    0.660 ms  void cublasLt::splitKreduce_kernel<32, 16, int, float, __nv_bfloat16, float, __nv_bfloat16, false, float, __nv
+    0.658 ms  void smxx::decode::flash_fwd_mla_combine_kernel<cutlass::bfloat16_t, 512, 8, 64, 256>(CombineParams)
+    0.623 ms  nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT
+108 steps: last->first FlashMLA span median 2220 us, GPU idle in it 240 us
+       0.0  gap    0.0  span   152.0  busy   251.4  cudaGraphLaunch          n=  26  [('memcpy32_post', 7), ('nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT', 2), ('void flashinfer::trtllm_allreduce_fusion::a
+     154.0  gap    2.0  span   770.7  busy   692.4  eager                    n=  70  [('Memset (Device)', 9), ('void at_cuda_detail::cub::detail::radix_sort::Devi', 9), ('void vllm::reshape_and_cache_
+     928.2  gap    3.4  span  1054.8  busy  1003.3  cudaGraphLaunch          n= 141  [('void decode_gemm_kernel<4, 4, true>(__nv_bfloat16 ', 18), ('void cutlass::device_kernel<vllm::cutlass_3x_gemm_',
+    1986.8  gap    3.8  span   118.5  busy    57.9  eager                    n=  43  [('void at::native::vectorized_elementwise_kernel<4, ', 15), ('void at::native::unrolled_elementwise_kernel<at::n',
+    2108.0  gap    2.7  span   120.4  busy   117.0  cudaGraphLaunch          n=  24  [('void decode_gemm_kernel<2, 8, true>(__nv_bfloat16 ', 2), ('triton_poi_fused_0', 1), ('void flashinfer::trtllm_al
+######## /e/fscratch/profound/naeimitabiei1/c2-k3/c2k3-graph/trace/pair-5K_5K/
+90 steps over 1 window(s): period 22.14 ms, GPU busy 21.56 ms, idle 0.58 ms per step
+kernel time 33.17 ms per step (sum, overlaps counted twice)
+    5.403 ms  void tiered_decode::gemm_kernel<0, 1>(tiered_decode::Params)
+    5.380 ms  tiered_decode::act_kernel(tiered_decode::Workspace*)
+    3.000 ms  void tiered_decode::gemm_kernel<1, 1>(tiered_decode::Params)
+    2.588 ms  tiered_decode::finalize_kernel(tiered_decode::Workspace*, __nv_bfloat16*)
+    2.477 ms  void decode_gemm_kernel<4, 4, true>(__nv_bfloat16 const*, __nv_bfloat16 const*, __nv_bfloat16*, int, int, int)
+    2.259 ms  void flashinfer::trtllm_allreduce_fusion::allreduce_fusion_kernel_oneshot_lamport<(flashinfer::trtllm_allreduc
+    1.413 ms  void sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_sparse_kernel<sm90::decode::sparse_fp8::KernelTemplat
+    1.226 ms  nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+    0.806 ms  void decode_gemm_kernel<2, 8, true>(__nv_bfloat16 const*, __nv_bfloat16 const*, __nv_bfloat16*, int, int, int)
+    0.754 ms  nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT
+    0.712 ms  void one_shot::gather_cat_kernel<4>(vllm::RankData*, vllm::RankData*, long, long, vllm::RankSignals, vllm::Sig
+    0.625 ms  void smxx::decode::flash_fwd_mla_combine_kernel<cutlass::bfloat16_t, 512, 8, 32, 256>(CombineParams)
+90 steps: last->first FlashMLA span median 2157 us, GPU idle in it 201 us
+       0.0  gap    0.0  span   188.9  busy   304.8  cudaGraphLaunch          n=  26  [('memcpy32_post', 7), ('nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT', 2), ('void flashinfer::trtllm_allreduce_fusion::a
+     191.4  gap    2.6  span   565.9  busy   523.7  eager                    n=  43  [('void vllm::reshape_and_cache_flash_kernel<__nv_bfl', 6), ('void at::native::index_elementwise_kernel<128, 4, ', 
+     760.3  gap    3.0  span  1106.8  busy  1057.8  cudaGraphLaunch          n= 141  [('void decode_gemm_kernel<4, 4, true>(__nv_bfloat16 ', 18), ('void cutlass::device_kernel<vllm::cutlass_3x_gemm_',
+    1871.2  gap    4.0  span   122.7  busy    58.0  eager                    n=  43  [('void at::native::vectorized_elementwise_kernel<4, ', 15), ('void at::native::unrolled_elementwise_kernel<at::n',
+    1996.3  gap    2.5  span   153.5  busy   150.1  cudaGraphLaunch          n=  24  [('void decode_gemm_kernel<2, 8, true>(__nv_bfloat16 ', 2), ('triton_poi_fused_0', 1), ('void flashinfer::trtllm_al

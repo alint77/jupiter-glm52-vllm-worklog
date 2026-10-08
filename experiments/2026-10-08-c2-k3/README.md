@@ -63,20 +63,21 @@ Every window runs the one-kernel tiered MoE, `decode_gemm` and the skip-KV
 stager (`_gather_rows`); the only Marlin MoE is the MTP layer's own (all-HBM,
 0.10-0.18 ms/step). MTP's draft passes are in CUDA graphs (idle <= 1.1 ms).
 
-The DFlash2 drafter is not: its ~240-270 kernels launch eagerly every step,
-in prod too (c=1 k=7: 1.89 ms span, 1.66 busy). With a lone request at c=2
-the same drafter work stretches to a 3.54 ms span (1.75 busy) plus a 0.42 ms
-gap, which is most of DF2 k3's 6.7 ms idle and of its 12% lone-request loss
-against prod. Capturing the drafter is the open lever for DFlash2 at c >= 2
-(and ~0.2 ms at c=1).
+The DFlash2 drafter ran eagerly then (~240-270 launches per step). Its large
+profiled idle with a lone request at c=2 (6.7 ms) turned out to be the torch
+profiler's per-launch cost, not serving overhead: un-profiled, the eager and
+captured drafter give the same c=2 k=3 step time
+(../2026-10-08-dflash2-cudagraph).
 
 ## Reading
 
-- MTP3 c=2 is the best c=2 config: lone requests 8-9% below prod
-  (155.7 vs 169.6 at 5K, 142.7 vs 156.4 at 50K), pairs ~1.4-1.5x prod's
-  aggregate at ~125-137 tok/s each. It beats DF2 k3 c=2 everywhere,
-  mostly because its draft is captured (lone step 19.2 vs 24.9 ms) and its
-  acceptance at k=3 is ~3.0 of 4.
+- MTP3 c=2 and DF2 k3 c=2 are close. Lone requests are 8-9% below prod
+  (155.7 vs 169.6 at 5K), pairs reach ~1.4-1.5x prod's aggregate at
+  ~125-137 tok/s each. A rerun of DF2 k3 c=2 (../2026-10-08-dflash2-cudagraph,
+  `run-c2k3-eager.log`) gave 155.6 lone 5K and 221-235 aggregate in pairs,
+  i.e. MTP3's numbers; the first DF2 k3 run (150 / 175-231) was a noisy
+  draw. MTP needs reserve 3.0 here, DF2 runs at 1.7 with ~13 more hot
+  experts per rank.
 - MTP1 c=4 tops out at ~280-300 tok/s aggregate with four in flight but
   only ~78-81 tok/s per request, and ~112 tok/s alone (acceptance 1.85 of 2):
   a throughput setting, not a latency one. It costs ~260 hot experts for
