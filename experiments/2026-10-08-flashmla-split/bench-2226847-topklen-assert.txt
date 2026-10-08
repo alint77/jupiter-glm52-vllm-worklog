@@ -1,0 +1,47 @@
+/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/profiler/profiler.py:224: UserWarning: Warning: Profiler clears events at the end of each cycle.Only events from the current cycle will be reported.To keep events across cycles, set acc_events=True.
+  _warn_once(
+Assertion `params.topk_length == nullptr` failed (/e/project1/profound/alint77/vllm/.deps/flashmla-src/csrc/sm90/decode/sparse_fp8/instantiations/../splitkv_mla.cuh:701): , V3.2 does not support dynamic topk length
+78 layers, valid per query 466..522, owned 1280, NVIDIA GH200 120GB
+ width topk_len  us/layer    main  combine  other sm_parts    max|d|
+  2048    False     21.45   17.30     7.90   0.00       16  0.00e+00
+Traceback (most recent call last):
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-10-08-flashmla-split/bench.py", line 132, in <module>
+    main()
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-10-08-flashmla-split/bench.py", line 123, in main
+    us, split, nsp, outs = run_variant(layers, width, with_len, a.iters)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-10-08-flashmla-split/bench.py", line 71, in run_variant
+    step()
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-10-08-flashmla-split/bench.py", line 65, in step
+    flash_mla_with_kvcache(
+  File "/e/project1/profound/alint77/vllm/vllm/third_party/flashmla/flash_mla_interface.py", line 161, in flash_mla_with_kvcache
+    out, lse, new_tile_scheduler_metadata, new_num_splits = flash_mla_cuda.sparse_decode_fwd(
+                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/_ops.py", line 1269, in __call__
+    return self._op(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Assertion error (/e/project1/profound/alint77/vllm/.deps/flashmla-src/csrc/sm90/decode/sparse_fp8/instantiations/../splitkv_mla.cuh:701): Assertion `params.topk_length == nullptr` failed.
+/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/profiler/profiler.py:224: UserWarning: Warning: Profiler clears events at the end of each cycle.Only events from the current cycle will be reported.To keep events across cycles, set acc_events=True.
+  _warn_once(
+Assertion `params.topk_length == nullptr` failed (/e/project1/profound/alint77/vllm/.deps/flashmla-src/csrc/sm90/decode/sparse_fp8/instantiations/../splitkv_mla.cuh:701): , V3.2 does not support dynamic topk length
+78 layers, valid per query 485..537, owned 25000, NVIDIA GH200 120GB
+ width topk_len  us/layer    main  combine  other sm_parts    max|d|
+  2048    False     21.56   17.43     7.88   0.00       16  0.00e+00
+Traceback (most recent call last):
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-10-08-flashmla-split/bench.py", line 132, in <module>
+    main()
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-10-08-flashmla-split/bench.py", line 123, in main
+    us, split, nsp, outs = run_variant(layers, width, with_len, a.iters)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-10-08-flashmla-split/bench.py", line 71, in run_variant
+    step()
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-10-08-flashmla-split/bench.py", line 65, in step
+    flash_mla_with_kvcache(
+  File "/e/project1/profound/alint77/vllm/vllm/third_party/flashmla/flash_mla_interface.py", line 161, in flash_mla_with_kvcache
+    out, lse, new_tile_scheduler_metadata, new_num_splits = flash_mla_cuda.sparse_decode_fwd(
+                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/_ops.py", line 1269, in __call__
+    return self._op(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Assertion error (/e/project1/profound/alint77/vllm/.deps/flashmla-src/csrc/sm90/decode/sparse_fp8/instantiations/../splitkv_mla.cuh:701): Assertion `params.topk_length == nullptr` failed.
+srun: error: jpbo-003-13: task 0: Exited with exit code 1

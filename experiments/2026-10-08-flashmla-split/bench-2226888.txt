@@ -1,0 +1,16 @@
+/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/profiler/profiler.py:224: UserWarning: Warning: Profiler clears events at the end of each cycle.Only events from the current cycle will be reported.To keep events across cycles, set acc_events=True.
+  _warn_once(
+78 layers, valid per query 466..522, owned 1280, NVIDIA GH200 120GB
+ width topk_len  us/layer    main  combine  other sm_parts    max|d|
+  2048    False     21.37   17.27     7.85   0.00       16  0.00e+00
+  1024    False     16.99   13.78     6.48   0.00       16  1.53e-05
+   768    False     16.75   13.98     6.23   0.00       16  1.53e-05
+   640    False     15.68   11.65     8.13   0.00       16  1.53e-05
+/e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/profiler/profiler.py:224: UserWarning: Warning: Profiler clears events at the end of each cycle.Only events from the current cycle will be reported.To keep events across cycles, set acc_events=True.
+  _warn_once(
+78 layers, valid per query 485..537, owned 25000, NVIDIA GH200 120GB
+ width topk_len  us/layer    main  combine  other sm_parts    max|d|
+  2048    False     21.57   17.44     7.86   0.00       16  0.00e+00
+  1024    False     17.44   14.09     6.83   0.00       16  1.53e-05
+   768    False     16.75   13.97     6.15   0.00       16  1.53e-05
+   640    False     15.44   11.55     7.78   0.00       16  1.53e-05
