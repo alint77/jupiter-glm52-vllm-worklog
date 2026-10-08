@@ -1,0 +1,170 @@
+######## /e/fscratch/profound/naeimitabiei1/c2-k3/mtp1c4-r3.0/trace/alone-5K/
+121 steps over 1 window(s): period 16.53 ms, GPU busy 15.89 ms, idle 0.64 ms per step
+kernel time 22.69 ms per step (sum, overlaps counted twice)
+    2.690 ms  void tiered_decode::gemm_kernel<0, 1>(tiered_decode::Params)
+    2.582 ms  tiered_decode::act_kernel(tiered_decode::Workspace*)
+    2.241 ms  void decode_gemm_kernel<4, 4, true>(__nv_bfloat16 const*, __nv_bfloat16 const*, __nv_bfloat16*, int, int, int)
+    2.147 ms  void flashinfer::trtllm_allreduce_fusion::allreduce_fusion_kernel_oneshot_lamport<(flashinfer::trtllm_allreduc
+    1.549 ms  void tiered_decode::gemm_kernel<1, 1>(tiered_decode::Params)
+    1.171 ms  tiered_decode::finalize_kernel(tiered_decode::Workspace*, __nv_bfloat16*)
+    0.976 ms  void smxx::decode::flash_fwd_mla_combine_kernel<cutlass::bfloat16_t, 512, 8, 96, 256>(CombineParams)
+    0.944 ms  void sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_sparse_kernel<sm90::decode::sparse_fp8::KernelTemplat
+    0.826 ms  nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+    0.818 ms  void decode_gemm_kernel<2, 8, true>(__nv_bfloat16 const*, __nv_bfloat16 const*, __nv_bfloat16*, int, int, int)
+    0.628 ms  nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT
+    0.581 ms  void cublasLt::splitKreduce_kernel<32, 16, int, float, __nv_bfloat16, float, __nv_bfloat16, false, float, __nv
+    0.559 ms  void one_shot::gather_cat_kernel<4>(vllm::RankData*, vllm::RankData*, long, long, vllm::RankSignals, vllm::Sig
+    0.454 ms  void one_shot::lse_reduce_scatter_kernel<__nv_bfloat16, 4, true>(vllm::RankData*, vllm::RankData*, long, long,
+    0.401 ms  void tiered_decode::route_prep_kernel<int>(tiered_decode::Workspace*, __nv_bfloat16 const*, int const*, bool c
+    0.384 ms  void vllm::moe::grouped_topk_fused_small_expert_count_kernel<float, float, int, (vllm::moe::ScoringFunc)1, 384
+    0.372 ms  triton_poi_fused_mul_silu_slice_0
+    0.285 ms  nvjet_sm90_tst_64x8_64x16_2x1_v_bz_NNT
+    0.285 ms  _gather_rows_kernel
+    0.280 ms  nvjet_sm90_tst_192x8_64x8_2x1_v_bz_TNT
+    0.253 ms  kernel_cutlass_kernel_vllmmodel_executorkernelsattentiondsadcp_indexer_cutedslStableTopKFromGatheredCandidates
+    0.224 ms  kernel_cutlass_kernel_vllmmodel_executorkernelslinearcute_dsl_ll_bf16_dotprodLLBf16Dotprod_object_at__tensorpt
+    0.194 ms  void at::native::tensor_kernel_scan_innermost_dim<float, std::plus<float> >(float*, float const*, unsigned int
+    0.180 ms  void vllm::concat_and_cache_ds_mla_kernel<__nv_bfloat16, unsigned char, (vllm::Fp8KVCacheDataType)1>(__nv_bflo
+    0.162 ms  triton_red_fused_2
+    0.127 ms  void one_shot::gather_kernel<4>(vllm::RankData*, vllm::RankSignals, vllm::Signal*, uint4*, int, long, long)
+    0.107 ms  triton_red_fused_1
+    0.101 ms  triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_3
+    0.096 ms  _compact_rows_kernel
+    0.096 ms  triton_poi_fused_add_mul_0
+0 aligned steps x 4 ranks
+0 steps; median layer period (MLA_i -> MLA_i+1), us:
+Traceback (most recent call last):
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-10-07-decode-mem-dive/layer_timeline.py", line 54, in <module>
+    main()
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-10-07-decode-mem-dive/layer_timeline.py", line 38, in main
+    print(" ".join(f"{i}:{st.median(p):.0f}" for i, p in enumerate(per)))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-10-07-decode-mem-dive/layer_timeline.py", line 38, in <genexpr>
+    print(" ".join(f"{i}:{st.median(p):.0f}" for i, p in enumerate(per)))
+                          ^^^^^^^^^^^^
+  File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/statistics.py", line 617, in median
+    raise StatisticsError("no median for empty data")
+statistics.StatisticsError: no median for empty data
+######## /e/fscratch/profound/naeimitabiei1/c2-k3/mtp1c4-r3.0/trace/pair-5K_5K/
+101 steps over 1 window(s): period 19.63 ms, GPU busy 19.00 ms, idle 0.63 ms per step
+kernel time 28.26 ms per step (sum, overlaps counted twice)
+    4.082 ms  void tiered_decode::gemm_kernel<0, 1>(tiered_decode::Params)
+    3.997 ms  tiered_decode::act_kernel(tiered_decode::Workspace*)
+    2.856 ms  void flashinfer::trtllm_allreduce_fusion::allreduce_fusion_kernel_oneshot_lamport<(flashinfer::trtllm_allreduc
+    2.293 ms  void tiered_decode::gemm_kernel<1, 1>(tiered_decode::Params)
+    2.276 ms  void decode_gemm_kernel<4, 4, true>(__nv_bfloat16 const*, __nv_bfloat16 const*, __nv_bfloat16*, int, int, int)
+    1.874 ms  tiered_decode::finalize_kernel(tiered_decode::Workspace*, __nv_bfloat16*)
+    1.166 ms  void sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_sparse_kernel<sm90::decode::sparse_fp8::KernelTemplat
+    0.943 ms  nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+    0.819 ms  void decode_gemm_kernel<2, 8, true>(__nv_bfloat16 const*, __nv_bfloat16 const*, __nv_bfloat16*, int, int, int)
+    0.673 ms  void smxx::decode::flash_fwd_mla_combine_kernel<cutlass::bfloat16_t, 512, 8, 64, 256>(CombineParams)
+    0.643 ms  nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT
+    0.629 ms  void cublasLt::splitKreduce_kernel<32, 16, int, float, __nv_bfloat16, float, __nv_bfloat16, false, float, __nv
+    0.580 ms  void one_shot::gather_cat_kernel<4>(vllm::RankData*, vllm::RankData*, long, long, vllm::RankSignals, vllm::Sig
+    0.487 ms  triton_poi_fused_mul_silu_slice_0
+    0.483 ms  void one_shot::lse_reduce_scatter_kernel<__nv_bfloat16, 4, true>(vllm::RankData*, vllm::RankData*, long, long,
+    0.427 ms  void tiered_decode::route_prep_kernel<int>(tiered_decode::Workspace*, __nv_bfloat16 const*, int const*, bool c
+    0.386 ms  void vllm::moe::grouped_topk_fused_small_expert_count_kernel<float, float, int, (vllm::moe::ScoringFunc)1, 384
+    0.359 ms  _gather_rows_kernel
+    0.286 ms  nvjet_sm90_tst_64x8_64x16_2x1_v_bz_NNT
+    0.277 ms  nvjet_sm90_tst_192x8_64x8_2x1_v_bz_TNT
+    0.263 ms  kernel_cutlass_kernel_vllmmodel_executorkernelsattentiondsadcp_indexer_cutedslStableTopKFromGatheredCandidates
+    0.262 ms  kernel_cutlass_kernel_vllmmodel_executorkernelslinearcute_dsl_ll_bf16_dotprodLLBf16Dotprod_object_at__tensorpt
+    0.203 ms  void vllm::concat_and_cache_ds_mla_kernel<__nv_bfloat16, unsigned char, (vllm::Fp8KVCacheDataType)1>(__nv_bflo
+    0.193 ms  void at::native::tensor_kernel_scan_innermost_dim<float, std::plus<float> >(float*, float const*, unsigned int
+    0.167 ms  triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_3
+    0.166 ms  void one_shot::gather_kernel<4>(vllm::RankData*, vllm::RankSignals, vllm::Signal*, uint4*, int, long, long)
+    0.114 ms  triton_red_fused_2
+    0.107 ms  triton_poi_fused_add_mul_0
+    0.095 ms  _compact_rows_kernel
+    0.089 ms  void vllm::cross_device_reduce_1stage<__nv_bfloat16, 4>(vllm::RankData*, vllm::RankSignals, vllm::Signal*, __n
+3 aligned steps x 4 ranks
+ar_attn     x 78/step  transfer(min) 0.486 ms/step  rank total 0.573 0.593 0.581 0.507  -> wait mean 0.078
+Traceback (most recent call last):
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-10-07-decode-mem-dive/coll_wait.py", line 104, in <module>
+    main()
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-10-07-decode-mem-dive/coll_wait.py", line 101, in main
+    + f"  -> wait mean {st.mean(per.values()) - mins / ok / 1e3:.3f}")
+                        ^^^^^^^^^^^^^^^^^^^^^
+  File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/statistics.py", line 486, in mean
+    raise StatisticsError('mean requires at least one data point')
+statistics.StatisticsError: mean requires at least one data point
+3 steps; median layer period (MLA_i -> MLA_i+1), us:
+0:186 1:191 2:150 3:213 4:225 5:264 6:213 7:206 8:211 9:258 10:219 11:218 12:213 13:270 14:217 15:220 16:239 17:259 18:262 19:228 20:247 21:291 22:241 23:214 24:218 25:293 26:219 27:208 28:209 29:294 30:253 31:214 32:212 33:257 34:251 35:249 36:206 37:356 38:232 39:256 40:291 41:301 42:251 43:291 44:259 45:292 46:250 47:239 48:265 49:305 50:249 51:210 52:211 53:328 54:261 55:253 56:201 57:277 58:255 59:261 60:251 61:268 62:265 63:246 64:245 65:264 66:251 67:303 68:250 69:259 70:250 71:241 72:240 73:279 74:294 75:236 76:249
+
+== layer 40: period 296.4 us
+       0.0    14.8  s19  g[1, 4, 33]  void sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_sparse_kernel<sm90::decode::spars
+      11.4     8.4  s19  g[1, 4, 8]  void smxx::decode::flash_fwd_mla_combine_kernel<cutlass::bfloat16_t, 512, 8, 64, 256>(Comb
+      20.2     7.5  s19  g[8, 1, 1]  void one_shot::lse_reduce_scatter_kernel<__nv_bfloat16, 4, true>(vllm::RankData*, vllm::Ra
+      28.2     3.9  s19  g[4, 16, 1]  nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+      32.3    16.7  s19  g[384, 1, 1]  void decode_gemm_kernel<4, 4, true>(__nv_bfloat16 const*, __nv_bfloat16 const*, __nv_bfloa
+      48.3     8.4  s19  g[16, 1, 1]  void flashinfer::trtllm_allreduce_fusion::allreduce_fusion_kernel_oneshot_lamport<(flashin
+      56.7     3.5  s19  g[256, 1, 1]  kernel_cutlass_kernel_vllmmodel_executorkernelslinearcute_dsl_ll_bf16_dotprodLLBf16Dotprod
+      59.2     6.5  s3101  g[4, 16, 1]  nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT
+      60.0     5.4  s19  g[4, 1, 1]  void vllm::moe::grouped_topk_fused_small_expert_count_kernel<float, float, int, (vllm::moe
+      64.3     5.4  s19  g[5, 1, 1]  void tiered_decode::route_prep_kernel<int>(tiered_decode::Workspace*, __nv_bfloat16 const*
+      66.2    81.7  s19  g[132, 1, 1]  void tiered_decode::gemm_kernel<0, 1>(tiered_decode::Params)
+      69.5    12.2  s3101  g[32, 1, 1]  void cublasLt::splitKreduce_kernel<32, 16, int, float, __nv_bfloat16, float, __nv_bfloat16
+      70.9    79.6  s19  g[32, 1, 1]  tiered_decode::act_kernel(tiered_decode::Workspace*)
+      82.1     4.0  s3101  g[4, 1, 1]  triton_poi_fused_mul_silu_slice_0
+      93.5     9.2  s3101  g[4, 24, 1]  nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+     148.5    42.0  s19  g[132, 1, 1]  void tiered_decode::gemm_kernel<1, 1>(tiered_decode::Params)
+     156.3    35.2  s19  g[6, 4, 1]  tiered_decode::finalize_kernel(tiered_decode::Workspace*, __nv_bfloat16*)
+     192.0     1.5  s19  g[48, 1, 1]  triton_poi_fused_add_mul_0
+     193.7    56.4  s19  g[16, 1, 1]  void flashinfer::trtllm_allreduce_fusion::allreduce_fusion_kernel_oneshot_lamport<(flashin
+     250.2    12.3  s19  g[164, 1, 1]  void decode_gemm_kernel<4, 4, true>(__nv_bfloat16 const*, __nv_bfloat16 const*, __nv_bfloa
+     262.9     1.5  s19  g[1, 1, 1]  triton_poi_fused_1
+     264.8     2.0  s19  g[4, 1, 1]  triton_red_fused_2
+     266.9     7.6  s19  g[256, 1, 1]  void decode_gemm_kernel<2, 8, true>(__nv_bfloat16 const*, __nv_bfloat16 const*, __nv_bfloa
+     275.0     2.0  s19  g[16, 1, 1]  triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_3
+     277.5     1.0  s19  g[4, 1, 1]  void vllm::concat_and_cache_ds_mla_kernel<__nv_bfloat16, unsigned char, (vllm::Fp8KVCacheD
+     278.9     0.9  s19  g[4, 1, 1]  void vllm::concat_and_cache_ds_mla_kernel<__nv_bfloat16, unsigned char, (vllm::Fp8KVCacheD
+     280.2     3.8  s19  g[2, 64, 1]  nvjet_sm90_tst_64x8_64x16_2x1_v_bz_NNT
+     284.7    11.6  s19  g[36, 1, 1]  void one_shot::gather_cat_kernel<4>(vllm::RankData*, vllm::RankData*, long, long, vllm::Ra
+######## /e/fscratch/profound/naeimitabiei1/c2-k3/mtp1c4-r3.0/trace/quad-5K/
+90 steps over 1 window(s): period 22.06 ms, GPU busy 21.49 ms, idle 0.57 ms per step
+kernel time 33.65 ms per step (sum, overlaps counted twice)
+    5.806 ms  void tiered_decode::gemm_kernel<0, 1>(tiered_decode::Params)
+    5.747 ms  tiered_decode::act_kernel(tiered_decode::Workspace*)
+    3.222 ms  void tiered_decode::gemm_kernel<1, 1>(tiered_decode::Params)
+    2.781 ms  tiered_decode::finalize_kernel(tiered_decode::Workspace*, __nv_bfloat16*)
+    2.335 ms  void decode_gemm_kernel<4, 4, true>(__nv_bfloat16 const*, __nv_bfloat16 const*, __nv_bfloat16*, int, int, int)
+    2.275 ms  void flashinfer::trtllm_allreduce_fusion::allreduce_fusion_kernel_oneshot_lamport<(flashinfer::trtllm_allreduc
+    1.448 ms  void sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_sparse_kernel<sm90::decode::sparse_fp8::KernelTemplat
+    1.282 ms  nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+    0.822 ms  void decode_gemm_kernel<2, 8, true>(__nv_bfloat16 const*, __nv_bfloat16 const*, __nv_bfloat16*, int, int, int)
+    0.766 ms  nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT
+    0.695 ms  void one_shot::gather_cat_kernel<4>(vllm::RankData*, vllm::RankData*, long, long, vllm::RankSignals, vllm::Sig
+    0.621 ms  void smxx::decode::flash_fwd_mla_combine_kernel<cutlass::bfloat16_t, 512, 8, 32, 256>(CombineParams)
+    0.511 ms  _gather_rows_kernel
+    0.509 ms  void one_shot::lse_reduce_scatter_kernel<__nv_bfloat16, 4, true>(vllm::RankData*, vllm::RankData*, long, long,
+    0.445 ms  void tiered_decode::route_prep_kernel<int>(tiered_decode::Workspace*, __nv_bfloat16 const*, int const*, bool c
+    0.417 ms  void cublasLt::splitKreduce_kernel<32, 16, int, float, __nv_bfloat16, float, __nv_bfloat16, false, float, __nv
+    0.379 ms  void vllm::moe::grouped_topk_fused_small_expert_count_kernel<float, float, int, (vllm::moe::ScoringFunc)1, 384
+    0.317 ms  kernel_cutlass_kernel_vllmmodel_executorkernelslinearcute_dsl_ll_bf16_splitkLLBf16SplitK_object_at__tensorptrb
+    0.301 ms  triton_poi_fused_mul_silu_slice_0
+    0.286 ms  nvjet_sm90_tst_64x8_64x16_2x1_v_bz_NNT
+    0.279 ms  nvjet_sm90_tst_192x8_64x8_2x1_v_bz_TNT
+    0.277 ms  kernel_cutlass_kernel_vllmmodel_executorkernelsattentiondsadcp_indexer_cutedslStableTopKFromGatheredCandidates
+    0.229 ms  void vllm::concat_and_cache_ds_mla_kernel<__nv_bfloat16, unsigned char, (vllm::Fp8KVCacheDataType)1>(__nv_bflo
+    0.180 ms  void one_shot::gather_kernel<4>(vllm::RankData*, vllm::RankSignals, vllm::Signal*, uint4*, int, long, long)
+    0.173 ms  triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_3
+    0.169 ms  _topk_topp_kernel
+    0.119 ms  triton_poi_fused_add_mul_0
+    0.114 ms  triton_red_fused_2
+    0.101 ms  void marlin_moe_wna16::Marlin<1125899906909960l, 1125899907892224l, 1125899906909960l, 1125899906909960l, 128,
+    0.096 ms  _compact_rows_kernel
+0 aligned steps x 4 ranks
+0 steps; median layer period (MLA_i -> MLA_i+1), us:
+Traceback (most recent call last):
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-10-07-decode-mem-dive/layer_timeline.py", line 54, in <module>
+    main()
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-10-07-decode-mem-dive/layer_timeline.py", line 38, in main
+    print(" ".join(f"{i}:{st.median(p):.0f}" for i, p in enumerate(per)))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-10-07-decode-mem-dive/layer_timeline.py", line 38, in <genexpr>
+    print(" ".join(f"{i}:{st.median(p):.0f}" for i, p in enumerate(per)))
+                          ^^^^^^^^^^^^
+  File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/statistics.py", line 617, in median
+    raise StatisticsError("no median for empty data")
+statistics.StatisticsError: no median for empty data

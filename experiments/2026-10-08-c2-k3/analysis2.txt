@@ -1,0 +1,33 @@
+Traceback (most recent call last):
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-09-26-mimo-decode-profile/analyze.py", line 266, in <module>
+    main()
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-09-26-mimo-decode-profile/analyze.py", line 259, in main
+    results[directory.name] = analyze(directory)
+                              ^^^^^^^^^^^^^^^^^^
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-09-26-mimo-decode-profile/analyze.py", line 200, in analyze
+    "period_ms": {"mean": mean(period), "p50": statistics.median(period)},
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/statistics.py", line 617, in median
+    raise StatisticsError("no median for empty data")
+statistics.StatisticsError: no median for empty data
+0 aligned steps x 4 ranks
+0 steps; median layer period (MLA_i -> MLA_i+1), us:
+Traceback (most recent call last):
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-10-07-decode-mem-dive/layer_timeline.py", line 54, in <module>
+    main()
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-10-07-decode-mem-dive/layer_timeline.py", line 38, in main
+    print(" ".join(f"{i}:{st.median(p):.0f}" for i, p in enumerate(per)))
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-10-07-decode-mem-dive/layer_timeline.py", line 38, in <genexpr>
+    print(" ".join(f"{i}:{st.median(p):.0f}" for i, p in enumerate(per)))
+                          ^^^^^^^^^^^^
+  File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/statistics.py", line 617, in median
+    raise StatisticsError("no median for empty data")
+statistics.StatisticsError: no median for empty data
+Traceback (most recent call last):
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-09-28-agentic-decode-bench/kernel_tally.py", line 61, in <module>
+    main()
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-09-28-agentic-decode-bench/kernel_tally.py", line 47, in main
+    span += (marks[-1] - marks[0]) / 1000
+             ~~~~~^^^^
+IndexError: list index out of range

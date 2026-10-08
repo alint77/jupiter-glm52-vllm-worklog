@@ -1,0 +1,37 @@
+Traceback (most recent call last):
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-09-26-mimo-decode-profile/analyze.py", line 266, in <module>
+    main()
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-09-26-mimo-decode-profile/analyze.py", line 259, in main
+    results[directory.name] = analyze(directory)
+                              ^^^^^^^^^^^^^^^^^^
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-09-26-mimo-decode-profile/analyze.py", line 206, in analyze
+    common = set.intersection(*(set(t) for t in tables.values()))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: unbound method set.intersection() needs an argument
+Traceback (most recent call last):
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-10-07-decode-mem-dive/coll_wait.py", line 104, in <module>
+    main()
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-10-07-decode-mem-dive/coll_wait.py", line 68, in main
+    base = ranks[0]
+           ~~~~~^^^
+IndexError: list index out of range
+Traceback (most recent call last):
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-10-07-decode-mem-dive/layer_timeline.py", line 54, in <module>
+    main()
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-10-07-decode-mem-dive/layer_timeline.py", line 24, in main
+    ev = json.load(gzip.open(a.trace))["traceEvents"]
+                   ^^^^^^^^^^^^^^^^^^
+  File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/gzip.py", line 65, in open
+    binary_file = GzipFile(filename, gz_mode, compresslevel)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/e/home/jusers/naeimitabiei1/jupiter/.local/share/uv/python/cpython-3.12.13-linux-aarch64-gnu/lib/python3.12/gzip.py", line 201, in __init__
+    fileobj = self.myfileobj = builtins.open(filename, mode or 'rb')
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/e/fscratch/profound/naeimitabiei1/c2-k3/c2k3/trace/*rank0.*.gz'
+Traceback (most recent call last):
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-09-28-agentic-decode-bench/kernel_tally.py", line 61, in <module>
+    main()
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-09-28-agentic-decode-bench/kernel_tally.py", line 39, in main
+    f = sorted(d.glob("*rank0*.pt.trace.json.gz"))[0]
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
