@@ -111,6 +111,7 @@ def main():
                     help="only two profiled windows (lone 4-token step, 5K+5K pair), 1200 tokens")
     ap.add_argument("--with-profile", action="store_true")
     ap.add_argument("--quad", action="store_true", help="also 4 concurrent requests")
+    ap.add_argument("--reps", type=int, default=2)
     ap.add_argument("--trace-root")
     a = ap.parse_args()
     name = json.loads(call("/v1/models", method="GET").read())["data"][0]["id"]
@@ -131,7 +132,7 @@ def main():
             prof += case(name, "quad 5K", q5, [0, 10, 20, 30], 0, True, 1200, a.trace_root)
         if a.profile_only:
             rows += prof
-    for rep in range(0 if a.profile_only else 2):
+    for rep in range(0 if a.profile_only else a.reps):
         rows += case(name, "alone 5K", [p5a], [rep], rep)
         rows += case(name, "alone 50K", [p50a], [rep], rep)
         rows += case(name, "pair 5K+5K", [p5a, p5b], [rep, rep + 10], rep, profile=a.profile and rep == 1)

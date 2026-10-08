@@ -155,7 +155,7 @@ exec agent_space/experiments/2026-07-17-end-to-end-tuning/run-server.sh \
   --speculative-config "${spec_config}" \
   --decode-context-parallel-size "${DCP:-4}" \
   --dcp-comm-backend "${DCP_COMM:-ag_rs}" \
-  --max-num-seqs 1 \
+  --max-num-seqs "${MAX_NUM_SEQS:-1}" \
   --max-num-batched-tokens "${MAX_NUM_BATCHED_TOKENS:-4096}" \
   --gpu-memory-utilization 0.90 \
   --max-model-len "${MAX_MODEL_LEN:-400000}" \

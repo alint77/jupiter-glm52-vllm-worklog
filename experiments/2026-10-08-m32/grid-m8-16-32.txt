@@ -1,0 +1,10 @@
+76 files, 41055 8-token steps, hot/GPU 3670
+M= 8 all ranks   : 38 cells cover 95%; hot p5/p50/p95/max 5/9/15/26, cold 0/1/2/8; box hot 3-18 cold 0-3
+M= 8 slowest rank: 38 cells cover 95%; hot p5/p50/p95/max 6/11/17/26, cold 0/1/3/8; box hot 4-20 cold 0-3
+M= 8 experts by tokens routed: 1:0.677 2:0.196 3:0.070 4:0.030 5:0.014 6:0.007 7:0.004 8:0.002 >8:0.0000 max 8
+M=16 all ranks   : 73 cells cover 95%; hot p5/p50/p95/max 11/16/24/41, cold 0/1/4/10; box hot 8-29 cold 0-4
+M=16 slowest rank: 71 cells cover 95%; hot p5/p50/p95/max 12/18/26/41, cold 0/2/4/10; box hot 9-31 cold 0-5
+M=16 experts by tokens routed: 1:0.602 2:0.221 3:0.091 4:0.042 5:0.021 6:0.011 7:0.006 8:0.003 >8:0.0026 max 16
+M=32 all ranks   : 130 cells cover 95%; hot p5/p50/p95/max 19/26/37/52, cold 0/3/6/13; box hot 16-43 cold 0-7
+M=32 slowest rank: 125 cells cover 95%; hot p5/p50/p95/max 20/27/39/52, cold 0/3/6/13; box hot 17-46 cold 0-7
+M=32 experts by tokens routed: 1:0.484 2:0.242 3:0.123 4:0.064 5:0.035 6:0.021 7:0.012 8:0.008 >8:0.0115 max 31
