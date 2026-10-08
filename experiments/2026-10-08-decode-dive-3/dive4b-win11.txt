@@ -1,0 +1,111 @@
+== window-11: 140 steps
+--- decode_gemm by position in the layer window
+    window call-count histogram: {6: 280, 5: 140, 3: 7840, 4: 2520, 1: 140}
+    o_proj           n= 56.0/step  mean  16.88 us  p10  16.3   2982 GB/s   82% HBM floor
+    qkv_a            n= 56.0/step  mean  12.65 us  p10  12.3   2569 GB/s   71% HBM floor
+    q_b              n= 56.0/step  mean   7.62 us  p10   7.4   2203 GB/s   61% HBM floor
+--- fused AR by position (rank0; wire = cross-rank min per call)
+    attn-AR  78.0/step  rank0 mean   6.4 us  wire(min)   5.6  rank0 wait   0.8  p90 wait    2.0  -> busy  0.50 ms/step, wait  0.06 ms/step
+    moe-AR  72.0/step  rank0 mean  22.8 us  wire(min)   5.4  rank0 wait  17.4  p90 wait   47.3  -> busy  1.64 ms/step, wait  1.25 ms/step
+      rank0: mean AR  14.3 vs wire   5.5 -> excess   8.8 us/call
+      rank1: mean AR  15.0 vs wire   5.5 -> excess   9.5 us/call
+      rank2: mean AR  15.2 vs wire   5.5 -> excess   9.7 us/call
+      rank3: mean AR  15.3 vs wire   5.5 -> excess   9.8 us/call
+--- skip-KV staging: gather end -> first skip FlashMLA slack (us): min 93.0 p10 159.5 n=2660
+--- PDL on the tiered chain (us/layer, n=10500 5-kernel windows):
+    span  108.3   sum of 5 kernel durations  208.0   -> overlapped   99.7
+    act inside w13  61.0 of its duration; finalize inside w2  30.7
+
+--- layer 0 (dense MLP) 208.5 us
+      0.0   14.6    sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_sparse_kernel
+     11.0    6.3 +  smxx::decode::flash_fwd_mla_combine_kernel
+     17.4    6.7    one_shot::lse_reduce_scatter_kernel
+     24.2    4.0    nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+     28.0   17.1    decode_gemm_kernel
+     44.3    6.7 +  flashinfer::trtllm_allreduce_fusion::allreduce_fusion_kernel_oneshot_l
+     51.2   25.0    decode_gemm_kernel
+     76.3    1.2    triton_poi_fused_mul_silu_slice_0
+     77.3   13.7    decode_gemm_kernel
+     90.2    5.9 +  flashinfer::trtllm_allreduce_fusion::allreduce_fusion_kernel_oneshot_l
+     96.3   12.2    decode_gemm_kernel
+    108.7    5.2    nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT
+    114.2    1.5    cublasLt::splitKreduce_kernel
+    115.8    2.0    triton_red_fused_1
+    117.9    1.6    triton_poi_fused_2
+    119.7    7.6    decode_gemm_kernel
+    127.4    2.2    triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqu
+    129.9    7.2    decode_gemm_kernel
+    137.2    1.7    _fused_indexer_q_rope_quant_kernel
+    139.2    1.9    vllm::indexer_k_quant_and_cache_kernel
+    141.2    0.9    at::native::vectorized_elementwise_kernel
+    142.4    8.1    deep_gemm::sm90_fp8_paged_mqa_logits
+    150.6   13.1    vllm::cooperative::cooperative_topk_cs8
+    164.0    1.9    _pack_dcp_topk_candidates_triton_kernel
+    165.9   10.8    one_shot::gather_kernel
+    176.8   12.1    kernel_cutlass_kernel_vllmmodel_executorkernelsattentiondsadcp_indexer
+    189.0    1.6    vllm::concat_and_cache_ds_mla_kernel
+    190.6    3.8    nvjet_sm90_tst_64x8_64x16_2x1_v_bz_NNT
+    194.5   10.0    one_shot::gather_cat_kernel
+    204.6    3.8    _convert_req_index_to_global_index_kernel
+
+--- layer 1 (dense MLP) 212.3 us
+      0.0   15.1    sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_sparse_kernel
+     11.1    7.0 +  smxx::decode::flash_fwd_mla_combine_kernel
+     18.1    7.2    one_shot::lse_reduce_scatter_kernel
+     25.4    4.2    nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+     29.5   17.2    decode_gemm_kernel
+     45.6    6.5 +  flashinfer::trtllm_allreduce_fusion::allreduce_fusion_kernel_oneshot_l
+     52.4   24.7    decode_gemm_kernel
+     77.2    1.2    triton_poi_fused_mul_silu_slice_0
+     78.3   13.5    decode_gemm_kernel
+     91.0    7.3 +  flashinfer::trtllm_allreduce_fusion::allreduce_fusion_kernel_oneshot_l
+     98.4   12.4    decode_gemm_kernel
+    110.9    5.0    nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT
+    116.1    1.6    cublasLt::splitKreduce_kernel
+    117.8    2.1    triton_red_fused_1
+    120.0    1.8    triton_poi_fused_2
+    122.0    7.7    decode_gemm_kernel
+    129.8    2.2    triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqu
+    132.3    7.1    decode_gemm_kernel
+    139.6    1.8    _fused_indexer_q_rope_quant_kernel
+    141.5    1.6    vllm::indexer_k_quant_and_cache_kernel
+    143.2    0.9    at::native::vectorized_elementwise_kernel
+    144.3    7.9    deep_gemm::sm90_fp8_paged_mqa_logits
+    152.4   12.6    vllm::cooperative::cooperative_topk_cs8
+    165.2    1.5    _pack_dcp_topk_candidates_triton_kernel
+    166.8   11.8    one_shot::gather_kernel
+    178.7   14.7    kernel_cutlass_kernel_vllmmodel_executorkernelsattentiondsadcp_indexer
+    193.6    1.6    vllm::concat_and_cache_ds_mla_kernel
+    195.3    3.7    nvjet_sm90_tst_64x8_64x16_2x1_v_bz_NNT
+    199.2    9.2    one_shot::gather_cat_kernel
+    208.4    3.8    _convert_req_index_to_global_index_kernel
+
+--- layer 2 (dense MLP) 150.7 us
+      0.0   14.8    sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_sparse_kernel
+     10.8    6.7 +  smxx::decode::flash_fwd_mla_combine_kernel
+     17.6    1.2    at::native::vectorized_elementwise_kernel
+     18.8    0.9    at::native::vectorized_elementwise_kernel
+     19.7    1.3    at::native::elementwise_kernel
+     21.2    1.0    memcpy32_post
+     22.2    0.9    at::native::vectorized_elementwise_kernel
+     22.5    9.2 +  one_shot::lse_reduce_scatter_kernel
+     23.2    2.7 +  _mark_rows_kernel
+     25.9    4.8 +  _compact_rows_kernel
+     30.8    2.3 +  _remap_rows_kernel
+     32.2    4.9 +  nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+     33.2   15.4 +  _gather_rows_kernel
+     37.2   18.1 +  decode_gemm_kernel
+     54.4    5.4 +  flashinfer::trtllm_allreduce_fusion::allreduce_fusion_kernel_oneshot_l
+     59.6   24.6    decode_gemm_kernel
+     84.7    1.3    triton_poi_fused_mul_silu_slice_0
+     86.2   13.3    decode_gemm_kernel
+     99.4    7.6    flashinfer::trtllm_allreduce_fusion::allreduce_fusion_kernel_oneshot_l
+    107.0   12.3    decode_gemm_kernel
+    119.7    1.3    triton_poi_fused_1
+    121.4    2.0    triton_red_fused_2
+    123.6    7.2    decode_gemm_kernel
+    131.2    2.2    triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqu
+    133.9    1.7    vllm::concat_and_cache_ds_mla_kernel
+    136.0    1.6    vllm::concat_and_cache_ds_mla_kernel
+    138.2    3.7    nvjet_sm90_tst_64x8_64x16_2x1_v_bz_NNT
+    142.4    7.9    one_shot::gather_cat_kernel

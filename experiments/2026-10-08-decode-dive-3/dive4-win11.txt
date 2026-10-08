@@ -1,0 +1,156 @@
+== window-11: 140 steps, period mean 21.46 p50 21.26 ms
+  target     busy 19.344 ms/step
+  logits     busy  0.165 ms/step
+  draft      busy  1.027 ms/step
+  host-side  busy  0.368 ms/step
+  GPU idle (period - any-busy) 0.561 ms/step
+
+--- streams (ms/step, union; overlaps another stream = hidden)
+  stream    19: busy  6.151 ms/step  exposed(if no other busy) <=  0.000  | decode_gemm_kernel x12180, allreduce_fusion_k.. x5740, concat_and_cache_ds_mla_kernel x5460
+  stream  2632: busy  5.452 ms/step  exposed(if no other busy) <=  0.000  | decode_gemm_kernel x9240, gemm_kernel x5320, allreduce_fusion_k.. x4900
+  stream  2633: busy  5.439 ms/step  exposed(if no other busy) <=  0.000  | decode_gemm_kernel x9240, gemm_kernel x5320, allreduce_fusion_k.. x4900
+  stream  2635: busy  4.262 ms/step  exposed(if no other busy) <=  0.000  | decode_gemm_kernel x7700, allreduce_fusion_k.. x5320, gemm_kernel x5320
+  stream  2634: busy  2.418 ms/step  exposed(if no other busy) <=  0.000  | nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT x10640, triton_poi_fused_mul_silu_slice_0 x10640, nvjet_sm90_tst_64x8_64x16_4x1_v
+  stream  2639: busy  0.042 ms/step  exposed(if no other busy) <=  0.000  | unrolled_elementwise_kernel x280, ncclDevKernel_AllGather_RING_LL x140, elementwise_kernel x140
+  stream    23: busy  0.003 ms/step  exposed(if no other busy) <=  0.000  | Memcpy DtoH  x280
+
+--- step phases (period 21.26 ms)
+  target      2503 kernels  span  19.51 ms  busy  19.18 ms  [    111..  19622 us]
+  logits         2 kernels  span   0.17 ms  busy   0.17 ms  [  19627..  19797 us]
+  draft        163 kernels  span   1.14 ms  busy   1.03 ms  [  20123..  21259 us]
+  host-side     62 kernels  span  20.12 ms  busy   0.35 ms  [      0..  20122 us]
+  NOTE: phases overlap in wall time; target is the big graph
+
+--- skip layer (per c2k3: ~245 us): layer ordinal 39, 235.0 us, main stream 2632
+  rel us    dur  ovl stream  kernel
+     0.0   14.7        2633  target sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_sparse_kernel
+    11.6    5.9    +   2633  target smxx::decode::flash_fwd_mla_combine_kernel
+    17.9    6.3        2633  target one_shot::lse_reduce_scatter_kernel
+    24.7    3.9        2633  target nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+    28.7   16.3        2633  target decode_gemm_kernel
+    44.6    6.9    +   2633  target flashinfer::trtllm_allreduce_fusion::allreduce_fusion_kernel_oneshot_lamport
+    51.4    4.0        2633  target kernel_cutlass_kernel_vllmmodel_executorkernelslinearcute_dsl_ll_bf16_splitkLL..
+    52.2    8.1    +   2634  target nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT
+    55.3    4.6    +   2633  target moe::grouped_topk_fused_small_expert_count_kernel
+    58.6    6.2    +   2633  target tiered_decode::route_prep_kernel
+    60.5    2.2    +   2634  target cublasLt::splitKreduce_kernel
+    60.6   78.7    +   2633  target tiered_decode::gemm_kernel
+    64.6    2.4    +   2634  target triton_poi_fused_mul_silu_slice_0
+    66.0   77.0    +   2633  target tiered_decode::act_kernel
+   102.1   12.2    +   2634  target nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+   140.1   40.6    +   2633  target tiered_decode::gemm_kernel
+   146.9   34.9    +   2633  target tiered_decode::finalize_kernel
+   182.5    1.5        2633  target triton_poi_fused_add_mul_0
+   184.2    5.2        2633  target flashinfer::trtllm_allreduce_fusion::allreduce_fusion_kernel_oneshot_lamport
+   189.5   12.6        2633  target decode_gemm_kernel
+   202.5    1.5        2633  target triton_poi_fused_1
+   204.4    2.0        2633  target triton_red_fused_2
+   206.6    7.6        2633  target decode_gemm_kernel
+   214.7    2.3        2633  target triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_vie..
+   217.5    1.8        2633  target concat_and_cache_ds_mla_kernel
+   219.7    1.8        2633  target concat_and_cache_ds_mla_kernel
+   222.0    3.6        2633  target nvjet_sm90_tst_64x8_64x16_2x1_v_bz_NNT
+   226.0    8.6        2633  target one_shot::gather_cat_kernel
+
+--- anchor layer (indexer): layer ordinal 42, 208.1 us, main stream 2632
+  rel us    dur  ovl stream  kernel
+     0.0   15.7        2632  target sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_sparse_kernel
+    11.1    7.3    +   2632  target smxx::decode::flash_fwd_mla_combine_kernel
+    18.5    0.9        2632  target vectorized_elementwise_kernel
+    18.8    6.5    +     19  target one_shot::lse_reduce_scatter_kernel
+    19.5    2.8    +   2632  target _mark_rows_kernel
+    22.5    4.8    +   2632  target _compact_rows_kernel
+    25.8    4.7    +     19  target nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+    27.4    2.8    +   2632  target _remap_rows_kernel
+    30.3   19.1        2632  target _gather_rows_kernel
+    30.8   17.4    +     19  target decode_gemm_kernel
+    47.7    6.3    +     19  target flashinfer::trtllm_allreduce_fusion::allreduce_fusion_kernel_oneshot_lamport
+    54.1    4.2          19  target kernel_cutlass_kernel_vllmmodel_executorkernelslinearcute_dsl_ll_bf16_splitkLL..
+    54.5    9.2    +   2634  target nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT
+    58.3    5.2    +     19  target moe::grouped_topk_fused_small_expert_count_kernel
+    62.1    6.2    +     19  target tiered_decode::route_prep_kernel
+    63.9    2.1    +   2634  target cublasLt::splitKreduce_kernel
+    64.1   42.8    +     19  target tiered_decode::gemm_kernel
+    68.1    2.0    +   2634  target triton_poi_fused_mul_silu_slice_0
+    69.4   39.9    +     19  target tiered_decode::act_kernel
+    91.5    8.1    +   2634  target nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+   107.5   24.9    +     19  target tiered_decode::gemm_kernel
+   111.7   22.4    +     19  target tiered_decode::finalize_kernel
+   134.5    1.3          19  target triton_poi_fused_add_mul_0
+   136.0   25.7          19  target flashinfer::trtllm_allreduce_fusion::allreduce_fusion_kernel_oneshot_lamport
+   161.8   12.4          19  target decode_gemm_kernel
+   174.6    1.3          19  target triton_poi_fused_1
+   176.3    1.8          19  target triton_red_fused_2
+   178.4    7.7          19  target decode_gemm_kernel
+   186.5    2.2          19  target triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_vie..
+   189.1    1.8          19  target concat_and_cache_ds_mla_kernel
+   191.4    1.8          19  target concat_and_cache_ds_mla_kernel
+   193.7    3.7          19  target nvjet_sm90_tst_64x8_64x16_2x1_v_bz_NNT
+   197.8   10.0          19  target one_shot::gather_cat_kernel
+
+--- last layer -> next step: layer ordinal 77, 274.9 us, main stream 2632
+  rel us    dur  ovl stream  kernel
+     0.0   14.9        2635  target sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_sparse_kernel
+    11.4    6.4    +   2635  target smxx::decode::flash_fwd_mla_combine_kernel
+    17.9    6.3        2635  target one_shot::lse_reduce_scatter_kernel
+    24.3    3.9        2635  target nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+    28.0   16.4        2635  target decode_gemm_kernel
+    43.7    6.7    +   2635  target flashinfer::trtllm_allreduce_fusion::allreduce_fusion_kernel_oneshot_lamport
+    50.2    3.9        2635  target kernel_cutlass_kernel_vllmmodel_executorkernelslinearcute_dsl_ll_bf16_splitkLL..
+    51.0    8.7    +   2634  target nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT
+    53.8    4.5    +   2635  target moe::grouped_topk_fused_small_expert_count_kernel
+    56.6    6.6    +   2635  target tiered_decode::route_prep_kernel
+    58.6   81.1    +   2635  target tiered_decode::gemm_kernel
+    63.0    9.7    +   2634  target cublasLt::splitKreduce_kernel
+    64.0   82.7    +   2635  target tiered_decode::act_kernel
+    73.2    4.3    +   2634  target triton_poi_fused_mul_silu_slice_0
+   109.5   10.9    +   2634  target nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+   140.0   41.2    +   2635  target tiered_decode::gemm_kernel
+   147.0   35.6    +   2635  target tiered_decode::finalize_kernel
+   182.6    1.4        2635  target triton_poi_fused_add_mul_0
+   184.3    7.5        2635  target flashinfer::trtllm_allreduce_fusion::allreduce_fusion_kernel_oneshot_lamport
+   191.9    1.1        2635  target memcpy32_post
+   193.1    1.2        2635  target memcpy32_post
+   194.5    1.4        2635  target memcpy32_post
+   196.0    1.4        2635  target memcpy32_post
+   197.5    1.3        2635  target memcpy32_post
+   198.8    1.4        2635  target memcpy32_post
+   200.3    1.9        2635  target memcpy32_post
+   204.6    1.5          19  host-s vectorized_gather_kernel
+   207.2  142.4          19  logits nvjet_sm90_tst_192x8_64x8_2x1_v_bz_TNT
+
+--- cross-rank collectives (per call, us; wire ~= cross-rank min)
+  AR lamport         151.0/step  call mean  14.9  cross-rank spread  19.1  -> total  2.25 ms/step, wait  2.89
+  one_shot gather     78.0/step  call mean   9.0  cross-rank spread   2.3  -> total  0.70 ms/step, wait  0.18
+  one_shot lse_rs     78.0/step  call mean   6.7  cross-rank spread   0.8  -> total  0.52 ms/step, wait  0.06
+
+--- kernel SOL (mean us per call; bytes model where established)
+  MoE one-kernel (per layer, 75 layers):
+    w13  mean   65.8 us p10  46.5 p90   82.4   -> implied cold/layer 1.74 (model t=8+33.6c)
+    w2   mean   38.0 us p10  28.0 p90   46.2   -> implied cold/layer 2.03 (model t=4+16.8c)
+    FlashMLA main mean  15.0 us  (fixed-cost kernel; sel~512 keys x 656 B = 0.34 MB/layer -> bytes are NOT the limit)
+    split combine   mean   6.5 us
+  dense GEMM decode_gemm (per call, weights streamed at M=8):
+    pre-attn (qkv_a/q_b)       n=  1.8/step  mean  12.45 us    split by shape below
+      duration modes: 8us x51, 13us x45, 7us x45, 17us x37, 12us x25, 16us x18
+    o_proj                     n=256.2/step  mean  12.12 us    4151 GB/s 114% HBM  48 MiB -> floor 13.8 us
+    wq_b (indexer)             n=  2.9/step  mean   9.07 us    
+  remaining GEMM/glue kernels (top by total ms/step):
+    tiered_decode::act_kernel                                   4.935 ms/step
+    tiered_decode::finalize_kernel                              2.429 ms/step
+    nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT                      1.208 ms/step
+    nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT               0.750 ms/step
+    cublasLt::splitKreduce_kernel                               0.453 ms/step
+    tiered_decode::route_prep_kernel                            0.445 ms/step
+    moe::grouped_topk_fused_small_expert_count_kernel           0.367 ms/step
+    triton_poi_fused_mul_silu_slice_0                           0.345 ms/step
+    kernel_cutlass_kernel_vllmmodel_executorkernelslinearcute_  0.308 ms/step
+    kernel_cutlass_kernel_vllmmodel_executorkernelsattentionds  0.291 ms/step
+    nvjet_sm90_tst_64x8_64x16_2x1_v_bz_NNT                      0.287 ms/step
+    concat_and_cache_ds_mla_kernel                              0.241 ms/step
+    triton_poi_fused_add_copy_index_select_mul_slice_split_sta  0.176 ms/step
+    deep_gemm::sm90_fp8_paged_mqa_logits                        0.172 ms/step
+    triton_red_fused_2                                          0.115 ms/step
+    triton_poi_fused_add_mul_0                                  0.113 ms/step
+    triton_poi_fused_1                                          0.074 ms/step
+    triton_red_fused_add_fused_add_rms_norm_1                   0.045 ms/step
