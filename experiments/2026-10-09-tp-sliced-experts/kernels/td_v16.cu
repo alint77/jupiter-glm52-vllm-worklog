@@ -136,6 +136,7 @@ struct Workspace {
   int done_s;   // shared w13 chunks flushed
   int ready_s;  // epoch once x2s is written
   int T;
+  int fin;      // CTAs done this call; the last FIN_CTAS convert y into the output
 };
 static_assert(offsetof(Workspace, x13) % 16 == 0 &&
                   offsetof(Workspace, x2) % 16 == 0,
@@ -145,9 +146,14 @@ struct Params {
   Tier tier[2];
   CUtensorMap sw[2];  // shared expert w13 [2 * INTER][HIDDEN], w2 [HIDDEN][INTER]
   Workspace* ws;
+  __nv_bfloat16* out;  // [T, HIDDEN]
   float shared_scale;
   int has_shared;
 };
+#ifndef TD_FIN_CTAS
+  #define TD_FIN_CTAS 16
+#endif
+constexpr int FIN_CTAS = TD_FIN_CTAS;
 
 // ---------------------------------------------------------------- PTX helpers
 __device__ __forceinline__ uint32_t smem_u32(const void* p) {
@@ -743,6 +749,7 @@ route_prep_kernel(Workspace* ws, const __nv_bfloat16* x, const IdT* topk_ids,
   if (threadIdx.x == 0) {
     ws->done_s = 0;
     ws->next[0] = ws->next[1] = 0;
+    ws->fin = 0;
     ws->T = num_tokens;
     ws->epoch += 1;
   }
@@ -1090,8 +1097,7 @@ __global__ void __launch_bounds__(THREADS, 1)
     }
     TD_V(if (lane == 0) td_record(60 + own, td_p0, td_p0 + td_spin, n_tier[0], n_tier[1]);)
     TD_V(if (lane == 0) td_record(80 + own, td_p0, td_p0 + td_empty, it, 0);)
-    return;
-  }
+  } else {
 
   // consumer warps
   const int g = lane / 4, tq = lane % 4;
@@ -1272,6 +1278,29 @@ __global__ void __launch_bounds__(THREADS, 1)
     td_record(70 + own, td_q0, td_q0 + td_wait, 0, 0);
   }
 #endif
+  }
+  // finalize in place: the last FIN_CTAS CTAs to finish wait for the rest, then
+  // each turns 1 / FIN_CTAS of y into the bf16 output and zeroes it
+  __shared__ int s_fin;
+  __threadfence();  // this thread's output atomics, before the CTA counts out
+  __syncthreads();
+  if (threadIdx.x == 0) s_fin = atomicAdd(&ws->fin, 1);
+  __syncthreads();
+  const int slot = s_fin - (GRID - FIN_CTAS);
+  if (slot >= 0) {
+    if (threadIdx.x == 0)
+      while (ld_acquire(&ws->fin) != GRID) __nanosleep(64);
+    __syncthreads();
+    const int n4 = T * HIDDEN / 4;
+    float4* y = reinterpret_cast<float4*>(ws->y);
+    for (int i = slot * THREADS + threadIdx.x; i < n4; i += FIN_CTAS * THREADS) {
+      const float4 v = __ldcg(y + i);
+      y[i] = make_float4(0.f, 0.f, 0.f, 0.f);
+      __nv_bfloat162* o = reinterpret_cast<__nv_bfloat162*>(p.out) + 2 * i;
+      o[0] = __floats2bfloat162_rn(v.x, v.y);
+      o[1] = __floats2bfloat162_rn(v.z, v.w);
+    }
+  }
 }
 
 // ---------------------------------------------------------------- 5: finalize
@@ -1361,6 +1390,7 @@ extern "C" int td_forward(void* out, const void* x, const int* ids, const float*
   TD_REQUIRE(fill_tier(p.tier[0], hw13, hs13, hw2, hs2, hot_size) == 0, "hot tier maps");
   TD_REQUIRE(fill_tier(p.tier[1], cw13, cs13, cw2, cs2, cold_size) == 0, "cold tier maps");
   p.ws = reinterpret_cast<Workspace*>(workspace);
+  p.out = reinterpret_cast<__nv_bfloat16*>(out);
   p.has_shared = sw13 != nullptr;
   p.shared_scale = shared_scale;
   if (p.has_shared) {
@@ -1395,10 +1425,6 @@ extern "C" int td_forward(void* out, const void* x, const int* ids, const float*
     return -2;
   c = config(dim3(GRID), dim3(THREADS), SMEM_BYTES);
   if (cudaLaunchKernelEx(&c, layer_kernel, p) != cudaSuccess) return -3;
-  c = config(dim3(HIDDEN / 1024, T), dim3(256), 0);
-  if (cudaLaunchKernelEx(&c, finalize_kernel, p.ws, reinterpret_cast<__nv_bfloat16*>(out)) !=
-      cudaSuccess)
-    return -4;
   return 0;
 }
 

@@ -343,22 +343,28 @@ def check_fixture(dev):
     return f
 
 
-def reference(f, x, ids, wt, shared, sscale):
-    """fp32 routed (+ shared) output on the GPU, per expert over its tokens."""
+def reference(f, x, ids, wt, shared, sscale, r=None):
+    """fp32 routed (+ shared) output on the GPU; with r, only slice r's part
+    (its 512 intermediate rows / columns), which is what one GPU computes."""
     xf = x.float()
     ref = torch.zeros_like(xf)
+    if r is None:
+        g_rows, u_rows, cols = slice(0, 2048), slice(2048, 4096), slice(0, 2048)
+    else:
+        g_rows, u_rows = slice(512 * r, 512 * r + 512), slice(2048 + 512 * r, 2048 + 512 * r + 512)
+        cols = slice(512 * r, 512 * r + 512)
     for ex in range(f["w13"].shape[0]):
         sel = ids == ex  # [m, k]
         tok = sel.any(1).nonzero().flatten()
         if len(tok) == 0:
             continue
-        h = xf[tok] @ f["w13"][ex].T
-        act = torch.nn.functional.silu(h[:, :2048]) * h[:, 2048:]
-        ref[tok] += (wt[tok] * sel[tok]).sum(1, keepdim=True) * (act @ f["w2"][ex].T)
+        w13 = f["w13"][ex]
+        act = torch.nn.functional.silu(xf[tok] @ w13[g_rows].T) * (xf[tok] @ w13[u_rows].T)
+        ref[tok] += (wt[tok] * sel[tok]).sum(1, keepdim=True) * (act @ f["w2"][ex][:, cols].T)
     if shared:
-        h = xf @ f["sw13"].float().T
-        act = (torch.nn.functional.silu(h[:, :2048]) * h[:, 2048:]).to(torch.bfloat16).float()
-        ref += sscale * (act @ f["sw2"].float().T)
+        sw13 = f["sw13"].float()
+        act = torch.nn.functional.silu(xf @ sw13[g_rows].T) * (xf @ sw13[u_rows].T)
+        ref += sscale * (act.to(torch.bfloat16).float() @ f["sw2"].float()[:, cols].T)
     return ref
 
 
@@ -397,18 +403,20 @@ def cmd_check(a):
                 ids = torch.full((m, TOPK), -1, dtype=torch.int32)
             wt = torch.rand((m, TOPK), generator=g)
             x, ids, wt = x.to(dev), ids.to(dev), wt.to(dev)
-            ref = reference(f, x, ids, wt, sh, sscale)
+            refs = [reference(f, x, ids, wt, sh, sscale, r) for r in range(4)]
             for rep in range(a.reps):
-                got = torch.zeros((m, HIDDEN), device=dev)
+                err = 0.0
                 for r, (hot, cold) in enumerate(f["tiers"]):
                     out = torch.empty((m, HIDDEN), dtype=torch.bfloat16, device=dev)
                     extra = (*f["sslices"][r], sscale) if sh else ()
                     mod.forward(out, x, ids, wt, hm, cm, e, e, e, 0, False, *parts(hot),
                                 *parts(cold), ws, True, e, *extra)
-                    got += out.float()
-                err = float((got - ref).abs().max() / ref.abs().max().clamp_min(1e-30))
+                    # per slice, against that slice's own fp32 part: bf16 rounding of
+                    # one output is <= 2^-9 relative, so 5e-3 separates bugs from noise
+                    err = max(err, float((out.float() - refs[r]).abs().max()
+                                         / refs[r].abs().max().clamp_min(1e-30)))
                 worst = max(worst, err)
-                if err > 6e-3:
+                if err > 5e-3:
                     fails += 1
                     print(json.dumps({"m": m, "case": case, "rep": rep, "rel_err": round(err, 5)}),
                           flush=True)

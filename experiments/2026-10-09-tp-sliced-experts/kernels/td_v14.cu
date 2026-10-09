@@ -1162,6 +1162,7 @@ __global__ void __launch_bounds__(THREADS, 1)
                         acc[mb][i] * fs[i & 1]);
             acc[mb][i] = 0.f;
           }
+        __threadfence();  // every thread's own y13 atomics, before the count
         consumer_sync(cg);
         if (lead) {
           __threadfence();
@@ -1247,6 +1248,7 @@ __global__ void __launch_bounds__(THREADS, 1)
               accs[rb][nt][i] = 0.f;
             }
         if (kind == K_S0) {
+          __threadfence();  // every thread's own y13s atomics, before the count
           consumer_sync(cg);
           if (lead) {
             __threadfence();

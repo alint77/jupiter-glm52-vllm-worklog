@@ -771,6 +771,14 @@ __device__ __forceinline__ void st_release(int* p, int v) {
 __device__ __forceinline__ void fence_proxy_async() {
   asm volatile("fence.proxy.async.global;" ::: "memory");
 }
+// predicated fire-and-forget add: no branch per element
+__device__ __forceinline__ void red_add_if(float* a, float v, bool p) {
+  asm volatile("{\n .reg .pred q;\n setp.ne.b32 q, %2, 0;\n @q red.global.add.f32 [%0], %1;\n}"
+               ::"l"(a), "f"(v), "r"(static_cast<int>(p)) : "memory");
+}
+__device__ __forceinline__ void fence_acq_rel_gpu() {
+  asm volatile("fence.acq_rel.gpu;" ::: "memory");
+}
 __device__ __forceinline__ void consumer_sync() {
   asm volatile("bar.sync 1, %0;" ::"n"(CONSUMER_WARPS * 32) : "memory");
 }
@@ -1103,6 +1111,8 @@ __global__ void __launch_bounds__(THREADS, 1)
   TD_V(uint64_t td_wait = 0; const uint64_t td_q0 = td_now();)
   // per-warp smem offsets within a stage, computed once
   const uint32_t ring_u = smem_u32(ring), full_u = smem_u32(full), empty_u = smem_u32(empty);
+  const uint32_t desc_u = smem_u32(desc), sdr_u = smem_u32(&sd_row[0][2 * tq]),
+                 sdf_u = smem_u32(&sd_f[0][2 * tq]);
   static_assert(CONSUMER_WARPS == 8, "8 K slices (w13), 2 halves x 4 K slices (w2)");
   const uint32_t wo0 = (warp * 8) * 512 + lane * 16;
   const uint32_t so0 = W_BYTES + (warp * 4) * 128 + 16 * g;
@@ -1117,7 +1127,8 @@ __global__ void __launch_bounds__(THREADS, 1)
     TD_V(const uint64_t td_w0 = td_now();)
     mbar_wait_a(full_u + 8 * s, ph);
     TD_V(td_wait += td_now() - td_w0;)
-    const int4 d = desc[s];
+    const uint4 du = lds_v4(desc_u + 16 * s);
+    const int4 d = make_int4(du.x, du.y, du.z, du.w);
     const int kind = d.x & 15;
     if (kind == K_END) break;
     const int q = (d.x >> 4) & 1, last = (d.x >> 9) & 1, nch = d.x >> 16;
@@ -1127,16 +1138,12 @@ __global__ void __launch_bounds__(THREADS, 1)
     const Expert* experts = ws->lists[q];
     // this lane's two tokens of a routed unit: destination rows and scales
     const int ntok = d.w;
-    int rw[2] = {0, 0};
-    float fs[2] = {0.f, 0.f};
-    if (kind == K_R0 || kind == K_R1) {
-#pragma unroll
-      for (int h = 0; h < 2; ++h)
-        if (2 * tq + h < ntok) {
-          rw[h] = sd_row[s][2 * tq + h];
-          fs[h] = sd_f[s][2 * tq + h];
-        }
-    }
+    // read unconditionally (stale past ntok, masked at the flush)
+    const int rw[2] = {static_cast<int>(lds_u32(sdr_u + s * MAX_TOK * 4)),
+                       static_cast<int>(lds_u32(sdr_u + s * MAX_TOK * 4 + 4))};
+    const float fs[2] = {__uint_as_float(lds_u32(sdf_u + s * MAX_TOK * 4)),
+                         __uint_as_float(lds_u32(sdf_u + s * MAX_TOK * 4 + 4))};
+    const bool pt[2] = {2 * tq < ntok, 2 * tq + 1 < ntok};
     if (kind == K_R0) {
       consume_routed<1>(st_u + wo1, st_u + so1, st_u + xo1, acc);
       __syncwarp();
@@ -1144,18 +1151,18 @@ __global__ void __launch_bounds__(THREADS, 1)
       if (last) {
         const int ei = d.y, t = d.z;
         const Expert& e = experts[ei];
+        float* const yb = ws->y13 + t * R0 + h1 * 64 + g;
+        float* const yr[2] = {yb + static_cast<size_t>(rw[0]) * 2 * INTER,
+                              yb + static_cast<size_t>(rw[1]) * 2 * INTER};
 #pragma unroll
         for (int mb = 0; mb < 4; ++mb)
 #pragma unroll
           for (int i = 0; i < 4; ++i) {
-            if (2 * tq + (i & 1) < ntok)
-              atomicAdd(&ws->y13[static_cast<size_t>(rw[i & 1]) * 2 * INTER + t * R0 + h1 * 64 +
-                                 mb * 16 + g + (i >> 1) * 8],
-                        acc[mb][i] * fs[i & 1]);
+            red_add_if(yr[i & 1] + mb * 16 + (i >> 1) * 8, acc[mb][i] * fs[i & 1], pt[i & 1]);
             acc[mb][i] = 0.f;
           }
 #ifndef TD_NO_FLUSH_FENCE
-        __threadfence();  // every thread's own y13 atomics, before the count
+        fence_acq_rel_gpu();  // every thread's own y13 atomics, before the count
 #endif
         consumer_sync();
         if (threadIdx.x == 0) {
@@ -1187,14 +1194,14 @@ __global__ void __launch_bounds__(THREADS, 1)
       __syncwarp();
       if (lane == 0) mbar_arrive_a(empty_s);
       const int t = d.z;
+      float* const yb = ws->y + t * R1 + h1 * 64 + g;
+      float* const yr[2] = {yb + static_cast<size_t>(rw[0]) * HIDDEN,
+                            yb + static_cast<size_t>(rw[1]) * HIDDEN};
 #pragma unroll
       for (int mb = 0; mb < 4; ++mb)
 #pragma unroll
         for (int i = 0; i < 4; ++i) {
-          if (2 * tq + (i & 1) < ntok)
-            atomicAdd(&ws->y[static_cast<size_t>(rw[i & 1]) * HIDDEN + t * R1 + h1 * 64 + mb * 16 +
-                             g + (i >> 1) * 8],
-                      acc[mb][i] * fs[i & 1]);
+          red_add_if(yr[i & 1] + mb * 16 + (i >> 1) * 8, acc[mb][i] * fs[i & 1], pt[i & 1]);
           acc[mb][i] = 0.f;
         }
     } else {  // shared expert: 32 rows per warp, 4 k16 steps, nt_n token tiles

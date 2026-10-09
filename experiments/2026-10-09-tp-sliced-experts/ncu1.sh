@@ -10,4 +10,4 @@ CUDA_VISIBLE_DEVICES=0 ncu --target-processes all --profile-from-start off -k re
   --cell $cell --n 1 "$@" >/dev/null 2>>logs/ncu-$tag.err
 ncu --import logs/ncu-$tag.ncu-rep --page raw 2>/dev/null | grep -E "issue_stalled.*per_issue_active.ratio|gpu__time_duration.sum |dram__throughput.avg.pct|smsp__issue_active.avg.pct|sm__warps_active" | awk '{print $NF, $1}' | sort -rn | head -14
 ncu --import logs/ncu-$tag.ncu-rep --page source --csv --print-source sass 2>/dev/null > logs/ncu-$tag-sass.csv
-python3 stall_regions.py logs/ncu-$tag-sass.csv --top 25
+python3 sass_runs.py logs/ncu-$tag-sass.csv; python3 stall_regions.py logs/ncu-$tag-sass.csv --top 25

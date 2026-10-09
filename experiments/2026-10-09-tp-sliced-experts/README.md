@@ -126,3 +126,32 @@ Open: v14 with one consumer group (`TD_CGROUPS=1`, otherwise ~v13) fails the
 check at M=32 hot-only in 6 / 320 runs (rel err 0.007-0.008) while v13 / v14
 (2 groups) / v15 pass 320 / 320: likely the same latent race as v12's GR1 > 1,
 exposed by timing. Not root-caused yet.
+
+### v16-v17: where the consumer time goes
+
+`kdev.py check` now compares each slice's output with its own fp32 reference
+(threshold 5e-3): the summed-slices check flagged bf16 rounding under partial
+cancellation (~6-7e-3) as failures. v15 passes 10 reps x 16 cases.
+
+v16 (finalize fused into the layer kernel, the last CTAs to finish): no gain,
+dropped.
+
+CTA trace, v15 at M=8 38/4 (`tr.sh`): with loads, hot consumer warps wait on
+full stages 9.7 of 85 us; compute-only they wait 3.7 of 67 us, so consumer
+work alone (~63 us) is above the memory floor (~61 us). The consumer is the
+bound.
+
+`probe_consume.cu` (`pc.sh`): v15's routed consume block alone on fake stage
+data, 132 CTAs: 0.72 us per 128 x 512 unit at 8 warps (0.77 with a CTA
+barrier per unit), i.e. ~6.3 TB/s of weights, 1.8x the HBM rate; 16 warps
+are no faster; non-volatile asm and hoisted loads change nothing. Inside v15
+a unit costs ~1.3 us. ncu SASS runs by execution count (`sass_runs.py`),
+v15 compute-only: MMA blocks 48% of samples (= the probe's rate), unit loop
+head 14% (mbarrier wait, `desc` re-addressed through the generic window each
+unit), w2 per-unit flush 9% (16 branchy atomics, a BSSY/BRA each), w13
+last-chunk flush 4% (per-thread `fence.sc.gpu`), kernel start 4%.
+
+| version | change | M=8 38/0 | 38/4 | M=32 110/12 | compute-only 38/4 | 110/12 |
+|---|---|--:|--:|--:|--:|--:|
+| v15 | | 87.0 | 94.4 | 265.9 | 71.0 | 190.6 |
+| **v17** | unit records via `ld.shared` off precomputed addresses, predicated `red.global.add` flushes (no branches), `fence.acq_rel` before the done count | **84.0** | **90.5** | **250.1** | 65.0 | 171.1 |
