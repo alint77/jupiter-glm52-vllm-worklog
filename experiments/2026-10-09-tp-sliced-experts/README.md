@@ -207,3 +207,61 @@ can fill C2C; in mixed cells it doesn't because cold CTAs come out of the hot
 consumer capacity, which is itself at its limit (cold-CTA sweep). (M=32
 cold-only cells put > 8 tokens on an expert: entries re-read weights, not
 comparable.)
+
+### Where the time goes (v24 ablations) and v25-v26
+
+v24 = v20 with `TD_NO_FLUSH_FENCE` as the default plus timing-only switches
+(`TD_ABL_NOMMA` skips the routed math, `TD_ABL_NOFLUSH` the flush; a no-flush
+cell alone is invalid: ptxas dead-codes the MMA block once acc is unused).
+
+| us, --shared 1 | 38/4 | 110/12 |
+|---|--:|--:|
+| full | 89.4 | 243.7 |
+| no routed math | 78.2 | 206.8 |
+| loads only (no math, no flush) | 78.1 | 203.6 |
+| compute-only full | 61.9 | 162.1 |
+| compute-only, no math | 33.2 | 73.9 |
+
+Loads alone are ~10 / ~30 us over (HBM floor + route_prep/finalize ~6.3 us):
+~85% of floor throughput. Math adds ~11 / ~40 us on top: the consumer is only
+~20-25% faster than delivery, so overlap is poor.
+
+Loads-only sweep (no math/flush): 3 stages, 32 cold CTAs, no claim prefetch
+all worse; GR1=4 -9 us at 110/12. Loads-only trace 38/0: routed w13 groups
+(12 units on one SM, ~20 us) finish up to 67.8 us; producers spin on ready up
+to 22 us.
+
+| version | change | 38/0 | 38/4 | 110/0 | 110/12 |
+|---|---|--:|--:|--:|--:|
+| v25 | `TD_R0S`: a w13 tile's 12 chunks as R0S adjacent groups; R0S 1/2/3/4 (38/4: 91.6 / 94.4 / 96.3 / 98.4; 110/12: 245.3 / 260.3 / 268.6 / 275.2) -> default 1 | | | | |
+| v25 GR1 1/2/3/4 | 110/12: 245.2 / 242.4 / 247.6 / 241.7; 38/4: 92.1 / 91.4 / 90.9 / 93.2 (~1%) | | | | |
+| v26 | w13 completion handed to warp 0: warps 1..7 `bar.arrive` after their reds and go on; warp 0 syncs, counts, activates all routes, publishes ready | 84.4 | 91.7 | 229.5 | 251.8 |
+| (v25 same node) | | 84.1 | 93.9 | 227.8 | 260.6 |
+
+GR1 > 1 passes 120 / 120 check reps on v25: the v12-era stealing race no longer
+reproduces (Astra review 4 found no GR1 race in the current code).
+
+Ready-aware w2 dispatch (Astra's top proposal) sized first with
+`TD_ABL_NOREADY` (w2 never waits for its entry; results invalid): full kernel
+110/0 221.6 -> 218.3, 110/12 234.4 -> 235.1, 38/0 83.9 -> 82.2, 38/4 87.6 ->
+87.3. Only loads-only gains (-6 to -8 us at M=32). Not worth the redesign.
+
+## Against prod EP (the goal)
+
+`logs/ep-vs-slice/` (one node, job 2251858): prod whole-expert kernel
+(`bench_slice.py --time --variant full-1024x4`) at round 1's per-GPU cells, v25
+at the slice cells (with and without the fused shared expert), `analyze.py`
+replay of 2,000 held-out agentic steps at the prod profile (3,670 hot,
+replicas + deployed balancer; EP = slowest GPU per layer):
+
+| MoE ms / step, 75 layers | M=8 | M=32 |
+|---|--:|--:|
+| prod EP, slowest GPU | 8.74 | 22.00 |
+| prod EP, mean GPU | 7.51 | 20.13 |
+| sliced v25 (no shared, like EP's side-stream shared) | **6.80 (-22%)** | **19.99 (-9%)** |
+| sliced v25 + shared expert fused | 7.05 (-19%) | 20.53 (-7%) |
+
+Fits (us per layer): EP M=32 53.3 + 4.87 hot + 26.29 cold (per GPU); sliced
+M=32 13.6 + 1.71 hot + 5.98 cold (node-wide slice counts, shared fused). Cold is
+where slicing wins (4 C2C links per expert, no slowest-GPU); hot slices cost
+6.8 us per expert-equivalent vs EP's 4.9.
