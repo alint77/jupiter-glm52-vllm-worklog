@@ -14,14 +14,20 @@ if [[ -n "${placement_profile}" ]]; then
   placement_args=(--tiered-moe-placement-profile "${placement_profile}")
 fi
 
+# TIERED_MOE_LAYOUT=tp_sliced: every GPU a quarter of every expert, TP MoE
+# (expert parallelism off); the default is EP.
+layout_args=(--enable-expert-parallel --enable-ep-weight-filter)
+if [[ "${TIERED_MOE_LAYOUT:-ep}" == tp_sliced ]]; then
+  layout_args=(--tiered-moe-layout tp_sliced)
+fi
+
 # SERVER_WRAPPER: an optional command prefix (e.g. nsys profile ...).
 exec ${SERVER_WRAPPER:-} "${VLLM_VENV_DIR:-${PWD}/.venv}/bin/vllm" serve "${model_path}" \
   --served-model-name glm52-w4a16-tiered \
   --host 127.0.0.1 \
   --port 8027 \
   --tensor-parallel-size 4 \
-  --enable-expert-parallel \
-  --enable-ep-weight-filter \
+  "${layout_args[@]}" \
   --distributed-executor-backend mp \
   --numa-bind \
   --kv-cache-dtype fp8_ds_mla \
