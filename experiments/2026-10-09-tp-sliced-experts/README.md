@@ -265,3 +265,23 @@ Fits (us per layer): EP M=32 53.3 + 4.87 hot + 26.29 cold (per GPU); sliced
 M=32 13.6 + 1.71 hot + 5.98 cold (node-wide slice counts, shared fused). Cold is
 where slicing wins (4 C2C links per expert, no slowest-GPU); hot slices cost
 6.8 us per expert-equivalent vs EP's 4.9.
+
+### v27 and replay 2 (Astra review 5: `logs/codex-review5.md`)
+
+v27 = v26 + `__syncwarp()` after lane 0's count acquire in the warp-0 handoff
+(Astra: `__shfl_sync` passes the decision, not the acquire). Passes 100 reps
+(v27 and GR1=2). Replay vs a fresh same-node EP (`logs/ep-vs-slice-v27/`; the
+v27 GR1=1 M=8 bench was lost to a concurrent-build race):
+
+| MoE ms / step | M=8 | M=32 |
+|---|--:|--:|
+| prod EP slowest / mean | 8.74 / 7.52 | 21.95 / 20.06 |
+| v25 + shared (previous node) | 7.05 | 20.53 |
+| v27 + shared | | 20.64 |
+| v27 GR1=2 + shared | 7.54 | 20.36 |
+
+v26/v27 and GR1=2 don't move the replay beyond noise; the per-variant linear fits
+have 30-65 us max residuals, so ~2-3% differences are not resolvable this way.
+Sliced leads EP by ~14-19% at M=8 and ~6-7% at M=32, and at M=32 that lead
+is EP's slowest-vs-mean imbalance; sliced is ~0.3-0.5 ms/step slower than EP's
+perfectly balanced mean.
