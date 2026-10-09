@@ -78,3 +78,18 @@ ms/step at c=1 (~0.5%), more at c=8.
 1,365 / 1,138 / 968 / 1,036). Served A/B: `chain_ab.sh`, 4 nodes x 4 arms
 alternating (ccf = prod profile, tch = this one), prod serve.sh c=1 DFlash2
 k=7, `../2026-10-07-mem-reclaim/arm.sh`.
+
+### Served A/B (4 nodes x 4 arms alternating, prod c=1 DFlash2 k=7; `chain_ab.sh`, `../2026-10-07-mem-reclaim/compare_ba.py`)
+
+| | ccfreq3676 (prod) | touch3676-r2000 |
+|---|--:|--:|
+| hot / rank | 3,671 | 3,673 |
+| tightest-rank startup free | 3.42 GiB | 2.67 |
+| agentic decode (301 requests) | | **-0.117 +- 0.028 ms/step** |
+| 50K / 130K decode (64 requests) | | -0.061 +- 0.029 ms/step |
+| GSM8K 200 (8 runs each) | 0.916 | 0.917 |
+
+TTFT, 388K stress (16/16) unchanged; peak within noise. As predicted
+(~-0.1 ms). The new profile starts with 0.75 GiB less free HBM at the same
+hot count (the reverse of what ccfreq gained over its predecessor; not
+investigated), still above the 1.7 reserve.
