@@ -101,7 +101,8 @@ def main():
         print(f"  {v:6.2f} ms  {100 * v / total:5.1f}%  {n}")
     if a.json:
         with open(a.json, "w") as f:
-            json.dump({"steps": len(rows), "period_ms": total, "ms": dict(zip(NAMES, mean))}, f)
+            json.dump({"steps": len(rows), "period_ms": total, "ms": dict(zip(NAMES, mean)),
+                       "per_step_ms": [[v / 1e3 for v in r] for r in rows]}, f)
 
 
 if __name__ == "__main__":
