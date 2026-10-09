@@ -33,6 +33,11 @@ ROOF = {"hbm": float(os.environ.get("ROOF_HBM", 0) or 0),
         "c2c": float(os.environ.get("ROOF_C2C", 0) or 0)}
 
 
+def version(v):
+    src = v.partition(":")[0]
+    return int(src.split("_v")[1]) if "_v" in src else 0
+
+
 def parse(v):
     src, _, defines = v.partition(":")
     return src, defines.split()
@@ -87,10 +92,13 @@ def expert_bytes(inter):
 
 
 class Setup:
-    def __init__(self, v, m, pool_hot, pool_cold, numa, inter=512, rand=False):
+    def __init__(self, v, m, pool_hot, pool_cold, numa, inter=512, rand=False, shared=False):
         from vllm.model_executor.offloader.grace import GraceAllocation
 
         self.mod, _ = build(v)
+        self.ver, self.shared = version(v), shared
+        self.sw13 = (torch.randn((2 * inter, HIDDEN), device="cuda") * 0.02).to(torch.bfloat16)
+        self.sw2 = (torch.randn((HIDDEN, inter), device="cuda") * 0.02).to(torch.bfloat16)
         self.ws = torch.zeros(self.mod.workspace_bytes(), dtype=torch.uint8, device="cuda")
         dev = torch.device("cuda:0")
         self.hot = {}
@@ -132,8 +140,12 @@ class Setup:
     def run(self, cl, out=None):
         e = torch.empty(0, device="cuda")
         out = torch.empty_like(self.x) if out is None else out
+        extra = ()
+        if self.ver >= 2:
+            extra = (self.sw13, self.sw2, 0.4) if self.shared else (e, e, 1.0)
         self.mod.forward(out, self.x, cl[0], cl[1], cl[2], cl[3], e, e, e, 0, False,
-                         *self.parts(self.hot), *self.parts(self.cold), self.ws, True, e)
+                         *self.parts(self.hot), *self.parts(self.cold), self.ws, True, e,
+                         *extra)
         return out
 
 
@@ -163,16 +175,17 @@ def time_graph(fns, reps=10):
 def cmd_bench(a):
     cells = [tuple(map(int, c.split(","))) for c in a.cells]
     st = Setup(a.v, a.m, max(h for h, _ in cells) + 16, max(c for _, c in cells) + 8,
-               a.numa_node)
+               a.numa_node, shared=a.shared)
     eb = expert_bytes(512)
+    sb = 3 * 512 * HIDDEN * 2 if a.shared else 0  # shared expert slice bytes
     for h, c in cells:
         cls = st.calls(h, c)
         us = time_graph([lambda cl=cl: st.run(cl) for cl in cls])
-        hbm, c2c = h * eb / us / 1e3, c * eb / us / 1e3  # GB/s
-        rec = {"v": a.v, "m": a.m, "hot": h, "cold": c, "us": round(us, 2),
-               "hbm_gbs": round(hbm), "c2c_gbs": round(c2c)}
+        hbm, c2c = (h * eb + sb) / us / 1e3, c * eb / us / 1e3  # GB/s
+        rec = {"v": a.v, "m": a.m, "hot": h, "cold": c, "shared": a.shared,
+               "us": round(us, 2), "hbm_gbs": round(hbm), "c2c_gbs": round(c2c)}
         if ROOF["hbm"] and ROOF["c2c"]:
-            floor = max(h * eb / ROOF["hbm"], c * eb / ROOF["c2c"]) / 1e3  # us
+            floor = max((h * eb + sb) / ROOF["hbm"], c * eb / ROOF["c2c"]) / 1e3  # us
             rec["roof_us"] = round(floor, 1)
             rec["roof_share"] = round(floor / us, 3)
         print(json.dumps(rec), flush=True)
@@ -180,7 +193,7 @@ def cmd_bench(a):
 
 def cmd_once(a):
     h, c = map(int, a.cell.split(","))
-    st = Setup(a.v, a.m, h + 16, c + 8, a.numa_node)
+    st = Setup(a.v, a.m, h + 16, c + 8, a.numa_node, shared=a.shared)
     cls = st.calls(h, c, n=max(a.n, 2))
     for cl in cls[:2]:
         st.run(cl)  # warm
@@ -216,7 +229,21 @@ def cmd_check(a):
 
     slice_t = [split(sl) for sl in slices]
     mod, _ = build(a.v)
+    ver = version(a.v)
     ws = torch.zeros(mod.workspace_bytes(), dtype=torch.uint8, device=dev)
+    sh = ver >= 2
+    sscale = 0.4
+    sg = torch.Generator().manual_seed(7)
+    sw13 = (torch.randn((4096, HIDDEN), generator=sg) * 0.02).to(torch.bfloat16)  # gate | up
+    sw2 = (torch.randn((HIDDEN, 2048), generator=sg) * 0.02).to(torch.bfloat16)
+
+    def shared_slice(r):
+        rows = torch.cat([torch.arange(512 * r, 512 * r + 512),
+                          2048 + torch.arange(512 * r, 512 * r + 512)])
+        return (sw13[rows].contiguous().to(dev),
+                sw2[:, 512 * r:512 * r + 512].contiguous().to(dev))
+
+    sslices = [shared_slice(r) for r in range(4)]
     w13 = T._int4_dequant(ck[0], ck[2])
     w2 = T._int4_dequant(ck[1], ck[3])
     e = torch.empty(0, device=dev)
@@ -227,7 +254,7 @@ def cmd_check(a):
 
     worst = 0.0
     for m in (1, 8, 16, 32):
-        for case in range(3):
+        for case in range(4 if version(a.v) >= 2 else 3):
             g = torch.Generator().manual_seed(100 * m + case)
             x = (torch.randn((m, HIDDEN), generator=g) * 0.3).to(torch.bfloat16)
             k = min(TOPK, n_hot + n_cold)
@@ -237,6 +264,8 @@ def cmd_check(a):
                 ids = torch.stack([torch.randperm(n_hot, generator=g)
                                    for _ in range(m)]).to(torch.int32)
                 ids = torch.cat([ids, torch.full((m, 2), -1, dtype=torch.int32)], 1)
+            if case == 3:  # shared expert only
+                ids = torch.full((m, TOPK), -1, dtype=torch.int32)
             wt = torch.rand((m, TOPK), generator=g)
             hm = torch.full((16,), -1, dtype=torch.int32)
             cm = torch.full((16,), -1, dtype=torch.int32)
@@ -252,14 +281,20 @@ def cmd_check(a):
                     h = w13[ex] @ xf[t]
                     act = torch.nn.functional.silu(h[:2048]) * h[2048:]
                     ref[t] += wt[t, kk] * (w2[ex] @ act)
+            if sh:
+                h = sw13.float() @ x.float().T  # [4096, m]
+                act = torch.nn.functional.silu(h[:2048]) * h[2048:]
+                act = act.to(torch.bfloat16).float()
+                ref += sscale * (sw2.float() @ act).T
             args = [t.to(dev) for t in (x, ids, wt, hm, cm)]
             got = torch.zeros((m, HIDDEN), device=dev)
-            for hot, cold in slice_t:
+            for r, (hot, cold) in enumerate(slice_t):
                 out = torch.empty((m, HIDDEN), dtype=torch.bfloat16, device=dev)
+                extra = (*sslices[r], sscale) if sh else ()
                 mod.forward(out, *args, e, e, e, 0, False, *parts(hot), *parts(cold), ws,
-                            True, e)
+                            True, e, *extra)
                 got += out.float()
-            err = float((got.cpu() - ref).abs().max() / ref.abs().max())
+            err = float((got.cpu() - ref).abs().max() / ref.abs().max().clamp_min(1e-30))
             worst = max(worst, err)
             print(json.dumps({"m": m, "case": case, "rel_err": round(err, 5)}), flush=True)
     print(json.dumps({"worst_rel_err": round(worst, 5), "pass": worst < 6e-3}))
@@ -351,6 +386,7 @@ def main():
         p.add_argument("--n", type=int, default=3)
         p.add_argument("--trace")
         p.add_argument("--numa-node", type=int, default=0)
+        p.add_argument("--shared", type=int, default=0)
     a = ap.parse_args()
     {"build": cmd_build, "bench": cmd_bench, "once": cmd_once, "roof": cmd_roof,
      "check": cmd_check}[a.cmd](a)
