@@ -50,3 +50,31 @@ slowest GPU of the layer):
 ~17 us per cold-instead-of-hot expert (`../2026-10-08-m32` fit): ~-0.25 ms/step
 at 8 tokens, ~-0.7 at 32, before the replay-to-served shrink seen last time
 (`../2026-10-08-moe-cost-table`: -0.9 replayed, -0.2 served).
+
+## On the full agentic capture (`build_touch.py`)
+
+The probe above learned on 38 live requests, where a few bursty requests
+inflate route counts. On the profile's own data (agentic capture, 375 train /
+275 held-out task families; 43,718 / 26,483 8-token steps) plus the live
+capture split even / odd, each GPU's 3,676 hot experts re-ranked over layers,
+replicas re-placed at 2,000 per GPU, scored at 3,670 hot (c=1): active cold
+experts per step summed over layers, busiest GPU after replica assignment /
+mean GPU:
+
+| hot set | agentic held-out | live odd |
+|---|--:|--:|
+| prod (ccfreq3676; its promotion saw the odd files) | 104.2 / 67.7 | 98.7 / 61.9 |
+| route count, agentic train (alone) | 103.2 / 67.7 | 126.1 / 89.0 |
+| steps touched, agentic train (alone) | 102.0 / 67.7 | 123.7 / 87.5 |
+| route count, agentic train + live even | 100.5 / 65.0 | 99.7 / 63.2 |
+| **steps touched, agentic train + live even** | **98.6 / 64.2** | **98.0 / 62.7** |
+
+Metric alone (same data): -1.2 to -1.9% busiest. Ranking the whole budget on
+both captures instead of promoting from the live one: -3.5%. Together -5.4%
+busiest on held-out families: ~-5.6 cold experts per step x ~17 us = ~-0.1
+ms/step at c=1 (~0.5%), more at c=8.
+
+`profiles/glm53-w4a16-touch3676-r2000.json` (owners unchanged; replicas
+1,365 / 1,138 / 968 / 1,036). Served A/B: `chain_ab.sh`, 4 nodes x 4 arms
+alternating (ccf = prod profile, tch = this one), prod serve.sh c=1 DFlash2
+k=7, `../2026-10-07-mem-reclaim/arm.sh`.

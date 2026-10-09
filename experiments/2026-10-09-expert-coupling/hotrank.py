@@ -69,7 +69,7 @@ def main():
         for g in range(4):
             mine = owners == g
             k = hot0[mine].sum()
-            s = np.where(mine, score / score.sum(1, keepdims=True), -1.0)
+            s = np.where(mine, score, -1.0)
             hot.flat[np.argsort(s, axis=None)[::-1][:k]] = True
         return hot
 
