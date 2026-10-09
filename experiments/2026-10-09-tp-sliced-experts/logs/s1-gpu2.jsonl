@@ -1,0 +1,8 @@
+{"v": "td_v0:TD_INTER=512 TD_CHUNK0=1024 TD_STAGES0=4 TD_CHUNK1=512 TD_STAGES1=8", "m": 32, "hot": 96, "cold": 8, "shared": "side", "us": 264.54, "hbm_gbs": 1998, "c2c_gbs": 161}
+{"v": "td_v0:TD_INTER=512 TD_CHUNK0=1024 TD_STAGES0=4 TD_CHUNK1=512 TD_STAGES1=8", "m": 32, "hot": 110, "cold": 12, "shared": "side", "us": 315.89, "hbm_gbs": 1908, "c2c_gbs": 202}
+{"v": "td_v0:TD_INTER=512 TD_CHUNK0=1024 TD_STAGES0=4 TD_CHUNK1=512 TD_STAGES1=8", "m": 32, "hot": 124, "cold": 16, "shared": "side", "us": 359.92, "hbm_gbs": 1881, "c2c_gbs": 236}
+{"v": "td_v0:TD_INTER=512 TD_CHUNK0=1024 TD_STAGES0=4 TD_CHUNK1=512 TD_STAGES1=8", "m": 32, "hot": 110, "cold": 0, "shared": "side", "us": 265.55, "hbm_gbs": 2270, "c2c_gbs": 0}
+{"v": "td_v5:", "m": 32, "hot": 96, "cold": 8, "shared": true, "us": 299.61, "hbm_gbs": 1764, "c2c_gbs": 142}
+{"v": "td_v5:", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 351.17, "hbm_gbs": 1717, "c2c_gbs": 181}
+{"v": "td_v5:", "m": 32, "hot": 124, "cold": 16, "shared": true, "us": 396.99, "hbm_gbs": 1706, "c2c_gbs": 214}
+{"v": "td_v5:", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 322.11, "hbm_gbs": 1871, "c2c_gbs": 0}

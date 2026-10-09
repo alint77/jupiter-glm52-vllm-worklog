@@ -11,7 +11,7 @@ while [[ ! -e $D/keep_holds.stop ]]; do
     { split($2, a, ":"); m = (NF && length(a) == 3) ? a[1] * 60 + a[2] : a[1]; if (m > 15) n++ }
     END {print n + 0}')
   for ((i = live; i < N; i++)); do
-    sbatch --parsable --time=01:00:00 --job-name=kdev-hold $E/hold.sbatch >> $D/keep_holds.log
+    sbatch --parsable --time=00:30:00 --reservation=develbooster --job-name=kdev-hold $E/hold.sbatch >> $D/keep_holds.log
   done
   sleep 120
 done

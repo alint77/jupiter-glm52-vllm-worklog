@@ -137,6 +137,22 @@ class Setup:
         return (t["w13_weight_packed"], t["w13_weight_scale"], t["w2_weight_packed"],
                 t["w2_weight_scale"])
 
+    def side_shared(self):
+        """Today's path: the shared expert as cuBLAS GEMMs on a side stream,
+        joined before the output is used."""
+        import torch.nn.functional as F
+
+        if not hasattr(self, "side"):
+            self.side = torch.cuda.Stream()
+            self.xb = self.x.clone()
+        main = torch.cuda.current_stream()
+        self.side.wait_stream(main)
+        with torch.cuda.stream(self.side):
+            h = F.linear(self.xb, self.sw13)
+            act = F.silu(h[:, :512]) * h[:, 512:]
+            self.sh_out = F.linear(act, self.sw2)
+        return self.side
+
     def run(self, cl, out=None):
         e = torch.empty(0, device="cuda")
         out = torch.empty_like(self.x) if out is None else out
@@ -177,12 +193,21 @@ def cmd_bench(a):
     st = Setup(a.v, a.m, max(h for h, _ in cells) + 16, max(c for _, c in cells) + 8,
                a.numa_node, shared=a.shared)
     eb = expert_bytes(512)
-    sb = 3 * 512 * HIDDEN * 2 if a.shared else 0  # shared expert slice bytes
+    sb = 3 * 512 * HIDDEN * 2 if (a.shared or a.side_shared) else 0  # shared slice bytes
     for h, c in cells:
         cls = st.calls(h, c)
-        us = time_graph([lambda cl=cl: st.run(cl) for cl in cls])
+        if a.side_shared:
+            def call(cl):
+                side = st.side_shared()
+                o = st.run(cl)
+                torch.cuda.current_stream().wait_stream(side)
+                return o + st.sh_out
+            us = time_graph([lambda cl=cl: call(cl) for cl in cls])
+        else:
+            us = time_graph([lambda cl=cl: st.run(cl) for cl in cls])
         hbm, c2c = (h * eb + sb) / us / 1e3, c * eb / us / 1e3  # GB/s
-        rec = {"v": a.v, "m": a.m, "hot": h, "cold": c, "shared": a.shared,
+        rec = {"v": a.v, "m": a.m, "hot": h, "cold": c,
+               "shared": "side" if a.side_shared else bool(a.shared),
                "us": round(us, 2), "hbm_gbs": round(hbm), "c2c_gbs": round(c2c)}
         if ROOF["hbm"] and ROOF["c2c"]:
             floor = max((h * eb + sb) / ROOF["hbm"], c * eb / ROOF["c2c"]) / 1e3  # us
@@ -387,6 +412,7 @@ def main():
         p.add_argument("--trace")
         p.add_argument("--numa-node", type=int, default=0)
         p.add_argument("--shared", type=int, default=0)
+        p.add_argument("--side-shared", type=int, default=0)
     a = ap.parse_args()
     {"build": cmd_build, "bench": cmd_bench, "once": cmd_once, "roof": cmd_roof,
      "check": cmd_check}[a.cmd](a)
