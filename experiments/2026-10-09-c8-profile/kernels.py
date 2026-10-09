@@ -17,6 +17,7 @@ def main():
     ap.add_argument("trace")
     ap.add_argument("--cat", type=int, nargs="*")
     ap.add_argument("--top", type=int, default=25)
+    ap.add_argument("--outside", action="store_true", help="kernels outside the verify graph")
     a = ap.parse_args()
     ev = json.load(gzip.open(a.trace))["traceEvents"]
     by_corr = collections.defaultdict(list)
@@ -42,9 +43,13 @@ def main():
         if len(ks) < 500:
             continue
         n += 1
+        if a.outside:
+            tc = t["args"]["correlation"]
+            ks = [k for la in las if la["args"].get("correlation") != tc
+                  for k in by_corr.get(la["args"].get("correlation"), [])]
         for k in ks:
             c = cat(k["name"])
-            if a.cat is None or c in a.cat:
+            if a.outside or a.cat is None or c in a.cat:
                 key = (CATS[c][0][:14], k["name"][:110])
                 tot[key] += k["dur"]
                 cnt[key] += 1
