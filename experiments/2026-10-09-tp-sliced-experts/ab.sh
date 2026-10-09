@@ -7,7 +7,9 @@ export ROOF_HBM=3600 ROOF_C2C=419
 PY=/e/project1/profound/alint77/vllm/.venv/bin/python
 tag=$1 m=$2 cells=$3; shift 3
 specs=("$@")
-for sp in "${specs[@]}"; do v=${sp%%|*}; CUDA_VISIBLE_DEVICES=0 $PY -c "import kdev; kdev.build('$v')" >/dev/null 2>&1; done
+vs=(); for sp in "${specs[@]}"; do vs+=("${sp%%|*}"); done
+# v13+ (no torch headers) build in parallel in seconds; older ones serially
+$PY -c "import sys, kdev; kdev.build_many(sys.argv[1:]); [kdev.build(v) for v in sys.argv[1:]]" "${vs[@]}" >/dev/null 2>&1
 rev=(); for ((i=${#specs[@]}-1; i>=0; i--)); do rev+=("${specs[i]}"); done
 for g in 0 1 2 3; do
   if (( g % 2 )); then order=("${rev[@]}"); else order=("${specs[@]}"); fi

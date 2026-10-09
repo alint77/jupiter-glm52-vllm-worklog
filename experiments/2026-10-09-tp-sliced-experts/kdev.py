@@ -50,7 +50,70 @@ def ext_name(v):
     return f"kdev_{src}_{h}"
 
 
+class PlainMod:
+    """A torch-free kernel library (v13+): nvcc -shared, called via ctypes with
+    the torch extension's forward signature."""
+
+    def __init__(self, so):
+        import ctypes
+
+        self.lib = ctypes.CDLL(str(so))
+        P, I, F = ctypes.c_void_p, ctypes.c_int, ctypes.c_float
+        self.lib.td_forward.argtypes = [P, P, P, P, P, P, I, P, P, P, P, I, P, P, P, P, I, P, I, P,
+                                        P, P, F, P]
+        self.lib.td_forward.restype = I
+        self.lib.td_workspace_bytes.restype = ctypes.c_longlong
+        self.trace = hasattr(self.lib, "td_dump")
+
+    def workspace_bytes(self):
+        return self.lib.td_workspace_bytes()
+
+    def forward(self, out, x, ids, wt, hot_map, cold_map, _p, _s, _h, _rank, _sched,
+                hw13, hs13, hw2, hs2, cw13, cs13, cw2, cs2, ws, pdl, padding,
+                sw13=None, sw2=None, sscale=1.0):
+        ptr = lambda t: t.data_ptr() if t is not None and t.numel() else None  # noqa: E731
+        assert ids.dtype == torch.int32
+        rc = self.lib.td_forward(
+            ptr(out), ptr(x), ptr(ids), ptr(wt), ptr(hot_map), ptr(cold_map), x.shape[0],
+            ptr(hw13), ptr(hs13), ptr(hw2), ptr(hs2), hw13.shape[0] if hw13.numel() else 0,
+            ptr(cw13), ptr(cs13), ptr(cw2), ptr(cs2), cw13.shape[0] if cw13.numel() else 0,
+            ptr(ws), int(bool(pdl)), ptr(padding), ptr(sw13), ptr(sw2), float(sscale),
+            torch.cuda.current_stream().cuda_stream)
+        assert rc == 0, f"td_forward returned {rc}"
+
+    def td_dump(self):
+        import ctypes
+
+        buf = torch.empty((1 << 18, 4), dtype=torch.int64)
+        n = self.lib.td_dump(ctypes.c_void_p(buf.data_ptr()), 1 << 18)
+        return buf[:n].clone()
+
+
+def plain_build(v, verbose=False):
+    """nvcc the kernel alone into a shared library (seconds, no torch headers)."""
+    src, defines = parse(v)
+    name = ext_name(v)
+    bdir = Path(os.environ.get("VLLM_CACHE_ROOT", "/tmp")) / "kdev" / name
+    bdir.mkdir(parents=True, exist_ok=True)
+    so = bdir / f"{name}.so"
+    if not so.exists():
+        cmd = ["nvcc", "-shared", "-Xcompiler", "-fPIC", "-O3",
+               "-gencode=arch=compute_90a,code=sm_90a", "-std=c++17", "-lineinfo",
+               "-Xptxas=-v", *(f"-D{d}" for d in defines), str(HERE / f"kernels/{src}.cu"),
+               "-o", str(so) + ".tmp", "-lcuda"]
+        r = subprocess.run(cmd, capture_output=True, text=True)
+        (bdir / "build.log").write_text(r.stdout + r.stderr)
+        if r.returncode:
+            raise RuntimeError(f"nvcc failed for {v}:\n{r.stderr[-3000:]}")
+        os.replace(str(so) + ".tmp", so)
+        if verbose:
+            print(r.stderr)
+    return PlainMod(so), bdir
+
+
 def build(v, verbose=False):
+    if version(v) >= 13:
+        return plain_build(v, verbose)
     from torch.utils.cpp_extension import load
 
     src, defines = parse(v)
@@ -65,11 +128,21 @@ def build(v, verbose=False):
     return mod, bdir
 
 
+def build_many(variants):
+    """Build several variants at once (one nvcc per variant)."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    with ThreadPoolExecutor(max_workers=len(variants)) as ex:
+        list(ex.map(lambda v: build(v) if version(v) >= 13 else None, variants))
+
+
 def cmd_build(a):
     mod, bdir = build(a.v, verbose=True)
     out = OUT / ext_name(a.v)
     out.mkdir(parents=True, exist_ok=True)
     so = next(bdir.glob("*.so"))
+    if version(a.v) >= 13:
+        print((bdir / "build.log").read_text())
     sass = subprocess.run(["cuobjdump", "-sass", str(so)], capture_output=True, text=True).stdout
     (out / "sass.txt").write_text(sass)
     (out / "variant.txt").write_text(a.v + "\n")

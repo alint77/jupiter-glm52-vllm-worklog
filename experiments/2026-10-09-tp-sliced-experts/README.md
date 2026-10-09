@@ -106,3 +106,23 @@ experts, only when hot CTAs steal cold w2 work (`TD_NO_STEAL_COLD` passes);
 the smem weights checksum correct in an instrumented build. Default GR1 = 1
 (no race, same speed). `kdev.py check --reps N` is now GPU-side (24 s for 5
 reps of 16 cases).
+
+### v13-v15
+
+| version | change | M=8 38/4 | M=32 110/12 |
+|---|---|--:|--:|
+| v13 | v12 device code, torch-free C entry (`td_forward`, ctypes): builds 97 s -> ~8 s each and in parallel (`kdev.build_many`); 97 s was 95% torch headers (gcc 35 s, cicc 27, cudafe++ 20), ptxas 0.8 s | 98.2 | 278.1 |
+| v14 | two 8-warp consumer groups on alternating stages | 101.4 | 295.6 |
+| **v15** | w13 units in w2's shape (128 rows x 512 of K): one consumer path, 45 KB stages | **93.8** | **271.9** |
+
+v13 compute-only 67.8 us vs 91.6 with loads at 38/0; 28.6 M warp instructions
+(67% in the MMA blocks), issue 43% busy: stall-bound with 2 consumer warps per
+scheduler. v14 (4 per scheduler) cuts compute-only to 63.5 but loses overall
+(2 stages per group, 96 registers with spills). v15 at 5 stages is slower
+than at 4 (default 4). Today's kernel + side-stream shared at the same cells:
+115.5 / 323.6 us, so v15 is -19% / -16%.
+
+Open: v14 with one consumer group (`TD_CGROUPS=1`, otherwise ~v13) fails the
+check at M=32 hot-only in 6 / 320 runs (rel err 0.007-0.008) while v13 / v14
+(2 groups) / v15 pass 320 / 320: likely the same latent race as v12's GR1 > 1,
+exposed by timing. Not root-caused yet.
