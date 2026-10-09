@@ -187,3 +187,23 @@ Sweeps on v17 (no code change):
 
 (same node, ab.sh; v17 on this node is ~3 us slower than in the v17 table.)
 All pass `check` 20 reps.
+
+### v22-v23 (Astra reviews 2 and 3: `logs/codex-review2.md`, `logs/codex-review3.md`)
+
+| us, same node, all TD_NO_FLUSH_FENCE | 38/0 | 38/4 | 110/0 | 110/12 |
+|---|--:|--:|--:|--:|
+| **v20** | 82.3 | **88.3** | 221.8 | **238.6** |
+| v22: the 4 K-quarter warps of a half sum partials in smem (named barriers 2/3), one red.v4 per float4 (4x fewer atomics; user approved the fp32 order change) | 81.5 | 88.1 | 218.6 | 240.4 |
+| v23: v22 + shared w13 statically split over CTAs, weight TMAs before griddepcontrol.wait | 83.1 | 90.3 | 223.5 | 245.2 |
+
+v22 = noise, v23 slower: dropped (Astra: both correct; keep v20's flush).
+`TD_NO_FLUSH_FENCE` on v20: 100 / 100 check reps pass; both reviews accept the
+CTA barrier + thread-0 fence as the ordering. Default from here.
+
+Cold transfer ceiling of the real kernel (cold-only cells, all 132 CTAs on
+the cold tier, v20): M=8 0/8 117.0 us = 363 GB/s, 0/12 166.7 us = 382 GB/s
+(0.87-0.91 of 419). Compute-only on the same cells: 28-29 us. So the TMA path
+can fill C2C; in mixed cells it doesn't because cold CTAs come out of the hot
+consumer capacity, which is itself at its limit (cold-CTA sweep). (M=32
+cold-only cells put > 8 tokens on an expert: entries re-read weights, not
+comparable.)
