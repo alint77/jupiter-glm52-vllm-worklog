@@ -155,3 +155,35 @@ last-chunk flush 4% (per-thread `fence.sc.gpu`), kernel start 4%.
 |---|---|--:|--:|--:|--:|--:|
 | v15 | | 87.0 | 94.4 | 265.9 | 71.0 | 190.6 |
 | **v17** | unit records via `ld.shared` off precomputed addresses, predicated `red.global.add` flushes (no branches), `fence.acq_rel` before the done count | **84.0** | **90.5** | **250.1** | 65.0 | 171.1 |
+
+### Reviews and v18-v21 (2026-10-09 afternoon)
+
+Two outside reviews of the design: Codex gpt-6-astra (`logs/codex-review.md`,
+prompt = `REVIEW_BRIEF.md` + code) and a fresh-context subagent (`AUDIT.md`).
+Both independently found: v18 read `sd_row[s]` in the flush after the warp
+released the stage (wrong destination rows, rel err 0.61); v19's deferred
+w13 count / activation waits behind the next full stage while this CTA's
+producer can spin on that entry's ready flag (deadlock; both v19 builds hung
+the check). Byte accounting corrected: 5.308 MB per routed entry with scales,
+18.87 MB shared; floors 61.3 us (38/4 HBM) and 167.4 us (110/12 HBM).
+
+Sweeps on v17 (no code change):
+- `TD_COLD_CTAS` 12/16/20/24/32: 16 stays best or tied at M=32 (110/12:
+  267.0 / 261.1 / 266.7 / 267.5 / 276.7) and M=8 (38/4: 92.8 / 92.3 / 94.0 /
+  94.8 / 97.6). More dedicated cold CTAs do not help.
+- `TD_GR1` 1/2/4/6 on cold-free cells: M=8 flat (38/0 84.2 / 84.2 / 85.7 /
+  86.6); M=32 GR1=4 -4% (110/0 226.8 / 222.3 / 217.3 / 220.9). The w2
+  claim/record chain matters at M=32 only. (The audit's "R1 phase starves"
+  came from a traced build whose per-unit record adds an atomic on that path.)
+- `TD_NO_FLUSH_FENCE` (no per-thread fence before the done13 count; thread 0
+  still fences after the CTA barrier): passes 60 reps.
+
+| version | change | 38/0 | 38/4 | 110/0 | 110/12 |
+|---|---|--:|--:|--:|--:|
+| v17 | | 84.9 | 93.7 | 232.8 | 261.1 |
+| v21 | v18's smem-staged vector-red flush, destination rows snapshotted before the stage release | 83.6 | 93.2 | 230.6 | 253.7 |
+| v20 | v21 + w2 producer chain: one unconditional record read, xs13 in producer lanes, x2 rows carry their scale (consumer applies wt * xs2), w2 weight TMA before the ready spin | 83.9 | 92.0 | 228.1 | 255.0 |
+| **v20 no per-thread fence** | | **83.3** | **90.6** | **226.6** | **245.3** |
+
+(same node, ab.sh; v17 on this node is ~3 us slower than in the v17 table.)
+All pass `check` 20 reps.
