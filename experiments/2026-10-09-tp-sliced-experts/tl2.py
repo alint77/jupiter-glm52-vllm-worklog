@@ -37,6 +37,17 @@ for p, name in ((0, "hot"), (1, "cold")):
     if prod.any():
         spin = (r[prod, 2] - r[prod, 1]) / 1e3
         print(f"   producer ready-wait us {q(spin)}")
+for p, name in ((0, "hot"), (1, "cold")):
+    c = ph == 70 + p
+    e = ph == 80 + p
+    if c.any():
+        span = (r[ph == p, 3] - r[ph == p, 1]) / 1e3
+        wait = (r[c, 2] - r[c, 1]) / 1e3
+        print(f"{name}: consumer warp 0 waiting on full stages {np.median(wait):.1f} of {np.median(span):.1f} us (median)")
+    if e.any():
+        ew = (r[e, 2] - r[e, 1]) / 1e3
+        units = (r[e, 0] >> 32) & 0xFFFF
+        print(f"{name}: producer blocked on empty stages {np.median(ew):.1f} us, units p50 {np.median(units):.0f}")
 for p, name in ((10, "hot idle"), (11, "cold idle")):
     m = ph == p
     if m.any():

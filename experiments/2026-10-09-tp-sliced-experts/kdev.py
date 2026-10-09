@@ -235,13 +235,17 @@ def cmd_once(a):
     print("once done", flush=True)
 
 
-def cmd_check(a):
-    """The four 512 slices of the same checkpoint experts through variant V,
-    summed, against fp32; three calls per case (counters / epochs reset)."""
+_CHECK_CACHE = {}
+
+
+def check_fixture(dev):
+    """Checkpoint experts, their 4 slices as hot / cold tiers, fp32 dequants,
+    and the shared expert (bf16) with its slices; cached per process."""
     import bench_slice as BS
 
+    if "f" in _CHECK_CACHE:
+        return _CHECK_CACHE["f"]
     T = BS.T
-    dev = torch.device("cuda:0")
     gen = torch.Generator().manual_seed(0)
     n_hot, n_cold = 6, 2
     ck = T._int4_experts(n_hot + n_cold, gen)
@@ -252,77 +256,90 @@ def cmd_check(a):
         cold = T._to_grace({k: v[n_hot:].contiguous() for k, v in tier.items()}, dev)
         return hot, cold
 
-    slice_t = [split(sl) for sl in slices]
+    sg = torch.Generator().manual_seed(7)
+    sw13 = (torch.randn((4096, HIDDEN), generator=sg) * 0.02).to(torch.bfloat16)
+    sw2 = (torch.randn((HIDDEN, 2048), generator=sg) * 0.02).to(torch.bfloat16)
+    rows = lambda r: torch.cat([torch.arange(512 * r, 512 * r + 512),  # noqa: E731
+                                2048 + torch.arange(512 * r, 512 * r + 512)])
+    f = {"n_hot": n_hot, "n_cold": n_cold, "tiers": [split(sl) for sl in slices],
+         "w13": T._int4_dequant(ck[0], ck[2]).to(dev), "w2": T._int4_dequant(ck[1], ck[3]).to(dev),
+         "sw13": sw13.to(dev), "sw2": sw2.to(dev),
+         "sslices": [(sw13[rows(r)].contiguous().to(dev),
+                      sw2[:, 512 * r:512 * r + 512].contiguous().to(dev)) for r in range(4)]}
+    _CHECK_CACHE["f"] = f
+    return f
+
+
+def reference(f, x, ids, wt, shared, sscale):
+    """fp32 routed (+ shared) output on the GPU, per expert over its tokens."""
+    xf = x.float()
+    ref = torch.zeros_like(xf)
+    for ex in range(f["w13"].shape[0]):
+        sel = ids == ex  # [m, k]
+        tok = sel.any(1).nonzero().flatten()
+        if len(tok) == 0:
+            continue
+        h = xf[tok] @ f["w13"][ex].T
+        act = torch.nn.functional.silu(h[:, :2048]) * h[:, 2048:]
+        ref[tok] += (wt[tok] * sel[tok]).sum(1, keepdim=True) * (act @ f["w2"][ex].T)
+    if shared:
+        h = xf @ f["sw13"].float().T
+        act = (torch.nn.functional.silu(h[:, :2048]) * h[:, 2048:]).to(torch.bfloat16).float()
+        ref += sscale * (act @ f["sw2"].float().T)
+    return ref
+
+
+def cmd_check(a):
+    """The four 512 slices of the same checkpoint experts through variant V,
+    summed, against fp32; per case `--reps` calls (counters / epochs reset,
+    races)."""
+    dev = torch.device("cuda:0")
+    f = check_fixture(dev)
     mod, _ = build(a.v)
     ver = version(a.v)
+    sh, sscale = ver >= 2, 0.4
     ws = torch.zeros(mod.workspace_bytes(), dtype=torch.uint8, device=dev)
-    sh = ver >= 2
-    sscale = 0.4
-    sg = torch.Generator().manual_seed(7)
-    sw13 = (torch.randn((4096, HIDDEN), generator=sg) * 0.02).to(torch.bfloat16)  # gate | up
-    sw2 = (torch.randn((HIDDEN, 2048), generator=sg) * 0.02).to(torch.bfloat16)
-
-    def shared_slice(r):
-        rows = torch.cat([torch.arange(512 * r, 512 * r + 512),
-                          2048 + torch.arange(512 * r, 512 * r + 512)])
-        return (sw13[rows].contiguous().to(dev),
-                sw2[:, 512 * r:512 * r + 512].contiguous().to(dev))
-
-    sslices = [shared_slice(r) for r in range(4)]
-    w13 = T._int4_dequant(ck[0], ck[2])
-    w2 = T._int4_dequant(ck[1], ck[3])
     e = torch.empty(0, device=dev)
+    n_hot, n_cold = f["n_hot"], f["n_cold"]
+    hm = torch.full((16,), -1, dtype=torch.int32, device=dev)
+    cm = torch.full((16,), -1, dtype=torch.int32, device=dev)
+    hm[:n_hot] = torch.arange(n_hot, dtype=torch.int32, device=dev)
+    cm[n_hot:n_hot + n_cold] = torch.arange(n_cold, dtype=torch.int32, device=dev)
 
     def parts(t):
         return (t["w13_weight_packed"], t["w13_weight_scale"], t["w2_weight_packed"],
                 t["w2_weight_scale"])
 
-    worst = 0.0
+    worst, fails = 0.0, 0
     for m in (1, 8, 16, 32):
-        for case in range(4 if version(a.v) >= 2 else 3):
+        for case in range(4 if sh else 3):
             g = torch.Generator().manual_seed(100 * m + case)
             x = (torch.randn((m, HIDDEN), generator=g) * 0.3).to(torch.bfloat16)
-            k = min(TOPK, n_hot + n_cold)
-            ids = torch.stack([torch.randperm(n_hot + n_cold, generator=g)[:k]
+            ids = torch.stack([torch.randperm(n_hot + n_cold, generator=g)[:TOPK]
                                for _ in range(m)]).to(torch.int32)
             if case == 2:  # hot only
-                ids = torch.stack([torch.randperm(n_hot, generator=g)
-                                   for _ in range(m)]).to(torch.int32)
-                ids = torch.cat([ids, torch.full((m, 2), -1, dtype=torch.int32)], 1)
+                ids = torch.cat([torch.stack([torch.randperm(n_hot, generator=g) for _ in range(m)]),
+                                 torch.full((m, 2), -1, dtype=torch.int64)], 1).to(torch.int32)
             if case == 3:  # shared expert only
                 ids = torch.full((m, TOPK), -1, dtype=torch.int32)
             wt = torch.rand((m, TOPK), generator=g)
-            hm = torch.full((16,), -1, dtype=torch.int32)
-            cm = torch.full((16,), -1, dtype=torch.int32)
-            hm[:n_hot] = torch.arange(n_hot, dtype=torch.int32)
-            cm[n_hot:n_hot + n_cold] = torch.arange(n_cold, dtype=torch.int32)
-            ref = torch.zeros((m, HIDDEN))
-            xf = x.float()
-            for t in range(m):
-                for kk in range(TOPK):
-                    ex = int(ids[t, kk])
-                    if ex < 0:
-                        continue
-                    h = w13[ex] @ xf[t]
-                    act = torch.nn.functional.silu(h[:2048]) * h[2048:]
-                    ref[t] += wt[t, kk] * (w2[ex] @ act)
-            if sh:
-                h = sw13.float() @ x.float().T  # [4096, m]
-                act = torch.nn.functional.silu(h[:2048]) * h[2048:]
-                act = act.to(torch.bfloat16).float()
-                ref += sscale * (sw2.float() @ act).T
-            args = [t.to(dev) for t in (x, ids, wt, hm, cm)]
-            got = torch.zeros((m, HIDDEN), device=dev)
-            for r, (hot, cold) in enumerate(slice_t):
-                out = torch.empty((m, HIDDEN), dtype=torch.bfloat16, device=dev)
-                extra = (*sslices[r], sscale) if sh else ()
-                mod.forward(out, *args, e, e, e, 0, False, *parts(hot), *parts(cold), ws,
-                            True, e, *extra)
-                got += out.float()
-            err = float((got.cpu() - ref).abs().max() / ref.abs().max().clamp_min(1e-30))
-            worst = max(worst, err)
-            print(json.dumps({"m": m, "case": case, "rel_err": round(err, 5)}), flush=True)
-    print(json.dumps({"worst_rel_err": round(worst, 5), "pass": worst < 6e-3}))
+            x, ids, wt = x.to(dev), ids.to(dev), wt.to(dev)
+            ref = reference(f, x, ids, wt, sh, sscale)
+            for rep in range(a.reps):
+                got = torch.zeros((m, HIDDEN), device=dev)
+                for r, (hot, cold) in enumerate(f["tiers"]):
+                    out = torch.empty((m, HIDDEN), dtype=torch.bfloat16, device=dev)
+                    extra = (*f["sslices"][r], sscale) if sh else ()
+                    mod.forward(out, x, ids, wt, hm, cm, e, e, e, 0, False, *parts(hot),
+                                *parts(cold), ws, True, e, *extra)
+                    got += out.float()
+                err = float((got - ref).abs().max() / ref.abs().max().clamp_min(1e-30))
+                worst = max(worst, err)
+                if err > 6e-3:
+                    fails += 1
+                    print(json.dumps({"m": m, "case": case, "rep": rep, "rel_err": round(err, 5)}),
+                          flush=True)
+    print(json.dumps({"worst_rel_err": round(worst, 5), "fails": fails, "pass": fails == 0}))
 
 
 ROOF_SRC = r"""
@@ -413,6 +430,7 @@ def main():
         p.add_argument("--numa-node", type=int, default=0)
         p.add_argument("--shared", type=int, default=0)
         p.add_argument("--side-shared", type=int, default=0)
+        p.add_argument("--reps", type=int, default=1)
     a = ap.parse_args()
     {"build": cmd_build, "bench": cmd_bench, "once": cmd_once, "roof": cmd_roof,
      "check": cmd_check}[a.cmd](a)

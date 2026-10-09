@@ -173,6 +173,29 @@ __device__ __forceinline__ void mbar_arrive(uint64_t* bar) {
   asm volatile("mbarrier.arrive.shared::cta.b64 _, [%0];" ::"r"(smem_u32(bar))
                : "memory");
 }
+__device__ __forceinline__ uint32_t lds_u32(uint32_t a) {
+  uint32_t v;
+  asm volatile("ld.shared.b32 %0, [%1];" : "=r"(v) : "r"(a));
+  return v;
+}
+__device__ __forceinline__ uint4 lds_v4(uint32_t a) {
+  uint4 v;
+  asm volatile("ld.shared.v4.b32 {%0,%1,%2,%3}, [%4];"
+               : "=r"(v.x), "=r"(v.y), "=r"(v.z), "=r"(v.w)
+               : "r"(a));
+  return v;
+}
+__device__ __forceinline__ void mbar_wait_a(uint32_t bar, uint32_t parity) {
+  asm volatile(
+      "{\n .reg .pred p;\n WAITA_%=:\n mbarrier.try_wait.parity.shared::cta.b64 "
+      "p, [%0], %1;\n"
+      " @!p bra WAITA_%=;\n}\n" ::"r"(bar),
+      "r"(parity)
+      : "memory");
+}
+__device__ __forceinline__ void mbar_arrive_a(uint32_t bar) {
+  asm volatile("mbarrier.arrive.shared::cta.b64 _, [%0];" ::"r"(bar) : "memory");
+}
 __device__ __forceinline__ void mbar_wait(uint64_t* bar, uint32_t parity) {
   asm volatile(
       "{\n .reg .pred p;\n WAIT_%=:\n mbarrier.try_wait.parity.shared::cta.b64 "
@@ -800,36 +823,40 @@ __device__ __forceinline__ void activate_shared(Workspace* ws, int T, int warp,
 // One routed unit's 16 group steps for this warp. PH 0 (w13): 4 row blocks x
 // 2 K halves of a 64-row x 1024 box; PH 1 (w2): 8 row blocks of a 128-row x
 // 512 box. All smem offsets are immediates off two per-warp bases.
+// One routed unit for this warp: all 4 row blocks of a 64-row tile over 4
+// group steps of K, so each lane's 16 B of a Marlin k16 row (its 4 row blocks)
+// is one conflict-free LDS.128, and each activation fragment feeds 4 MMAs.
+// w13 unit (64 rows x 1024): warp w takes K steps [4w, 4w + 4); w2 unit (128
+// rows x 512): warp w takes 64-row half w / 4, K steps [4 (w % 4), + 4).
 template <int PH>
-__device__ __forceinline__ void consume_routed(const unsigned char* st, int warp,
-                                               int lane, float* acc) {
+__device__ __forceinline__ void consume_routed(uint32_t wb, uint32_t sb, uint32_t xb,
+                                               float (*acc)[4]) {
   constexpr int KROW = PH ? 1024 : 512;  // bytes per k16 row of the box
   constexpr int SROW = PH ? 256 : 128;   // bytes per scale group row
-  const int g = lane / 4, tq = lane % 4;
-  const int mb = PH ? warp : warp % 4, half = PH ? 0 : warp / 4;
-  const int wrow = PH ? (mb >> 2) * 512 + 4 * (mb & 3) : 4 * mb;
-  const int sblk = PH ? (mb >> 2) * 128 + 4 * (mb & 3) : 4 * mb;
-  const unsigned char* wb = st + (half * 32) * KROW + lane * 16 + wrow;
-  const unsigned char* sb = st + W_BYTES + (half * 16) * SROW + 16 * g + sblk;
-  const unsigned char* xb = st + W_BYTES + S_BYTES + g * XROW_STRIDE + (half * 64 + tq) * 16;
 #pragma unroll
-  for (int j = 0; j < 16; ++j) {
-    const uint32_t sw = *reinterpret_cast<const uint32_t*>(sb + j * SROW);
-    const uint32_t w0 = *reinterpret_cast<const uint32_t*>(wb + (2 * j) * KROW);
-    const uint32_t w1 = *reinterpret_cast<const uint32_t*>(wb + (2 * j + 1) * KROW);
-    const uint4 xv = *reinterpret_cast<const uint4*>(xb + j * 64);
-    const float zero[4] = {0.f, 0.f, 0.f, 0.f};
-    float d[4];
-    uint32_t a[4];
-    decode_int4_fast(w0, a);
-    mma_f16(d, a, xv.x, xv.y, zero);
-    decode_int4_fast(w1, a);
-    mma_f16(d, a, xv.z, xv.w, d);
-    const float s0 = __uint_as_float(sw << 16), s1 = __uint_as_float(sw & 0xFFFF0000u);
-    acc[0] = fmaf(s0, d[0], acc[0]);
-    acc[1] = fmaf(s0, d[1], acc[1]);
-    acc[2] = fmaf(s1, d[2], acc[2]);
-    acc[3] = fmaf(s1, d[3], acc[3]);
+  for (int j = 0; j < 4; ++j) {
+    const uint4 w0 = lds_v4(wb + (2 * j) * KROW);
+    const uint4 w1 = lds_v4(wb + (2 * j + 1) * KROW);
+    const uint4 sw = lds_v4(sb + j * SROW);
+    const uint4 xv = lds_v4(xb + j * 64);
+    const uint32_t w0s[4] = {w0.x, w0.y, w0.z, w0.w}, w1s[4] = {w1.x, w1.y, w1.z, w1.w};
+    const uint32_t sws[4] = {sw.x, sw.y, sw.z, sw.w};
+#pragma unroll
+    for (int mb = 0; mb < 4; ++mb) {
+      const float zero[4] = {0.f, 0.f, 0.f, 0.f};
+      float d[4];
+      uint32_t a[4];
+      decode_int4_fast(w0s[mb], a);
+      mma_f16(d, a, xv.x, xv.y, zero);
+      decode_int4_fast(w1s[mb], a);
+      mma_f16(d, a, xv.z, xv.w, d);
+      const float s0 = __uint_as_float(sws[mb] << 16),
+                  s1 = __uint_as_float(sws[mb] & 0xFFFF0000u);
+      acc[mb][0] = fmaf(s0, d[0], acc[mb][0]);
+      acc[mb][1] = fmaf(s0, d[1], acc[mb][1]);
+      acc[mb][2] = fmaf(s1, d[2], acc[mb][2]);
+      acc[mb][3] = fmaf(s1, d[3], acc[mb][3]);
+    }
   }
 }
 
@@ -945,7 +972,7 @@ __global__ void __launch_bounds__(THREADS, 1)
           }
           __syncwarp();
           if (lane == 0) {
-            desc[s] = make_int4(hdr, gr.x, c, e.ntok);
+            desc[s] = make_int4(hdr, ei, t, e.ntok);
             mbar_expect_tx(&full[s], W_BYTES + S_BYTES + e.ntok * XROW_BYTES0);
             tma_3d(dst, &tr.w[0], t * 128, c * KT0, e.local, &full[s]);
             tma_3d(dst + W_BYTES, &tr.s[0], t * 64, c * G0, e.local, &full[s]);
@@ -976,7 +1003,7 @@ __global__ void __launch_bounds__(THREADS, 1)
           }
           __syncwarp();
           if (lane == 0) {
-            desc[s] = make_int4(hdr, gr.x, c, e.ntok);
+            desc[s] = make_int4(hdr, ei, t, e.ntok);
             mbar_expect_tx(&full[s], W_BYTES + S_BYTES + e.ntok * XROW_BYTES1);
           }
           __syncwarp();
@@ -1020,21 +1047,34 @@ __global__ void __launch_bounds__(THREADS, 1)
   // consumer warps
   const int g = lane / 4, tq = lane % 4;
   const int nt_n = (T + 7) / 8;
-  float acc[4] = {};
+  float acc[4][4] = {};
   float accs[2][4][4] = {};
   int acq = -1;  // (tier, entry) whose ready this warp has acquired
   TD_V(uint64_t td_c0 = 0;)
   TD_V(uint64_t td_wait = 0; const uint64_t td_q0 = td_now();)
+  // per-warp smem offsets within a stage, computed once
+  const uint32_t ring_u = smem_u32(ring), full_u = smem_u32(full), empty_u = smem_u32(empty);
+  static_assert(CONSUMER_WARPS == 8, "8 K slices (w13), 2 halves x 4 K slices (w2)");
+  const uint32_t wo0 = (warp * 8) * 512 + lane * 16;
+  const uint32_t so0 = W_BYTES + (warp * 4) * 128 + 16 * g;
+  const uint32_t xo0 = W_BYTES + S_BYTES + g * XROW_STRIDE + (warp * 16 + tq) * 16;
+  const int h1 = warp / 4, k1 = warp % 4;
+  const uint32_t wo1 = (k1 * 8) * 1024 + h1 * 512 + lane * 16;
+  const uint32_t so1 = W_BYTES + (k1 * 4) * 256 + h1 * 128 + 16 * g;
+  const uint32_t xo1 = W_BYTES + S_BYTES + g * XROW_STRIDE + (k1 * 16 + tq) * 16;
+  int s = 0;
+  uint32_t ph = 0;
   for (int it = 0;; ++it) {
-    const int s = it % STAGES;
     TD_V(const uint64_t td_w0 = td_now();)
-    mbar_wait(&full[s], (it / STAGES) & 1);
+    mbar_wait_a(full_u + 8 * s, ph);
     TD_V(td_wait += td_now() - td_w0;)
     const int4 d = desc[s];
     const int kind = d.x & 15;
     if (kind == K_END) break;
     const int q = (d.x >> 4) & 1, last = (d.x >> 9) & 1, nch = d.x >> 16;
     const unsigned char* st = ring + static_cast<size_t>(s) * STAGE_BYTES;
+    const uint32_t st_u = ring_u + s * STAGE_BYTES;
+    const uint32_t empty_s = empty_u + 8 * s;
     const Expert* experts = ws->lists[q];
     // this lane's two tokens of a routed unit: destination rows and scales
     const int ntok = d.w;
@@ -1049,20 +1089,22 @@ __global__ void __launch_bounds__(THREADS, 1)
         }
     }
     if (kind == K_R0) {
-      consume_routed<0>(st, warp, lane, acc);
+      consume_routed<0>(st_u + wo0, st_u + so0, st_u + xo0, acc);
       __syncwarp();
-      if (lane == 0) mbar_arrive(&empty[s]);
+      if (lane == 0) mbar_arrive_a(empty_s);
       if (last) {
-        const int ei = d.y / TILES0, t = d.y - ei * TILES0;
+        const int ei = d.y, t = d.z;
         const Expert& e = experts[ei];
-        const int n0r = t * R0 + (warp % 4) * 16 + g;
 #pragma unroll
-        for (int i = 0; i < 4; ++i) {
-          if (2 * tq + (i & 1) < ntok)
-            atomicAdd(&ws->y13[static_cast<size_t>(rw[i & 1]) * 2 * INTER + n0r + (i >> 1) * 8],
-                      acc[i] * fs[i & 1]);
-          acc[i] = 0.f;
-        }
+        for (int mb = 0; mb < 4; ++mb)
+#pragma unroll
+          for (int i = 0; i < 4; ++i) {
+            if (2 * tq + (i & 1) < ntok)
+              atomicAdd(&ws->y13[static_cast<size_t>(rw[i & 1]) * 2 * INTER + t * R0 + mb * 16 +
+                                 g + (i >> 1) * 8],
+                        acc[mb][i] * fs[i & 1]);
+            acc[mb][i] = 0.f;
+          }
         consumer_sync();
         if (threadIdx.x == 0) {
           __threadfence();
@@ -1080,18 +1122,20 @@ __global__ void __launch_bounds__(THREADS, 1)
         TD_V(td_c0 = td_now();)
       }
     } else if (kind == K_R1) {
-      consume_routed<1>(st, warp, lane, acc);
+      consume_routed<1>(st_u + wo1, st_u + so1, st_u + xo1, acc);
       __syncwarp();
-      if (lane == 0) mbar_arrive(&empty[s]);
-      const int t = d.y % TILES1;
-      const int n0r = t * R1 + warp * 16 + g;
+      if (lane == 0) mbar_arrive_a(empty_s);
+      const int t = d.z;
 #pragma unroll
-      for (int i = 0; i < 4; ++i) {
-        if (2 * tq + (i & 1) < ntok)
-          atomicAdd(&ws->y[static_cast<size_t>(rw[i & 1]) * HIDDEN + n0r + (i >> 1) * 8],
-                    acc[i] * fs[i & 1]);
-        acc[i] = 0.f;
-      }
+      for (int mb = 0; mb < 4; ++mb)
+#pragma unroll
+        for (int i = 0; i < 4; ++i) {
+          if (2 * tq + (i & 1) < ntok)
+            atomicAdd(&ws->y[static_cast<size_t>(rw[i & 1]) * HIDDEN + t * R1 + h1 * 64 + mb * 16 +
+                             g + (i >> 1) * 8],
+                      acc[mb][i] * fs[i & 1]);
+          acc[mb][i] = 0.f;
+        }
     } else {  // shared expert: 32 rows per warp, 4 k16 steps, nt_n token tiles
       const unsigned char* xa = st + W_BYTES;
 #pragma unroll
@@ -1114,7 +1158,7 @@ __global__ void __launch_bounds__(THREADS, 1)
         }
       }
       __syncwarp();
-      if (lane == 0) mbar_arrive(&empty[s]);
+      if (lane == 0) mbar_arrive_a(empty_s);
       if (last) {
         const int t = d.y;
 #pragma unroll
@@ -1152,6 +1196,10 @@ __global__ void __launch_bounds__(THREADS, 1)
           }
         }
       }
+    }
+    if (++s == STAGES) {
+      s = 0;
+      ph ^= 1;
     }
   }
 #ifdef TD_CTA_TRACE

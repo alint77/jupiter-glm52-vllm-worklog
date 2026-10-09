@@ -79,3 +79,30 @@ INTER 512 + the shared expert as cuBLAS on a side stream, today's shape):
 
 Cold-preferring CTAs: 16 best (8 collapses with cold slices, 24 / 32 slightly
 worse).
+
+### v9-v12 (2026-10-09, same-GPU A/Bs on develbooster)
+
+| version | change | M=8 38/4 | M=32 110/12 |
+|---|---|--:|--:|
+| v8 | (previous best) | 103.6 | 292.5 |
+| v9 | 16 consumer warps + parallel activation | slower (+3%); 8-warp build ~ v8 | |
+| v10 | per-warp smem offsets hoisted, 32-bit ld.shared, incremental stage / phase | 103.3 | 288.8 |
+| v11 | each warp all 4 row blocks of a 64-row tile over a K slice: one conflict-free LDS.128 per k16 row (4.3M bank conflicts before), activation fragment feeds 4 MMAs | 99.6 | 288.1 |
+| **v12** | producer: next group claimed while this one issues, entry record read once per group | **98.2** | **279.5** |
+
+Findings: `TD_COMPUTE_ONLY` (producer signals stages without loads): v8 69.8 /
+190.5 us at 38/0 and 110/0 vs 95.3 / 260.3 with loads, i.e. consumer
+instruction work alone ~ the memory floor (the decode/MMA blocks are 75% of
+instructions at ~30 per group step, near Marlin's dequant minimum; the rest
+was bookkeeping); 16 warps are slower even compute-only. ncu (compute-only):
+issue 47%, ALU 34%, FMA 28%, LSU 22%, tensor 16%: latency, no pipe saturated.
+CTA trace: consumer warp 0 waits on data 14% of the call, the producer is
+blocked on a full ring ~20%: the producer's own serial latencies (claim
+atomics, record loads) bound the pipeline, hence v12.
+
+Open: v12 with w2 groups of > 1 unit (`TD_GR1`) gives garbage in the first
+64-row half of one w2 tile for a few tokens in ~10% of M=32 calls with cold
+experts, only when hot CTAs steal cold w2 work (`TD_NO_STEAL_COLD` passes);
+the smem weights checksum correct in an instrumented build. Default GR1 = 1
+(no race, same speed). `kdev.py check --reps N` is now GPU-side (24 s for 5
+reps of 16 cases).

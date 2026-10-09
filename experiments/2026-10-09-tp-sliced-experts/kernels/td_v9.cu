@@ -82,7 +82,10 @@ constexpr int STAGE_BYTES =
     (W_BYTES + S_BYTES + MAX_TOK * XROW_STRIDE + 1023) / 1024 * 1024;
 static_assert(MAX_TOKENS * XS_BYTES <= STAGE_BYTES - W_BYTES, "shared rows fit");
 constexpr int STAGES = TD_STAGES;
-constexpr int CONSUMER_WARPS = 8;
+#ifndef TD_CWARPS
+  #define TD_CWARPS 16
+#endif
+constexpr int CONSUMER_WARPS = TD_CWARPS;
 constexpr int THREADS = (CONSUMER_WARPS + 1) * 32;
 constexpr int SMEM_HEAD = 128;
 static_assert(STAGES <= 8, "barrier head holds 8 stages");
@@ -92,8 +95,13 @@ constexpr int PLACEMENT_EXP = 14;  // decoded weights are value * 2^-14
 constexpr int GRID = 132;
 constexpr int PREP_THREADS =
     1024;  // route_prep block: 6 hidden elements per thread
-static_assert(CONSUMER_WARPS == 8,
-              "consumer warps are 4 row blocks x 2 K halves (w13), 8 row blocks (w2)");
+static_assert(CONSUMER_WARPS == 8 || CONSUMER_WARPS == 16,
+              "w13: 4 row blocks x CW/4 K parts; w2: 8 row blocks x CW/8 K parts");
+constexpr int KP0 = CONSUMER_WARPS / 4, KP1 = CONSUMER_WARPS / 8;  // K parts per unit
+constexpr int STEPS = 32 / KP0;  // group steps per warp per routed unit
+static_assert(16 / KP1 == STEPS, "w13 and w2 warps run the same number of steps");
+constexpr int SROWS = RS / CONSUMER_WARPS;  // shared expert rows per warp
+constexpr int SRB = SROWS / 16;              // ... in 16-row blocks
 
 struct Expert {
   int local;  // index into the tier's tensors
@@ -156,19 +164,12 @@ __device__ __forceinline__ void mbar_init(uint64_t* bar, uint32_t count) {
   asm volatile("mbarrier.init.shared::cta.b64 [%0], %1;" ::"r"(smem_u32(bar)),
                "r"(count));
 }
-#ifdef TD_COMPUTE_ONLY
-// timing probe: no loads; each stage is released with a plain arrive
-__device__ __forceinline__ void mbar_expect_tx(uint64_t* bar, uint32_t) {
-  asm volatile("mbarrier.arrive.shared::cta.b64 _, [%0];" ::"r"(smem_u32(bar)) : "memory");
-}
-#else
 __device__ __forceinline__ void mbar_expect_tx(uint64_t* bar, uint32_t bytes) {
   asm volatile("mbarrier.arrive.expect_tx.shared::cta.b64 _, [%0], %1;" ::"r"(
                    smem_u32(bar)),
                "r"(bytes)
                : "memory");
 }
-#endif
 __device__ __forceinline__ void mbar_arrive(uint64_t* bar) {
   asm volatile("mbarrier.arrive.shared::cta.b64 _, [%0];" ::"r"(smem_u32(bar))
                : "memory");
@@ -183,37 +184,28 @@ __device__ __forceinline__ void mbar_wait(uint64_t* bar, uint32_t parity) {
 }
 __device__ __forceinline__ void bulk_g2s(void* dst, const void* src,
                                          uint32_t bytes, uint64_t* bar) {
-  
-#ifndef TD_COMPUTE_ONLY
   asm volatile(
       "cp.async.bulk.shared::cluster.global.mbarrier::complete_tx::bytes [%0], "
       "[%1], %2, [%3];" ::"r"(smem_u32(dst)),
       "l"(src), "r"(bytes), "r"(smem_u32(bar))
       : "memory");
-#endif
 }
 __device__ __forceinline__ void tma_3d(void* dst, const CUtensorMap* map,
                                        int c0, int c1, int c2, uint64_t* bar) {
-  
-#ifndef TD_COMPUTE_ONLY
   asm volatile(
       "cp.async.bulk.tensor.3d.shared::cluster.global.mbarrier::complete_tx::"
       "bytes [%0], [%1, {%2, %3, %4}], [%5];" ::"r"(smem_u32(dst)),
       "l"(reinterpret_cast<uint64_t>(map)), "r"(c0), "r"(c1), "r"(c2),
       "r"(smem_u32(bar))
       : "memory");
-#endif
 }
 __device__ __forceinline__ void tma_2d(void* dst, const CUtensorMap* map,
                                        int c0, int c1, uint64_t* bar) {
-  
-#ifndef TD_COMPUTE_ONLY
   asm volatile(
       "cp.async.bulk.tensor.2d.shared::cluster.global.mbarrier::complete_tx::"
       "bytes [%0], [%1, {%2, %3}], [%4];" ::"r"(smem_u32(dst)),
       "l"(reinterpret_cast<uint64_t>(map)), "r"(c0), "r"(c1), "r"(smem_u32(bar))
       : "memory");
-#endif
 }
 __device__ __forceinline__ void ldmatrix_x4(uint32_t* a, const void* p) {
   asm volatile("ldmatrix.sync.aligned.m8n8.x4.shared.b16 {%0,%1,%2,%3}, [%4];"
@@ -754,41 +746,65 @@ __device__ __forceinline__ void consumer_sync() {
 // silu(gate) * up for one entry's routes, one warp per route: f16 fragments
 // of x2 with the row's power-of-two scale; the y13 rows are zeroed for the
 // next call.
-__device__ __forceinline__ void activate(Workspace* ws, const Expert& e,
-                                         int warp, int lane) {
-  if (warp >= e.ntok) return;
-  const int r = e.route[warp];
-  float* __restrict__ yr = ws->y13 + static_cast<size_t>(r) * 2 * INTER;
-  float a[INTER / 32], m = 0.f;
+__device__ __forceinline__ void activate(Workspace* ws, const Expert& e) {
+  __shared__ float red[MAX_TOK][CONSUMER_WARPS];
+  static_assert(INTER == CONSUMER_WARPS * 32 || INTER == 2 * CONSUMER_WARPS * 32, "elements per thread");
+  constexpr int PER = INTER / (CONSUMER_WARPS * 32);
+  const int warp = threadIdx.x / 32, lane = threadIdx.x % 32, n = e.ntok;
+  float a[MAX_TOK][PER];
 #pragma unroll
-  for (int q = 0; q < INTER / 32; ++q) {
-    const float g = __ldcg(yr + q * 32 + lane), u = __ldcg(yr + INTER + q * 32 + lane);
-    a[q] = __fdividef(g, 1.f + __expf(-g)) * u;
-    m = fmaxf(m, fabsf(a[q]));
-  }
-  for (int o = 16; o; o >>= 1) m = fmaxf(m, __shfl_xor_sync(0xffffffffu, m, o));
-  float scale;
-  const float inv = row_scale(m, &scale);
-  if (lane == 0) ws->xs2[r] = scale;
-  __half* __restrict__ out = ws->x2 + static_cast<size_t>(r) * INTER;
+  for (int i = 0; i < MAX_TOK; ++i)
+    if (i < n) {
+      const float* yr = ws->y13 + static_cast<size_t>(e.route[i]) * 2 * INTER;
 #pragma unroll
-  for (int q = 0; q < INTER / 32; ++q) {
-    out[frag_slot(q * 32 + lane)] = __float2half_rn(a[q] * inv);
-    yr[q * 32 + lane] = 0.f;
-    yr[INTER + q * 32 + lane] = 0.f;
-  }
+      for (int q = 0; q < PER; ++q) {
+        const int k = threadIdx.x + q * CONSUMER_WARPS * 32;
+        const float g = __ldcg(yr + k), u = __ldcg(yr + INTER + k);
+        a[i][q] = __fdividef(g, 1.f + __expf(-g)) * u;
+      }
+    }
+#pragma unroll
+  for (int i = 0; i < MAX_TOK; ++i)
+    if (i < n) {
+      float m = 0.f;
+#pragma unroll
+      for (int q = 0; q < PER; ++q) m = fmaxf(m, fabsf(a[i][q]));
+      for (int o = 16; o; o >>= 1) m = fmaxf(m, __shfl_xor_sync(0xffffffffu, m, o));
+      if (lane == 0) red[i][warp] = m;
+    }
+  consumer_sync();
+#pragma unroll
+  for (int i = 0; i < MAX_TOK; ++i)
+    if (i < n) {
+      float m = 0.f;
+#pragma unroll
+      for (int w = 0; w < CONSUMER_WARPS; ++w) m = fmaxf(m, red[i][w]);
+      float scale;
+      const float inv = row_scale(m, &scale);
+      const int r = e.route[i];
+      if (threadIdx.x == 0) ws->xs2[r] = scale;
+      float* yr = ws->y13 + static_cast<size_t>(r) * 2 * INTER;
+      __half* out = ws->x2 + static_cast<size_t>(r) * INTER;
+#pragma unroll
+      for (int q = 0; q < PER; ++q) {
+        const int k = threadIdx.x + q * CONSUMER_WARPS * 32;
+        out[frag_slot(k)] = __float2half_rn(a[i][q] * inv);
+        yr[k] = 0.f;
+        yr[INTER + k] = 0.f;
+      }
+    }
 }
 
-// The shared expert's silu * up for all T tokens (bf16 fragments of x2s);
-// y13s is zeroed for the next call.
-__device__ __forceinline__ void activate_shared(Workspace* ws, int T, int warp,
-                                                int lane) {
-  for (int tok = warp; tok < T; tok += CONSUMER_WARPS) {
+// The shared expert's silu * up for all T tokens (bf16 fragments of x2s), one
+// element per consumer thread; y13s is zeroed for the next call.
+__device__ __forceinline__ void activate_shared(Workspace* ws, int T) {
+  constexpr int PER = INTER / (CONSUMER_WARPS * 32);
+  for (int tok = 0; tok < T; ++tok) {
     float* __restrict__ yr = ws->y13s + static_cast<size_t>(tok) * 2 * INTER;
     __nv_bfloat16* __restrict__ out = ws->x2s + static_cast<size_t>(tok) * INTER;
 #pragma unroll
-    for (int q = 0; q < INTER / 32; ++q) {
-      const int k = q * 32 + lane;
+    for (int q = 0; q < PER; ++q) {
+      const int k = threadIdx.x + q * CONSUMER_WARPS * 32;
       const float g = __ldcg(yr + k), u = __ldcg(yr + INTER + k);
       out[frag_slot(k)] = __float2bfloat16_rn(__fdividef(g, 1.f + __expf(-g)) * u);
       yr[k] = 0.f;
@@ -806,14 +822,14 @@ __device__ __forceinline__ void consume_routed(const unsigned char* st, int warp
   constexpr int KROW = PH ? 1024 : 512;  // bytes per k16 row of the box
   constexpr int SROW = PH ? 256 : 128;   // bytes per scale group row
   const int g = lane / 4, tq = lane % 4;
-  const int mb = PH ? warp : warp % 4, half = PH ? 0 : warp / 4;
+  const int mb = PH ? warp % 8 : warp % 4, kp = PH ? warp / 8 : warp / 4;
   const int wrow = PH ? (mb >> 2) * 512 + 4 * (mb & 3) : 4 * mb;
   const int sblk = PH ? (mb >> 2) * 128 + 4 * (mb & 3) : 4 * mb;
-  const unsigned char* wb = st + (half * 32) * KROW + lane * 16 + wrow;
-  const unsigned char* sb = st + W_BYTES + (half * 16) * SROW + 16 * g + sblk;
-  const unsigned char* xb = st + W_BYTES + S_BYTES + g * XROW_STRIDE + (half * 64 + tq) * 16;
+  const unsigned char* wb = st + (kp * STEPS * 2) * KROW + lane * 16 + wrow;
+  const unsigned char* sb = st + W_BYTES + (kp * STEPS) * SROW + 16 * g + sblk;
+  const unsigned char* xb = st + W_BYTES + S_BYTES + g * XROW_STRIDE + (kp * STEPS * 4 + tq) * 16;
 #pragma unroll
-  for (int j = 0; j < 16; ++j) {
+  for (int j = 0; j < STEPS; ++j) {
     const uint32_t sw = *reinterpret_cast<const uint32_t*>(sb + j * SROW);
     const uint32_t w0 = *reinterpret_cast<const uint32_t*>(wb + (2 * j) * KROW);
     const uint32_t w1 = *reinterpret_cast<const uint32_t*>(wb + (2 * j + 1) * KROW);
@@ -911,7 +927,7 @@ __global__ void __launch_bounds__(THREADS, 1)
         for (int k = 0; k < 2; ++k)
           asm volatile("prefetch.tensormap [%0];" ::"l"(reinterpret_cast<uint64_t>(&p.sw[k])) : "memory");
     }
-    TD_V(const uint64_t td_p0 = td_now(); uint64_t td_spin = 0, td_empty = 0;)
+    TD_V(const uint64_t td_p0 = td_now(); uint64_t td_spin = 0;)
     int q = own, last_ready = -1, it = 0;
     bool stolen = false;
     while (true) {
@@ -931,9 +947,7 @@ __global__ void __launch_bounds__(THREADS, 1)
       for (int ci = 0; ci < gr.nch; ++ci, ++it) {
         const int s = it % STAGES, c = gr.c0 + ci;
         unsigned char* dst = ring + static_cast<size_t>(s) * STAGE_BYTES;
-        TD_V(const uint64_t td_e0 = td_now();)
         if (lane == 0 && it >= STAGES) mbar_wait(&empty[s], ((it / STAGES) - 1) & 1);
-        TD_V(td_empty += td_now() - td_e0;)
         __syncwarp();
         const int hdr = gr.kind | q << 4 | (ci == 0) << 8 | (ci == gr.nch - 1) << 9 | gr.nch << 16;
         if (gr.kind == K_R0) {
@@ -1013,7 +1027,6 @@ __global__ void __launch_bounds__(THREADS, 1)
       mbar_arrive(&full[s]);
     }
     TD_V(if (lane == 0) td_record(60 + own, td_p0, td_p0 + td_spin, n_tier[0], n_tier[1]);)
-    TD_V(if (lane == 0) td_record(80 + own, td_p0, td_p0 + td_empty, it, 0);)
     return;
   }
 
@@ -1021,15 +1034,12 @@ __global__ void __launch_bounds__(THREADS, 1)
   const int g = lane / 4, tq = lane % 4;
   const int nt_n = (T + 7) / 8;
   float acc[4] = {};
-  float accs[2][4][4] = {};
+  float accs[SRB][4][4] = {};
   int acq = -1;  // (tier, entry) whose ready this warp has acquired
   TD_V(uint64_t td_c0 = 0;)
-  TD_V(uint64_t td_wait = 0; const uint64_t td_q0 = td_now();)
   for (int it = 0;; ++it) {
     const int s = it % STAGES;
-    TD_V(const uint64_t td_w0 = td_now();)
     mbar_wait(&full[s], (it / STAGES) & 1);
-    TD_V(td_wait += td_now() - td_w0;)
     const int4 d = desc[s];
     const int kind = d.x & 15;
     if (kind == K_END) break;
@@ -1071,7 +1081,7 @@ __global__ void __launch_bounds__(THREADS, 1)
         consumer_sync();
         if (s_last) {
           __threadfence();
-          activate(ws, e, warp, lane);
+          activate(ws, e);
           fence_proxy_async();
           __threadfence();
           consumer_sync();
@@ -1084,7 +1094,7 @@ __global__ void __launch_bounds__(THREADS, 1)
       __syncwarp();
       if (lane == 0) mbar_arrive(&empty[s]);
       const int t = d.y % TILES1;
-      const int n0r = t * R1 + warp * 16 + g;
+      const int n0r = t * R1 + (warp % 8) * 16 + g;
 #pragma unroll
       for (int i = 0; i < 4; ++i) {
         if (2 * tq + (i & 1) < ntok)
@@ -1096,10 +1106,10 @@ __global__ void __launch_bounds__(THREADS, 1)
       const unsigned char* xa = st + W_BYTES;
 #pragma unroll
       for (int ks = 0; ks < CKS / 16; ++ks) {
-        uint32_t af[2][4];
+        uint32_t af[SRB][4];
 #pragma unroll
-        for (int rb = 0; rb < 2; ++rb) {
-          const int row = warp * 32 + rb * 16 + (lane & 7) + ((lane >> 3) & 1) * 8;
+        for (int rb = 0; rb < SRB; ++rb) {
+          const int row = warp * SROWS + rb * 16 + (lane & 7) + ((lane >> 3) & 1) * 8;
           const int ck = ks * 2 + (lane >> 4);
           ldmatrix_x4(af[rb], st + row * 128 + ((ck ^ (row & 7)) << 4));
         }
@@ -1108,8 +1118,8 @@ __global__ void __launch_bounds__(THREADS, 1)
           if (nt < nt_n) {
             const uint2 bv = *reinterpret_cast<const uint2*>(
                 xa + (nt * 8 + g) * XS_BYTES + ((ks >> 1) * 4 + tq) * 16 + (ks & 1) * 8);
-            mma_bf16(accs[0][nt], af[0], bv.x, bv.y);
-            mma_bf16(accs[1][nt], af[1], bv.x, bv.y);
+#pragma unroll
+            for (int rb = 0; rb < SRB; ++rb) mma_bf16(accs[rb][nt], af[rb], bv.x, bv.y);
           }
         }
       }
@@ -1118,13 +1128,13 @@ __global__ void __launch_bounds__(THREADS, 1)
       if (last) {
         const int t = d.y;
 #pragma unroll
-        for (int rb = 0; rb < 2; ++rb)
+        for (int rb = 0; rb < SRB; ++rb)
 #pragma unroll
           for (int nt = 0; nt < 4; ++nt)
 #pragma unroll
             for (int i = 0; i < 4; ++i) {
               const int tok = nt * 8 + 2 * tq + (i & 1);
-              const int row = t * RS + warp * 32 + rb * 16 + g + (i >> 1) * 8;
+              const int row = t * RS + warp * SROWS + rb * 16 + g + (i >> 1) * 8;
               if (nt < nt_n && tok < T) {
                 if (kind == K_S0)
                   atomicAdd(&ws->y13s[static_cast<size_t>(tok) * 2 * INTER + row],
@@ -1144,7 +1154,7 @@ __global__ void __launch_bounds__(THREADS, 1)
           consumer_sync();
           if (s_last) {
             __threadfence();
-            activate_shared(ws, T, warp, lane);
+            activate_shared(ws, T);
             fence_proxy_async();
             __threadfence();
             consumer_sync();
@@ -1157,7 +1167,6 @@ __global__ void __launch_bounds__(THREADS, 1)
 #ifdef TD_CTA_TRACE
   if (threadIdx.x == 0) {
     td_record(own, td_t1, td_c0, n_tier[0], n_tier[1]);
-    td_record(70 + own, td_q0, td_q0 + td_wait, 0, 0);
   }
 #endif
 }
