@@ -285,3 +285,31 @@ have 30-65 us max residuals, so ~2-3% differences are not resolvable this way.
 Sliced leads EP by ~14-19% at M=8 and ~6-7% at M=32, and at M=32 that lead
 is EP's slowest-vs-mean imbalance; sliced is ~0.3-0.5 ms/step slower than EP's
 perfectly balanced mean.
+
+## Served integration (`tp-sliced-moe` branch of vLLM)
+
+`--tiered-moe-layout tp_sliced` (vllm 4bf85a198f .. a64fab4d00): TP MoE with EP
+off, every GPU a 512 slice of every expert (hot HBM / cold own Grace, one hot
+set for all GPUs), the sliced kernel on decode steps with the shared expert
+fused (through the runner's MK-internal shared slot; Astra reviews 6 and 7:
+`logs/codex-review6.md`, `logs/codex-review7.md`), Marlin tiers otherwise.
+Plan: `INTEGRATION_PLAN.md`. Tests: `tests/kernels/moe/test_tiered_decode_sliced.py`
+(kernel vs fp32 and Marlin, shared on/off), `tests/model_executor/model_loader/
+test_tiered_moe_sliced_conversion.py` (real checkpoint expert: 4 production-
+converted slices sum to the whole expert).
+
+Boot fixes found on the way: the frozen worktree needs every untracked build
+artifact (flash-attn .so in subpackages); the tiered plan was built inside the
+EP weight-filter setup (EP off -> no plan -> full allocation OOM); Marlin's
+synchronous finalize never runs the shared expert in the MK slot; no vLLM
+config is current at run time.
+
+First served boot (job 2255845, prod serve.sh: DFlash2 k=7, DCP4, 400K,
+reserve 1.7): 14748 hot / 4452 cold slices per GPU (the EP profile's hot set),
+weights 325 s (every GPU reads every expert), ready in 9 min, GSM8K
+**92.0%** on 250 questions (prod ~90-91%).
+
+A/B vs prod EP (frozen worktrees ep-base = c1aec2e22f, tp-sliced-a =
+a64fab4d00): `chain_ab.sh` on holds 2255981 / 2255982, the standard arm
+(`../2026-10-07-mem-reclaim/arm.sh`); compare with
+`KINDS=ep,sl LOGS=logs/serve ../2026-10-07-mem-reclaim/compare_ba.py`.
