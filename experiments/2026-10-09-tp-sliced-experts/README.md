@@ -679,3 +679,35 @@ idles ~45 us / CTA waiting for slots. The producer's w2 path is still ~1.9-2.1
 us / unit: weight TMA issue 0.48, ready spin 0.50-0.61 (p50 0.26, long tail),
 x2 copies 0.33, FIFO wait 0.2-0.28. Next: the scheduler probes readiness
 (v45).
+
+### v45 (scheduler ready probe) and v46 (finisher warp)
+
+| us | 38/0 | 38/4 | 50/4 | 70/6 | 110/0 | 110/12 |
+|---|--:|--:|--:|--:|--:|--:|
+| v44 (e56) | 84.5 | 89.0 | 111.4 | 145.1 | 202.2 | 235.2 |
+| v45 (e56) | 84.8 | 88.8 | 110.5 | 144.1 | 200.8 | 237.2 |
+| v45 (e57) | 85.0 | 88.8 | 110.7 | 145.3 | 208.3 | 235.0 |
+| **v46** (e57) | 85.3 | 88.6 | 110.4 | **142.0** | **204.1** | **229.0** |
+| v46 no SREADY (e57) | 85.0 | 88.2 | 110.0 | 143.0 | 203.4 | 228.7 |
+
+- v45 (`TD_SREADY`): the scheduler probes a w2 entry's ready flag once and
+  publishes it with the group; the producer skips its spin when set (the
+  acquire reaches it through the FIFO mbarrier; copying lanes still fence the
+  async proxy). Hit rate 95% (M=8) / 100% (M=32); the producer's spin goes,
+  but the scheduler now limits the w2 phase (producer FIFO wait 8.7 us / CTA).
+  Neutral.
+- v46 (`TD_FIN`): a finisher warp (THREADS 352, 166 regs) runs the w13
+  completion handoff (fence + done count; activation + ready release) that
+  consumer warp 0 ran inline. Every consumer thread arrives on a 4-slot
+  `hq_full` mbarrier (count 256) after its own y13 reductions; warp 0 lane 0
+  writes (q, entry, chunks) first. -3 to -6 us at M=16/32; neutral at M=8.
+  Traced M=8 (`logs/e57-tr.out`): R0 consume 34.7 -> 29.6 us / CTA, but the
+  finisher's activation is 2x slower than warp 0's was (p50 8.7 vs 4.1 us per
+  completed entry), so ready flags come later and R1 waits rose 4.6 -> 8.0.
+  (Single traced calls differ from the bench's many-routing average; the
+  bench is the verdict.)
+- v47 (`kernels/mk_v47.py`, running): `TD_SPIPE` overlaps the scheduler's three
+  round trips per group (next claim issued before the current record load;
+  ready probe in flight with the record), `TD_FIN_AR` replaces the
+  finisher's MEMBAR.SC.GPU fences with fence.acq_rel.gpu. Astra review 11
+  (`logs/astra11-prompt.md`) covers the v44-v46 handoff protocols.
