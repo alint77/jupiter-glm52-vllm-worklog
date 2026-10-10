@@ -1,0 +1,18 @@
+ready 19:53:12
+      1 GPU KV cache size: 1,600,255 tokens
+      1 Maximum concurrency for 400,000 tokens per request: 4.00x
+      4 Tiered MoE observed HBM reserve: 2.87 GiB free (minimum 2.53 GiB)
+Tiered MoE residency: 13528 hot / 5672 cold experts per rank (66.9 GiB available / 5.1 MiB
+  5000 n=  8 agg   496.4 tok/s ( 124.1/GPU) per-user   76.1 acc 3.02 step  39.84 ms
+  5000 n= 12 agg   578.6 tok/s ( 144.6/GPU) per-user   60.2 acc 2.97 step  49.42 ms
+  5000 n= 16 agg   660.3 tok/s ( 165.1/GPU) per-user   50.3 acc 2.92 step  58.37 ms
+ 50000 n=  8 agg   507.4 tok/s ( 126.9/GPU) per-user   78.8 acc 3.27 step  41.63 ms
+ 50000 n= 12 agg   587.7 tok/s ( 146.9/GPU) per-user   60.4 acc 3.19 step  52.97 ms
+ 50000 n= 16 agg   674.3 tok/s ( 168.6/GPU) per-user   53.4 acc 3.21 step  60.29 ms
+  5000 n=  8 agg   492.1 tok/s ( 123.0/GPU) per-user   72.9 acc 2.90 step  40.02 ms
+  5000 n= 12 agg   584.3 tok/s ( 146.1/GPU) per-user   58.4 acc 2.86 step  49.12 ms
+  5000 n= 16 agg   673.1 tok/s ( 168.3/GPU) per-user   50.1 acc 2.94 step  58.89 ms
+ 50000 n=  8 agg   507.0 tok/s ( 126.8/GPU) per-user   77.8 acc 3.24 step  41.79 ms
+ 50000 n= 12 agg   567.6 tok/s ( 141.9/GPU) per-user   60.9 acc 3.08 step  50.81 ms
+ 50000 n= 16 agg   677.6 tok/s ( 169.4/GPU) per-user   52.7 acc 3.22 step  61.40 ms
+=== done 19:57:20

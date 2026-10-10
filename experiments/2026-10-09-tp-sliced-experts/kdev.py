@@ -38,6 +38,13 @@ def version(v):
     return int(src.split("_v")[1]) if "_v" in src else 0
 
 
+def max_tokens(v):
+    for d in parse(v)[1]:
+        if d.startswith("TD_MAX_TOKENS="):
+            return int(d.split("=")[1])
+    return 32
+
+
 def parse(v):
     src, _, defines = v.partition(":")
     return src, defines.split()
@@ -107,12 +114,12 @@ def plain_build(v, verbose=False):
         cmd = ["nvcc", "-shared", "-Xcompiler", "-fPIC", "-O3",
                "-gencode=arch=compute_90a,code=sm_90a", "-std=c++17", "-lineinfo",
                "-Xptxas=-v", *(f"-D{d}" for d in defines), str(HERE / f"kernels/{src}.cu"),
-               "-o", str(so) + ".tmp", "-lcuda"]
+               "-o", f"{so}.{os.getpid()}.tmp", "-lcuda"]
         r = subprocess.run(cmd, capture_output=True, text=True)
         (bdir / "build.log").write_text(r.stdout + r.stderr)
         if r.returncode:
             raise RuntimeError(f"nvcc failed for {v}:\n{r.stderr[-3000:]}")
-        os.replace(str(so) + ".tmp", so)
+        os.replace(f"{so}.{os.getpid()}.tmp", so)
         if verbose:
             print(r.stderr)
     return PlainMod(so, version(v) >= 28, version(v) >= 30), bdir
@@ -399,7 +406,7 @@ def cmd_check(a):
                 t["w2_weight_scale"])
 
     worst, fails = 0.0, 0
-    for m in (1, 8, 16, 32):
+    for m in (1, 8, 16, 32) + ((48, 64) if max_tokens(a.v) >= 64 else ()):
         for case in range(4 if sh else 3):
             g = torch.Generator().manual_seed(100 * m + case)
             x = (torch.randn((m, HIDDEN), generator=g) * 0.3).to(torch.bfloat16)

@@ -1,0 +1,6 @@
+variant                                     132/16  roof   144/24  roof   156/48  roof   156/60  roof
+td_v56[TD_MAX_TOKENS=64 TD_SFENCE]           285.2  0.71    366.1  0.83    627.6  0.97    781.3  0.97
+td_v56[TD_MAX_TOKENS=64 TD_SFENCE_CONS]      292.1  0.69    368.3  0.83    631.7  0.96    785.9  0.97
+td_v56[TD_MAX_TOKENS=64 TD_SFENCE_PROD]      290.8  0.70    366.3  0.83    631.1  0.96    785.0  0.97
+td_v56[TD_MAX_TOKENS=64]                     283.5  0.71    366.4  0.83    632.1  0.96    785.0  0.97
+E76_DONE

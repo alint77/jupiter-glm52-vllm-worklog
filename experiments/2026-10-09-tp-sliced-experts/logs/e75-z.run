@@ -1,0 +1,11 @@
+== g0
+{"v": "td_v57:TD_MAX_TOKENS=64 TD_ACTK=1", "stress": "64,cold,normal,ident,1,1,20000", "fails": 0}
+== g1
+{"call": 1961, "err": 0.005322220269590616, "slice": 1, "dirty_before": {}, "dirty_after": {}, "bad_rows": [0], "bad_rows_padded": [0], "n_bad_cols": 2, "bad_cols_head": [2312, 3699], "bad_cols_tiles256": [9, 14], "bad_cols_mod256": [8, 115], "n_bad": 2, "max_abs_out": 0.07373046875, "live_routes": 224, "pads": 13}
+{"v": "td_v57:TD_MAX_TOKENS=64 TD_ACTK=1", "stress": "41,cold,normal,ident,1,1,20000", "fails": 1}
+== g2
+{"call": 4746, "err": 0.005370621103793383, "slice": 2, "dirty_before": {}, "dirty_after": {}, "bad_rows": [45], "bad_rows_padded": [0], "n_bad_cols": 2, "bad_cols_head": [3140, 3145], "bad_cols_tiles256": [12], "bad_cols_mod256": [68, 73], "n_bad": 2, "max_abs_out": 0.07373046875, "live_routes": 360, "pads": 19}
+{"v": "td_v57:TD_MAX_TOKENS=64", "stress": "64,cold,normal,ident,1,1,20000", "fails": 1}
+== g3
+{"v": "td_v57:TD_MAX_TOKENS=64", "stress": "64,same_cold,normal,ident,0,1,20000", "fails": 0}
+E75_DONE

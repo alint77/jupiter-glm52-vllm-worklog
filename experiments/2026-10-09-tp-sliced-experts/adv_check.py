@@ -25,6 +25,7 @@ from kdev import HIDDEN, TOPK
 N_HOT, N_COLD = 40, 12
 E = N_HOT + N_COLD
 SSCALE = 0.4
+MAX_M = 32  # the variant's TD_MAX_TOKENS, set in main
 
 
 def fixture(dev):
@@ -105,10 +106,13 @@ def main():
     ap.add_argument("--v", required=True)
     ap.add_argument("--reps", type=int, default=5)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--stress", help="m,kind,scale,cfg,pad(0/1),shared(0/1),calls: one case with fresh inputs every call (random pad mask when pad=1)")
     a = ap.parse_args()
     dev = torch.device("cuda:0")
     f = fixture(dev)
     mod, _ = kdev.build(a.v)
+    global MAX_M
+    MAX_M = kdev.max_tokens(a.v)
     ver = kdev.version(a.v)
     rscale = 2.5 if ver >= 28 else 1.0
     ws = torch.zeros(mod.workspace_bytes(), dtype=torch.uint8, device=dev)
@@ -180,6 +184,8 @@ def main():
     kinds = ["sparse", "same", "heavy", "cold", "hot", "masked", "shared_only",
              "one_cold", "one_hot", "same_cold"]
     ms = [1, 2, 3, 5, 7, 8, 9, 13, 16, 17, 24, 31, 32]
+    if MAX_M >= 64:
+        ms += [33, 40, 47, 48, 57, 63, 64]
     scales = {"normal": 0.3, "large": 30.0, "tiny": 3e-4}
     worst, fails, n = 0.0, 0, 0
     cases = []
@@ -204,6 +210,69 @@ def main():
             wt = torch.nn.functional.one_hot(torch.randint(0, TOPK, (m,), generator=g),
                                              TOPK).float()
         return x.to(torch.bfloat16).to(dev), ids.to(dev), wt.to(dev)
+
+    if a.stress:
+        m, kind, sc, cfg, pd, sh, calls = a.stress.split(",")
+        m, pd, sh, calls = int(m), pd == "1", sh == "1", int(calls)
+        bad = 0
+        lib = getattr(mod, "lib", None)
+        zero_bufs = []
+        if lib is not None and hasattr(lib, "td_workspace_offsets"):
+            import ctypes
+            o = (ctypes.c_longlong * 7)()
+            lib.td_workspace_offsets(o)
+            zero_bufs = [(nm, o[2 * k], o[2 * k + 1]) for k, nm in enumerate(("y", "y13", "y13s"))]
+            dbg_off = o[6]
+        else:
+            dbg_off = -1
+
+        def dirty():
+            torch.cuda.synchronize()
+            return {nm: int((ws[off:off + n] != 0).sum()) for nm, off, n in zero_bufs
+                    if bool((ws[off:off + n] != 0).any())}
+
+        for i in range(calls):
+            x, ids, wt = inputs(m, kind, sc)
+            pad = (torch.rand(m, generator=g) < 0.3).to(dev) if pd else None
+            r = i % 4
+            out = torch.full((m, HIDDEN), float("nan"), dtype=torch.bfloat16, device=dev)
+            before = dirty() if zero_bufs else {}
+            call(out, x, ids, wt, r, sh, cfg, pad)
+            after = dirty() if zero_bufs else {}
+            ref = ref_of(x, ids, wt, r, sh, cfg, pad)
+            err = err_of(out, ref)
+            if dbg_off >= 0:
+                dv = ws[dbg_off:dbg_off + 4 * (1 + 16 * 12)].view(torch.int32)
+                nd = int(dv[0])
+                if nd:
+                    recs = dv[1:1 + 12 * min(nd, 16)].view(-1, 12).tolist()
+                    print(json.dumps({"call": i, "dbg_n": nd, "err": err, "recs": recs,
+                                      "keys": "cta warp kind s ph it tile chunk bad_row bad_ck bad_tok*8+ck lanes"}), flush=True)
+                    ws[dbg_off:dbg_off + 4 * (1 + 16 * 12)] = 0
+            if before or after or not (err <= 5e-3):
+                bad += not (err <= 5e-3)
+                o = out.float()
+                d = (o - ref).abs()
+                badm = (d > 5e-3 * ref.abs().amax(1, keepdim=True).clamp_min(1e-30)) | o.isnan()
+                rows = badm.any(1).nonzero().flatten()
+                cols = badm.any(0).nonzero().flatten()
+                live = (ids >= 0) & configs[cfg][3].to(dev)[ids.clamp_min(0).long()]
+                if pad is not None:
+                    live &= ~pad[:, None]
+                print(json.dumps({
+                    "call": i, "err": err, "slice": r, "dirty_before": before, "dirty_after": after,
+                    "bad_rows": rows.tolist(),
+                    "bad_rows_padded": [] if pad is None else pad[rows].nonzero().flatten().tolist(),
+                    "n_bad_cols": len(cols), "bad_cols_head": cols.tolist()[:12],
+                    "bad_cols_tiles256": sorted(set((cols // 256).tolist()))[:24],
+                    "bad_cols_mod256": sorted(set((cols % 256).tolist()))[:40],
+                    "n_bad": int(badm.sum()), "max_abs_out": float(o[badm].abs().max()) if bool(badm.any()) else 0,
+                    "live_routes": int(live.sum()), "pads": 0 if pad is None else int(pad.sum())}), flush=True)
+                torch.save({"x": x.cpu(), "ids": ids.cpu(), "wt": wt.cpu(), "pad": None if pad is None else pad.cpu(),
+                            "out": out.cpu(), "ref": ref.cpu(), "slice": r, "cfg": cfg, "shared": sh},
+                           f"logs/fail-{a.seed}-{i}.pt")
+        print(json.dumps({"v": a.v, "stress": a.stress, "fails": bad}), flush=True)
+        return
 
     # interleave M, routing and map configs so the workspace sees every transition
     order = torch.randperm(len(cases), generator=g).tolist()
@@ -231,7 +300,7 @@ def main():
     # every route of every token on one cold expert: outside top-k's contract
     # (no repeated ids per token), reported but not part of the verdict
     dup = []
-    for m in (1, 8, 32):
+    for m in (1, 8, 32, MAX_M):
         x, ids, wt = inputs(m, "dup_cold")
         out = torch.empty((m, HIDDEN), dtype=torch.bfloat16, device=dev)
         call(out, x, ids, wt, 0)
@@ -242,6 +311,8 @@ def main():
     gcases = [(32, "sparse", True), (1, "one_cold", True), (8, "same", True),
               (17, "masked", False), (4, "shared_only", False), (32, "heavy", True),
               (5, "cold", False), (9, "isolate", False)]
+    if MAX_M >= 64:
+        gcases += [(64, "heavy", True), (41, "masked", False), (64, "sparse", False)]
     bufs, outs = [], []
     for m, kind, sh in gcases:
         bufs.append(inputs(m, kind))

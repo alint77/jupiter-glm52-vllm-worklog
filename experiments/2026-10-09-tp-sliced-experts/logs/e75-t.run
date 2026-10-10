@@ -1,0 +1,17 @@
+== g0
+{"v": "td_v56:TD_MAX_TOKENS=64 TD_SFENCE", "stress": "64,cold,normal,ident,1,1,15000", "fails": 0}
+== g1
+{"call": 1947, "err": 0.005314482841640711, "slice": 3, "dirty_before": {}, "dirty_after": {}, "bad_rows": [60], "bad_rows_padded": [0], "n_bad_cols": 1, "bad_cols_head": [3321], "bad_cols_tiles256": [12], "bad_cols_mod256": [249], "n_bad": 1, "max_abs_out": 0.0625, "live_routes": 360, "pads": 19}
+{"call": 2841, "err": 0.00572455208748579, "slice": 1, "dirty_before": {}, "dirty_after": {}, "bad_rows": [9], "bad_rows_padded": [0], "n_bad_cols": 1, "bad_cols_head": [2228], "bad_cols_tiles256": [8], "bad_cols_mod256": [180], "n_bad": 1, "max_abs_out": 0.0693359375, "live_routes": 400, "pads": 14}
+{"v": "td_v56:TD_MAX_TOKENS=64 TD_ACTK=1 TD_SFENCE", "stress": "64,cold,normal,ident,1,1,15000", "fails": 2}
+== g2
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-10-09-tp-sliced-experts/kdev.py", line 130, in build
+    return plain_build(v, verbose)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-10-09-tp-sliced-experts/kdev.py", line 122, in plain_build
+    os.replace(str(so) + ".tmp", so)
+FileNotFoundError: [Errno 2] No such file or directory: '/e/fscratch/profound/naeimitabiei1/caches/kdev/kdev/kdev_td_v56_f64b45e108/kdev_td_v56_f64b45e108.so.tmp' -> '/e/fscratch/profound/naeimitabiei1/caches/kdev/kdev/kdev_td_v56_f64b45e108/kdev_td_v56_f64b45e108.so'
+== g3
+{"call": 41, "err": 0.0050559816882014275, "slice": 1, "dirty_before": {}, "dirty_after": {}, "bad_rows": [34], "bad_rows_padded": [0], "n_bad_cols": 1, "bad_cols_head": [4015], "bad_cols_tiles256": [15], "bad_cols_mod256": [175], "n_bad": 1, "max_abs_out": 0.07275390625, "live_routes": 344, "pads": 21}
+{"v": "td_v56:TD_MAX_TOKENS=64 TD_ACTK=1 TD_SFENCE TD_NO_STEAL", "stress": "64,cold,normal,ident,1,1,15000", "fails": 1}
+E75_DONE

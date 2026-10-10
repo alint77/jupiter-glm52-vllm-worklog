@@ -1087,3 +1087,120 @@ all-reduce wait moves into the DCP collectives under sliced (+0.1-0.3 ms). No
 sliced-specific irregularity. Two levers are common to both layouts at M=32:
 dense GEMMs at 5.1 ms (decode_gemm 1.7 + cuBLAS 3.4, vs 4.1 ms at M=4), and
 the 3 MTP passes outside the graph at 2.6 ms.
+
+## c16: the sliced decode MoE kernel at 64 tokens (2026-10-10)
+
+The user asked to scale past c8 on the sliced layout only (EP dropped): extend
+the kernel from 32 to 64 tokens (16 sequences x MTP3), raise the arbitrary
+32-token limits (skip-KV stager, `max_num_seqs` guard, capture sizes) to 64,
+keep cuBLAS for dense GEMMs above 32 tokens (no benchmark), and serve c16 on
+the same 1.6M-token KV pool.
+
+### Scale probe on the 32-token code (sliced, 64 sequences, 5K)
+
+Above 32 tokens the MoE falls back to the generic path:
+
+| n | tok/s/GPU | per-user tok/s | step (ms) |
+|--:|--:|--:|--:|
+| 8 | 116-127 | - | 41.5 |
+| 16 | 138-141 | 42 | 70-71 |
+| 32 | 192 | 29 | 102-105 |
+| 64 | 242-257 | 19-20 | 148-157 |
+
+### Kernel: td_v56 (`TD_MAX_TOKENS=64`)
+
+`sl_grid.py`: at M=64 the sliced (hot, cold) touched-expert grid is hot
+p5/p50/p95 129/141/158, cold 14/25/51 (M=32: 101 / 14); an expert gets more
+than 8 tokens in 95% of layer calls. Changes from v55: `NT_MAX = MAX_TOKENS/8`
+shared-expert token tiles, the shared activation copies loop over 32-lane
+groups, the scheduler keeps `MAX_TOKENS/32` banks of x13 scales. Shared
+activation rows (T x 128 B after `W_BYTES`) now extend past the routed scale
+slot into the routed XROW area; lifetimes are ordered by the stage ring.
+
+Timing (`e72.sh`, `ab.sh`, us, roof = HBM/C2C roofline fraction): M=32 is
+unchanged (v55 / v56 / v56@64 at 120/32: 423.4 / 424.4 / 425.5). M=64:
+
+| (hot, cold) | 132/16 | 144/24 | 144/40 | 156/48 | 156/60 |
+|---|--:|--:|--:|--:|--:|
+| us | 299.6 | 372.8 | 539.9 | 641.3 | 794.4 |
+| roof | 0.68 | 0.82 | 0.94 | 0.95 | 0.96 |
+
+### The 64-token race and its fix (Astra reviews `logs/astra-v56{,b,c}.out`; stress logs `logs/e75-*`)
+
+v56@64 produced garbage (1e23-1e38 or NaN, all tokens x all 6144 columns, or
+all tokens x a few columns in rows 8-15 mod 16) in about 1 call per
+1000-5000 of `adv_check.py --stress` (fresh inputs every call). Conditions:
+shared expert on, cold routed work, T >= 41, 4 stages. `TD_ACTK=1` raises the
+rate to about 1 in 600-1000 and was used as the provoking build.
+
+Ruled out:
+- Workspace contamination: y/y13/y13s are clean before and after every
+  failing call.
+- Stage contents: `TD_DEBUGCHK` compares every stage (shared weights and
+  activations; routed int4 weights, scales, x13/x2 rows) with its global
+  source at the start of consumption. Zero mismatches in any failing call.
+- Stale routed XROW rows (tokens >= ntok): isolated per MMA column, and
+  `flush_rows` writes only valid tokens.
+- The overlap of shared activations with the routed x2-row scale (Astra's
+  lead): shifting the shared base by +128 B (`TD_XSHIFT`) leaves the boundary
+  at 41 (T=40: 0 and 0 garbage in 20k; T=41: 5 and 5). The boundary matches
+  the sixth shared token tile (`nt_n`).
+
+Same node, 64 tokens, cold-heavy, `TD_ACTK=1` (garbage calls):
+
+| variant | garbage |
+|---|--:|
+| none | 25 / 15000 |
+| compiler barrier only (`TD_CLOBBER`) | 16 / 20000 |
+| `fence.proxy.async.shared::cta`, consumer side | 0 / 20000 |
+| the fence, producer side | 0 / 20000 (also T=48, same_cold: 0 / 20000) |
+| both | 0 / 25000 |
+| no hot/cold stealing (`TD_NO_STEAL`) | 0 / 20000 |
+
+Cause: consumers read a stage with generic-proxy loads (ldmatrix, ld.shared),
+then the producer refills it with async-proxy TMA/bulk copies; the mbarrier
+release/acquire alone does not order a generic read before an async write.
+CUTLASS's SM90 epilogue fences the same edge (`fence_view_async_shared()`
+before `consumer_release`). Either end of the chain suffices; shipped on the
+producer side (one warp). The fence is free (`e76.sh`: all variants within
+1-2% at M=32 and M=64). 32-token builds (v55, v56@32, v56@64 at T=32):
+0 garbage in 4 x 25000 with `TD_ACTK=1`; the fence covers them anyway.
+
+Served kernel (copied as `kernels/td_v57.cu`, identical to v56's production
+paths plus the fence): kdev check pass (worst 0.0035), adversarial 4 seeds x
+5253 calls 0 fails (graph, wrap), pytest 10 passed (T = 1, 8, 32, 47, 64),
+stress 0 garbage in 4 x 20000. vLLM commit 25c3ed40c4.
+
+### c16 serving (`c16_launch.sh 4.0` → `c16_arm.sh`, worktree `tp-sliced-c16`)
+
+16 sequences need reserve 4.0 GiB (3.6 fails the observed-free check: 2.68 vs
+2.71 GB); the hot tier drops from 13,614 to 13,528 slices (-86). Two servers x
+two rounds each, MTP3, before the fence (holds 2264454/55):
+
+| context, n | tok/s/GPU | per-user tok/s | acceptance | step (ms) |
+|---|--:|--:|--:|--:|
+| 5K, 8 | 120-127 | 72-77 | 2.78-3.00 | 38.6-39.4 |
+| 5K, 12 | 145-150 | 59-60 | 2.89-2.92 | 48.7-49.2 |
+| 5K, 16 | 166-170 | 50-51 | 2.89-2.94 | 57.6 |
+| 50K, 8 | 125-127 | 75-79 | 3.02-3.21 | 40.4-41.2 |
+| 50K, 12 | 150-156 | 63-64 | 3.16-3.24 | 50-51 |
+| 50K, 16 | 171-176 | 53-54 | 3.17-3.27 | 60-61.5 |
+
+c16 is +35% (5K) and +38% (50K) tok/s/GPU over c8, and +20% over the
+32-token code at n=16 (138-141 at a 70 ms step).
+
+After the fence (vLLM 25c3ed40c4 kernel in the frozen worktree, holds
+2264992/93, two servers x two rounds):
+
+| context, n | tok/s/GPU | per-user tok/s | acceptance | step (ms) |
+|---|--:|--:|--:|--:|
+| 5K, 8 | 123-125 | 73-76 | 2.90-3.02 | 39.5-40.1 |
+| 5K, 12 | 141-146 | 58-60 | 2.82-2.97 | 49.1-49.4 |
+| 5K, 16 | 165-168 | 50-51 | 2.92-2.96 | 58.0-58.9 |
+| 50K, 8 | 127-131 | 78-79 | 3.24-3.27 | 41.2-41.8 |
+| 50K, 12 | 142-154 | 60-63 | 3.08-3.19 | 50.2-53.0 |
+| 50K, 16 | 169-174 | 53-54 | 3.18-3.23 | 59.9-61.4 |
+
+Same as before the fence within node variance (n=8 steps are also ~0.5 ms
+higher on these nodes). Not yet done: a c16 profile (where the extra ~19 ms
+per step from c8 to c16 goes).

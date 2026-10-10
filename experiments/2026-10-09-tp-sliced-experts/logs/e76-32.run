@@ -1,0 +1,6 @@
+variant                                       96/8  roof   108/16  roof   120/32  roof
+td_v56[TD_MAX_TOKENS=64 TD_SFENCE]           195.2  0.75    249.8  0.81    422.4  0.96
+td_v56[TD_MAX_TOKENS=64 TD_SFENCE_CONS]      200.6  0.73    249.8  0.81    423.1  0.96
+td_v56[TD_MAX_TOKENS=64 TD_SFENCE_PROD]      195.8  0.75    248.0  0.82    421.5  0.96
+td_v56[TD_MAX_TOKENS=64]                     199.4  0.74    248.1  0.82    422.7  0.96
+E76_DONE

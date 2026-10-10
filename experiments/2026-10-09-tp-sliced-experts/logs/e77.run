@@ -1,0 +1,19 @@
+{"worst_rel_err": 0.00346, "fails": 0, "pass": true}
+== seed 41
+{"v": "td_v57:TD_MAX_TOKENS=64", "oob_fails": 0, "calls_checked": 5253, "worst_rel_err": 0.0048, "fails": 0, "graph_fails": 0, "wrap_fails": 0, "cases_by_cfg": {"ident": 381, "perm": 188, "absent": 178, "nohot": 207, "nocold": 186}, "dup_cold_err": [0.00225, 0.0029, 0.00342, 0.00347], "pass": true}
+== seed 42
+{"v": "td_v57:TD_MAX_TOKENS=64", "oob_fails": 0, "calls_checked": 5253, "worst_rel_err": 0.00462, "fails": 0, "graph_fails": 0, "wrap_fails": 0, "cases_by_cfg": {"ident": 334, "perm": 188, "absent": 181, "nohot": 222, "nocold": 215}, "dup_cold_err": [0.00234, 0.00295, 0.00338, 0.00354], "pass": true}
+== seed 43
+{"v": "td_v57:TD_MAX_TOKENS=64", "oob_fails": 0, "calls_checked": 5253, "worst_rel_err": 0.00403, "fails": 0, "graph_fails": 0, "wrap_fails": 0, "cases_by_cfg": {"ident": 374, "perm": 192, "absent": 172, "nohot": 196, "nocold": 206}, "dup_cold_err": [0.00201, 0.00345, 0.00355, 0.00325], "pass": true}
+== seed 44
+{"v": "td_v57:TD_MAX_TOKENS=64", "oob_fails": 0, "calls_checked": 5253, "worst_rel_err": 0.00392, "fails": 0, "graph_fails": 0, "wrap_fails": 0, "cases_by_cfg": {"ident": 398, "perm": 168, "absent": 213, "nohot": 200, "nocold": 161}, "dup_cold_err": [0.00328, 0.00323, 0.00345, 0.00372], "pass": true}
+Running 10 items in this shard
+..........                                                               [100%]
+=============================== warnings summary ===============================
+tests/kernels/moe/test_tiered_decode_sliced.py: 14 warnings
+  /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/jit/_script.py:365: DeprecationWarning: `torch.jit.script_method` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+10 passed, 14 warnings in 17.23s
+E77_DONE

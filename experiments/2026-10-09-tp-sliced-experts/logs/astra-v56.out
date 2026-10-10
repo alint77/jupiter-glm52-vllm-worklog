@@ -1,0 +1,84 @@
+[codex] Starting Codex task thread.
+[codex] Thread ready (01a1269c-b2c4-7e10-a099-4da00eefa06d).
+[codex] Turn started (01a1269c-d539-7fc1-b18b-ba3605ef56c0).
+[codex] Assistant message captured: I’ll review only the supplied code, tracing synchronization and buffer reuse first, then chec...
+[codex] Assistant message captured: The 64-token indexing changes appear consistent, and the shared activation area has enough sp...
+[codex] Assistant message captured: I haven’t found a broken ordering chain in the supplied code: the shared-copy barrier counts ...
+[codex] Assistant message captured: **I do not find a confirmed valid-output indexing bug or broken ordering chain in the supplie...
+[codex] Turn completion inferred after the main thread finished and subagent work drained.
+**I do not find a confirmed valid-output indexing bug or broken ordering chain in the supplied source.** The three 64-token changes are internally consistent. There is, however, a concrete source of uninitialized MMA inputs that becomes more concerning above 32 tokens. I would eliminate that first, without claiming it explains the failure.
+
+No commands were run.
+
+1. **Highest investigation priority: the shared tail tile reads unwritten activation rows.**  
+   At `td_v56.cu:1325–1331`, the producer copies exactly `T` rows. At `td_v56.cu:1463–1469`, consumers load `ceil(T/8) * 8` rows.
+
+   For `T=47`, lanes with `g == 7` load token slot **47** in the last tile, although only slots 0–46 were copied. This is within the stage allocation, but its contents are unspecified.
+
+   There is a relevant difference above 32 tokens: slots 32 onward overlap the stage area used for **routed f16 activations**, whereas slots 0–31 overlap the routed bf16 scales. Stale f16 activation bits can become enormous when interpreted as bf16—for example, f16 `8192` has bits `0x7000`, which represent bf16 `2^97`.
+
+   **Why this is not yet the root cause:** that B column should contribute only to output token 47, whose stores are suppressed by `tok < T` at `td_v56.cu:1483–1492`. The source fragment mapping does not mix it into token 46 or another valid column. Thus, identifying the garbage input does not establish a path to the observed output.
+
+   Concrete hardening: initialize `bv` to zero and guard its load with `nt * 8 + g < T`. Keep both `mma_bf16` calls outside that lane-dependent guard so all lanes execute them. This removes the unspecified inputs and makes a useful controlled reproduction variant.
+
+2. **Medium priority: the failing configuration is materially different from the stated “~376 cold routes” scenario.**  
+   `adv_check.py:143–145` makes the original 40 hot experts **absent**; it does not move them into the cold tier. Only experts 40–51 remain available.
+
+   Consequently, sparse routing over 52 experts at `m=47` selects approximately `376 * 12/52 ≈ 87` live cold routes before padding, and approximately 61 with the harness’s expected padding fraction. The exact count requires the actual inputs.
+
+   Other `cold` and `same_cold` cases can exercise dense cold routing, so this does **not** mean high route counts are entirely untested. It does mean the failing case should not be diagnosed as a 376-live-route capacity failure.
+
+   Also, repetitions regenerate inputs, configuration and padding (`adv_check.py:215–222`). Earlier successful repetitions of the same case tuple are not successful executions of the same input.
+
+3. **Low priority, existing configuration defect: the shared-memory fit assertion excludes static shared allocations.**  
+   `td_v56.cu:110–111` checks dynamic shared memory only. With `TD_STAGES=5`, that allocation is 231,552 bytes, leaving just 896 bytes under the asserted 227 KiB limit. `scr_all` alone requires 17,408 bytes (`td_v56.cu:1044`).
+
+   Thus the “5 fits” comment at `td_v56.cu:48` is inconsistent with this listing. The attribute-setting error is also ignored at `td_v56.cu:1629–1631`. Default four-stage execution fits; this does not explain the intermittent result.
+
+The remaining token-limit audit checks out:
+
+| Area | Assessment |
+|---|---|
+| Scheduler scale lookup | `xs13r[0]` covers tokens 0–31; `[1]` covers 32–63. Both shuffles execute across the warp, then each lane selects its token’s bank. `tokl >> 5 == j` correctly parses as `(tokl >> 5) == j`. `td_v56.cu:1114–1117,1178–1187`. |
+| Route-to-thread mapping | There are 1,024 prep threads and at most 512 routes. At `T=47`, threads 0–375 process the routes directly; no warp-sized route limit exists. `td_v56.cu:583–597`. |
+| List capacity | Each entry contains at least one route, so each tier needs at most `MAX_ROUTES` entries. Splitting experts into groups of eight remains valid. `td_v56.cu:682–706`. |
+| Counters and flags | At the 64-token build, all 1,024 `done13` elements and all 512 `live` elements are initialized. Ready-flag wrap clearing also scales with `MAX_LIST`. `td_v56.cu:576–587,714–722`. |
+| Ballots and masks | The ballots concern expert lanes and placement pairs, not a bitmap of all tokens. The other `&31` operations index warp lanes. `td_v56.cu:495–529,641–647,1178–1182`. |
+| Eight-element arrays | `Expert`, scheduling metadata, routed scratch and routed activation rows are sized for an **entry’s eight routes**, independently of total `T`. `td_v56.cu:120–125,978–981,1037–1044`. |
+| Shared accumulator extent | `NT_MAX=8` covers tokens 0–63. Stores are bounded by `tok < T`, and every accumulator is reset after its group. `td_v56.cu:1352–1354,1480–1494`. |
+| Finalize extent | Grid dimensions are `(6,T)`, with each thread handling four unique elements. There is no 32-token limit. `td_v56.cu:1527–1534,1657`. |
+
+The stage calculation is:
+
+```text
+W_BYTES                  = 32,768
+S_BYTES                  =  4,096
+8 * XROW_STRIDE           =  8,704
+STAGE_BYTES               = 46,080
+Available after weights   = 13,312
+64 shared activation rows =  8,192
+```
+
+Even the rounded tail loads remain within that allocation. The issue in finding 1 is uninitialized contents, not an out-of-bounds access.
+
+The synchronization and cleanup paths also have the necessary structure on inspection:
+
+- **Longer shared copies:** `mbar_expect_tx` expects `W_BYTES + T*128` bytes (`td_v56.cu:1314`). The new loop issues exactly that activation byte count. For `T=47`, lanes 0–14 issue two copies and lanes 15–31 issue one. The full barrier cannot complete before those transactions complete. Stage reuse still requires all eight consumer arrivals.
+- **Shared activation readiness:** the complete token loop in `activate_shared` runs before the proxy fences, consumer barrier and `ready_s` publication (`td_v56.cu:895–907,1504–1510`). The second row copied by a producer lane is covered by that lane’s existing acquire and proxy fence (`td_v56.cu:1318–1331`).
+- **Routed readiness:** the scheduler’s acquire is transferred through the FIFO, or the producer acquires directly. Each copying lane executes the proxy fence when first consuming the entry (`td_v56.cu:1176–1177,1202–1207,1299–1309`). Nothing about the second token bank bypasses this.
+- **Zeroing:** publishing routed readiness before `zero_routes` is intentional and does not itself race with w2: w2 reads `x2`, while cleanup writes `y13` (`td_v56.cu:1104–1107`). Shared activation writes `x2s` and clears `y13s` before publishing readiness. Neither activation buffer needs zeroing between calls.
+- **PDL and finalize:** `launch_dependents` permits early launch; it does not make the successor’s dependency wait complete early. With the waits at `td_v56.cu:547,1063,1526`, finalize must wait for the layer, including its cleanup. Finalize then reads and clears each output element exactly once.
+- **Padding:** prep drops padded tokens’ routed work, while shared computation still processes those tokens. That matches the reference’s masking behavior (`td_v56.cu:593–594`; `adv_check.py:163–167`).
+
+These conclusions assume the demonstrated contract: one correctly sized workspace, with its uses ordered on the stream.
+
+For performance:
+
+- Shared MMA work grows with `ceil(T/8)`: going from 32 to 33 tokens increases that work by **25%**, and going to 64 doubles it (`td_v56.cu:1453–1470`). Shared activation-copy traffic grows linearly with `T`.
+- Shared accumulators grow from 32 to 64 floats per consumer thread. The reported 166 registers and no spills provide no evidence of a register-induced occupancy regression; shared memory already restricts this configuration to one CTA per SM.
+- The scheduler adds one cached scale register, a second shuffle and a selection where emitted. That is modest per group, though the larger unrolled shared path can increase instruction footprint.
+- **“All cold” with the shared expert enabled still starts with 16 cold CTAs**, because the hot queue contains shared work. The actual decision uses queue lengths at `td_v56.cu:1069–1072`; the helper at line 733 is unused. Work stealing eventually redistributes work, but longer shared computation can change that timing.
+
+For the running reproduction, the most useful additional evidence is the exact bad token/column, actual live-route count, padding status of the bad token, and absolute output/reference values. A bad **padded** token would narrow the investigation substantially because it should receive only shared contributions.
+
+I would also check the cleanup invariant after each completed call: **all of `y`, `y13`, and `y13s` should be zero across their full allocated extents**, including inactive rows. Then compare the exact failing input using a fresh workspace and the tail-load hardening above. Those checks distinguish inherited workspace corruption from corruption generated during the call; another passing seed alone cannot make that distinction.

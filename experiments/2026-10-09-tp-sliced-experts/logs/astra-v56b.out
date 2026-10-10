@@ -1,0 +1,189 @@
+[codex] Starting Codex task thread.
+[codex] Thread ready (01a126b0-07db-7622-b915-2747bd93e5e7).
+[codex] Turn started (01a126b0-09fd-7432-a12c-67944e5878f8).
+[codex] Assistant message captured: I’ll trace the stage lifetimes and barrier phases from the pasted kernel, then rank the mecha...
+[codex] Assistant message captured: The transaction totals match the issued copies, and the R0 loop advances the stage and parity...
+[codex] Assistant message captured: There’s a useful extra clue in the reported columns: every one is in rows 8–15 modulo 16. In ...
+[codex] Assistant message captured: **The strongest fit is corruption of the shared weight operands during stage reuse. I do not ...
+[codex] Turn completed.
+**The strongest fit is corruption of the shared weight operands during stage reuse. I do not find a byte-count or parity error in the pasted source that explains it.** In particular, the `T > 32` overlap is within the allocated stage, and both kinds populate that region through async copies. It does not introduce a generic store into the ring.
+
+There are two useful deductions from the output patterns:
+
+- A single S1 unit covers every token. A single R1 unit covers at most eight routes. Consequently, **all 64 tokens bad in a few columns points much more strongly to one S1 weight failure** than to one R1 unit.
+- Every example column you gave is **8–15 modulo 16**. In the shared path, those output rows use A-fragment registers **`af[rb][1]` and `af[rb][3]`**. That is a particularly valuable place to instrument.
+
+I would distinguish a demonstrated stage-payload failure from a hypothesized barrier failure; the checks below can make that distinction.
+
+**The transaction accounting checks out.**
+
+With `n = ntok ≤ 8`:
+
+| Kind | Expected bytes | Issued copies |
+|---|---:|---|
+| R0 | `32768 + 4096 + 1024*n` | Weight map, scale map, `n` activation rows |
+| R1 | `32768 + 4096 + 1040*n` | Weight map, scale map, `n` activation-plus-scale rows |
+| S0/S1 | `32768 + 128*T` | Weight map, exactly `T` activation slices |
+
+The tensor-map box sizes at L1580–1588 and L1621–1624 agree with those totals. R1 correctly counts the extra 16 bytes per activation copy.
+
+For shared work, the loop at L1325 issues exactly `T` copies across the warp, including for `T > 32`. The producer’s warp synchronization prevents those activation copies from preceding lane 0’s `arrive.expect_tx`. The same protection exists for R0 and R1.
+
+`STAGE_BYTES = 46080`; at 64 tokens, shared data ends at byte `40960`. There is no stage overrun.
+
+**The logical ring protocol also checks out.**
+
+For a physical stage’s use number `j`, starting at zero:
+
+- The consumer waits for full phase `j & 1`.
+- Before reuse, the producer waits for empty phase `(j - 1) & 1`.
+- Each of eight consumer warps supplies exactly one empty arrival after its `__syncwarp()`.
+
+The R0 loop advances `s/ph` once between chunks and once through the outer-loop tail after the final chunk: **exactly `nch` advances**. Its outer `it` counts groups rather than physical stages, but that variable is unused. It does not affect parity.
+
+Skipping subsequent R0 descriptors is valid because the producer emits the entire group contiguously. A subsequent chunk’s descriptor contains no metadata the consumer needs to change.
+
+The shared `last` path does not change the stage bookkeeping. Releasing the stage at L1474 before flushing accumulators is logically valid: subsequent computation uses registers and global memory, not the stage payload.
+
+Likewise, `hand_off` waits for the previous slot acknowledgement before any warp contributes to its next full-barrier generation. I do not see an extra arrival or a missing wait there.
+
+**Ranked hypotheses and discriminating experiments**
+
+| Rank | Mechanism | Assessment | Experiment |
+|---|---|---|---|
+| 1 | Shared payload is overwritten by a routed refill while a shared operand read is still effectively outstanding | Best fit for INT4-looking shared weights and S1 corruption across all tokens. The source-level empty protocol should prevent it, so this would require an ordering/emitted-code problem rather than the visible counter arithmetic. | Add shared-proxy fences as described below; separately test consumer lockstep before empty release. |
+| 2 | A consumer accepts the wrong full generation, or full completes without the expected payload | Fits stale-format operands, but the audited phase and byte arithmetic provide no source-level explanation. | Add an independent physical-stage sequence number and validate every stage, including every R0 chunk. Pair this with operand bit comparisons. |
+| 3 | Incorrect publication or consumption of shared `y13s/x2s` | Can explain widespread output corruption, but poorly explains isolated output columns across all tokens. The shared completion/publication sequence looks internally consistent. | Check `y13s` before activation, `x2s` before publishing `ready_s`, and actual S1 B operands against `x2s`. |
+| 4 | A problem in the larger compiled shared MMA path: operand handling, register allocation, or compiler treatment of inline assembly | The upper-eight-row pattern makes this worth retaining. It is not evidence of a compiler bug by itself. | Compare `ldmatrix` output words with ordinary shared loads and the original global weights; test the 64-token binary at `T=32`. |
+
+Here is how I would implement the useful switches.
+
+**1. `TD_DEBUG_STAGE_SEQUENCE`: independently audit ownership.**
+
+Add sidecar metadata outside the payload:
+
+```cuda
+stage_seq[STAGES];
+stage_prev_kind[STAGES];
+released_seq[STAGES][CONSUMER_WARPS];
+```
+
+The producer publishes `stage_seq[s] = it` after acquiring empty and before publishing full.
+
+Each consumer maintains its own **physical-unit counter**, incremented for every consumed stage, including inside the R0 loop. After every full wait, check:
+
+```cuda
+stage_seq[s] == consumer_unit
+```
+
+For every R0 chunk, also read and check the descriptor:
+
+- kind, tier, entry, tile, token count and `nch`;
+- first flag iff `c == 0`;
+- last flag iff `c == nch - 1`.
+
+Immediately before an empty arrival, each warp records its released sequence. After acquiring empty for reuse, the producer checks all eight records against `it - STAGES`.
+
+Record the first mismatch with CTA, warp, stage, sequence, parity and previous/current kinds.
+
+This detects generation and ownership errors without relying on the same parity calculation being tested. **A correct sequence tag does not prove the payload landed**, because the producer writes the tag before the transfers finish.
+
+**2. `TD_DEBUG_SHARED_OPERANDS`: check the actual A/B words consumed.**
+
+This is the most decisive diagnostic.
+
+Immediately after each shared `ldmatrix_x4`, compare its four output words with the corresponding packed bf16 pairs in the original shared weight tensor. For an MMA row block, let:
+
+```text
+r = tile*256 + warp*32 + rb*16 + g
+k = chunk*64 + ks*16 + 2*tq
+```
+
+The expected packed pairs are:
+
+```text
+af[0]: W[r    ][k   : k+2]
+af[1]: W[r + 8][k   : k+2]
+af[2]: W[r    ][k+8 : k+10]
+af[3]: W[r + 8][k+8 : k+10]
+```
+
+Pass the raw shared-weight pointers through debug parameters. Start with `af[1]` and `af[3]`, given the reported columns, or check all four for completeness.
+
+Also compare each valid token’s `bv` against the corresponding packed words in `x13b` or `x2s`.
+
+These are exact bit comparisons, independent of fp32 summation order:
+
+- **A mismatch, B matches:** shared weight delivery, lifetime or loading.
+- **B mismatch, A matches:** activation delivery or lifetime.
+- **A and B match, but an initially sound accumulator becomes enormous:** investigate the MMA/register path.
+- **Source `x2s` is already enormous:** investigate S0 or shared activation publication.
+
+For an A mismatch, also compare against ordinary `ld.shared.b32` loads from the equivalent swizzled locations. That helps separate bad stage bytes from a bad `ldmatrix` result, although concurrent overwrite could make successive reads disagree.
+
+**3. `TD_DEBUG_SHARED_PROXY`: test the proposed proxy edge explicitly.**
+
+The existing helper at L749 is:
+
+```cuda
+fence.proxy.async.global;
+```
+
+It does **not** fence shared memory.
+
+For this experiment, add:
+
+```cuda
+asm volatile("fence.proxy.async.shared::cta;" ::: "memory");
+```
+
+At both ends:
+
+- In **every consumer thread**, after its final stage-payload read and before the `__syncwarp()` preceding empty arrival.
+- In **every producer lane**, after the empty-wait `__syncwarp()` at L1262 and before issuing new copies.
+
+Test both together first, then separately if that removes failures.
+
+I would not call the missing fence a proven defect: the ring contains no generic payload stores, and the intended barrier protocol already protects its generic readers. Nevertheless, this directly tests the suspected generic-read → async-overwrite edge. A disappearance of rare failures is supporting evidence, especially if accompanied by operand diagnostics.
+
+Separately, add `"memory"` clobbers to the shared-load/store inline-assembly helpers. That tests compiler treatment without conflating it with an actual hardware proxy fence.
+
+**4. `TD_DEBUG_CONSUMER_LOCKSTEP`: strengthen the release boundary.**
+
+Insert a separate named barrier, for example:
+
+```cuda
+asm volatile("bar.sync 2, 256;" ::: "memory");
+```
+
+before every physical stage’s empty release, including inside the R0 loop. Keep barrier 1 for the existing shared completion path.
+
+For a more localized experiment, move the shared **last-stage** empty release until after the entire `last` block, with another warp synchronization before release.
+
+Neither should be necessary under the audited protocol. If either changes failures, it localizes sensitivity to consumer skew or the transition into the next group; it does not by itself identify an incorrect phase.
+
+**5. `TD_NO_STEAL`: eliminate mixed rings while preserving concurrent shared/routed execution.**
+
+For this all-cold case, change:
+
+```cuda
+bool steal = !stolen;
+```
+
+to disable stealing. The hot queue then runs shared work, and cold CTAs run routed work. Both still contribute concurrently to `ws->y`.
+
+This is the cheapest direct test of your mixed-CTA premise.
+
+One correction to the scheduling picture: with only **56 shared groups, at most 56 CTAs receive shared work**, not 116. Many hot CTAs steal cold work immediately. Moreover, the common mixed transition here should be **shared → routed**; cold → shared requires shared groups still to be unclaimed. Record actual previous kinds per physical stage.
+
+Also, the pasted default `TD_GR1=2` produces 24 R1 groups per entry; your 12-group count implies an override to 4. Neither value exposes a bookkeeping error in this audit.
+
+**6. Separate the activation regions as a controlled layout experiment.**
+
+Place shared activations after the entire routed payload and update `STAGE_BYTES`. Use `TD_STAGES=3`, because the enlarged four-stage layout plus static shared allocations exceeds the stated capacity. Compare against an overlapping-layout build also using three stages.
+
+This tests the activation alias specifically. It leaves the shared/routed **weight slot** aliased, which is why I would run the A-fragment check first.
+
+Two limits on interpreting the evidence: zeroed `y/y13/y13s` rules out inherited accumulator contents, but does not validate `x2/x2s` or in-call publications. And zero failures in 20,000 calls gives an approximate 95% upper rate bound of `1.5e-4`; it does not yet establish a hard token-count boundary.
+
+**My first runs would be `TD_NO_STEAL` and exact shared A/B validation with sequence tags.** The upper-eight-row signature makes `af[1]/af[3]` the highest-value observation. A captured mismatch there would turn “the shared contribution looks corrupted” into a precise identification of which operands were wrong, in which stage generation, and across which kind transition.
