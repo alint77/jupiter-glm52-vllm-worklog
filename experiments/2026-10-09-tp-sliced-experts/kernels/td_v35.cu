@@ -382,6 +382,22 @@ __device__ __forceinline__ void td_record(int ph, uint64_t t0, uint64_t t1,
   td_trace[i][2] = t1;
   td_trace[i][3] = td_now();
 }
+// the same into a slot the caller reserved, word 3 stamped by the caller: no
+// atomic round trip on the traced warp
+__device__ __forceinline__ void td_record_at(unsigned slot, int ph, uint64_t t0, uint64_t t1,
+                                             uint64_t t3, int n_hot,
+                                             int n_cold) {
+  uint32_t sm;
+  asm volatile("mov.u32 %0, %%smid;" : "=r"(sm));
+  const unsigned i = slot & ((1u << 18) - 1);
+  td_trace[i][0] = uint64_t(ph & 0xFF) | (uint64_t(blockIdx.x & 0xFF) << 8) |
+                   (uint64_t(sm & 0xFFFF) << 16) |
+                   (uint64_t(n_hot & 0xFFFF) << 32) |
+                   (uint64_t(n_cold & 0xFFFF) << 48);
+  td_trace[i][1] = t0;
+  td_trace[i][2] = t1;
+  td_trace[i][3] = t3;
+}
 __global__ void td_stamp_kernel(int tag) {
   const uint64_t t = td_now();
   td_record(100 + tag, t, t, 0, 0);
@@ -939,14 +955,35 @@ __device__ __forceinline__ void consume_routed(uint32_t wb, uint32_t sb,
 #ifdef TD_ABL_NOMMA  // timing ablation: skip the routed math
   return;
 #endif
+#ifdef TD_ABL_LDSONLY  // timing ablation: the routed smem reads, no math
+  {
+    constexpr int KR = PH ? 1024 : 512, SR = PH ? 256 : 128;
+    uint32_t z = 0;
+#pragma unroll
+    for (int j = 0; j < 4; ++j) {
+      const uint4 a = lds_v4(wb + (2 * j) * KR), b = lds_v4(wb + (2 * j + 1) * KR),
+                  c = lds_v4(sb + j * SR), e = lds_v4(xb + j * 64);
+      z ^= a.x ^ a.y ^ a.z ^ a.w ^ b.x ^ b.y ^ b.z ^ b.w ^ c.x ^ c.w ^ e.x ^ e.w;
+    }
+    acc[0][0] += __uint_as_float(z & 1u);
+    return;
+  }
+#endif
   constexpr int KROW = PH ? 1024 : 512;  // bytes per k16 row of the box
   constexpr int SROW = PH ? 256 : 128;   // bytes per scale group row
 #pragma unroll
   for (int j = 0; j < 4; ++j) {
+#ifdef TD_ABL_NOLDS  // timing ablation: the routed math on register data
+    const uint4 w0 = make_uint4(wb ^ j, wb + j, wb * 3 + j, wb ^ (j << 7)),
+                w1 = make_uint4(sb ^ j, sb + j, sb * 3 + j, sb ^ (j << 7)),
+                sw = make_uint4(0x3c003c00u, 0x3c003c00u, 0x3c003c00u, 0x3c003c00u),
+                xv = make_uint4(xb ^ j, xb + j, xb * 5, xb ^ 0x3c00u);
+#else
     const uint4 w0 = lds_v4(wb + (2 * j) * KROW);
     const uint4 w1 = lds_v4(wb + (2 * j + 1) * KROW);
     const uint4 sw = lds_v4(sb + j * SROW);
     const uint4 xv = lds_v4(xb + j * 64);
+#endif
     const uint32_t w0s[4] = {w0.x, w0.y, w0.z, w0.w},
                    w1s[4] = {w1.x, w1.y, w1.z, w1.w};
     const uint32_t sws[4] = {sw.x, sw.y, sw.z, sw.w};
@@ -1260,6 +1297,10 @@ __global__ void __launch_bounds__(THREADS, 1)
   int acq = -1;  // (tier, entry) whose ready this warp has acquired
   TD_V(uint64_t td_c0 = 0;)
   TD_V(uint64_t td_wait = 0; const uint64_t td_q0 = td_now();)
+#ifdef TD_UNIT_TRACE
+  unsigned td_slot = 0;  // warp 0 lane 0: this CTA's unit records
+  if (warp == 0 && lane == 0) td_slot = atomicAdd(&td_trace_n, 512u);
+#endif
   // per-warp smem offsets within a stage, computed once
   const uint32_t ring_u = smem_u32(ring), full_u = smem_u32(full),
                  empty_u = smem_u32(empty);
@@ -1282,6 +1323,9 @@ __global__ void __launch_bounds__(THREADS, 1)
   for (int it = 0;; ++it) {
     TD_V(const uint64_t td_w0 = td_now();)
     mbar_wait_a(full_u + 8 * s, ph);
+#ifdef TD_UNIT_TRACE
+    const uint64_t td_f = td_now();
+#endif
     TD_V(td_wait += td_now() - td_w0;)
     const uint4 du = lds_v4(desc_u + 16 * s);
     const int4 d = make_int4(du.x, du.y, du.z, du.w);
@@ -1289,7 +1333,7 @@ __global__ void __launch_bounds__(THREADS, 1)
     if (kind == K_END) break;
 #ifdef TD_UNIT_TRACE
     if (warp == 0 && lane == 0)
-      td_record(120 + kind, s_issue[s], td_w0, d.w, (d.x >> 4) & 1);
+      td_record_at(td_slot++, 120 + kind, s_issue[s], td_w0, td_f, d.w, (d.x >> 4) & 1);
 #endif
     const int q = (d.x >> 4) & 1, last = (d.x >> 9) & 1, nch = d.x >> 16;
     const unsigned char* st = ring + static_cast<size_t>(s) * STAGE_BYTES;
@@ -1316,13 +1360,26 @@ __global__ void __launch_bounds__(THREADS, 1)
           lds_u32(sdr0_u + (s * MAX_TOK + (lane >> 4) + 2 * j) * 4));
 
     if (kind == K_R0) {
+#ifdef TD_UNIT_TRACE
+      const uint64_t td_cs = td_now();
+#endif
       consume_routed<1>(st_u + wo1, st_u + so1, st_u + xo1, acc);
       __syncwarp();
       if (lane == 0) mbar_arrive_a(empty_s);
+#ifdef TD_UNIT_TRACE
+      if (warp == 0 && lane == 0)
+        td_record_at(td_slot++, 151, td_cs, td_now(), td_f, 0, 0);
+#endif
       if (last) {
         const int ei = d.y, t = d.z;
+#ifdef TD_UNIT_TRACE
+        const uint64_t td_ha = td_now();
+#endif
         flush_rows(acc, fs, scr_u, ws->y13 + t * R0 + h1 * 64, rows4, 2 * INTER,
                    ntok, g, tq, lane);
+#ifdef TD_UNIT_TRACE
+        const uint64_t td_hb = td_now();
+#endif
 #ifdef TD_FLUSH_FENCE
         fence_acq_rel_gpu();  // every thread's own y13 atomics, before the
                               // count
@@ -1334,11 +1391,18 @@ __global__ void __launch_bounds__(THREADS, 1)
           handoff_arrive();
         } else {
           handoff_sync();
+#ifdef TD_UNIT_TRACE
+          const uint64_t td_hc = td_now();
+#endif
           int done = 0;
           if (lane == 0) {
             __threadfence();
             done = atomicAdd(&ws->done13[q][ei], nch) + nch == UNITS0;
           }
+#ifdef TD_UNIT_TRACE
+          const int td_done = __shfl_sync(0xffffffffu, done, 0);
+          const uint64_t td_hd = td_now();
+#endif
           if (__shfl_sync(0xffffffffu, done, 0)) {
             __threadfence();
             __syncwarp();  // lane 0's acquire (the count) ordered before every
@@ -1351,10 +1415,19 @@ __global__ void __launch_bounds__(THREADS, 1)
             __syncwarp();
             if (lane == 0) st_release(&ws->ready[q][ei], epoch);
           }
+#ifdef TD_UNIT_TRACE
+          if (lane == 0) {
+            td_record_at(td_slot++, 140, td_ha, td_hb, td_hc, 0, 0);
+            td_record_at(td_slot++, 141 + td_done, td_hc, td_hd, td_now(), 0, 0);
+          }
+#endif
         }
         TD_V(td_c0 = td_now();)
       }
     } else if (kind == K_R1) {
+#ifdef TD_UNIT_TRACE
+      const uint64_t td_cs = td_now();
+#endif
 #if defined(TD_DEBUG_SUM) && defined(TD_CTA_TRACE)
       if (warp == 0) {  // checksum of half A's weights (32 k16 rows x 512 B) as
                         // seen in smem
@@ -1371,8 +1444,17 @@ __global__ void __launch_bounds__(THREADS, 1)
       __syncwarp();
       if (lane == 0) mbar_arrive_a(empty_s);
       const int t = d.z;
+#ifdef TD_UNIT_TRACE
+      const uint64_t td_ce = td_now();
+#endif
       flush_rows(acc, fs, scr_u, ws->y + t * R1 + h1 * 64, rows4, HIDDEN, ntok,
                  g, tq, lane);
+#ifdef TD_UNIT_TRACE
+      if (warp == 0 && lane == 0)
+        td_record_at(td_slot++, 153, td_cs, td_ce, td_now(), 0, 0);
+      if (warp == 0 && lane == 0)
+        td_record_at(td_slot++, 154, td_f, td_cs, td_now(), 0, 0);
+#endif
     } else {  // shared expert: 32 rows per warp, 4 k16 steps, nt_n token tiles
       const unsigned char* xa = st + W_BYTES;
 #ifndef TD_ABL_NOSHMMA  // timing ablation: skip the shared expert's math

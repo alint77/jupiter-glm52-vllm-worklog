@@ -508,3 +508,53 @@ unit ci + P within a w13 / shared group, before the empty wait; passes check)
 is slower, monotonically in P: 38/0 84.0 -> 89.7 / 93.9 / 103.1 at P = 2 / 4
 / 8 (`e38.sh`). The ~4.5 us load latency is not a ring-depth artefact; more
 outstanding requests only add traffic.
+
+### Trace methodology fixed, and where v32's time actually goes (2026-10-10)
+
+The per-unit trace was distorting what it measured, twice:
+1. The unit record's "stage full" time was stamped inside `td_record`
+   after its `atomicAdd` on the trace counter, so every unit carried one
+   global atomic round trip as fake wait (no unit ever waited < 0.25 us).
+2. Warp 0 (the warp that paces the ring: it also runs the w13 handoff) did
+   that atomic for every unit, ~0.4-0.9 us under HBM load: loads-only showed
+   warp 0 "consuming" 33 us per CTA with no math at all.
+
+v35's trace now stamps right after the barrier wait and writes unit records
+into slots each CTA reserves once (plain stores). Traced v35 = 84.2 us vs
+~85 untraced. The "latency-bound ring" reading above (and the Little's-law
+argument behind the 5-stage and L2-prefetch probes) came from the distorted
+trace; with the fixed trace both null results are explained.
+
+`trace_bd.py` (every hot CTA's wall time partitioned, waits charged to
+latency / ring / producer), `hand_tl.py` (warp 0's work split), `wait_dist.py`
+(true landing latency of waited units), `sass_win.py` / `sass_reg.py` (ncu
+SASS windows and per-region stall reasons). M=8 38/4, hot CTAs, us per CTA:
+
+| warp 0, us / CTA | full | compute-only | loads-only |
+|---|--:|--:|--:|
+| kernel (traced, extra stamps) | 90.0 | 69.8 | 78.4 |
+| head (route_prep + PDL) + first fill | 7.1 | 4.6 | 8.4 |
+| R0 math (31.4 units) | 28.6 (0.93 / unit) | 23.0 (0.74) | 0.5 |
+| R1 math (14.7 units) | 12.7 (0.93) | 10.1 (0.70) | 0.1 |
+| loop head: stage full -> math start | 13.5 (0.26 R0 / 0.32 R1) | 11.4 | 7.8 |
+| R1 flush / R0 flush | 3.6 / 0.7 | 2.9 / 0.7 | ~0 |
+| w13 done count (fence + atomic), 2.6 / CTA | 3.3 (1.3-1.6 each) | 1.6 (0.6) | 7.6 (3.1) |
+| activation + ready release (0.3 / CTA) | 1.3 (3.6 each) | 0.9 | 2.2 (5.7) |
+| shared expert units | ~4.5 | ~3.3 | ~4.9 |
+| waits on loads (all kinds) | ~5 | ~2.6 | ~35 |
+| end (last unit + imbalance) | ~4 | ~3.3 | ~1.5 |
+
+- **The full kernel is consumer-bound**: warp 0 consumes 90-96% of the time
+  from 16 to 64 us; waits on loads total ~5 us. Loads-only, the same
+  delivery finishes at 78 us, so memory is not the limit.
+- Per R0 unit the warp-0 cycle is 1.38 us (full) / 1.15 (compute-only);
+  the floor needs ~1.2 us per unit for everything (61 us / ~50 units).
+- The math slows 25% with loads (0.74 -> 0.93 us / unit); the done-count
+  fence + atomic doubles (0.6 -> 1.3-1.6 us) and is on warp 0, which the ring
+  waits for (warps 1-7 wait ~22 us vs warp 0 ~15 in the CTA trace).
+- ncu (v32 full, base clock): the math regions are issue-bound with
+  dependency stalls (selected 33%, wait 25%, not_selected 13%, math 11%,
+  dispatch 8-10%, short_sb 7%); per HMMA 13.2 instructions: 4.75 LOP3, 4
+  HFMA2, 2 FFMA, 1.1 SHF, 0.84 IMAD, 0.5 LDS. The loop head (27 SASS) is 17%
+  of samples, 62% long_sb on the full-barrier try_wait (warps 1-7 idling
+  behind warp 0). DRAM bytes 221.6 MB = the model's hot + shared bytes.
