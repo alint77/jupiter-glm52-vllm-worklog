@@ -1305,3 +1305,25 @@ EP two-stream overlap (Marlin hot + cold co-resident, section 1 of the
 write-up) worked because Marlin left SM room; this kernel's ring (4 x 45 KB)
 leaves no room for a co-resident CTA and its consumers use the issue time.
 Offloading can beat all-hot only once the kernel is HBM-bound.
+
+### Roofline position per concurrency (`e82.sh`, ncu base clock, all hot at the MTP3 mean expert counts)
+
+Tensor ridge: ~1,070 TFLOP/s bf16 / 3.6 TB/s ~ 300 FLOP/B, i.e. ~84 tokens per
+expert at 0.5625 B/weight. Served decode has 1.3 (c=1) to 2.9 (c=16) tokens
+per expert: 4.6-11.3 useful FLOP/B, 25-29 executed (N padded to 8).
+
+| M | us | TB/s | warp inst / B | inst / HMMA | ALU+FMA / HMMA | issue | tensor pipe | warps / scheduler |
+|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| 4 | 60.0 | 2.54 | 0.119 | 14.8 | 11.7 | 44% | 18% | 2.68 |
+| 8 | 93.2 | 2.78 | 0.120 | 15.9 | 12.8 | 52% | 19% | 2.73 |
+| 16 | 157.2 | 2.77 | 0.121 | 16.6 | 13.5 | 56% | 20% | 2.74 |
+| 32 | 245.9 | 2.80 | 0.122 | 17.0 | 14.0 | 58% | 20% | 2.75 |
+| 64 | 345.0 | 2.81 | 0.128 | 17.4 | 14.3 | 57% | 20% | 2.74 |
+
+Instructions per byte are flat in M (+8% from 4 to 64 tokens): concurrency
+does not move the kernel toward a ridge. At base clock (~1.2 GHz under ncu)
+the issue peak is 132 x 4 x 1.2e9 = 6.3e11 warp inst/s, so 8.2 B/inst would
+carry 5.2 TB/s at full issue; at the achieved ~57% (dependency stalls, 2.7
+warps per scheduler) that is ~3.0 TB/s, close to the 2.8 measured. Instruction
+ridge for HBM at 3.6 TB/s: 5.7 B/inst at 100% issue, ~10 B/inst at 57%; the
+kernel's 8.2 sits below the latter, so it is issue-limited at every M.
