@@ -9,6 +9,8 @@ glm-concurrency.png   throughput per GPU vs interactivity: the section-10 EP
 glm-offload.png       offloading vs every expert in HBM: tiered / all-hot
                       kernel time (roofline and measured, e78.sh), and the
                       cost per decode step (nsys traces x the bench ratio)
+glm-moe-headroom.png  decode step today vs with a roofline MoE kernel
+                      (max(hot / 3.6 TB/s, cold / 0.419 TB/s) per call, 75 calls)
 """
 import json
 import statistics as st
@@ -188,10 +190,56 @@ def offload(out):
     plt.close(fig)
 
 
+def headroom_rows():
+    rows = []
+    for n, (h, c) in MIX.items():
+        hb, cb = h * EXPERT_B + SHARED_B, c * EXPERT_B
+        m, mix, _ = BENCH[n]
+        moe = 75 * bench_us(m, mix) / 1e3
+        roof = 75 * max(hb / ROOF_HBM, cb / ROOF_C2C) * 1e3
+        step = TRACE[n][1] if n in TRACE else C16_STEP_MS
+        rows.append(dict(n=n, step=step, moe=moe, roof=roof, rest=step - moe,
+                         gain=(moe - roof) / step, c2c_bound=cb / ROOF_C2C > hb / ROOF_HBM))
+    return rows
+
+
+def headroom(out):
+    rows = headroom_rows()
+    print(json.dumps(rows, indent=1))
+    fig, ax = plt.subplots(figsize=(9.5, 4.8), facecolor=SURFACE)
+    y = range(len(rows))
+    ax.barh(y, [r["rest"] for r in rows], color=MUTED, alpha=0.45, height=0.6,
+            label="rest of the step (attention, GEMMs, all-reduce, drafter)")
+    ax.barh(y, [r["roof"] for r in rows], left=[r["rest"] for r in rows], color=SL, height=0.6,
+            label="MoE at the roofline (HBM 3.6 TB/s, C2C 0.42 TB/s)")
+    ax.barh(y, [r["moe"] - r["roof"] for r in rows], left=[r["rest"] + r["roof"] for r in rows],
+            color=SL2, height=0.6, hatch="//", edgecolor=SURFACE, label="MoE kernel's gap to the roofline")
+    for i, r in zip(y, rows):
+        ax.annotate(f"{r['step']:.0f} ms: {r['gain'] * 100:.0f}% above the roofline", (r["step"], i),
+                    xytext=(6, 0), textcoords="offset points", va="center", fontsize=9.5,
+                    color=INK, fontweight="bold")
+    ax.set_yticks(list(y), [f"{r['n']} request{'s' if r['n'] > 1 else ''}" for r in rows])
+    ax.invert_yaxis()
+    ax.set_xlabel("decode step (ms)", color=INK2)
+    ax.set_xlim(0, max(r["step"] for r in rows) * 1.42)
+    ax.legend(frameon=False, fontsize=8.5, loc="upper center", ncol=2,
+              bbox_to_anchor=(0.45, -0.2))
+    style(ax, "x")
+    fig.suptitle("A perfect MoE kernel would make the step only 5-10% faster", x=0.01, ha="left",
+                 fontsize=13, fontweight="bold", color=INK)
+    fig.text(0.01, 0.875, "TP-sliced, MTP3, as served (cold experts on Grace); roofline = the slower "
+             "of the HBM and C2C reads at full speed, 75 MoE layers", fontsize=9.5, color=INK2,
+             va="bottom")
+    fig.tight_layout(rect=(0, 0, 1, 0.87))
+    fig.savefig(out / "glm-moe-headroom.png", dpi=160, facecolor=SURFACE)
+    plt.close(fig)
+
+
 def main():
     out = Path(sys.argv[1])
     out.mkdir(parents=True, exist_ok=True)
     offload(out)
+    headroom(out)
     if all((PROF / r / "scale.jsonl").exists() for r in C16_RUNS):
         concurrency(out)
 
