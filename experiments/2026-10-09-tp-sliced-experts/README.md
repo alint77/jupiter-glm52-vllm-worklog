@@ -1264,3 +1264,38 @@ measured kernel does not beat all-hot even at c=1, where the ideal predicts
 -9%: at M=4 it runs at 64-71% of roof (latency, not bandwidth), so the extra
 C2C bandwidth has nothing to shorten. All-hot is hypothetical: 19,200 slices
 x 5.06 MiB = 95 GiB per GPU does not fit.
+
+### Why the mix does not beat all-hot (`e79.sh` traces, `tier_tl.py`; `e80.sh`/`e81.sh` benches; hold 2266611)
+
+The 1-in-7 argument (cold read alongside the hot ones, so time = hot only)
+assumes HBM bandwidth is the limit. It is not: the kernel streams ~22 GB/s per
+SM from either memory (all-hot 2.87 TB/s / 132; served mix hot 2.4 TB/s / 116,
+cold 366 GB/s / 16). The 16 cold CTAs are SMs taken from the hot stream, so
+the hot work slows by ~132/116, cancelling the bytes moved off HBM.
+
+Unit traces (v53 `TD_NOAHEAD TD_UNIT_TRACE TD_CTA_TRACE`, us, traced so slower
+than bench), last hot R1 unit:
+
+| M | hot only | mix | all hot | cold R1 last | kernel end mix |
+|--:|--:|--:|--:|--:|--:|
+| 8 (40,5) | 79.7 | 83.2 | 84.9 | 81.0 | 85.5 |
+| 16 (69,9) | 125.2 | 138.6 (+11%) | 139.4 | 145.2 | 147.4 |
+| 32 (108,17) | 191.0 | 216.6 (+13%) | 218.3 | 249.3 | 251.1 |
+
+Same hot work, 13% longer on 116 SMs (132/116 = 1.14). At M=32 cold w13 ends
+32 us after hot w13 (177 vs 145), so cold w2 trails; hot CTAs steal 322 of 816
+cold R1 units, and the bench shows ~7 us of that tail survives. At M=8 the
+fixed parts (head, shared expert, the w13 -> w2 hand-off) dominate: hot only
+(40 experts) is only 5.5% faster than all hot (45).
+
+Cold CTA count (served kernel, same node, us):
+
+| cold CTAs | 8 | 12 | 16 (served) | 24 | 32 | all hot | hot only |
+|---|--:|--:|--:|--:|--:|--:|--:|
+| M=16 (69,9) | 180.8 | 158.4 | 147.9 | 148.7 | 161.9 | 149.4 | 134.2 |
+| M=32 (108,17) | 310.8 | 273.0 | 245.2 | 240.1 | 261.7 | 233.3 | 206.5 |
+
+Fewer cold CTAs starve C2C (each pulls ~23 GB/s); more starve HBM. No split
+beats all-hot. Offloading can only win if the per-SM rate rises until fewer
+than 132 SMs saturate HBM. Two kernels on two streams (the EP design) split the
+SMs the same way, without control over the split.
