@@ -619,3 +619,35 @@ atomic under `TD_CTA_TRACE` (now gated behind `TD_DEBUG_SUM` in v40), so the
 untraced cycle is ~1.65 us, still above the consumer's 1.4.
 At M=32 (GR1=2) the producer's issue -> next-unit gap is 1.73 us p50 for
 two units, and the consumer is busy 73-93% throughout.
+
+### v40-v43: chasing the producer's per-unit path (M=8 w2 phase)
+
+Every guess about the ~0.9 us "setup + record" step was wrong until it was
+stamped finely; the ablations below record why.
+
+| variant (e51-e53, us) | 38/0 | 38/4 | 50/4 | 70/6 | 110/0 | 110/12 |
+|---|--:|--:|--:|--:|--:|--:|
+| v39 | 84.6 | 91.2 | 113.8 | 144.9 | 207.7 | 242.4 |
+| v40 (claim 2 ahead + prefetch next record) | 86.3 | 94.0 | 117.2 | 151.0 | 211.1 | 247.6 |
+| v41 no prefetch (len/n_tier in registers) | 84.6 | 91.2 | 113.9 | 144.9 | 205.3 | 241.5 |
+| v42 static strided schedule, no stealing (ablation) | 97.3 | 103.9 | 133.5 | 190.1 | 281.7 | 303.5 |
+| v42 dynamic, no stealing | 86.2 | 95.5 | 120.4 | 147.5 | 201.3 | 250.3 |
+
+(e51 and e52/e53 ran on different nodes; compare within a run.)
+
+- v40: the claim atomic and the record loads share SASS scoreboard SB5, so
+  the prefetched record's first use waits for this group's contended claim
+  atomic (record wait 0.32 -> 0.65 us). The claim prefetch of v32+ has never
+  overlapped anything.
+- v41: `len[q]` / `n_tier[q]` were a 16 B stack frame (two LDLs per group,
+  after the ready spin's CCTL.IVALL). Registers now; neutral.
+- v42: with no claim atomics at all the setup step still costs 0.79 us; the
+  static schedule loses 12-90 us to imbalance (work stealing matters).
+- v43 (`setup_tl.py`, stamps that take the loaded registers as asm inputs):
+  the setup step is a chain of small latencies, not one round trip:
+  index math (`group_at` + a runtime division by TILES1/g1) 0.22, record
+  load 0.32, record -> empty wait (STS, loop setup) 0.32 us. The whole
+  per-unit producer path is ~2.2 us of such steps (weight TMA issue 0.44,
+  ready spin 0.22-0.30, x copies 0.22, loop head 0.16) vs the consumer's
+  ~1.4 us per w2 unit. Astra consult 10 (`logs/astra10-prompt.md`) weighs two
+  producer warps sharing the ring vs shortening the chain.
