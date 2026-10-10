@@ -482,3 +482,29 @@ tp-sliced-a. `KINDS=sla,slb LOGS=logs/serve ../2026-10-07-mem-reclaim/compare_ba
   vLLM 6dd6db53bd). Checked: the compile cache key hashes
   VLLM_TIERED_SLICED_FUSE_SHARED and the traced moe_runner.py, so no stale
   graph is reused across the change.
+
+### Lever 1 resumed: ring depth and L2 prefetch (v35, v36; 2026-10-10)
+
+Skeleton trace (`e37.sh`, v32 M=8 38/4, CTA trace): compute-only with no
+routed math or flush exits at 32.8 us with consumers waiting 22.7 us of it, so
+the producer's serial path (claims, record loads, ready acquires, issue) is
+~26 us for ~46 units. In the full kernel the producer empty-waits 19.7 us
+while consumers wait ~22 us on full stages: both sides idle on each other.
+
+Hypothesis tested: too few bytes in flight per SM (ring 4 x 46 KB). Both
+probes say no.
+
+| us | 38/0 | 38/4 | 50/4 | 110/0 | 110/12 |
+|---|--:|--:|--:|--:|--:|
+| v32 | 84.8 | 92.9 | 115.9 | 216.5 | 254.5 |
+| v35 `TD_XROWS=4` (41 KB stages) | 85.7 | 93.6 | 116.1 | 211.8 | 252.6 |
+| v35 `TD_XROWS=4 TD_STAGES=5` | 85.5 | 93.7 | 116.6 | 214.7 | 253.4 |
+| v35 `TD_XROWS=2 TD_STAGES=5` | 85.2 | 93.8 | 116.4 | 212.8 | 253.6 |
+| loads-only v32 / XROWS=4 / +5 stages (38/0) | 78.3 / 78.8 / 78.4 | | | | |
+
+(`e36.sh`; `TD_XROWS` clamps the x rows per stage, timing only.) A 5th stage
+changes nothing, loads-only included. v36 `TD_L2PF=P` (L2 tensor prefetch of
+unit ci + P within a w13 / shared group, before the empty wait; passes check)
+is slower, monotonically in P: 38/0 84.0 -> 89.7 / 93.9 / 103.1 at P = 2 / 4
+/ 8 (`e38.sh`). The ~4.5 us load latency is not a ring-depth artefact; more
+outstanding requests only add traffic.
