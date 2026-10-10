@@ -339,3 +339,85 @@ a64fab4d00): `chain_ab.sh` on holds 2255981 / 2255982, the standard arm
   over the sliced tiers with no wgmma prefill kernel and no cold prefetch
   (cold slices read over C2C through UVA). Prefill is not the target, but this
   is the largest regression and is fixable (512-wide wgmma prefill; staging).
+
+### Round 2: TTFT fix (vLLM 1830810344: wgmma prefill at 512, cold prefetch staging)
+
+Holds 2258516 (sl first) / 2258574 (ep first), same harness:
+
+| arm | GSM8K | acc | tok/step | ms/step | TTFT 20K/14K | 8K/150K | 60K | 388K |
+|---|--:|--:|--:|--:|--:|--:|--:|---|
+| ep-2258516-2 | 0.900 | 0.342 | 3.39 | 21.37 | 2.810 | 1.523 | 8.26 | OK |
+| ep-2258574-1 | 0.915 | 0.312 | 3.18 | 20.90 | 2.788 | 1.535 | 8.19 | OK |
+| sl-2258516-1 | 0.915 | 0.331 | 3.32 | 19.09 | 2.929 | 1.592 | 8.68 | OK |
+| sl-2258574-2 | 0.915 | 0.322 | 3.25 | 19.06 | 2.951 | 1.623 | 8.65 | OK |
+
+- Agentic decode **-1.862 +- 0.079 ms/step** (75 requests), long context
+  **-1.956 +- 0.052**. TTFT now +4-6% (was +33%); every prefill chunk stages
+  all 75 layers' cold slices from the 2 x 440 MiB slots (0 from Grace).
+- Acceptance: round 2 sliced 3.32 / 3.25 vs EP 3.39 / 3.18: no consistent
+  direction over the four pairs so far.
+
+## Decode step breakdown, sliced vs EP (holds 2258736 / 2258737)
+
+`prof_launch.sh <ep|sl>` -> `prof_arm.sh` (prod serve.sh, c=1, DFlash2 k=7,
+torch profiler 2 s windows from `prof_load.py`: one request at 5K and one at
+50K context). Traces: `/e/fscratch/profound/naeimitabiei1/sliced-prof/`.
+`breakdown2.py` (copy of ../2026-10-09-c8-profile's, layer_kernel counted as
+MoE), `kernels.py`, `layer_chain.py` (median per-layer kernel chain),
+`ar_skew.py` (per-rank MoE kernel and AR).
+
+| ms / step, rank 0 | EP 5K | SL 5K | EP 50K | SL 50K |
+|---|--:|--:|--:|--:|
+| period | 20.87 | 19.08 | 22.98 | 20.28 |
+| MoE expert kernels (SL: + shared expert) | 7.44 | 6.70 | 7.98 | 7.65 |
+| dense GEMMs (decode_gemm) | 3.12 | 3.14 | 3.13 | 3.14 |
+| all-reduce + RMSNorm (incl. wait) | 2.31 | 1.26 | 2.94 | 1.24 |
+| outside the verify graph (drafter, sampling) | 1.58 | 1.55 | 2.02 | 1.55 |
+| DCP collectives | 1.39 | 1.38 | 1.43 | 1.40 |
+| attention (FlashMLA + combine) | 1.37 | 1.37 | 1.38 | 1.39 |
+| dense GEMMs (cuBLAS; EP: + shared expert) | 1.02 | 1.00 | 1.02 | 1.00 |
+| other verify-graph kernels | 0.64 | 0.69 | 0.63 | 0.69 |
+| GPU idle | 0.61 | 0.66 | 0.75 | 0.61 |
+| MoE router / route / finalize (exclusive) | 0.57 | 0.49 | 0.57 | 0.49 |
+| DSA indexer | 0.57 | 0.57 | 0.87 | 0.86 |
+| KV write / skip-KV staging | 0.26 | 0.26 | 0.26 | 0.26 |
+
+The sliced win is the MoE kernel (-0.7) and the MoE all-reduce no longer
+waiting on the slowest EP rank (-1.05 / -1.7); everything else is unchanged.
+
+**One layer, sliced, 5K (median, us from grouped_topk; 206 us/layer x 75 =
+15.5 ms of the 19.1):**
+- MoE region 95.3: grouped_topk 4.1 and route_prep overlap the layer kernel's
+  start (it starts at 4.7), layer_kernel 85.5, finalize exposed 1.9 after it,
+  then a bf16 zero fill (the owned shared output, 1.0), the runner's
+  `shared + rsf * routed` (1.2) and 3 x 0.4 us launch gaps.
+- MoE AR + residual + RMSNorm 9.3 (the attention-side AR: 6.5).
+- Attention block 101: qkv_a 13.0, q_b 7.8, o_proj 16.4 (decode_gemm), two
+  nvjet absorbs 3.7 + 3.9, router 3.7; DCP gather_cat 8.5 + lse
+  reduce-scatter 6.5; FlashMLA 14.9 + combine (2.8 exposed); AR 6.5; norms,
+  rope, 2 x concat_and_cache 9.4; ~0.4 us launch gap before each kernel.
+
+EP's layer is 236 us: MoE region 107 (gemm 59.7 + act + gemm 37.5, shared
+expert on cuBLAS on the side stream) and the MoE AR 18 (ranks' MoE kernels end
+14-17 us apart at the median).
+
+**MoE kernel durations** (layer_kernel, rank 0): 5K mean 89.2, p50 85.7, p90
+106, p99 152 us; 50K mean 101.8, p50 91.7, p90 140, p99 196. Above-p90 calls
+are 14% / 17% of MoE time. EP (gemm<0> start to gemm<1> end): 5K p50 98.0, p90
+125; 50K p50 105.5, p90 130. The sliced tail at 50K is heavier than EP's.
+
+**Per-rank skew (sliced)**: rank 3's layer_kernel is 2-3.4 us slower at the
+median in both windows (87.9 vs 84.5-86.1 at 5K) and its MoE AR is the
+shortest (6.6 vs 8.7-9.9): the other ranks wait for it.
+
+### Optimization opportunities (ms / step at c=1, 75 layers)
+
+| # | lever | evidence | upper bound |
+|---|---|---|--:|
+| 1 | MoE kernel to the memory floor | p50 85.7 us vs floor 61.3 us at 38/4 (bench); consumer math only ~20-25% faster than delivery | ~1.8 |
+| 2 | Cold-heavy tail | 50K mean 101.8 vs p50 91.7; 16 cold CTAs at ~11 GB/s each cap C2C at ~180 GB/s, vs 363 GB/s with all CTAs | 0.26 (5K) - 0.75 (50K) |
+| 3 | Dense GEMMs over floor | qkv_a 13.0 vs 8.9, q_b 7.8 vs 4.6, o_proj 16.4 vs 13.8 (`../2026-10-07-skinny-gemm-v2`): mostly per-kernel ramp | ~0.74 |
+| 4 | Launch gaps in the verify graph | ~0.4 us before each of ~20 kernels per layer (GPU idle 0.61-0.66) | ~0.6 |
+| 5 | MoE epilogue | zero fill + runner add + gaps 3.4 us, finalize exposed 1.9: write rsf * routed + shared in-kernel, finalize in the last CTA | ~0.4 |
+| 6 | Rank-3 skew into the MoE AR | MoE AR 8.7-9.9 vs 6.5 floor | ~0.19 |
+| 7 | MoE head | grouped_topk + route_prep before the kernel starts (4.7 us) | ~0.15 |
