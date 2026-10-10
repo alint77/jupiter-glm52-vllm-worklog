@@ -54,13 +54,18 @@ class PlainMod:
     """A torch-free kernel library (v13+): nvcc -shared, called via ctypes with
     the torch extension's forward signature."""
 
-    def __init__(self, so):
+    def __init__(self, so, routed_scale=False, num_experts=False):
         import ctypes
 
         self.lib = ctypes.CDLL(str(so))
         P, I, F = ctypes.c_void_p, ctypes.c_int, ctypes.c_float
+        # v28+: a routed_scale after shared_scale (output = rs * routed + shared)
+        self.routed_scale = routed_scale
+        # v30+: the slot maps' length after routed_scale
+        self.num_experts = num_experts
         self.lib.td_forward.argtypes = [P, P, P, P, P, P, I, P, P, P, P, I, P, P, P, P, I, P, I, P,
-                                        P, P, F, P]
+                                        P, P, F, *([F] if routed_scale else []),
+                                        *([I] if num_experts else []), P]
         self.lib.td_forward.restype = I
         self.lib.td_workspace_bytes.restype = ctypes.c_longlong
         self.trace = hasattr(self.lib, "td_dump")
@@ -70,7 +75,7 @@ class PlainMod:
 
     def forward(self, out, x, ids, wt, hot_map, cold_map, _p, _s, _h, _rank, _sched,
                 hw13, hs13, hw2, hs2, cw13, cs13, cw2, cs2, ws, pdl, padding,
-                sw13=None, sw2=None, sscale=1.0):
+                sw13=None, sw2=None, sscale=1.0, rscale=1.0):
         ptr = lambda t: t.data_ptr() if t is not None and t.numel() else None  # noqa: E731
         assert ids.dtype == torch.int32
         rc = self.lib.td_forward(
@@ -78,6 +83,8 @@ class PlainMod:
             ptr(hw13), ptr(hs13), ptr(hw2), ptr(hs2), hw13.shape[0] if hw13.numel() else 0,
             ptr(cw13), ptr(cs13), ptr(cw2), ptr(cs2), cw13.shape[0] if cw13.numel() else 0,
             ptr(ws), int(bool(pdl)), ptr(padding), ptr(sw13), ptr(sw2), float(sscale),
+            *([float(rscale)] if self.routed_scale else []),
+            *([hot_map.numel()] if self.num_experts else []),
             torch.cuda.current_stream().cuda_stream)
         assert rc == 0, f"td_forward returned {rc}"
 
@@ -108,7 +115,7 @@ def plain_build(v, verbose=False):
         os.replace(str(so) + ".tmp", so)
         if verbose:
             print(r.stderr)
-    return PlainMod(so), bdir
+    return PlainMod(so, version(v) >= 28, version(v) >= 30), bdir
 
 
 def build(v, verbose=False):
@@ -343,7 +350,7 @@ def check_fixture(dev):
     return f
 
 
-def reference(f, x, ids, wt, shared, sscale, r=None):
+def reference(f, x, ids, wt, shared, sscale, r=None, rscale=1.0):
     """fp32 routed (+ shared) output on the GPU; with r, only slice r's part
     (its 512 intermediate rows / columns), which is what one GPU computes."""
     xf = x.float()
@@ -360,7 +367,7 @@ def reference(f, x, ids, wt, shared, sscale, r=None):
             continue
         w13 = f["w13"][ex]
         act = torch.nn.functional.silu(xf[tok] @ w13[g_rows].T) * (xf[tok] @ w13[u_rows].T)
-        ref[tok] += (wt[tok] * sel[tok]).sum(1, keepdim=True) * (act @ f["w2"][ex][:, cols].T)
+        ref[tok] += rscale * (wt[tok] * sel[tok]).sum(1, keepdim=True) * (act @ f["w2"][ex][:, cols].T)
     if shared:
         sw13 = f["sw13"].float()
         act = torch.nn.functional.silu(xf @ sw13[g_rows].T) * (xf @ sw13[u_rows].T)
@@ -377,6 +384,8 @@ def cmd_check(a):
     mod, _ = build(a.v)
     ver = version(a.v)
     sh, sscale = ver >= 2, 0.4
+    # v28+ applies the routed scale itself (GLM-5.3: 2.5, shared at 1)
+    rscale = 2.5 if ver >= 28 else 1.0
     ws = torch.zeros(mod.workspace_bytes(), dtype=torch.uint8, device=dev)
     e = torch.empty(0, device=dev)
     n_hot, n_cold = f["n_hot"], f["n_cold"]
@@ -403,12 +412,14 @@ def cmd_check(a):
                 ids = torch.full((m, TOPK), -1, dtype=torch.int32)
             wt = torch.rand((m, TOPK), generator=g)
             x, ids, wt = x.to(dev), ids.to(dev), wt.to(dev)
-            refs = [reference(f, x, ids, wt, sh, sscale, r) for r in range(4)]
+            refs = [reference(f, x, ids, wt, sh, sscale, r, rscale) for r in range(4)]
             for rep in range(a.reps):
                 err = 0.0
                 for r, (hot, cold) in enumerate(f["tiers"]):
                     out = torch.empty((m, HIDDEN), dtype=torch.bfloat16, device=dev)
                     extra = (*f["sslices"][r], sscale) if sh else ()
+                    if ver >= 28:
+                        extra = (*(extra or (None, None, 1.0)), rscale)
                     mod.forward(out, x, ids, wt, hm, cm, e, e, e, 0, False, *parts(hot),
                                 *parts(cold), ws, True, e, *extra)
                     # per slice, against that slice's own fp32 part: bf16 rounding of

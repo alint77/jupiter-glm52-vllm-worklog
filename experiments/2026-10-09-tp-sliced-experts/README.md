@@ -421,3 +421,33 @@ shortest (6.6 vs 8.7-9.9): the other ranks wait for it.
 | 5 | MoE epilogue | zero fill + runner add + gaps 3.4 us, finalize exposed 1.9: write rsf * routed + shared in-kernel, finalize in the last CTA | ~0.4 |
 | 6 | Rank-3 skew into the MoE AR | MoE AR 8.7-9.9 vs 6.5 floor | ~0.19 |
 | 7 | MoE head | grouped_topk + route_prep before the kernel starts (4.7 us) | ~0.15 |
+
+### Levers 5 and 7 (user: "5&7"; lever 6 dropped)
+
+**Lever 7, MoE head: no kernel-side headroom.** Moving route_prep into the
+layer kernel (`kernels/td_v28.cu`-`td_v30.cu`: fused prep, per-tile counting,
+end-of-kernel finalize) was never faster than route_prep + the PDL boundary.
+v27's route_prep exits at 3.7 us and its producers issue at 5.0; in-kernel
+prep took 4.3 (v29) or 2-3 us (v30, vectorized) after the wait, and M=32
+regressed (110/0: 222 vs 217 us; 110/12: 264 vs 250). `td_v31` (v27 + routed
+scale + the slot maps read with the ids, `e24.sh`) passes check (worst 0.0034)
+and benches equal to v27 (M=8 38/0 82.0 vs 84.0, 38/4 86.2 vs 86.0, 50/4 107
+vs 107; M=32 110/0 215 vs 211-217, 110/12 255 vs 254); its route_prep still
+exits at 3.8 us (`probe27.py`), so the map prefetch is dropped. The head's
+remaining 4.7 us is grouped_topk + route_prep latency the kernel already
+overlaps from 4.4 us.
+
+**Lever 5, MoE epilogue (vLLM f51ed6dec9).** An in-kernel finalize cannot
+beat the exposed finalize tail (~2.6 us either way in v29/v30), so the
+win left is the runner's glue: the zero fill of the owned shared output and
+`shared + rsf * routed`. The tiered setup now calls
+`MoERunner.release_output_epilogue()`: the runner gives the shared MLP and its
+routed scale to the method, keeps no shared expert and a scale of 1 (plain
+`moe_forward` op, then the AR). Decode: route_prep multiplies the router weight
+by the routed scale and the kernel adds the shared slice at scale 1. Other
+steps: tiers' output `*= rsf` then `mlp(x) +` it, the runner's own ops. The
+`tiered_fuse_shared` hook on `mk_can_overlap_shared_experts` is gone.
+`tests/kernels/moe/test_tiered_decode_sliced.py` (now with routed_scale 2.5):
+6 passed. Served check: `chain_arms.sh run slb sla` / `run sla slb` (holds
+2258906 / 2258907) and `chain_arms.sh prof slb sla` (2258908); slb runs from
+worktree tp-sliced-b with its own compile cache.

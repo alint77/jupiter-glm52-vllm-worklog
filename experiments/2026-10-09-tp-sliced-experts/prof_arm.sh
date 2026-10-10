@@ -8,7 +8,9 @@ C=/e/fscratch/profound/${USER}/caches/marlin
 WT=/e/fscratch/profound/${USER}/worktrees
 arm=$1 tag=$2
 OUT=/e/fscratch/profound/${USER}/sliced-prof/${tag}; mkdir -p "${OUT}/trace"
-if [[ ${arm} == ep ]]; then
+if [[ -n ${ARM_ENVS:-} ]]; then
+  :  # PYTHONPATH and the rest set by the caller (chain_arms.sh)
+elif [[ ${arm} == ep ]]; then
   export PYTHONPATH=${WT}/ep-base SERVE_CACHE_ROOT=${C}/vllm-cache-glm53-ep-base
 else
   export PYTHONPATH=${WT}/tp-sliced-a SERVE_CACHE_ROOT=${C}/vllm-cache-glm53-sliced TIERED_MOE_LAYOUT=tp_sliced REPLICAS=
