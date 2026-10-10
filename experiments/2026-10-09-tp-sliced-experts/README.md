@@ -926,3 +926,119 @@ routings): −20% (M=8) / −16% (M=32) vs EP's slowest GPU. The NOAHEAD
 increment over v53 is not established by paired measurement. The served
 sliced vs EP A/B (holds 2255981/2) predates v53; a served rerun with the new
 kernel is the next measurement.
+
+## Round 3: served A/B with the shipped kernel (vLLM 18bb8c945f / 7df917dd4d, 2026-10-10)
+
+Both layouts run from one frozen worktree (`worktrees/tp-sliced-b`), so the
+only difference is the layout flag. Each hold runs EP and sliced arms back to
+back. The analysis is `../2026-10-07-mem-reclaim/compare_ba.py` (`JOBS=`
+filter, plus a `prefill_fit` regression: prefill_ms ~ new_k + new_k·ctx +
+kind × (1, new_k)).
+
+**DFlash2 k=7, c=1** (`chain_r3.sh`, holds 2262101-4, 4 + 4 arms):
+
+| | sliced − EP |
+|---|--:|
+| agentic decode | **−2.395 ± 0.033 ms/step** (EP ~21.0 → ~18.6) |
+| long-context decode (50K/130K) | −2.579 ± 0.026 ms/step |
+| agentic prefill | +11.4 ± 2.2 ms per 1K new tokens (+1.4 ms at 0.5K, +18.5 ms / +6.6% at 2K) |
+| TTFT 20K/14K, 8K/150K, 60K | 2.83 → 2.95 s, 1.57 → 1.60 s, 8.29 → 8.67 s |
+
+Acceptance (3.56 vs 3.55), GSM8K, free HBM and the 388K stress test are
+equal.
+
+**MTP3, c=1** (`chain_r3m2.sh` + `../2026-10-07-mem-reclaim/arm_nogsm.sh`,
+holds 2262830/38/41/42). Round 1 (`chain_r3m.sh`) failed to boot sliced:
+"no placement for layer 78". 7df917dd4d loads the MTP drafter's MoE untiered
+under tp_sliced, as a plain TP MoE.
+
+| | EP | sliced |
+|---|--:|--:|
+| step (agentic) | 19.41-19.60 ms | 17.13-17.26 ms |
+| tok/step | 2.74-2.93 | 2.77-2.87 |
+| hot / free at startup | 3,470 experts / 7.46 GiB | 13,972 slices / 7.32 GiB |
+
+- Agentic decode: **−2.354 ± 0.027 ms/step**.
+- Long-context decode: −2.460 ± 0.034 ms/step.
+- Prefill: +25.4 ± 5.4 ms per 1K new tokens. That is −12 ± 7 ms at 0.5K and +26 ms (+8%) at 2K; TTFT is +4-7%.
+
+## MTP3 interactivity sweep at c=8 on the 1.6M pool (2026-10-10)
+
+The config is the `../2026-10-08-m32` chart's main line (`mtp3-c8-400k-pool1600k`):
+`chain_sweep.sh sweep` → `../2026-10-08-m32/sweep_arm.sh`
+(VLLM_TIERED_MOE_KV_POOL_SEQS=4, conc_sweep.py n = 1, 2, 4, 8 × 5K / 50K, 3
+reps). There were 4 holds (2263519/21/22/23), each running ep, sl or sl, ep.
+The analysis is `sweep_ab.py`; the figure is `plot_sliced.py figs` →
+`figs/glm-sliced-concurrency.png`.
+
+**Reserve 3.6, not the chart's 3.0.** At 3.0 the EP arms at 7df917dd4d do not
+boot: the observed free HBM is 2.39-2.52 GiB, below the 2.53 GiB minimum. At
+3.6, EP places 3,381 hot experts per rank, which is exactly the chart run's
+hot set, and its curve reproduces the chart's EP line. Both layouts use 3.6
+(sliced: 13,614 hot slices ≈ 3,404 experts).
+
+| ctx | n | tok/s/user EP → SL | tok/s/GPU EP → SL | step ms EP → SL | sliced − EP, paired (4 holds) |
+|---|--:|--|--|--|--:|
+| 5K | 1 | 148.3 → 169.0 | 35.2 → 39.8 | 19.99 → 17.37 | −2.62 ± 0.17 (−13.1%) |
+| 5K | 2 | 118.5 → 137.9 | 53.5 → 62.4 | 24.17 → 20.91 | −3.26 ± 0.12 (−13.5%) |
+| 5K | 4 | 93.9 → 109.2 | 81.0 → 92.9 | 31.52 → 27.42 | −4.10 ± 0.14 (−13.0%) |
+| 5K | 8 | 67.4 → 76.4 | 115.2 → 127.6 | 43.85 → 38.71 | −5.14 ± 0.07 (−11.7%) |
+| 50K | 1 | 163.6 → 192.3 | 37.3 → 43.3 | 20.53 → 17.94 | −2.59 ± 0.12 (−12.6%) |
+| 50K | 2 | 130.4 → 150.0 | 55.9 → 63.4 | 24.90 → 21.40 | −3.50 ± 0.11 (−14.1%) |
+| 50K | 4 | 98.6 → 113.0 | 83.2 → 94.9 | 32.73 → 28.80 | −3.93 ± 0.11 (−12.0%) |
+| 50K | 8 | 69.0 → 76.6 | 112.6 → 124.7 | 45.75 → 40.69 | −5.06 ± 0.14 (−11.1%) |
+
+Acceptance is equal (2.86-2.98 at 5K, 3.10-3.45 at 50K, with no
+direction). The step saving grows with the number of tokens per step (−2.6 ms
+at M=4 to −5.1 ms at M=32) but shrinks as a fraction (−13% → −11%).
+
+### Profile (torch profiler, `chain_prof.sh` → `prof_c8_arm.sh`, holds 2263524/25)
+
+Rank 0, `breakdown2.py`, ms per step. The run also recorded allocator
+snapshots, so these windows are slower than the unprofiled sweep; the per-
+request tok/s in `prof_load.py`'s log is not a timing measure.
+
+| | EP 1x5K | SL 1x5K | EP 8x5K | SL 8x5K | EP 8x50K | SL 8x50K |
+|---|--:|--:|--:|--:|--:|--:|
+| period | 20.01 | 17.52 | 42.84 | 37.88 | 44.11 | 38.51 |
+| MoE expert kernels (SL: + shared expert) | 6.13 | 5.33 | 22.65 | 19.84 | 22.94 | 19.84 |
+| all-reduce + RMSNorm (incl. wait) | 2.57 | 1.09 | 3.87 | 1.92 | 4.14 | 1.92 |
+| dense GEMMs (cuBLAS etc.; EP: + shared expert) | 0.96 | 0.97 | 3.63 | 3.41 | 3.62 | 3.41 |
+| DCP collectives | 1.18 | 1.36 | 2.83 | 2.94 | 2.86 | 2.98 |
+| outside the verify graph (3 MTP passes, sampling) | 2.15 | 2.08 | 2.61 | 2.60 | 2.67 | 2.65 |
+| GPU idle | 0.74 | 0.69 | 1.04 | 1.23 | 1.21 | 1.28 |
+
+No irregularity is specific to sliced. The saving comes from the MoE kernel
+(−0.8 / −2.8 ms) and from the all-reduce no longer waiting on EP's
+imbalanced ranks (−1.5 / −2.0 ms). DCP collectives (+0.1-0.2 ms) and idle at
+8x (+0.1-0.2 ms) take some of the wait back. At M=32, 3.4-3.6 ms of dense
+GEMMs run in cuBLAS (decode_gemm holds 1.7 ms of them); this is the same in
+both layouts and is the largest non-MoE item at c=8.
+
+### Memory (`MEM_SNAPSHOT_DIR` probe, local patch in `worktrees/tp-sliced-mem`)
+
+Rank 0, GiB:
+
+| | EP | SL |
+|---|--:|--:|
+| expert storage | 66.95 | 67.38 |
+| dense weights (create_weights) | 10.71 | 10.71 |
+| KV (HBM) | 6.22 | 6.22 |
+| MTP layer MoE (Marlin repack + scales, untiered in both) | 1.27 | 1.27 |
+| cold prefetch slots (prefill only) | 1.15 | 1.01 |
+| fused-MoE modular-kernel workspace | 0.75 | 0.75 |
+| live at startup / after all four windows | 87.90 / 87.91 | 88.19 / 88.19 |
+| allocator reserved-free after serving (main pool) | 2.95 | 2.77 |
+| CUDA-graph pool reserved (0.03 allocated) | 0.56 | 0.57 |
+| non-torch (context, NCCL, graphs) | 2.36 → 2.91 | 2.35 → 2.76 |
+| device free at the end | 0.60-0.76 | 0.74 |
+| nvidia-smi peak (MiB) | 96,670 | 96,521 |
+
+- Nothing grows while serving.
+- Sliced's extra 0.3 GiB of live memory is extra hot experts.
+- The main pool caches 2.8-3.0 GiB of prefill transients, and that cache is
+  what the reserve must cover.
+- The workspace is sized by the largest fused-MoE call. The only Marlin MoE
+  left is the MTP drafter's untiered layer, at 4,096-token prefill chunks.
+  Chunking that layer would free about 0.5 GiB (about 25 hot experts). This
+  is not measured.

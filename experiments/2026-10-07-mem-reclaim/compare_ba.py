@@ -6,6 +6,11 @@ stress survival and peak. Decode: step_ms ~ tokens/step + ctx + node + after
 over agentic requests (>= 20 steps), and the same over the long-context rows.
 
     compare_ba.py [root]
+
+KINDS=a,b names the two arm kinds (tag prefixes); JOBS=j1,j2,... keeps only
+those holds' arms. Prefill: per agentic request, prefill_ms ~ new tokens (not
+prefix-cached) + new x context, with the b arm's offset and per-1K-token
+slope, plus node dummies.
 """
 import json
 import os
@@ -25,6 +30,8 @@ for d in sorted(root.glob(f"[{A[0]}{Bk[0]}]*-22*")):
     kind, job = d.name.split("-")[0], d.name.split("-")[1]
     log = logs / f"run-{d.name}.log"
     if kind not in (A, Bk) or not log.exists() or "=== done" not in log.read_text():
+        continue
+    if os.environ.get("JOBS") and job not in os.environ["JOBS"].split(","):
         continue
     out = (d / "server.out").read_text(errors="ignore")
     tp0 = [l for l in out.splitlines() if "Worker_TP0" in l and "residency:" in l]
@@ -84,3 +91,49 @@ for kind in (A, Bk):
     g = [a["gsm"] for a in arms if a["kind"] == kind and a["gsm"] is not None]
     if g:
         print(f"GSM8K {kind}: mean {st.mean(g):.3f} over {len(g)} x 200")
+
+
+def prefill_fit(arms):
+    """prefill_ms = a + b new_k + c new_k ctx_100k + [Bk] (d + e new_k) + node."""
+    X, y = [], []
+    jobs = sorted({a["job"] for a in arms})
+    for a in arms:
+        for r in a["rows"]:
+            if "prefill_s" not in r or r.get("prompt_tokens") is None:
+                continue
+            new = (r["prompt_tokens"] - r.get("cached_tokens", 0)) / 1e3
+            if new <= 0:
+                continue
+            b = 1.0 if a["kind"] == Bk else 0.0
+            x = [1.0, new, new * r["prompt_tokens"] / 1e5, b, b * new]
+            x += [1.0 if a["job"] == j else 0.0 for j in jobs[1:]]
+            X.append(x)
+            y.append(1000 * r["prefill_s"])
+    if not X:
+        return
+    X, y = np.array(X), np.array(y)
+    beta, *_ = np.linalg.lstsq(X, y, rcond=None)
+    res = y - X @ beta
+    cov = np.linalg.inv(X.T @ X) * (res @ res) / (len(y) - X.shape[1])
+    newk = X[:, 1]
+    print(f"agentic prefill ({len(y)} requests, new tokens median {np.median(newk) * 1e3:.0f}, "
+          f"p90 {np.percentile(newk, 90) * 1e3:.0f}): {A} {beta[0]:.1f} ms + {beta[1]:.1f} ms/1K new; "
+          f"{Bk} - {A}: {beta[3]:+.1f} +- {np.sqrt(cov[3, 3]):.1f} ms {beta[4]:+.2f} +- "
+          f"{np.sqrt(cov[4, 4]):.2f} ms/1K new")
+    for k in (0.5, 2, 10, 30):
+        v = np.zeros(len(beta))
+        v[3], v[4] = 1, k
+        d = v @ beta
+        base = beta[0] + beta[1] * k
+        print(f"  at {k:g}K new tokens: {Bk} - {A} = {d:+.1f} +- {np.sqrt(v @ cov @ v):.1f} ms "
+              f"({100 * d / base:+.1f}% of {A}'s {base:.0f} ms, short context)"
+              f"{' [extrapolated]' if k > np.percentile(newk, 95) else ''}")
+    for a in arms:
+        rows = [r for r in a["rows"] if "prefill_s" in r]
+        new = sum(r["prompt_tokens"] - r.get("cached_tokens", 0) for r in rows)
+        t = sum(r["prefill_s"] for r in rows)
+        print(f"  {a['name']:22s} prefill {t:6.1f} s over {new / 1e3:7.1f}K new tokens "
+              f"({new / max(t, 1e-9):6.0f} tok/s), {len(rows)} requests")
+
+
+prefill_fit(arms)
