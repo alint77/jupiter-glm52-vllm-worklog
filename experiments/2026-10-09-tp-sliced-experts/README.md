@@ -451,3 +451,34 @@ steps: tiers' output `*= rsf` then `mlp(x) +` it, the runner's own ops. The
 6 passed. Served check: `chain_arms.sh run slb sla` / `run sla slb` (holds
 2258906 / 2258907) and `chain_arms.sh prof slb sla` (2258908); slb runs from
 worktree tp-sliced-b with its own compile cache.
+
+**Served result (slb = f51ed6dec9 vs sla = 1830810344; holds 2258906/7/10,
+same-node pairs on 2258907 and 2258910).** The first slb arms on 2258906 and
+2258908 died at boot: worktree tp-sliced-b lacked the ignored build outputs
+(flash-attn extensions, third_party); all ignored files are now synced from
+tp-sliced-a. `KINDS=sla,slb LOGS=logs/serve ../2026-10-07-mem-reclaim/compare_ba.py`:
+
+| arm | GSM8K | acc | tok/step | ms/step | TTFT 20K/14K | 8K/150K | 60K | 388K |
+|---|--:|--:|--:|--:|--:|--:|--:|---|
+| sla-2258906-2 | 0.910 | 0.328 | 3.30 | 19.18 | 2.950 | 1.598 | 8.73 | OK |
+| sla-2258907-1 | 0.910 | 0.360 | 3.52 | 19.26 | 2.974 | 1.621 | 8.78 | OK |
+| sla-2258910-2 | 0.910 | 0.332 | 3.33 | 19.14 | 2.914 | 1.562 | 8.57 | OK |
+| slb-2258907-2 | 0.910 | 0.317 | 3.22 | 18.80 | 2.983 | 1.590 | 8.78 | OK |
+| slb-2258910-1 | 0.915 | 0.321 | 3.25 | 18.90 | 2.916 | 1.578 | 8.58 | OK |
+
+- Agentic decode: **slb - sla = -0.235 +- 0.029 ms/step** (85 requests, 3
+  nodes; fit controls tok/step and context). Long context: -0.306 +- 0.058.
+- GSM8K 0.910 -> 0.913; TTFT unchanged.
+- Acceptance 0.317 / 0.321 vs 0.328-0.360: in the low end of the old arms'
+  spread; the decode numerics only moved rsf before the kernel's single bf16
+  cast. Watch it over more arms.
+- Profile (2258911, rank 0, 5K, `layer_chain.py`): the layer chain drops from
+  23 to 21 kernels (FillFunctor and `triton_poi_fused_add_mul_0` gone; the MoE
+  AR starts 0.1 us after finalize) and the layer from 211.0 to 207.0 us:
+  4.0 us x 75 = 0.30 ms/step, as served.
+- Astra review 8 (`logs/codex-review8.md`): no definite bug. Fixed: non-decode
+  steps now scale and add with one rounding like the runner's fused kernel
+  (`torch.add(shared, out, alpha=rsf)`, fp32 opmath on CUDA, checked on GPU;
+  vLLM 6dd6db53bd). Checked: the compile cache key hashes
+  VLLM_TIERED_SLICED_FUSE_SHARED and the traced moe_runner.py, so no stale
+  graph is reused across the change.
