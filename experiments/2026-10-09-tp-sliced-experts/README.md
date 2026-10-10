@@ -313,3 +313,29 @@ A/B vs prod EP (frozen worktrees ep-base = c1aec2e22f, tp-sliced-a =
 a64fab4d00): `chain_ab.sh` on holds 2255981 / 2255982, the standard arm
 (`../2026-10-07-mem-reclaim/arm.sh`); compare with
 `KINDS=ep,sl LOGS=logs/serve ../2026-10-07-mem-reclaim/compare_ba.py`.
+
+### Served A/B vs prod EP (holds 2255981 / 2255982, both orders)
+
+`KINDS=ep,sl LOGS=logs/serve ../2026-10-07-mem-reclaim/compare_ba.py`:
+
+| arm | hot | free GiB | GSM8K | acc | tok/step | ms/step | TTFT 20K/14K | 8K/150K | 60K | 388K | peak MiB |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|---|--:|
+| ep-2255981-1 | 3671 | 3.42 | 0.915 | 0.366 | 3.56 | 21.13 | 2.841 | 1.565 | 8.36 | OK | 96142 |
+| ep-2255982-2 | 3671 | 3.42 | 0.900 | 0.381 | 3.67 | 21.12 | 2.788 | 1.512 | 8.17 | OK | 95882 |
+| sl-2255981-2 | 14748 | 3.71 | 0.930 | 0.356 | 3.49 | 19.35 | 3.787 | 1.965 | 11.14 | OK | 96190 |
+| sl-2255982-1 | 14748 | 3.71 | 0.900 | 0.347 | 3.43 | 19.29 | 3.721 | 1.958 | 10.97 | OK | 96615 |
+
+(hot: whole experts per GPU for EP, slices per GPU for sliced: same residency.)
+
+- Agentic decode: **sl - ep = -1.841 +- 0.039 ms/step** (69 requests, 2 nodes;
+  fit controls tok/step and context). Long context (50K / 130K): **-1.805 +-
+  0.067 ms/step**.
+- GSM8K 0.907 (EP) vs 0.915 (sliced), 2 x 200 each: unchanged.
+- Acceptance lower on the sliced arms (tok/step 3.49 / 3.43 vs 3.56 / 3.67):
+  within run-to-run spread so far (2 arms each) but in one direction; the
+  sliced numerics differ from EP (fp32 summation order over four partials,
+  shared expert fused in fp32 at 1 / rsf), so it needs more arms.
+- TTFT +33% (20K: 2.8 -> 3.75 s; 60K: 8.3 -> 11.1 s): prefill runs on Marlin
+  over the sliced tiers with no wgmma prefill kernel and no cold prefetch
+  (cold slices read over C2C through UVA). Prefill is not the target, but this
+  is the largest regression and is fixable (512-wide wgmma prefill; staging).
