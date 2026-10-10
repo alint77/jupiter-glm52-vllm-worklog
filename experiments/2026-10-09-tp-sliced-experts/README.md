@@ -651,3 +651,31 @@ stamped finely; the ablations below record why.
   ready spin 0.22-0.30, x copies 0.22, loop head 0.16) vs the consumer's
   ~1.4 us per w2 unit. Astra consult 10 (`logs/astra10-prompt.md`) weighs two
   producer warps sharing the ring vs shortening the chain.
+
+### v44: a scheduler warp (Astra consult 10, option C)
+
+Astra (`logs/codex-review10.md`) ranked a scheduler warp over two producer
+warps (whose ring-reservation protocol it showed unsound: slot parity
+aliasing across generations, and a w13 -> w2 claim/reservation deadlock) and
+over shortening the single producer's chain. No PTX control exists over SASS
+scoreboard assignment; another warp is the only isolation.
+
+`td_v44` (`kernels/mk_v44.py`): warp 9 (THREADS 320, 161 regs, no spills)
+claims, steals, decodes groups (constant divisions only) and loads entry
+records; it publishes whole groups through a `TD_SQ`-slot shared-memory FIFO
+(mbarriers `sq_full` / `sq_empty`, a slot freed once its group is issued, so
+at most TD_SQ claims ahead). The producer only issues. Check passes.
+
+| us (e55) | 38/0 | 38/4 | 50/4 | 70/6 | 110/0 | 110/12 |
+|---|--:|--:|--:|--:|--:|--:|
+| v41 (no prefetch) | 85.5 | 91.1 | 113.8 | 146.7 | 206.4 | 241.2 |
+| **v44** (SQ 2) | **84.4** | **88.4** | **111.5** | **142.9** | **203.5** | **234.9** |
+| v44 SQ 3 | 85.8 | 89.1 | 110.4 | 145.7 | 204.5 | 234.8 |
+
+Trace (M=8 38/4, `sched_tl.py`, `logs/e55-tr.out`): the producer's setup per
+w2 unit 0.93 -> 0.23 us; R1 load waits 12 -> 7.5 us / CTA (4.9 at SQ 3). The
+scheduler claims in 0.29 us p50 and decodes + loads + publishes in 0.90; it
+idles ~45 us / CTA waiting for slots. The producer's w2 path is still ~1.9-2.1
+us / unit: weight TMA issue 0.48, ready spin 0.50-0.61 (p50 0.26, long tail),
+x2 copies 0.33, FIFO wait 0.2-0.28. Next: the scheduler probes readiness
+(v45).
