@@ -1309,7 +1309,9 @@ Offloading can beat all-hot only once the kernel is HBM-bound.
 ### Roofline position per concurrency (`e82.sh`, ncu base clock, all hot at the MTP3 mean expert counts)
 
 Tensor ridge: ~1,070 TFLOP/s bf16 / 3.6 TB/s ~ 300 FLOP/B, i.e. ~84 tokens per
-expert at 0.5625 B/weight. Served decode has 1.3 (c=1) to 2.9 (c=16) tokens
+expert at 0.5625 B/weight (peak clock). At the ~630 TFLOP/s achieved under the
+power limit (~1.4 GHz) the ridge is ~175 FLOP/B, ~49 tokens per expert, ~1,600
+tokens per step. Served decode has 1.3 (c=1) to 2.9 (c=16) tokens
 per expert: 4.6-11.3 useful FLOP/B, 25-29 executed (N padded to 8).
 
 | M | us | TB/s | warp inst / B | inst / HMMA | ALU+FMA / HMMA | issue | tensor pipe | warps / scheduler |
