@@ -1,0 +1,16 @@
+{"v": "td_v32", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 211.17, "hbm_gbs": 2855, "c2c_gbs": 0}
+{"v": "td_v32", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 251.92, "hbm_gbs": 2393, "c2c_gbs": 253}
+{"v": "td_v34", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 210.92, "hbm_gbs": 2858, "c2c_gbs": 0}
+{"v": "td_v34", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 253.69, "hbm_gbs": 2376, "c2c_gbs": 251}
+{"v": "td_v32:TD_COMPUTE_ONLY", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 144.39, "hbm_gbs": 4175, "c2c_gbs": 0}
+{"v": "td_v32:TD_COMPUTE_ONLY", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 158.34, "hbm_gbs": 3807, "c2c_gbs": 402}
+{"v": "td_v34:TD_COMPUTE_ONLY", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 143.95, "hbm_gbs": 4187, "c2c_gbs": 0}
+{"v": "td_v34:TD_COMPUTE_ONLY", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 159.17, "hbm_gbs": 3787, "c2c_gbs": 400}
+{"v": "td_v32", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 214.74, "hbm_gbs": 2807, "c2c_gbs": 0}
+{"v": "td_v32", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 252.58, "hbm_gbs": 2387, "c2c_gbs": 252}
+{"v": "td_v34", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 216.38, "hbm_gbs": 2786, "c2c_gbs": 0}
+{"v": "td_v34", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 253.7, "hbm_gbs": 2376, "c2c_gbs": 251}
+{"v": "td_v32:TD_COMPUTE_ONLY", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 143.23, "hbm_gbs": 4209, "c2c_gbs": 0}
+{"v": "td_v32:TD_COMPUTE_ONLY", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 158.12, "hbm_gbs": 3812, "c2c_gbs": 403}
+{"v": "td_v34:TD_COMPUTE_ONLY", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 143.96, "hbm_gbs": 4187, "c2c_gbs": 0}
+{"v": "td_v34:TD_COMPUTE_ONLY", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 159.2, "hbm_gbs": 3786, "c2c_gbs": 400}

@@ -558,3 +558,64 @@ SASS windows and per-region stall reasons). M=8 38/4, hot CTAs, us per CTA:
   HFMA2, 2 FFMA, 1.1 SHF, 0.84 IMAD, 0.5 LDS. The loop head (27 SASS) is 17%
   of samples, 62% long_sb on the full-barrier try_wait (warps 1-7 idling
   behind warp 0). DRAM bytes 221.6 MB = the model's hot + shared bytes.
+
+### v37-v39: Astra consult 9 switches, w2 claim size (2026-10-10)
+
+Astra consult 9 (`logs/astra9-prompt.md`, `logs/codex-review9.md`) on the
+consumer-bound v32. `kernels/mk_v37.py` adds four switches on v35:
+`TD_MMA_NV` (non-volatile mma asm), `TD_MB2` (two row blocks interleaved:
+independent decode/MMA chains), `TD_GLOOP` (an R0 group's chunks consumed in
+an inner loop, flush metadata as plain shared loads read only where needed),
+`TD_ACQREL` (acq_rel done count instead of `__threadfence` + atomicAdd).
+All pass check (worst rel err 0.00344).
+
+Traced (M=8 38/4, warp 0, us / CTA), all four on vs v35: R0 math 28.6 ->
+21.6 (0.93 -> 0.70 / unit), R0 loop head 8.8 -> 5.4, R0 consume 47.9 ->
+38.1; but waits rose (R0 1.7 -> 3.5, R1 2.5 -> 6.9) and the done count rose
+3.6 -> 5.0 with ACQREL (an acq_rel atomic is slower under load: p50 1.38 ->
+1.76 us). Kernel 91.9 -> 86.5 traced: the saved consumer time mostly
+reappears as w2-phase waits.
+
+- `TD_GR1=2` (two w2 tiles per claim) helps M=16/32 (amortises the
+  producer's claim / record / ready round trips) but not M=8 (tail
+  imbalance). `td_v38` (`TD_GUIDED=K`, guided self-scheduling of w2 claims,
+  may span entries) lost to static GR1=2.
+- `td_v39` (`kernels/mk_v39.py`): v37's MMA_NV + MB2 + GLOOP on by default,
+  the claim size per call: `g1 = T > 8 ? 2 : 1`. 162 regs, no spills.
+
+| us (e49) | 38/0 | 38/4 | 50/4 | 70/6 | 110/0 | 110/12 |
+|---|--:|--:|--:|--:|--:|--:|
+| v32 | 84.7 | 91.6 | 112.9 | 151.7 | 219.6 | 255.4 |
+| **v39** | 84.5 | 90.6 | 113.9 | **144.9** | **209.9** | **242.6** |
+| v39 + ACQREL | 83.8 | 90.9 | 113.9 | 147.0 | 206.8 | 243.7 |
+
+ACQREL dropped (neutral). M=8 (the served DFlash2 case) stays flat.
+
+### v39 producer timeline: at M=8 the w2 phase is producer-bound
+
+`prod_tl.py` reads producer records added to v39 under `TD_UNIT_TRACE`
+(170 group start, 171 per unit empty wait + issue, 172 ready spin, 173
+claim wait). M=8 38/4 (`logs/e50.out`): from ~56 us the hot CTAs wait
+30-40% of the time; trace_bd charges 12.0 us / CTA to "wait latency R1"
+(issued before the consumer arrived, landed after). The producer's cycle per
+w2 unit (GR1=1 at M=8), mean / p50 us:
+
+| producer, one w2 unit | mean | p50 |
+|---|--:|--:|
+| group setup + entry record load | 0.90 | 0.90 |
+| empty wait | 0.16 | 0.16 |
+| descriptors + weight TMAs (incl. a trace atomic, see below) | 0.73 | 0.70 |
+| ready spin (taken every unit: each claim is a new entry) | 0.22 | 0.19 |
+| x2 row copies | 0.22 | 0.22 |
+| claim wait / loop head | 0.15 | 0.13 |
+| **sum** | **2.38** | |
+
+The consumer needs ~1.4 us per w2 unit (0.93 math + 0.22 flush + 0.22 loop
+head), so the producer cannot keep the ring ahead: every unit is issued
+~1.2 us before it is needed while landing takes ~1.5. The record load is a
+serial dependent round trip (the TMA coordinates need `local`) on every unit.
+The "W issue" 0.73 includes a `td_record(90 + q)` debug record with a global
+atomic under `TD_CTA_TRACE` (now gated behind `TD_DEBUG_SUM` in v40), so the
+untraced cycle is ~1.65 us, still above the consumer's 1.4.
+At M=32 (GR1=2) the producer's issue -> next-unit gap is 1.73 us p50 for
+two units, and the consumer is busy 73-93% throughout.

@@ -1,0 +1,1 @@
+gpu1 td_v34: {"worst_rel_err": 0.00344, "fails": 0, "pass": true}

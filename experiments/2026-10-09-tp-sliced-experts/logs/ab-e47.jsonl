@@ -1,0 +1,72 @@
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=4 TD_ACQREL", "m": 8, "hot": 38, "cold": 0, "shared": true, "us": 88.02, "hbm_gbs": 2506, "c2c_gbs": 0, "roof_us": 61.3, "roof_share": 0.696, "gpu": 3}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=4 TD_ACQREL", "m": 8, "hot": 38, "cold": 4, "shared": true, "us": 89.94, "hbm_gbs": 2453, "c2c_gbs": 236, "roof_us": 61.3, "roof_share": 0.681, "gpu": 3}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=4 TD_ACQREL", "m": 8, "hot": 50, "cold": 4, "shared": true, "us": 107.5, "hbm_gbs": 2645, "c2c_gbs": 198, "roof_us": 79.0, "roof_share": 0.735, "gpu": 3}
+{"v": "td_v32", "m": 8, "hot": 38, "cold": 0, "shared": true, "us": 84.13, "hbm_gbs": 2622, "c2c_gbs": 0, "roof_us": 61.3, "roof_share": 0.728, "gpu": 0}
+{"v": "td_v32", "m": 8, "hot": 38, "cold": 4, "shared": true, "us": 89.41, "hbm_gbs": 2467, "c2c_gbs": 237, "roof_us": 61.3, "roof_share": 0.685, "gpu": 0}
+{"v": "td_v32", "m": 8, "hot": 50, "cold": 4, "shared": true, "us": 111.17, "hbm_gbs": 2557, "c2c_gbs": 191, "roof_us": 79.0, "roof_share": 0.71, "gpu": 0}
+{"v": "td_v32", "m": 8, "hot": 38, "cold": 0, "shared": true, "us": 83.6, "hbm_gbs": 2639, "c2c_gbs": 0, "roof_us": 61.3, "roof_share": 0.733, "gpu": 2}
+{"v": "td_v32", "m": 8, "hot": 38, "cold": 4, "shared": true, "us": 86.01, "hbm_gbs": 2565, "c2c_gbs": 247, "roof_us": 61.3, "roof_share": 0.712, "gpu": 2}
+{"v": "td_v32", "m": 8, "hot": 50, "cold": 4, "shared": true, "us": 106.8, "hbm_gbs": 2662, "c2c_gbs": 199, "roof_us": 79.0, "roof_share": 0.739, "gpu": 2}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=4 TD_ACQREL", "m": 8, "hot": 38, "cold": 0, "shared": true, "us": 87.62, "hbm_gbs": 2518, "c2c_gbs": 0, "roof_us": 61.3, "roof_share": 0.699, "gpu": 1}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=4 TD_ACQREL", "m": 8, "hot": 38, "cold": 4, "shared": true, "us": 92.97, "hbm_gbs": 2373, "c2c_gbs": 228, "roof_us": 61.3, "roof_share": 0.659, "gpu": 1}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=4 TD_ACQREL", "m": 8, "hot": 50, "cold": 4, "shared": true, "us": 113.71, "hbm_gbs": 2500, "c2c_gbs": 187, "roof_us": 79.0, "roof_share": 0.695, "gpu": 1}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=4", "m": 8, "hot": 38, "cold": 0, "shared": true, "us": 89.02, "hbm_gbs": 2478, "c2c_gbs": 0, "roof_us": 61.3, "roof_share": 0.688, "gpu": 3}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=4", "m": 8, "hot": 38, "cold": 4, "shared": true, "us": 89.8, "hbm_gbs": 2457, "c2c_gbs": 236, "roof_us": 61.3, "roof_share": 0.682, "gpu": 3}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=4", "m": 8, "hot": 50, "cold": 4, "shared": true, "us": 107.17, "hbm_gbs": 2653, "c2c_gbs": 198, "roof_us": 79.0, "roof_share": 0.737, "gpu": 3}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP", "m": 8, "hot": 38, "cold": 0, "shared": true, "us": 84.51, "hbm_gbs": 2610, "c2c_gbs": 0, "roof_us": 61.3, "roof_share": 0.725, "gpu": 0}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP", "m": 8, "hot": 38, "cold": 4, "shared": true, "us": 87.32, "hbm_gbs": 2526, "c2c_gbs": 243, "roof_us": 61.3, "roof_share": 0.702, "gpu": 0}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP", "m": 8, "hot": 50, "cold": 4, "shared": true, "us": 110.43, "hbm_gbs": 2574, "c2c_gbs": 192, "roof_us": 79.0, "roof_share": 0.715, "gpu": 0}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP", "m": 8, "hot": 38, "cold": 0, "shared": true, "us": 82.84, "hbm_gbs": 2663, "c2c_gbs": 0, "roof_us": 61.3, "roof_share": 0.74, "gpu": 2}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP", "m": 8, "hot": 38, "cold": 4, "shared": true, "us": 85.62, "hbm_gbs": 2576, "c2c_gbs": 248, "roof_us": 61.3, "roof_share": 0.716, "gpu": 2}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP", "m": 8, "hot": 50, "cold": 4, "shared": true, "us": 106.62, "hbm_gbs": 2666, "c2c_gbs": 199, "roof_us": 79.0, "roof_share": 0.741, "gpu": 2}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=4", "m": 8, "hot": 38, "cold": 0, "shared": true, "us": 88.95, "hbm_gbs": 2480, "c2c_gbs": 0, "roof_us": 61.3, "roof_share": 0.689, "gpu": 1}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=4", "m": 8, "hot": 38, "cold": 4, "shared": true, "us": 93.74, "hbm_gbs": 2353, "c2c_gbs": 227, "roof_us": 61.3, "roof_share": 0.654, "gpu": 1}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=4", "m": 8, "hot": 50, "cold": 4, "shared": true, "us": 114.19, "hbm_gbs": 2490, "c2c_gbs": 186, "roof_us": 79.0, "roof_share": 0.692, "gpu": 1}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=2", "m": 8, "hot": 38, "cold": 0, "shared": true, "us": 85.27, "hbm_gbs": 2587, "c2c_gbs": 0, "roof_us": 61.3, "roof_share": 0.719, "gpu": 3}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=2", "m": 8, "hot": 38, "cold": 4, "shared": true, "us": 86.54, "hbm_gbs": 2549, "c2c_gbs": 245, "roof_us": 61.3, "roof_share": 0.708, "gpu": 3}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=2", "m": 8, "hot": 50, "cold": 4, "shared": true, "us": 106.24, "hbm_gbs": 2676, "c2c_gbs": 200, "roof_us": 79.0, "roof_share": 0.743, "gpu": 3}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_ACQREL", "m": 8, "hot": 38, "cold": 0, "shared": true, "us": 83.64, "hbm_gbs": 2638, "c2c_gbs": 0, "roof_us": 61.3, "roof_share": 0.733, "gpu": 0}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_ACQREL", "m": 8, "hot": 38, "cold": 4, "shared": true, "us": 88.29, "hbm_gbs": 2499, "c2c_gbs": 240, "roof_us": 61.3, "roof_share": 0.694, "gpu": 0}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_ACQREL", "m": 8, "hot": 50, "cold": 4, "shared": true, "us": 109.9, "hbm_gbs": 2587, "c2c_gbs": 193, "roof_us": 79.0, "roof_share": 0.719, "gpu": 0}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_ACQREL", "m": 8, "hot": 38, "cold": 0, "shared": true, "us": 82.03, "hbm_gbs": 2689, "c2c_gbs": 0, "roof_us": 61.3, "roof_share": 0.747, "gpu": 2}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_ACQREL", "m": 8, "hot": 38, "cold": 4, "shared": true, "us": 85.27, "hbm_gbs": 2587, "c2c_gbs": 249, "roof_us": 61.3, "roof_share": 0.719, "gpu": 2}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_ACQREL", "m": 8, "hot": 50, "cold": 4, "shared": true, "us": 106.26, "hbm_gbs": 2675, "c2c_gbs": 200, "roof_us": 79.0, "roof_share": 0.743, "gpu": 2}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=2", "m": 8, "hot": 38, "cold": 0, "shared": true, "us": 86.4, "hbm_gbs": 2553, "c2c_gbs": 0, "roof_us": 61.3, "roof_share": 0.709, "gpu": 1}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=2", "m": 8, "hot": 38, "cold": 4, "shared": true, "us": 92.15, "hbm_gbs": 2394, "c2c_gbs": 230, "roof_us": 61.3, "roof_share": 0.665, "gpu": 1}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=2", "m": 8, "hot": 50, "cold": 4, "shared": true, "us": 112.92, "hbm_gbs": 2518, "c2c_gbs": 188, "roof_us": 79.0, "roof_share": 0.699, "gpu": 1}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_ACQREL", "m": 8, "hot": 38, "cold": 0, "shared": true, "us": 83.14, "hbm_gbs": 2653, "c2c_gbs": 0, "roof_us": 61.3, "roof_share": 0.737, "gpu": 3}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_ACQREL", "m": 8, "hot": 38, "cold": 4, "shared": true, "us": 87.39, "hbm_gbs": 2524, "c2c_gbs": 243, "roof_us": 61.3, "roof_share": 0.701, "gpu": 3}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_ACQREL", "m": 8, "hot": 50, "cold": 4, "shared": true, "us": 108.88, "hbm_gbs": 2611, "c2c_gbs": 195, "roof_us": 79.0, "roof_share": 0.725, "gpu": 3}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=2", "m": 8, "hot": 38, "cold": 0, "shared": true, "us": 84.96, "hbm_gbs": 2597, "c2c_gbs": 0, "roof_us": 61.3, "roof_share": 0.721, "gpu": 0}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=2", "m": 8, "hot": 38, "cold": 4, "shared": true, "us": 87.67, "hbm_gbs": 2516, "c2c_gbs": 242, "roof_us": 61.3, "roof_share": 0.699, "gpu": 0}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=2", "m": 8, "hot": 50, "cold": 4, "shared": true, "us": 108.33, "hbm_gbs": 2624, "c2c_gbs": 196, "roof_us": 79.0, "roof_share": 0.729, "gpu": 0}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=2", "m": 8, "hot": 38, "cold": 0, "shared": true, "us": 83.41, "hbm_gbs": 2645, "c2c_gbs": 0, "roof_us": 61.3, "roof_share": 0.735, "gpu": 2}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=2", "m": 8, "hot": 38, "cold": 4, "shared": true, "us": 84.58, "hbm_gbs": 2608, "c2c_gbs": 251, "roof_us": 61.3, "roof_share": 0.724, "gpu": 2}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=2", "m": 8, "hot": 50, "cold": 4, "shared": true, "us": 103.15, "hbm_gbs": 2756, "c2c_gbs": 206, "roof_us": 79.0, "roof_share": 0.766, "gpu": 2}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_ACQREL", "m": 8, "hot": 38, "cold": 0, "shared": true, "us": 83.94, "hbm_gbs": 2628, "c2c_gbs": 0, "roof_us": 61.3, "roof_share": 0.73, "gpu": 1}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_ACQREL", "m": 8, "hot": 38, "cold": 4, "shared": true, "us": 92.93, "hbm_gbs": 2374, "c2c_gbs": 228, "roof_us": 61.3, "roof_share": 0.659, "gpu": 1}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_ACQREL", "m": 8, "hot": 50, "cold": 4, "shared": true, "us": 115.64, "hbm_gbs": 2458, "c2c_gbs": 184, "roof_us": 79.0, "roof_share": 0.683, "gpu": 1}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP", "m": 8, "hot": 38, "cold": 0, "shared": true, "us": 83.87, "hbm_gbs": 2630, "c2c_gbs": 0, "roof_us": 61.3, "roof_share": 0.731, "gpu": 3}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP", "m": 8, "hot": 38, "cold": 4, "shared": true, "us": 87.13, "hbm_gbs": 2532, "c2c_gbs": 244, "roof_us": 61.3, "roof_share": 0.703, "gpu": 3}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP", "m": 8, "hot": 50, "cold": 4, "shared": true, "us": 108.82, "hbm_gbs": 2613, "c2c_gbs": 195, "roof_us": 79.0, "roof_share": 0.726, "gpu": 3}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=4", "m": 8, "hot": 38, "cold": 0, "shared": true, "us": 89.47, "hbm_gbs": 2466, "c2c_gbs": 0, "roof_us": 61.3, "roof_share": 0.685, "gpu": 0}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=4", "m": 8, "hot": 38, "cold": 4, "shared": true, "us": 90.93, "hbm_gbs": 2426, "c2c_gbs": 234, "roof_us": 61.3, "roof_share": 0.674, "gpu": 0}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=4", "m": 8, "hot": 50, "cold": 4, "shared": true, "us": 109.09, "hbm_gbs": 2606, "c2c_gbs": 195, "roof_us": 79.0, "roof_share": 0.724, "gpu": 0}
+{"v": "td_v32", "m": 8, "hot": 38, "cold": 0, "shared": true, "us": 83.15, "hbm_gbs": 2653, "c2c_gbs": 0, "roof_us": 61.3, "roof_share": 0.737, "gpu": 3}
+{"v": "td_v32", "m": 8, "hot": 38, "cold": 4, "shared": true, "us": 88.29, "hbm_gbs": 2499, "c2c_gbs": 241, "roof_us": 61.3, "roof_share": 0.694, "gpu": 3}
+{"v": "td_v32", "m": 8, "hot": 50, "cold": 4, "shared": true, "us": 109.73, "hbm_gbs": 2591, "c2c_gbs": 194, "roof_us": 79.0, "roof_share": 0.72, "gpu": 3}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=4 TD_ACQREL", "m": 8, "hot": 38, "cold": 0, "shared": true, "us": 87.61, "hbm_gbs": 2518, "c2c_gbs": 0, "roof_us": 61.3, "roof_share": 0.699, "gpu": 0}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=4 TD_ACQREL", "m": 8, "hot": 38, "cold": 4, "shared": true, "us": 88.83, "hbm_gbs": 2483, "c2c_gbs": 239, "roof_us": 61.3, "roof_share": 0.69, "gpu": 0}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=4 TD_ACQREL", "m": 8, "hot": 50, "cold": 4, "shared": true, "us": 108.22, "hbm_gbs": 2627, "c2c_gbs": 196, "roof_us": 79.0, "roof_share": 0.73, "gpu": 0}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP", "m": 8, "hot": 38, "cold": 0, "shared": true, "us": 86.38, "hbm_gbs": 2554, "c2c_gbs": 0, "roof_us": 61.3, "roof_share": 0.709, "gpu": 1}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP", "m": 8, "hot": 38, "cold": 4, "shared": true, "us": 92.89, "hbm_gbs": 2375, "c2c_gbs": 229, "roof_us": 61.3, "roof_share": 0.66, "gpu": 1}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP", "m": 8, "hot": 50, "cold": 4, "shared": true, "us": 115.64, "hbm_gbs": 2459, "c2c_gbs": 184, "roof_us": 79.0, "roof_share": 0.683, "gpu": 1}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=4", "m": 8, "hot": 38, "cold": 0, "shared": true, "us": 88.49, "hbm_gbs": 2493, "c2c_gbs": 0, "roof_us": 61.3, "roof_share": 0.692, "gpu": 2}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=4", "m": 8, "hot": 38, "cold": 4, "shared": true, "us": 90.22, "hbm_gbs": 2445, "c2c_gbs": 235, "roof_us": 61.3, "roof_share": 0.679, "gpu": 2}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=4", "m": 8, "hot": 50, "cold": 4, "shared": true, "us": 104.82, "hbm_gbs": 2712, "c2c_gbs": 203, "roof_us": 79.0, "roof_share": 0.753, "gpu": 2}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=4 TD_ACQREL", "m": 8, "hot": 38, "cold": 0, "shared": true, "us": 87.57, "hbm_gbs": 2519, "c2c_gbs": 0, "roof_us": 61.3, "roof_share": 0.7, "gpu": 2}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=4 TD_ACQREL", "m": 8, "hot": 38, "cold": 4, "shared": true, "us": 89.19, "hbm_gbs": 2473, "c2c_gbs": 238, "roof_us": 61.3, "roof_share": 0.687, "gpu": 2}
+{"v": "td_v37:TD_MMA_NV TD_MB2 TD_GLOOP TD_GR1=4 TD_ACQREL", "m": 8, "hot": 50, "cold": 4, "shared": true, "us": 104.27, "hbm_gbs": 2726, "c2c_gbs": 204, "roof_us": 79.0, "roof_share": 0.757, "gpu": 2}
+{"v": "td_v32", "m": 8, "hot": 38, "cold": 0, "shared": true, "us": 85.79, "hbm_gbs": 2571, "c2c_gbs": 0, "roof_us": 61.3, "roof_share": 0.714, "gpu": 1}
+{"v": "td_v32", "m": 8, "hot": 38, "cold": 4, "shared": true, "us": 92.2, "hbm_gbs": 2393, "c2c_gbs": 230, "roof_us": 61.3, "roof_share": 0.665, "gpu": 1}
+{"v": "td_v32", "m": 8, "hot": 50, "cold": 4, "shared": true, "us": 116.57, "hbm_gbs": 2439, "c2c_gbs": 182, "roof_us": 79.0, "roof_share": 0.677, "gpu": 1}

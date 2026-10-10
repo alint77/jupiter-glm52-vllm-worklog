@@ -1,0 +1,12 @@
+{"v": "td_v17", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 275.34, "hbm_gbs": 2189, "c2c_gbs": 231, "roof_us": 167.4, "roof_share": 0.608, "gpu": 2}
+{"v": "td_v17", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 241.93, "hbm_gbs": 2492, "c2c_gbs": 0, "roof_us": 167.4, "roof_share": 0.692, "gpu": 2}
+{"v": "td_v17", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 261.29, "hbm_gbs": 2307, "c2c_gbs": 244, "roof_us": 167.4, "roof_share": 0.641, "gpu": 0}
+{"v": "td_v17", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 225.2, "hbm_gbs": 2677, "c2c_gbs": 0, "roof_us": 167.4, "roof_share": 0.744, "gpu": 0}
+{"v": "td_v17:TD_NO_FLUSH_FENCE", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 258.96, "hbm_gbs": 2328, "c2c_gbs": 246, "roof_us": 167.4, "roof_share": 0.647, "gpu": 3}
+{"v": "td_v17:TD_NO_FLUSH_FENCE", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 234.93, "hbm_gbs": 2566, "c2c_gbs": 0, "roof_us": 167.4, "roof_share": 0.713, "gpu": 3}
+{"v": "td_v17:TD_NO_FLUSH_FENCE", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 253.03, "hbm_gbs": 2382, "c2c_gbs": 252, "roof_us": 167.4, "roof_share": 0.662, "gpu": 1}
+{"v": "td_v17:TD_NO_FLUSH_FENCE", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 224.92, "hbm_gbs": 2680, "c2c_gbs": 0, "roof_us": 167.4, "roof_share": 0.744, "gpu": 1}
+{"v": "td_v17:TD_NO_FLUSH_FENCE", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 272.41, "hbm_gbs": 2213, "c2c_gbs": 234, "roof_us": 167.4, "roof_share": 0.615, "gpu": 2}
+{"v": "td_v17:TD_NO_FLUSH_FENCE", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 241.91, "hbm_gbs": 2492, "c2c_gbs": 0, "roof_us": 167.4, "roof_share": 0.692, "gpu": 2}
+{"v": "td_v17:TD_NO_FLUSH_FENCE", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 247.87, "hbm_gbs": 2432, "c2c_gbs": 257, "roof_us": 167.4, "roof_share": 0.676, "gpu": 0}
+{"v": "td_v17:TD_NO_FLUSH_FENCE", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 229.73, "hbm_gbs": 2624, "c2c_gbs": 0, "roof_us": 167.4, "roof_share": 0.729, "gpu": 0}

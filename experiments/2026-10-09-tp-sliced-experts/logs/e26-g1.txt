@@ -1,0 +1,16 @@
+sh1 {"v": "td_v31", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 229.06, "hbm_gbs": 2632, "c2c_gbs": 
+sh1 {"v": "td_v31", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 260.57, "hbm_gbs": 2313, "c2c_gbs":
+sh1 {"v": "td_v31", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 222.34, "hbm_gbs": 2711, "c2c_gbs": 
+sh1 {"v": "td_v31", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 263.83, "hbm_gbs": 2285, "c2c_gbs":
+sh1 {"v": "td_v31:TD_ABL_NOMMA", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 222.37, "hbm_gbs": 2711
+sh1 {"v": "td_v31:TD_ABL_NOMMA", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 264.29, "hbm_gbs": 228
+sh1 {"v": "td_v31:TD_ABL_NOMMA", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 224.31, "hbm_gbs": 2687
+sh1 {"v": "td_v31:TD_ABL_NOMMA", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 262.41, "hbm_gbs": 229
+sh1 {"v": "td_v31:TD_COMPUTE_ONLY", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 143.31, "hbm_gbs": 4
+sh1 {"v": "td_v31:TD_COMPUTE_ONLY", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 158.1, "hbm_gbs": 3
+sh1 {"v": "td_v31:TD_COMPUTE_ONLY", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 143.12, "hbm_gbs": 4
+sh1 {"v": "td_v31:TD_COMPUTE_ONLY", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 158.12, "hbm_gbs": 
+sh1 {"v": "td_v31:TD_COMPUTE_ONLY TD_ABL_NOMMA", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 143.33,
+sh1 {"v": "td_v31:TD_COMPUTE_ONLY TD_ABL_NOMMA", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 158.23
+sh1 {"v": "td_v31:TD_COMPUTE_ONLY TD_ABL_NOMMA", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 143.3, 
+sh1 {"v": "td_v31:TD_COMPUTE_ONLY TD_ABL_NOMMA", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 158.25

@@ -1,0 +1,24 @@
+sh0 {"v": "td_v31", "m": 8, "hot": 38, "cold": 0, "shared": false, "us": 75.42, "hbm_gbs": 2675, "c2c_gbs": 0}
+sh0 {"v": "td_v31", "m": 8, "hot": 38, "cold": 4, "shared": false, "us": 81.13, "hbm_gbs": 2486, "c2c_gbs": 26
+sh0 {"v": "td_v31", "m": 8, "hot": 50, "cold": 4, "shared": false, "us": 101.83, "hbm_gbs": 2607, "c2c_gbs": 2
+sh0 {"v": "td_v31", "m": 8, "hot": 38, "cold": 0, "shared": false, "us": 75.37, "hbm_gbs": 2676, "c2c_gbs": 0}
+sh0 {"v": "td_v31", "m": 8, "hot": 38, "cold": 4, "shared": false, "us": 81.18, "hbm_gbs": 2485, "c2c_gbs": 26
+sh0 {"v": "td_v31", "m": 8, "hot": 50, "cold": 4, "shared": false, "us": 101.69, "hbm_gbs": 2610, "c2c_gbs": 2
+sh0 {"v": "td_v31:TD_ABL_NOMMA", "m": 8, "hot": 38, "cold": 0, "shared": false, "us": 75.76, "hbm_gbs": 2663, 
+sh0 {"v": "td_v31:TD_ABL_NOMMA", "m": 8, "hot": 38, "cold": 4, "shared": false, "us": 81.38, "hbm_gbs": 2479, 
+sh0 {"v": "td_v31:TD_ABL_NOMMA", "m": 8, "hot": 50, "cold": 4, "shared": false, "us": 101.9, "hbm_gbs": 2605, 
+sh0 {"v": "td_v31:TD_ABL_NOMMA", "m": 8, "hot": 38, "cold": 0, "shared": false, "us": 75.35, "hbm_gbs": 2677, 
+sh0 {"v": "td_v31:TD_ABL_NOMMA", "m": 8, "hot": 38, "cold": 4, "shared": false, "us": 80.9, "hbm_gbs": 2493, "
+sh0 {"v": "td_v31:TD_ABL_NOMMA", "m": 8, "hot": 50, "cold": 4, "shared": false, "us": 101.84, "hbm_gbs": 2606,
+sh0 {"v": "td_v31:TD_COMPUTE_ONLY", "m": 8, "hot": 38, "cold": 0, "shared": false, "us": 56.1, "hbm_gbs": 3596
+sh0 {"v": "td_v31:TD_COMPUTE_ONLY", "m": 8, "hot": 38, "cold": 4, "shared": false, "us": 58.47, "hbm_gbs": 345
+sh0 {"v": "td_v31:TD_COMPUTE_ONLY", "m": 8, "hot": 50, "cold": 4, "shared": false, "us": 71.72, "hbm_gbs": 370
+sh0 {"v": "td_v31:TD_COMPUTE_ONLY", "m": 8, "hot": 38, "cold": 0, "shared": false, "us": 55.28, "hbm_gbs": 364
+sh0 {"v": "td_v31:TD_COMPUTE_ONLY", "m": 8, "hot": 38, "cold": 4, "shared": false, "us": 58.82, "hbm_gbs": 342
+sh0 {"v": "td_v31:TD_COMPUTE_ONLY", "m": 8, "hot": 50, "cold": 4, "shared": false, "us": 71.85, "hbm_gbs": 369
+sh0 {"v": "td_v31:TD_COMPUTE_ONLY TD_ABL_NOMMA", "m": 8, "hot": 38, "cold": 0, "shared": false, "us": 55.3, "h
+sh0 {"v": "td_v31:TD_COMPUTE_ONLY TD_ABL_NOMMA", "m": 8, "hot": 38, "cold": 4, "shared": false, "us": 58.98, "
+sh0 {"v": "td_v31:TD_COMPUTE_ONLY TD_ABL_NOMMA", "m": 8, "hot": 50, "cold": 4, "shared": false, "us": 71.76, "
+sh0 {"v": "td_v31:TD_COMPUTE_ONLY TD_ABL_NOMMA", "m": 8, "hot": 38, "cold": 0, "shared": false, "us": 54.95, "
+sh0 {"v": "td_v31:TD_COMPUTE_ONLY TD_ABL_NOMMA", "m": 8, "hot": 38, "cold": 4, "shared": false, "us": 58.39, "
+sh0 {"v": "td_v31:TD_COMPUTE_ONLY TD_ABL_NOMMA", "m": 8, "hot": 50, "cold": 4, "shared": false, "us": 71.59, "
