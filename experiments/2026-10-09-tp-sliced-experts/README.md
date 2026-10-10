@@ -773,3 +773,156 @@ zeroing per lane per route) issue slowly from this warp.
   lane 0's st.release.gpu is cumulative) and `TD_ATOM_AR` (count as one
   atom.acq_rel.gpu). Astra review 12 (`logs/astra12-prompt.md`) asked about
   these and the done path's structure.
+
+v51 results (`logs/e61-*.out`): all four fence variants are within noise of v48
+(M=8 38/4 86.7-87.8 us, 110/12 230.1-231.1). Astra review 12
+(`logs/codex-review12.md`) approved ZLATE, ONEREL, ATOM_AR, FIN_AR and
+dropping the finisher's proxy fence; v53 makes those the defaults (old fences
+behind `TD_V51_FENCES`, `TD_WPROXY`).
+
+### v52-v53: why w2 waits on ready at M=8, and the fix (2026-10-10)
+
+v52 (`kernels/mk_v52.py`) adds entry ids to the trace records, and
+`ent_tl.py` gives a per-entry timeline (last w13 claim, count, ready, first /
+last w2 claim, not-ready claims, spin). At M=8 the consumers' R1 wait (10-15 us
+per CTA) comes from two causes:
+- head-of-line blocking behind a slow entry;
+- a CTA's scheduler claiming the next routed w13 group (12 chunks) before its
+  producer has taken the current one. That claim-ahead hoards w13 work that
+  idle CTAs could start, so the entry's ready, and every w2 unit spinning on
+  it, waits for the hoarding CTA.
+
+v53 (`kernels/mk_v53.py`) has two options:
+- `TD_NOAHEAD`: after publishing a multi-chunk w13 group, the scheduler waits
+  `sq_empty` for that slot (the producer took it) before claiming. With
+  `TD_NOAHEAD_HOT`, this applies only to the hot tier.
+- `TD_RLIST`: a ready-ordered w2 list. The finisher appends `{epoch, entry}`
+  to a per-tier list with `st.release.b64`, and w2 claims follow ready order.
+
+Kernel benches (us):
+
+| | 30/2 | 38/0 | 38/4 | 50/4 | 70/6 | 110/0 | 110/12 |
+|---|--:|--:|--:|--:|--:|--:|--:|
+| v48 (e65) | 77.8 | 85.8 | 86.7 | 106.1 | 143.9 | 207.6 | 231.4 |
+| NOAHEAD (e65) | 73.0 | 80.1 | 88.5 | 109.4 | 140.8 | 198.5 | 230.6 |
+| NOAHEAD+HOT (e65) | 71.7 | 80.2 | 88.2 | 108.7 | 144.2 | 197.1 | 234.2 |
+| RLIST (e65) | 75.1 | 82.3 | 87.1 | 108.4 | 140.5 | 197.5 | 231.9 |
+| NOAHEAD (e63) | | 81.5 | 89.3 | 112.8 | 145.3 | 206.9 | 240.1 |
+
+NOAHEAD wins 5-6 us on the low-cold M=8 cells and loses 1.5-3 us on the
+cold-heavy ones. Run-to-run spread on the same variant is up to ~4% (110/12:
+230.6 in e65 vs 240.1 in e63), so single-cell differences under ~4 us are not
+resolved; the replay averages 3 grid runs per variant.
+
+Replay against prod EP (`e66.sh`): grid benches of EP and three slice variants
+on one node, 3 runs each, written to `logs/ep-vs-slice-v53/`, then
+`analyze.py logs/ep-vs-slice-v53/replay.jsonl`. Values are MoE ms per step,
+2,000 held-out agentic steps × 75 layers:
+
+| | EP slowest GPU | EP mean GPU | v53 | **v53 NOAHEAD** | NOAHEAD+HOT |
+|---|--:|--:|--:|--:|--:|
+| M=8 | 8.75 | 7.53 | 7.06 | **7.01** | 7.30 |
+| M=32 | 22.43 | 20.40 | 19.26 | **18.89** | 19.48 |
+
+The shipped kernel is v53 + NOAHEAD:
+- vs prod EP's slowest GPU (which sets the step): −20% at M=8, −16% at M=32.
+- vs EP's mean GPU: −7% at both M.
+
+Fits (us = a + b·hot + c·cold):
+- EP M=8: 34.4 + 4.46h + 26.3c.
+- Ship M=8: 30.5 + 1.27h + 4.14c.
+
+The sliced layout's advantage is the cold term: every GPU streams a quarter of
+each cold expert over its own C2C, where EP fetches a whole expert on one GPU.
+
+### Ship: td_v54 → served `sliced_decode.cu` (2026-10-10)
+
+Source:
+- `kernels/td_v54.cu` = `tools/unifdef_td.py kernels/td_v53.cu kernels/td_v54.cu
+  -DTD_NOAHEAD`, then `tools/clean_v54.py` and `tools/clean_v54b.py`. These
+  drop the dead trace hooks, the RLIST storage, the old `bar.sync 2` handoff
+  and dead locals, and restore `#ifndef` guards on the tunables.
+- SASS: layer_kernel and finalize are byte-identical to
+  `td_v53.cu -DTD_NOAHEAD` (168 regs, no spills). route_prep differs only by
+  the two dropped `rl_tail` zero stores.
+- clang-format did not change the SASS.
+
+ABI: `td_forward` gained `int num_experts` before the stream. sliced.py
+passes `hot_map.numel()` and rejects hot/cold maps of different lengths.
+
+Adversarial check (`adv_check.py`):
+- Fixture: 52 checkpoint experts (40 hot, 12 cold in Grace), all 4 slices,
+  checked against fp32.
+- Routings: sparse, same, heavy, cold-only, hot-only, masked (token 0 fully
+  masked), shared-only, one_cold, one_hot.
+- M ∈ {1,2,3,5,7,8,9,13,16,17,24,31,32}.
+- Activations: normal / large / tiny, zero rows, and no-shared.
+- The workspace is never reset, and cases are interleaved.
+- A 6-call CUDA graph is replayed as a PDL chain.
+
+Adversarial results:
+- v48, v53, v53 NOAHEAD, NOAHEAD+RLIST and RLIST: 2,928 calls each, 0 fails.
+- td_v54 (`e67.sh`, seeds 11-14, reps 5): 4 × 4,880 calls, 0 fails, worst
+  rel err 0.00395 (bf16 output rounding).
+
+vLLM `tests/kernels/moe/test_tiered_decode_sliced.py` on the served file
+(`e68.sh`): 6 passed.
+
+Astra review 13 (`logs/astra13-prompt.md` → `logs/codex-review13.md`)
+returned a conditional ship. It found no parity or deadlock issue in NOAHEAD:
+claims stay in FIFO order, so blocking dependencies only point back to earlier
+claims. Its conditions were:
+- remove the dead `TD_FIN_FENCE` knob (ATOM_AR had already superseded that
+  fence);
+- bound ids by `num_experts` in the placement-less map lookup;
+- extend the adversarial tests: empty work, permuted and absent maps, empty
+  tiers, padding, isolated routes, per-row checks, graph replays with new
+  inputs, and epoch wrap.
+
+It also pointed out that `int epoch += 1` wraps after 2^32 calls. That is
+about a week of serving at 75 layers × ~100 steps/s. After the wrap, a ready
+flag last set 2^32 calls earlier aliases the new epoch.
+
+**td_v55 = served `sliced_decode.cu`** (vLLM 18bb8c945f):
+- the dead fence knob is removed;
+- `if (e >= (E > 0 ? E : num_experts)) e = -1`;
+- the epoch advances unsigned, and on wrap to 0 route_prep clears the ready
+  flags and uses 1;
+- the comments are corrected.
+
+layer_kernel and finalize SASS are identical to td_v54. Timing (`e70.sh`,
+same node, us):
+
+| | 30/2 | 38/0 | 38/4 | 50/4 | 70/6 | 110/0 | 110/12 |
+|---|--:|--:|--:|--:|--:|--:|--:|
+| td_v54 | 73.2 | 80.8 | 88.0 | 110.6 | 141.9 | 202.6 | 233.8 |
+| td_v55 | 73.6 | 80.9 | 87.7 | 110.8 | 142.0 | 203.1 | 234.6 |
+
+Adversarial round 2 (`adv_check.py`, round 1 kept as `adv_check_v1.py`;
+`e69.sh`, seeds 21-24, reps 3):
+- Map configs per case: identity, permuted slots, absent experts, empty hot
+  tier, empty cold tier.
+- Inputs: the padding argument; all masked with no shared expert; same_cold;
+  isolate (one-hot weights, no shared expert).
+- Per-row checks, with exact zero where the reference row is zero.
+- An 8-call PDL graph with shared on/off and an empty call, given new inputs
+  before every replay.
+- Epoch wrap: epoch set to 2^32-1, stale flags set to 0 or 1.
+- Out-of-range ids.
+
+Results:
+- td_v55: 4 × 3,477 calls, 0 fails, worst per-row error 0.00412. Duplicate-id
+  routing, which is outside the top-k contract, also matches (≤0.0036).
+- td_v54 control: 10-15 wrap failures per seed (rel err 0.7-1.6) and nothing
+  else, so the wrap test detects the aliasing.
+- vLLM `test_tiered_decode_sliced.py` on the served file: 6 passed.
+
+Astra 13b (`logs/astra13b-prompt.md` → `logs/codex-review13b.md`): **ship
+td_v55**. Its two non-blocking test notes (seed stale flags with 1 too; count
+the wrap / oob errors in `worst_rel_err`) were applied and rerun clean.
+
+The EP comparison is a **modeled** prediction (fits + replayed held-out
+routings): −20% (M=8) / −16% (M=32) vs EP's slowest GPU. The NOAHEAD
+increment over v53 is not established by paired measurement. The served
+sliced vs EP A/B (holds 2255981/2) predates v53; a served rerun with the new
+kernel is the next measurement.

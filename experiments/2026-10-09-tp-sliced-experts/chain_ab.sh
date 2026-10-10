@@ -18,7 +18,7 @@ for i in $(seq 1 "${n}"); do
   if [[ ${arm} == ep ]]; then
     envs="PYTHONPATH=${WT}/ep-base SERVE_CACHE_ROOT=${C}/vllm-cache-glm53-ep-base"
   else
-    envs="PYTHONPATH=${WT}/tp-sliced-a SERVE_CACHE_ROOT=${C}/vllm-cache-glm53-sliced TIERED_MOE_LAYOUT=tp_sliced REPLICAS= VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS=0 VLLM_TIERED_MOE_PREFILL_KERNEL=0"
+    envs="PYTHONPATH=${WT}/tp-sliced-a SERVE_CACHE_ROOT=${C}/vllm-cache-glm53-sliced TIERED_MOE_LAYOUT=tp_sliced REPLICAS="
   fi
   HOLD_JOB=${j} ${E}/onnode.sh "${envs} ${A} ${arm}-${j}-${i}" > ${D}/logs/serve/run-${arm}-${j}-${i}.log 2>&1
   [[ ${arm} == ep ]] && arm=sl || arm=ep

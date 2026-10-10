@@ -1,0 +1,40 @@
+{"v": "td_v51:TD_ONEREL TD_ATOM_AR", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 209.97, "hbm_gbs": 2871, "c2c_gbs": 0, "roof_us": 167.4, "roof_share": 0.797, "gpu": 3}
+{"v": "td_v51:TD_ONEREL TD_ATOM_AR", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 232.42, "hbm_gbs": 2594, "c2c_gbs": 274, "roof_us": 167.4, "roof_share": 0.72, "gpu": 3}
+{"v": "td_v51:TD_ONEREL TD_ATOM_AR", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 203.56, "hbm_gbs": 2961, "c2c_gbs": 0, "roof_us": 167.4, "roof_share": 0.823, "gpu": 1}
+{"v": "td_v51:TD_ONEREL TD_ATOM_AR", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 225.52, "hbm_gbs": 2673, "c2c_gbs": 282, "roof_us": 167.4, "roof_share": 0.742, "gpu": 1}
+{"v": "td_v48", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 209.74, "hbm_gbs": 2874, "c2c_gbs": 0, "roof_us": 167.4, "roof_share": 0.798, "gpu": 0}
+{"v": "td_v48", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 228.18, "hbm_gbs": 2642, "c2c_gbs": 279, "roof_us": 167.4, "roof_share": 0.734, "gpu": 0}
+{"v": "td_v48", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 212.12, "hbm_gbs": 2842, "c2c_gbs": 0, "roof_us": 167.4, "roof_share": 0.789, "gpu": 2}
+{"v": "td_v48", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 256.09, "hbm_gbs": 2354, "c2c_gbs": 249, "roof_us": 167.4, "roof_share": 0.654, "gpu": 2}
+{"v": "td_v51:TD_ATOM_AR", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 206.98, "hbm_gbs": 2912, "c2c_gbs": 0, "roof_us": 167.4, "roof_share": 0.809, "gpu": 3}
+{"v": "td_v51:TD_ATOM_AR", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 231.29, "hbm_gbs": 2606, "c2c_gbs": 275, "roof_us": 167.4, "roof_share": 0.724, "gpu": 3}
+{"v": "td_v51", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 204.22, "hbm_gbs": 2952, "c2c_gbs": 0, "roof_us": 167.4, "roof_share": 0.82, "gpu": 0}
+{"v": "td_v51", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 226.96, "hbm_gbs": 2656, "c2c_gbs": 281, "roof_us": 167.4, "roof_share": 0.738, "gpu": 0}
+{"v": "td_v51:TD_ATOM_AR", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 208.55, "hbm_gbs": 2890, "c2c_gbs": 0, "roof_us": 167.4, "roof_share": 0.803, "gpu": 1}
+{"v": "td_v51:TD_ATOM_AR", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 224.24, "hbm_gbs": 2688, "c2c_gbs": 284, "roof_us": 167.4, "roof_share": 0.747, "gpu": 1}
+{"v": "td_v51", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 212.02, "hbm_gbs": 2843, "c2c_gbs": 0, "roof_us": 167.4, "roof_share": 0.79, "gpu": 2}
+{"v": "td_v51", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 249.63, "hbm_gbs": 2415, "c2c_gbs": 255, "roof_us": 167.4, "roof_share": 0.671, "gpu": 2}
+{"v": "td_v51:TD_ONEREL", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 209.0, "hbm_gbs": 2884, "c2c_gbs": 0, "roof_us": 167.4, "roof_share": 0.801, "gpu": 3}
+{"v": "td_v51:TD_ONEREL", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 232.82, "hbm_gbs": 2589, "c2c_gbs": 274, "roof_us": 167.4, "roof_share": 0.719, "gpu": 3}
+{"v": "td_v51:TD_ONEREL", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 209.14, "hbm_gbs": 2882, "c2c_gbs": 0, "roof_us": 167.4, "roof_share": 0.801, "gpu": 0}
+{"v": "td_v51:TD_ONEREL", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 228.62, "hbm_gbs": 2637, "c2c_gbs": 279, "roof_us": 167.4, "roof_share": 0.732, "gpu": 0}
+{"v": "td_v51:TD_ONEREL", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 206.87, "hbm_gbs": 2914, "c2c_gbs": 0, "roof_us": 167.4, "roof_share": 0.809, "gpu": 1}
+{"v": "td_v51:TD_ONEREL", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 223.61, "hbm_gbs": 2696, "c2c_gbs": 285, "roof_us": 167.4, "roof_share": 0.749, "gpu": 1}
+{"v": "td_v51:TD_ONEREL", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 211.1, "hbm_gbs": 2855, "c2c_gbs": 0, "roof_us": 167.4, "roof_share": 0.793, "gpu": 2}
+{"v": "td_v51:TD_ONEREL", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 250.57, "hbm_gbs": 2406, "c2c_gbs": 254, "roof_us": 167.4, "roof_share": 0.668, "gpu": 2}
+{"v": "td_v51", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 211.76, "hbm_gbs": 2847, "c2c_gbs": 0, "roof_us": 167.4, "roof_share": 0.791, "gpu": 3}
+{"v": "td_v51", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 233.71, "hbm_gbs": 2579, "c2c_gbs": 273, "roof_us": 167.4, "roof_share": 0.716, "gpu": 3}
+{"v": "td_v51:TD_ATOM_AR", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 208.34, "hbm_gbs": 2893, "c2c_gbs": 0, "roof_us": 167.4, "roof_share": 0.804, "gpu": 0}
+{"v": "td_v51:TD_ATOM_AR", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 228.82, "hbm_gbs": 2634, "c2c_gbs": 278, "roof_us": 167.4, "roof_share": 0.732, "gpu": 0}
+{"v": "td_v51:TD_ATOM_AR", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 215.11, "hbm_gbs": 2802, "c2c_gbs": 0, "roof_us": 167.4, "roof_share": 0.778, "gpu": 2}
+{"v": "td_v51:TD_ATOM_AR", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 254.86, "hbm_gbs": 2365, "c2c_gbs": 250, "roof_us": 167.4, "roof_share": 0.657, "gpu": 2}
+{"v": "td_v51", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 207.8, "hbm_gbs": 2901, "c2c_gbs": 0, "roof_us": 167.4, "roof_share": 0.806, "gpu": 1}
+{"v": "td_v51", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 223.95, "hbm_gbs": 2692, "c2c_gbs": 284, "roof_us": 167.4, "roof_share": 0.748, "gpu": 1}
+{"v": "td_v48", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 210.07, "hbm_gbs": 2869, "c2c_gbs": 0, "roof_us": 167.4, "roof_share": 0.797, "gpu": 3}
+{"v": "td_v48", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 234.06, "hbm_gbs": 2575, "c2c_gbs": 272, "roof_us": 167.4, "roof_share": 0.715, "gpu": 3}
+{"v": "td_v51:TD_ONEREL TD_ATOM_AR", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 206.9, "hbm_gbs": 2914, "c2c_gbs": 0, "roof_us": 167.4, "roof_share": 0.809, "gpu": 0}
+{"v": "td_v51:TD_ONEREL TD_ATOM_AR", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 227.87, "hbm_gbs": 2645, "c2c_gbs": 280, "roof_us": 167.4, "roof_share": 0.735, "gpu": 0}
+{"v": "td_v48", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 205.63, "hbm_gbs": 2931, "c2c_gbs": 0, "roof_us": 167.4, "roof_share": 0.814, "gpu": 1}
+{"v": "td_v48", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 225.56, "hbm_gbs": 2672, "c2c_gbs": 282, "roof_us": 167.4, "roof_share": 0.742, "gpu": 1}
+{"v": "td_v51:TD_ONEREL TD_ATOM_AR", "m": 32, "hot": 110, "cold": 0, "shared": true, "us": 218.83, "hbm_gbs": 2755, "c2c_gbs": 0, "roof_us": 167.4, "roof_share": 0.765, "gpu": 2}
+{"v": "td_v51:TD_ONEREL TD_ATOM_AR", "m": 32, "hot": 110, "cold": 12, "shared": true, "us": 254.26, "hbm_gbs": 2371, "c2c_gbs": 251, "roof_us": 167.4, "roof_share": 0.659, "gpu": 2}
