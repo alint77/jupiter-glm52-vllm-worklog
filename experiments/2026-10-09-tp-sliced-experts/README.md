@@ -1296,6 +1296,12 @@ Cold CTA count (served kernel, same node, us):
 | M=32 (108,17) | 310.8 | 273.0 | 245.2 | 240.1 | 261.7 | 233.3 | 206.5 |
 
 Fewer cold CTAs starve C2C (each pulls ~23 GB/s); more starve HBM. No split
-beats all-hot. Offloading can only win if the per-SM rate rises until fewer
-than 132 SMs saturate HBM. Two kernels on two streams (the EP design) split the
-SMs the same way, without control over the split.
+beats all-hot. The per-SM limit is the consumers' math, not memory: hot CTAs
+consume 80-90% of the call (`trace_bd.py` on `logs/u79-32-108_0.pt`), and
+the v8/v13 compute-only runs took ~70% of the loaded time at ~45% issue. A
+cold byte costs the same dequant + MMA as a hot one, so the total SM work is
+the same for the mix and all-hot, and moving it between SMs cannot win. The
+EP two-stream overlap (Marlin hot + cold co-resident, section 1 of the
+write-up) worked because Marlin left SM room; this kernel's ring (4 x 45 KB)
+leaves no room for a co-resident CTA and its consumers use the issue time.
+Offloading can beat all-hot only once the kernel is HBM-bound.
