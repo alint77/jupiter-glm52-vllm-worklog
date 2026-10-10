@@ -40,7 +40,7 @@ def main():
     dev = a.device if a.device is not None else min(
         d for (d,) in c.execute("select distinct deviceId from CUPTI_ACTIVITY_KIND_KERNEL"))
     by_corr = collections.defaultdict(list)
-    for s, e, corr, n in c.execute("select start, end, correlationId, shortName from "
+    for s, e, corr, n in c.execute("select start, end, correlationId, demangledName from "
                                    "CUPTI_ACTIVITY_KIND_KERNEL where deviceId = ?", (dev,)):
         by_corr[corr].append((s, e, names[n]))
     other = []

@@ -977,16 +977,18 @@ boot: the observed free HBM is 2.39-2.52 GiB, below the 2.53 GiB minimum. At
 hot set, and its curve reproduces the chart's EP line. Both layouts use 3.6
 (sliced: 13,614 hot slices ≈ 3,404 experts).
 
+8 servers per layout over 4 holds (2 + 2 per hold; paired over holds):
+
 | ctx | n | tok/s/user EP → SL | tok/s/GPU EP → SL | step ms EP → SL | sliced − EP, paired (4 holds) |
 |---|--:|--|--|--|--:|
-| 5K | 1 | 148.3 → 169.0 | 35.2 → 39.8 | 19.99 → 17.37 | −2.62 ± 0.17 (−13.1%) |
-| 5K | 2 | 118.5 → 137.9 | 53.5 → 62.4 | 24.17 → 20.91 | −3.26 ± 0.12 (−13.5%) |
-| 5K | 4 | 93.9 → 109.2 | 81.0 → 92.9 | 31.52 → 27.42 | −4.10 ± 0.14 (−13.0%) |
-| 5K | 8 | 67.4 → 76.4 | 115.2 → 127.6 | 43.85 → 38.71 | −5.14 ± 0.07 (−11.7%) |
-| 50K | 1 | 163.6 → 192.3 | 37.3 → 43.3 | 20.53 → 17.94 | −2.59 ± 0.12 (−12.6%) |
-| 50K | 2 | 130.4 → 150.0 | 55.9 → 63.4 | 24.90 → 21.40 | −3.50 ± 0.11 (−14.1%) |
-| 50K | 4 | 98.6 → 113.0 | 83.2 → 94.9 | 32.73 → 28.80 | −3.93 ± 0.11 (−12.0%) |
-| 50K | 8 | 69.0 → 76.6 | 112.6 → 124.7 | 45.75 → 40.69 | −5.06 ± 0.14 (−11.1%) |
+| 5K | 1 | 148.7 → 172.0 | 35.2 → 40.5 | 19.85 → 17.22 | −2.63 ± 0.13 (−13.2%) |
+| 5K | 2 | 118.3 → 137.2 | 53.5 → 62.0 | 24.14 → 20.91 | −3.23 ± 0.09 (−13.4%) |
+| 5K | 4 | 94.2 → 108.4 | 81.4 → 93.1 | 31.51 → 27.50 | −4.01 ± 0.10 (−12.7%) |
+| 5K | 8 | 67.5 → 76.2 | 115.2 → 127.8 | 43.72 → 38.72 | −5.00 ± 0.07 (−11.4%) |
+| 50K | 1 | 167.7 → 193.3 | 38.1 → 43.5 | 20.41 → 17.80 | −2.61 ± 0.14 (−12.8%) |
+| 50K | 2 | 129.5 → 150.9 | 55.4 → 64.3 | 24.75 → 21.51 | −3.24 ± 0.04 (−13.1%) |
+| 50K | 4 | 99.1 → 112.6 | 83.6 → 94.2 | 32.76 → 28.78 | −3.98 ± 0.09 (−12.1%) |
+| 50K | 8 | 69.0 → 77.0 | 112.9 → 124.9 | 45.74 → 40.68 | −5.06 ± 0.12 (−11.1%) |
 
 Acceptance is equal (2.86-2.98 at 5K, 3.10-3.45 at 50K, with no
 direction). The step saving grows with the number of tokens per step (−2.6 ms
@@ -1042,3 +1044,46 @@ Rank 0, GiB:
   left is the MTP drafter's untiered layer, at 4,096-token prefill chunks.
   Chunking that layer would free about 0.5 GiB (about 25 hot experts). This
   is not measured.
+
+### Why 50K is faster per user than 5K (`ctx_probe.py`, hold 2263891, sliced)
+
+The sweep's 5K prompts start at corpus offsets i·1M (set A) and its 50K prompts
+at (3i+10)·1M (set B). This probe runs both sets at both lengths, one request at
+a time, 8 prompts × 2 seeds per cell:
+
+| set | ctx | acc | step ms | tok/s |
+|---|--:|--:|--:|--:|
+| A | 5K | 2.93 | 17.20 | 170.6 |
+| A | 50K | 3.18 | 17.55 | 181.2 |
+| B | 5K | 2.91 | 17.21 | 168.8 |
+| B | 50K | 3.19 | 17.53 | 182.2 |
+
+The effect is length, not content. At 50K, MTP3 accepts about 0.27 more tokens
+per step, while DSA's fixed top-k attention costs only +0.35 ms. Per-user
+tok/s equals acceptance / step in every sweep cell.
+
+### Nsight Systems (`chain_nsys.sh` → `nsys_c8_arm.sh`, `nsys_node.sh`, `nsys_bd.py`; holds 2263794/96)
+
+Graph kernels are traced per node, one report per window, and nothing else is
+recorded. Rank 0, ms per step, breakdown2.py's categories (demangled names):
+
+| | EP 1x5K | SL 1x5K | EP 8x5K | SL 8x5K | EP 8x50K | SL 8x50K |
+|---|--:|--:|--:|--:|--:|--:|
+| period | 20.19 | 17.42 | 42.59 | 37.56 | 43.81 | 37.67 |
+| MoE expert kernels (SL: + shared expert) | 6.15 | 5.31 | 22.54 | 19.81 | 23.32 | 19.47 |
+| all-reduce + RMSNorm (incl. wait) | 2.56 | 1.06 | 3.87 | 2.05 | 3.87 | 2.06 |
+| dense GEMMs (cuBLAS etc.) | 1.00 | 0.96 | 3.61 | 3.40 | 3.60 | 3.41 |
+| DCP collectives | 1.14 | 1.24 | 2.76 | 3.03 | 2.74 | 3.02 |
+| outside the verify graph | 2.13 | 2.10 | 2.61 | 2.62 | 2.65 | 2.67 |
+| attention (FlashMLA) | 0.88 | 0.91 | 1.94 | 2.00 | 1.96 | 2.03 |
+| dense GEMMs (decode_gemm) | 3.08 | 3.08 | 1.68 | 1.70 | 1.76 | 1.78 |
+| GPU idle | 0.92 | 0.65 | 1.04 | 0.73 | 0.96 | 0.61 |
+| MoE route/act/finalize + router | 0.58 | 0.47 | 0.78 | 0.58 | 0.78 | 0.58 |
+| DSA indexer | 0.55 | 0.55 | 0.63 | 0.64 | 1.02 | 1.04 |
+
+The periods match the unprofiled sweep. The torch profile's +0.2 ms idle for
+sliced was profiler cost: under nsys, sliced idles less than EP. Part of EP's
+all-reduce wait moves into the DCP collectives under sliced (+0.1-0.3 ms). No
+sliced-specific irregularity. Two levers are common to both layouts at M=32:
+dense GEMMs at 5.1 ms (decode_gemm 1.7 + cuBLAS 3.4, vs 4.1 ms at M=4), and
+the 3 MTP passes outside the graph at 2.6 ms.
