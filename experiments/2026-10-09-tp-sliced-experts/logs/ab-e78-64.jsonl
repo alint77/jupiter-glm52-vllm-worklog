@@ -1,0 +1,12 @@
+{"v": "td_v57:TD_MAX_TOKENS=64", "m": 64, "hot": 147, "cold": 30, "shared": true, "us": 413.58, "hbm_gbs": 1932, "c2c_gbs": 385, "roof_us": 380.1, "roof_share": 0.919, "gpu": 3}
+{"v": "td_v57:TD_MAX_TOKENS=64", "m": 64, "hot": 177, "cold": 0, "shared": true, "us": 336.88, "hbm_gbs": 2845, "c2c_gbs": 0, "roof_us": 266.2, "roof_share": 0.79, "gpu": 3}
+{"v": "td_v57:TD_MAX_TOKENS=64", "m": 64, "hot": 147, "cold": 0, "shared": true, "us": 293.21, "hbm_gbs": 2726, "c2c_gbs": 0, "roof_us": 222.0, "roof_share": 0.757, "gpu": 3}
+{"v": "td_v57:TD_MAX_TOKENS=64", "m": 64, "hot": 147, "cold": 30, "shared": true, "us": 415.18, "hbm_gbs": 1925, "c2c_gbs": 384, "roof_us": 380.1, "roof_share": 0.915, "gpu": 2}
+{"v": "td_v57:TD_MAX_TOKENS=64", "m": 64, "hot": 177, "cold": 0, "shared": true, "us": 339.54, "hbm_gbs": 2823, "c2c_gbs": 0, "roof_us": 266.2, "roof_share": 0.784, "gpu": 2}
+{"v": "td_v57:TD_MAX_TOKENS=64", "m": 64, "hot": 147, "cold": 0, "shared": true, "us": 298.3, "hbm_gbs": 2679, "c2c_gbs": 0, "roof_us": 222.0, "roof_share": 0.744, "gpu": 2}
+{"v": "td_v57:TD_MAX_TOKENS=64", "m": 64, "hot": 147, "cold": 30, "shared": true, "us": 425.0, "hbm_gbs": 1880, "c2c_gbs": 375, "roof_us": 380.1, "roof_share": 0.894, "gpu": 1}
+{"v": "td_v57:TD_MAX_TOKENS=64", "m": 64, "hot": 177, "cold": 0, "shared": true, "us": 346.26, "hbm_gbs": 2768, "c2c_gbs": 0, "roof_us": 266.2, "roof_share": 0.769, "gpu": 1}
+{"v": "td_v57:TD_MAX_TOKENS=64", "m": 64, "hot": 147, "cold": 0, "shared": true, "us": 305.28, "hbm_gbs": 2618, "c2c_gbs": 0, "roof_us": 222.0, "roof_share": 0.727, "gpu": 1}
+{"v": "td_v57:TD_MAX_TOKENS=64", "m": 64, "hot": 147, "cold": 30, "shared": true, "us": 437.7, "hbm_gbs": 1826, "c2c_gbs": 364, "roof_us": 380.1, "roof_share": 0.868, "gpu": 0}
+{"v": "td_v57:TD_MAX_TOKENS=64", "m": 64, "hot": 177, "cold": 0, "shared": true, "us": 361.93, "hbm_gbs": 2648, "c2c_gbs": 0, "roof_us": 266.2, "roof_share": 0.736, "gpu": 0}
+{"v": "td_v57:TD_MAX_TOKENS=64", "m": 64, "hot": 147, "cold": 0, "shared": true, "us": 295.76, "hbm_gbs": 2702, "c2c_gbs": 0, "roof_us": 222.0, "roof_share": 0.751, "gpu": 0}

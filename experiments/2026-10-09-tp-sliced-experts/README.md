@@ -1204,3 +1204,63 @@ After the fence (vLLM 25c3ed40c4 kernel in the frozen worktree, holds
 Same as before the fence within node variance (n=8 steps are also ~0.5 ms
 higher on these nodes). Not yet done: a c16 profile (where the extra ~19 ms
 per step from c8 to c16 goes).
+
+## Offload overhead: the served mix vs all experts hot (2026-10-10)
+
+The user asked: with the MoE kernel's achieved performance, what would the
+existing MTP3 traces look like if every expert were in HBM, and does the
+tiered kernel beat HBM alone as the ideal says?
+
+Inputs:
+- `nsys_moe_calls.py`: per-call `layer_kernel` time in the verify graph from
+  the c8 nsys reports (holds 2263794/96, two servers x 4 GPUs, 75 calls per
+  step). c=2 and c=16 have no trace.
+- `sl_mix.py`: mean distinct (hot, cold) experts per layer call on the
+  routing capture (MTP3: 4 tokens per sequence, per-layer top-181 hot):
+  n=1 21.8/2.5, n=4 69.4/9.4, n=8 108.4/17.4, n=16 147.2/29.8.
+- Bytes: an expert slice is 5.06 MiB (int4 + scales), the bf16 shared slice
+  18 MiB (HBM). Rooflines HBM 3600, C2C 419 GB/s.
+- `e78.sh` (hold 2265861, td_v57, shared on, median of 4 GPUs): the mean mix
+  (h, c) vs all hot (h + c, 0) vs hot only (h, 0).
+
+Ideal (roofline) per call:
+
+| n | HBM / C2C MB | tiered max(HBM, C2C) us | all-hot us | ratio |
+|--:|--:|--:|--:|--:|
+| 1 | 134 / 13 | 37 (HBM) | 41 | 0.91 |
+| 4 | 387 / 50 | 119 (C2C) | 121 | 0.98 |
+| 8 | 594 / 92 | 221 (C2C) | 191 | 1.16 |
+| 16 | 800 / 158 | 378 (C2C) | 266 | 1.42 |
+
+The tier only beats HBM alone while cold bytes stay under C2C / (HBM + C2C)
+= 10.4%. The hot set is fixed, so the cold share grows with the batch (9%,
+11%, 13.5%, 16.5%), and from c=4 on the C2C stream is the floor.
+
+Measured kernel (us; HBM / C2C GB/s achieved):
+
+| M | mix (h, c) | all hot | hot only | mix / all hot |
+|--:|--:|--:|--:|--:|
+| 4 | 59.2 (2293 / 270) | 59.5 (2546) | 57.1 | 1.00 |
+| 16 | 156.0 (2472 / 306) | 151.2 (2864) | 136.1 | 1.03 |
+| 32 | 246.4 (2405 / 366) | 236.4 (2886) | 208.5 | 1.04 |
+| 64 | 420.1 (1902 / 380) | 342.9 (2796) | 297.0 | 1.23 |
+
+All hot, the kernel reaches 2.5-2.9 TB/s (71-80% of the HBM roof). That
+headroom hides the C2C stream up to c=8; at c=16 C2C runs at 380 GB/s (91% of
+its roof) and sets the time.
+
+Applied to the traces (served per-call time x all hot / mix):
+
+| window | trace us/call | all hot us/call | overhead ms/step | step ms | share |
+|---|--:|--:|--:|--:|--:|
+| c=1, 5K | 70.0 | 70.4 | -0.03 | 17.4 | 0% |
+| c=4, 5K | 184.5 | 178.8 | 0.43 | 27.8 | 1.5% |
+| c=8, 5K | 272.0 | 261.0 | 0.83 | 37.6 | 2.2% |
+| c=8, 50K | 263.5 | 252.8 | 0.80 | 37.7 | 2.1% |
+| c=16 (bench only) | - | - | 5.8 | 58 | ~10% |
+
+Offloading costs 0-2% of the step up to c=8 and about 10% at c=16. The
+measured kernel does not beat all-hot even at c=1, where the ideal predicts
+-9%: at M=4 it runs at 64-71% of roof (latency, not bandwidth), so the extra
+C2C bandwidth has nothing to shorten. All-hot is hypothetical: 19,200 slices
+x 5.06 MiB = 95 GiB per GPU does not fit.

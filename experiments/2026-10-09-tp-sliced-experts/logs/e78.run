@@ -1,0 +1,9 @@
+variant                        22/0  roof     22/3  roof     25/0  roof
+td_v57[TD_MAX_TOKENS=64]       57.1  0.66     59.2  0.64     59.5  0.71
+variant                        69/0  roof     69/9  roof     78/0  roof
+td_v57[TD_MAX_TOKENS=64]      136.1  0.79    156.0  0.73    151.2  0.80
+variant                       108/0  roof   108/17  roof    125/0  roof
+td_v57[TD_MAX_TOKENS=64]      208.5  0.79    246.4  0.87    236.4  0.80
+variant                       147/0  roof   147/30  roof    177/0  roof
+td_v57[TD_MAX_TOKENS=64]      297.0  0.75    420.1  0.90    342.9  0.78
+E78_DONE
