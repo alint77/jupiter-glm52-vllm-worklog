@@ -1,0 +1,74 @@
+{
+ "/e/fscratch/profound/naeimitabiei1/sliced-prof/ns-mtp3-c16-2268015/nsys.1.nsys-rep:0": {
+  "steps": 41,
+  "calls_per_step": 75,
+  "mean_us": 379.15949495934956,
+  "p10": 264.8896,
+  "p50": 367.84,
+  "p90": 503.776,
+  "sum_ms_per_step": 28.43696212195122
+ },
+ "/e/fscratch/profound/naeimitabiei1/sliced-prof/ns-mtp3-c16-2268015/nsys.1.nsys-rep:1": {
+  "steps": 41,
+  "calls_per_step": 75,
+  "mean_us": 383.3215177235772,
+  "p10": 269.0112,
+  "p50": 373.664,
+  "p90": 505.1456,
+  "sum_ms_per_step": 28.749113829268293
+ },
+ "/e/fscratch/profound/naeimitabiei1/sliced-prof/ns-mtp3-c16-2268015/nsys.1.nsys-rep:3": {
+  "steps": 41,
+  "calls_per_step": 75,
+  "mean_us": 385.7341128455285,
+  "p10": 267.40479999999997,
+  "p50": 381.856,
+  "p90": 510.4838,
+  "sum_ms_per_step": 28.930058463414635
+ },
+ "/e/fscratch/profound/naeimitabiei1/sliced-prof/ns-mtp3-c16-2268015/nsys.1.nsys-rep:2": {
+  "steps": 41,
+  "calls_per_step": 75,
+  "mean_us": 377.24137105691057,
+  "p10": 263.6928,
+  "p50": 363.968,
+  "p90": 501.26719999999995,
+  "sum_ms_per_step": 28.293102829268292
+ },
+ "/e/fscratch/profound/naeimitabiei1/sliced-prof/ns-mtp3-c16-2268015/nsys.2.nsys-rep:3": {
+  "steps": 23,
+  "calls_per_step": 75,
+  "mean_us": 358.0121495652174,
+  "p10": 247.8784,
+  "p50": 355.936,
+  "p90": 470.336,
+  "sum_ms_per_step": 26.850911217391307
+ },
+ "/e/fscratch/profound/naeimitabiei1/sliced-prof/ns-mtp3-c16-2268015/nsys.2.nsys-rep:2": {
+  "steps": 23,
+  "calls_per_step": 75,
+  "mean_us": 349.83136811594204,
+  "p10": 246.20159999999998,
+  "p50": 341.728,
+  "p90": 464.7872000000001,
+  "sum_ms_per_step": 26.23735260869565
+ },
+ "/e/fscratch/profound/naeimitabiei1/sliced-prof/ns-mtp3-c16-2268015/nsys.2.nsys-rep:1": {
+  "steps": 23,
+  "calls_per_step": 75,
+  "mean_us": 353.65959304347825,
+  "p10": 249.8432,
+  "p50": 348.064,
+  "p90": 467.56480000000005,
+  "sum_ms_per_step": 26.52446947826087
+ },
+ "/e/fscratch/profound/naeimitabiei1/sliced-prof/ns-mtp3-c16-2268015/nsys.2.nsys-rep:0": {
+  "steps": 23,
+  "calls_per_step": 75,
+  "mean_us": 349.03231420289853,
+  "p10": 245.0688,
+  "p50": 340.544,
+  "p90": 462.9952,
+  "sum_ms_per_step": 26.17742356521739
+ }
+}

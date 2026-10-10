@@ -39,9 +39,9 @@ EXPERT_B, SHARED_B = 5308416, 18874368  # int4 slice + scales; bf16 shared slice
 ROOF_HBM, ROOF_C2C = 3600e9, 419e9
 BENCH = {1: (4, "22,3", "25,0"), 4: (16, "69,9", "78,0"), 8: (32, "108,17", "125,0"),
          16: (64, "147,30", "177,0")}
-# nsys windows (nsys_moe_calls.py): n -> (report index, step period ms from nsys_bd.py)
-TRACE = {1: ("1", 17.4), 4: ("2", 27.8), 8: ("3", 37.6)}
-C16_STEP_MS = 58.3  # c16 servers, n=16 at 5K
+# nsys windows (nsys_moe_calls.py): n -> (calls json, report index, step period ms
+# from nsys_bd.py); c8 server windows 1x5K / 4x5K / 8x5K, c16 server 16x5K
+TRACE = {1: ("sl", "1", 17.4), 4: ("sl", "2", 27.8), 8: ("sl", "3", 37.6), 16: ("c16", "1", 51.3)}
 
 
 def c16_cells():
@@ -116,8 +116,8 @@ def bench_us(m, cell):
     return st.median(us)
 
 
-def trace_us(idx):
-    d = json.loads((HERE / "logs/nsys-moe-calls-sl.json").read_text())
+def trace_us(name, idx):
+    d = json.loads((HERE / f"logs/nsys-moe-calls-{name}.json").read_text())
     return st.mean(v["mean_us"] for k, v in d.items() if f"nsys.{idx}.nsys-rep" in k)
 
 
@@ -128,13 +128,10 @@ def offload_rows():
         ideal = max(hb / ROOF_HBM, cb / ROOF_C2C) / ((hb + cb) / ROOF_HBM)
         m, mix, hot = BENCH[n]
         ratio = bench_us(m, mix) / bench_us(m, hot)
-        if n in TRACE:
-            t = trace_us(TRACE[n][0])
-            cost, step = 75 * t * (1 - 1 / ratio) / 1e3, TRACE[n][1]
-        else:
-            cost, step = 75 * (bench_us(m, mix) - bench_us(m, hot)) / 1e3, C16_STEP_MS
+        name, idx, step = TRACE[n]
+        cost = 75 * trace_us(name, idx) * (1 - 1 / ratio) / 1e3
         rows.append(dict(n=n, ideal=ideal, measured=ratio, cost_ms=cost, step_ms=step,
-                         cold_share=cb / (hb + cb), traced=n in TRACE))
+                         cold_share=cb / (hb + cb)))
     return rows
 
 
@@ -167,14 +164,12 @@ def offload(out):
                  color=INK)
     a1.legend(frameon=False, fontsize=9, loc="upper left")
     style(a1, "y")
-    bars = a2.bar(x, [r["cost_ms"] for r in rows], color=[SL if r["traced"] else SL2 for r in rows],
-                  width=0.6)
+    bars = a2.bar(x, [r["cost_ms"] for r in rows], color=SL, width=0.6)
     for b, r in zip(bars, rows):
         a2.annotate(f"{max(r['cost_ms'], 0):.1f} ms\n{max(r['cost_ms'], 0) / r['step_ms'] * 100:.0f}% of "
                     f"the step", (b.get_x() + b.get_width() / 2, max(r["cost_ms"], 0)),
                     xytext=(0, 4), textcoords="offset points", ha="center", fontsize=9, color=INK)
-    a2.set_xticks(list(x), [str(n) + ("" if r["traced"] else "\n(bench only)")
-                            for n, r in zip(ns, rows)])
+    a2.set_xticks(list(x), [str(n) for n in ns])
     a2.set_xlabel("requests in flight", color=INK2)
     a2.set_ylabel("extra time per decode step (ms)", color=INK2)
     a2.set_ylim(0, max(r["cost_ms"] for r in rows) * 1.35)
@@ -197,7 +192,7 @@ def headroom_rows():
         m, mix, _ = BENCH[n]
         moe = 75 * bench_us(m, mix) / 1e3
         roof = 75 * max(hb / ROOF_HBM, cb / ROOF_C2C) * 1e3
-        step = TRACE[n][1] if n in TRACE else C16_STEP_MS
+        step = TRACE[n][2]
         rows.append(dict(n=n, step=step, moe=moe, roof=roof, rest=step - moe,
                          gain=(moe - roof) / step, c2c_bound=cb / ROOF_C2C > hb / ROOF_HBM))
     return rows

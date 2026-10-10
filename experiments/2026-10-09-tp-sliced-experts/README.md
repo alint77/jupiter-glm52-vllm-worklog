@@ -1329,3 +1329,26 @@ carry 5.2 TB/s at full issue; at the achieved ~57% (dependency stalls, 2.7
 warps per scheduler) that is ~3.0 TB/s, close to the 2.8 measured. Instruction
 ridge for HBM at 3.6 TB/s: 5.7 B/inst at 100% issue, ~10 B/inst at 57%; the
 kernel's 8.2 sits below the latter, so it is issue-limited at every M.
+
+### c16 Nsight Systems (`nsys_c16_launch.sh` → `nsys_c16_arm.sh`, `prof_load16.py`; hold 2268015)
+
+The c16 config from the frozen `tp-sliced-c16` tree (MAX_NUM_SEQS=16, reserve 4.0, 1.6M pool, captures to
+64), two windows of 16 distinct cached prompts x 1200 tokens. All 16 requests decode through each window
+and every verify launch is one graph (the 64-token capture). Rank 0, `nsys_bd.py`, ms per step:
+
+| | 16x5K | 16x50K | (c8 server, 8x5K) |
+|---|--:|--:|--:|
+| period | 51.27 | 49.88 | 37.56 |
+| MoE expert kernels + shared | 28.29 | 26.03 | 19.81 |
+| dense GEMMs (all cuBLAS at 64 tokens) | 5.55 | 5.52 | 5.10 |
+| DCP collectives | 4.80 | 5.01 | 3.03 |
+| outside the verify graph | 3.24 | 3.27 | 2.62 |
+| attention (FlashMLA) | 3.05 | 3.03 | 2.00 |
+| all-reduce + RMSNorm | 2.73 | 2.85 | 2.05 |
+| GPU idle | 1.02 | 0.89 | 0.73 |
+
+`nsys_moe_calls.py` (`logs/nsys-moe-calls-c16.json`): layer_kernel mean 377-386 us per call at 16x5K
+(p10/50/90 ~265/370/505), 349-358 at 16x50K. The decode-only period (51.3 ms) is below the scale runs'
+per-request step (58 ms = acceptance / decode tok/s, which also absorbs stalls behind other requests'
+prefill); at c8 the two agreed. The plot now uses the trace for c16 like the other points: offload cost
+5.3 ms/step (10%) at c16, roofline headroom 3.2 ms (6%).
