@@ -1352,3 +1352,35 @@ and every verify launch is one graph (the 64-token capture). Rank 0, `nsys_bd.py
 per-request step (58 ms = acceptance / decode tok/s, which also absorbs stalls behind other requests'
 prefill); at c8 the two agreed. The plot now uses the trace for c16 like the other points: offload cost
 5.3 ms/step (10%) at c16, roofline headroom 3.2 ms (6%).
+
+### c16 per-kernel SOL (`kchain_nsys.py`, `xrank_nsys.py` on hold 2268015's 16x5K report; c8 = hold 2263796 8x5K)
+
+Rank 0, 40 steps, 51.27 ms. Rooflines: HBM 3.6 TB/s, C2C 0.42 TB/s, bf16 ~630 TFLOP/s (power-limited
+~1.4 GHz). Byte models as `../2026-10-08-decode-dive-3`; NVLink inbound taken as ~400-450 GB/s (the
+all-reduce adds bytes at ~380 GB/s from c8 to c16). "min" = per-call minimum over the 4 ranks.
+
+| kernel | /step | us/call | ms/step | model | SOL us | % SOL | gap ms/step |
+|---|--:|--:|--:|---|--:|--:|--:|
+| MoE layer_kernel | 75 | 377 (min 375) | 28.29 | max(hot/HBM, cold/C2C); bench at mean mix | 378 vs 420 bench | ~90 | ~3.2 |
+| FlashMLA sparse fp8 | 78 | 39.2 | 3.05 | 6.85 GFLOP (64 tok x 64 heads x 768 keys), <=32 MB | ~11 | ~28 | ~2.2 |
+| DCP gather_cat | 78 | 35.2 (min 34) | 2.75 | 3.5 MB in | ~8 | ~23 | ~2.1 |
+| DCP lse_reduce_scatter | 78 | 18.8 (min 18) | 1.47 | 3.1 MB in | ~7 | ~37 | ~0.9 |
+| DCP gather (indexer) | 21 | 27.9 | 0.59 | | | | |
+| AR + RMSNorm lamport | 157 | 17.4 (min 11.7) | 2.73 | 2.36 MB in | ~6 + fixed | | wait ~0.8 |
+| o_proj (cuBLAS) | 78 | 23.2 | 1.81 | 50.3 MB | 14.0 | 60 | 0.72 |
+| fused qkv_a | 78 | 15.4 | 1.20 | 32.5 MB | 9.0 | 59 | 0.50 |
+| q_b + indexer wq_b | 99 | 9.3 | 0.92 | 16.8 MB | 4.7 | 50 | 0.46 |
+| router (splitK + reduce) | 75 | 7.1 | 0.53 | 3.1 MB | 0.9 | 12 | 0.47 |
+| W_UV absorb | 78 | 5.5 | 0.43 | 4.2 MB | 1.2 | 21 | 0.34 |
+| W_UK absorb | 78 | 4.4 | 0.34 | 3.1 MB | 0.9 | 20 | 0.28 |
+| MTP drafter MoE (Marlin, untiered) | 6 | 127 | 0.76 | ~79 experts x 5.3 MB per pass (est.) | ~58 | ~46 | ~0.4 |
+| lm_head drafter / target | 3 / 1 | 142 / 152 | 0.58 | 475.6 MB | 132 | 93 / 87 | 0.05 |
+| sampler `_topk_topp` | 1 | 236 | 0.24 | 8 CTAs, latency | | | 0.24 |
+| skip-KV `_gather_rows` (side stream) | 19 | 227 (min 138) | 0.36 exposed | rows not logged | | | |
+
+c8 -> c16 per call: gather_cat 20 -> 35, lse_rs 12 -> 19, AR min 8.6 -> 11.7, FlashMLA 26 -> 40,
+layer_kernel 267 -> 381, `_gather_rows` 54 -> 216 us. The DCP one-shots add bytes at only 120-220 GB/s
+(36 CTAs) and their min over ranks equals their mean (no waiting): bandwidth-starved, not skewed.
+`_gather_rows` grows 4x for 2x tokens and varies 138-216 us across ranks; it overlaps the next layers'
+kernels, so it likely competes with the MoE kernel's cold reads on C2C (unmeasured). Gaps sum to
+~12 ms of 51 (not strictly additive).
