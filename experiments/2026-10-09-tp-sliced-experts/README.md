@@ -706,8 +706,70 @@ x2 copies 0.33, FIFO wait 0.2-0.28. Next: the scheduler probes readiness
   completed entry), so ready flags come later and R1 waits rose 4.6 -> 8.0.
   (Single traced calls differ from the bench's many-routing average; the
   bench is the verdict.)
-- v47 (`kernels/mk_v47.py`, running): `TD_SPIPE` overlaps the scheduler's three
+- v47 (`kernels/mk_v47.py`): `TD_SPIPE` overlaps the scheduler's three
   round trips per group (next claim issued before the current record load;
   ready probe in flight with the record), `TD_FIN_AR` replaces the
-  finisher's MEMBAR.SC.GPU fences with fence.acq_rel.gpu. Astra review 11
-  (`logs/astra11-prompt.md`) covers the v44-v46 handoff protocols.
+  finisher's MEMBAR.SC.GPU fences with fence.acq_rel.gpu.
+
+| us (e58) | 38/0 | 38/4 | 50/4 | 70/6 | 110/0 | 110/12 |
+|---|--:|--:|--:|--:|--:|--:|
+| v46 | 85.2 | 89.0 | 110.5 | 144.4 | 203.9 | 229.9 |
+| v47 | 87.3 | 86.8 | 106.7 | 145.7 | 208.9 | 230.0 |
+| v47 FIN_AR | 85.7 | 87.9 | 106.9 | 143.6 | 210.1 | 230.2 |
+
+  Mixed: -2 to -4 us on the M=8 cells with a cold tier, +2 at 38/0 and +5 at
+  110/0. Traced (`logs/e58-tr.out`): the scheduler's decode+record+publish is
+  0.77 us p50 per w2 group (was 1.09) and its slot wait dominates its time,
+  so it no longer limits; the largest M=8 bucket is now R1 ready waits
+  (12-17 us / CTA), and the finisher's activation is 8-10 us p50 per finished
+  entry at M=8, 11 us at M=32: one route per L2 round trip, serially.
+  FIN_AR shortens the done count (p50 2.18 -> 1.76 us) but is bench-neutral.
+
+Astra review 11 (`logs/codex-review11.md`): v44/v45's FIFO handoffs and v46's
+cumulative publication (consumer reds -> mbarrier release -> finisher fence +
+count RMW -> fence -> activation -> release) are sound, but v46's `hq_full`
+reuse breaks the PTX mbarrier phase rule: warps 1-7 could arrive for a slot's
+next generation before the finisher had waited on the completed phase (warp
+0 alone waited `hq_empty`). Also the producer built a `Group` from slot
+fields the K_END entry leaves unwritten.
+
+- v48 (`kernels/mk_v48.py`): the fixes. Every consumer warp's lane 0 waits
+  `hq_empty` before reuse, `__syncwarp`, then lane 0 arrives (count
+  CONSUMER_WARPS instead of 256); the producer checks `e.kind == K_END`
+  first.
+- v49 (`kernels/mk_v49.py`): `TD_ACTK=K` (default 4): the finisher activates
+  K routes at once (all their y13 loads in flight), and loads the entry
+  record before the done count. 168 regs, no spills at K <= 4 (K=8 spills).
+
+| us (e59) | 38/0 | 38/4 | 50/4 | 70/6 | 110/0 | 110/12 |
+|---|--:|--:|--:|--:|--:|--:|
+| v47 | 86.2 | 87.7 | 106.9 | 144.4 | 209.0 | 230.2 |
+| v48 | 85.8 | 87.3 | 107.3 | 146.7 | 209.8 | 231.8 |
+| v48 no SPIPE | 85.1 | 89.8 | 111.0 | 143.1 | 205.9 | 231.5 |
+| v49 (ACTK 4) | 87.3 | 88.1 | 107.4 | 145.0 | 208.9 | 230.7 |
+| v49 ACTK 2 | 86.1 | 88.3 | 107.0 | 145.3 | 210.0 | 230.9 |
+
+v48's fixes are neutral; SPIPE is worth 2.5-4 us on the M=8 cells with a cold
+tier (and costs ~1-4 us at 70/6 and 110/0). v49 is neutral and its trace
+(`logs/e59-tr.out`) still has 8 us (M=8) / 11 us (M=32) p50 per finished
+entry, so serial per-route loads were not the cost.
+
+v50 (`kernels/mk_v50.py`, trace builds only): sub-stamps on the finisher's done
+path, `fin_tl.py` (`logs/e60` run, traces `logs/u60-*.pt`). p50 us per finished
+entry, M=8 38/4, one route:
+
+| count RT | post-count fence | y13 loads landed | compute + stores | proxy + GPU fences | release | total |
+|--:|--:|--:|--:|--:|--:|--:|
+| 1.8 | 1.5 | 1.9 | 1.0 | 1.1 | 0.7 | ~10 |
+
+It is a chain of ~6 serialized global round trips/fences, each 1-2 us under
+the kernel's memory load, on one warp. Compute + stores grows with the routes:
+1.5 us at 1 route, 18.4 at 8 (M=32), i.e. the stores (16 f16 x2 + 32 fp32 y13
+zeroing per lane per route) issue slowly from this warp.
+
+- v51 (`kernels/mk_v51.py`): `TD_ZLATE` zeroes y13 after the ready release
+  (float4 stores; next call's reds are after its PDL wait), `TD_FIN_AR` on by
+  default, variants `TD_ONEREL` (no GPU fence before the release `__syncwarp`;
+  lane 0's st.release.gpu is cumulative) and `TD_ATOM_AR` (count as one
+  atom.acq_rel.gpu). Astra review 12 (`logs/astra12-prompt.md`) asked about
+  these and the done path's structure.
