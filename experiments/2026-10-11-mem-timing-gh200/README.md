@@ -63,9 +63,49 @@ which is the input to the 2080 Ti actuator campaign.
 
 ## Results
 
-Status: standby job 2287088, probe1 in flight. Tables filled when the hop
-completes. Raw logs in `logs/` (untracked), JSON at `logs/probe1-bw-*.json`
-(untracked); numbers land here on commit.
+Status: standby job 2287122 (jpbo-017-41), probe1 complete on GPU 0;
+probe2 cold/hot sweep + probe1/probe2 replicates in flight on GPUs 1-3.
+
+Platform facts (from `logs/probe1-inventory-*.txt`):
+
+- NVIDIA GH200 120GB, driver 595.71.05, CUDA 13.2; 97,871 MiB visible per GPU.
+- Exactly **one memory clock bin: 2619 MHz** (max = current), constant
+  through the runs — there is nothing clock-side to vary on this platform.
+- ECC mode **Enabled/Enabled** (current/pending) on all four GPUs.
+- Topo: GPU k owns CPUs [72k .. 72k+71] and NUMA node k; a separate
+  "GPU NUMA ID" column (4/12/20/28) marks the memory-only HBM nodes.
+
+probe1, GPU 0, NUMA-bound to node 0, bf16, 8 GiB span (GiB/s, ratios vs
+stream copy):
+
+| pattern            | GiB/s   | x copy |
+|--------------------|---------|--------|
+| copy_6g_rw (R+W)   | 3395.8  | 1.000  |
+| fill_6g_w (W only) | 3156.3  | 0.929  |
+| sum_bf16_6g_r (R)  | 3300.1  | 0.972  |
+| gather 2 B random  | 122.9   | 0.036  |
+| gather 256 B random| 791.3   | 0.233  |
+| gather 64 KiB random | 3084.7 | 0.908 |
+
+Readings:
+
+- Stream copy hits ~3.4 TiB/s (3.65 TB/s decimal), roughly 0.9x of the
+  4 TB/s-class expectation for this HBM3 config, so the streaming
+  infrastructure is healthy; these numbers are trustworthy references.
+- The granularity cliff is steep: 2-byte random accesses run at **1/28 of
+  stream** and 256-byte at **1/4.3**. Sector waste alone would put 2 B at
+  ~0.0625x (2/32); the measured 0.036x means roughly a further ~1.7x comes
+  from row activation/precharge and activation-rate limits — the exact
+  timing state this thread is after.
+- 64 KiB gathers are effectively streaming (0.91x): large contiguous
+  expert-weight reads pay no gather tax, consistent with the GEMV/ethash
+  intuition split.
+- Consequence for serving: KV/random-gather traffic lives in the
+  0.036-0.23x band, so any workload whose DRAM traffic is dominated by
+  fine-grained gathers sees an *effective* HBM roughly an order below the
+  ~4 TB/s spec — independent of clocks and ECC.
+
+Raw JSONs in `logs/` (untracked); the durable numbers live in this table.
 
 ## Reproducing
 

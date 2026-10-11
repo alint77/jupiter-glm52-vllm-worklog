@@ -11,11 +11,15 @@ standby allocation (job 2287122, `standby.sbatch`; the first attempt
 /var/spool copy, so BASH_SOURCE-relative repo detection broke — fixed with
 the claude-server hardcoded-fallback pattern) with `node-submit.sh`
 submitting steps via the verified `srun --jobid --overlap` pattern, GPU
-pinned through `CUDA_VISIBLE_DEVICES`. probe1 (in flight) records the
-read-only inventory (ECC modes, memory clock bins, topo) and the
-access-granularity bandwidth curve: stream copy/fill/sum vs random gathers
-at 2 B / 256 B / 64 KiB. Next: analyze the granularity curve, then map it
-onto serving access patterns (KV gather, MoE expert reads). No serving
+pinned through `CUDA_VISIBLE_DEVICES`. probe1 (GPU 0) landed: stream copy
+3395.8 GiB/s (~0.9x of the ~4 TB/s class), sum 3300.1, fill 3156.3; random
+gathers fall off a cliff — 2 B: 122.9 GiB/s (0.036x copy), 256 B: 791.3
+(0.233x), 64 KiB: 3084.7 (0.908x, effectively streaming). ECC enabled on
+all GPUs, single memory clock bin (2619 MHz) — nothing clock-side to vary
+on this platform. In flight: probe2 cold-vs-hot row sweep (2 B..64 KiB,
+separates the row-activation tax from sector waste) plus probe1/probe2
+replicates on GPUs 1-3. Next: interpret the cold/hot gap, then map onto
+serving access patterns (KV gather, MoE expert reads). No serving
 changes; the RTX 2080 Ti BAR0 actuator work happens off-cluster.
 
 **Latest (2026-10-11, evening): fastokens tokenizer is prod.** serve.sh
