@@ -1,10 +1,11 @@
 """Step breakdown per concurrency (ms/step, mean over the 4 ranks) from
 an/bd-c<c>-w<window>-d<dev>.json; window 1 = ~5K context, 2 = ~50K."""
 import json
+import os
 import sys
 from pathlib import Path
 
-A = Path(__file__).parent / "an"
+A = Path(os.environ.get("SOL_AN", Path(__file__).parent / "an"))
 cs = [1, 2, 4, 8, 16]
 w = sys.argv[1] if len(sys.argv) > 1 else "1"
 d = {c: [json.loads((A / f"bd-c{c}-w{w}-d{dev}.json").read_text()) for dev in range(4)]

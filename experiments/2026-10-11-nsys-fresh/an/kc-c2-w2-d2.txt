@@ -1,0 +1,82 @@
+99 steps, period 20.26 ms; G = inside the verify graph; us per step (sum of durations)
+    7833.2 us  x  75.0  mean  104.44  G tiered_decode::layer_kernel
+    3231.6 us  x 261.0  mean   12.38  G decode_gemm_kernel
+    1163.9 us  x 157.0  mean    7.41  G allreduce_fusion_kernel_oneshot_lamport
+     853.1 us  x  78.0  mean   10.94  G flash_fwd_splitkv_mla_fp8_sparse_kernel
+     805.8 us  x  75.0  mean   10.74  G tiered_decode::finalize_kernel
+     601.7 us  x  78.0  mean    7.71  G smxx::decode::flash_fwd_mla_combine_kernel
+     584.1 us  x  78.0  mean    7.49  G one_shot::gather_cat_kernel
+     566.8 us  x   4.0  mean  141.69    nvjet_sm90_tst_192x8_64x8_2x1_v_bz_TNT
+     525.8 us  x  78.0  mean    6.74  G one_shot::lse_reduce_scatter_kernel
+     469.3 us  x  19.0  mean   24.70  G _gather_rows_kernel
+     399.5 us  x  75.0  mean    5.33  G tiered_decode::route_prep_kernel
+     323.4 us  x  78.0  mean    4.15  G nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+     304.1 us  x  75.0  mean    4.06  G vllm::moe::grouped_topk_fused_small_expert_count_kernel
+     293.7 us  x  21.0  mean   13.99  G kernel_cutlass_kernel_vllmmodel_executorkernelsattentiondsadcp_indexer
+     292.0 us  x  78.0  mean    3.74  G nvjet_sm90_tst_64x8_64x16_2x1_v_bz_NNT
+     286.5 us  x  75.0  mean    3.82  G kernel_cutlass_kernel_vllmmodel_executorkernelslinearcute_dsl_ll_bf16_
+     262.5 us  x  21.0  mean   12.50  G vllm::cooperative::cooperative_topk_cs8
+     239.7 us  x 135.0  mean    1.78  G vllm::concat_and_cache_ds_mla_kernel
+     205.5 us  x   6.0  mean   34.24    marlin_moe_wna16::Marlin
+     179.4 us  x  21.0  mean    8.54  G one_shot::gather_kernel
+     167.2 us  x   1.0  mean  167.21    _topk_topp_kernel
+     145.0 us  x   3.0  mean   48.32    nvjet_sm90_tst_192x8_64x8_2x1_v_bz_splitK_TNT
+     131.8 us  x  12.0  mean   10.98    decode_gemm_kernel
+     124.0 us  x  21.0  mean    5.91  G deep_gemm::sm90_fp8_paged_mqa_logits
+     122.3 us  x  59.0  mean    2.07  G triton_red_fused_1
+     119.2 us  x  78.0  mean    1.53  G triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqu
+     106.2 us  x  21.0  mean    5.06  G nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT
+      96.5 us  x  19.0  mean    5.08  G _compact_rows_kernel
+      84.7 us  x  57.0  mean    1.49  G triton_poi_fused_0
+      80.3 us  x  21.0  mean    3.82  G _convert_req_index_to_global_index_kernel
+      65.4 us  x   4.0  mean   16.34    ncclDevKernel_AllGather_RING_LL
+      58.6 us  x  53.0  mean    1.11    at::native::vectorized_elementwise_kernel
+      56.1 us  x  19.0  mean    2.95  G _remap_rows_kernel
+      54.7 us  x  19.0  mean    2.88  G _mark_rows_kernel
+      44.0 us  x   6.0  mean    7.33    vllm::cross_device_reduce_1stage
+      40.6 us  x  21.0  mean    1.93  G vllm::indexer_k_quant_and_cache_kernel
+      39.1 us  x  42.0  mean    0.93  G at::native::vectorized_elementwise_kernel
+      38.4 us  x  18.0  mean    2.13  G triton_red_fused_0
+      37.3 us  x   6.0  mean    6.22    nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT
+      35.7 us  x  21.0  mean    1.70  G _fused_indexer_q_rope_quant_kernel
+
+median chain from one layer_kernel to the next (layers 20-40):
+    0   88.45 us (gap  0.0)  grid 132x1x1 blk 352  tiered_decode::layer_kernel
+    1    7.18 us (gap -5.2)  grid 6x8x1 blk 256  tiered_decode::finalize_kernel
+    2    7.55 us (gap  0.1)  grid 32x1x1 blk 192  allreduce_fusion_kernel_oneshot_lamport
+    3   12.90 us (gap -0.1)  grid 164x1x1 blk 128  decode_gemm_kernel
+    4    1.50 us (gap  0.4)  grid 1x1x1 blk 256  triton_poi_fused_0
+    5    2.02 us (gap  0.4)  grid 8x1x1 blk 512  triton_red_fused_1
+    6    7.74 us (gap  0.2)  grid 256x1x1 blk 64  decode_gemm_kernel
+    7    1.47 us (gap  0.4)  grid 64x1x1 blk 256  triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqu
+    8    1.82 us (gap  0.4)  grid 8x1x1 blk 96  vllm::concat_and_cache_ds_mla_kernel
+    9    1.76 us (gap  0.4)  grid 8x1x1 blk 96  vllm::concat_and_cache_ds_mla_kernel
+   10    3.78 us (gap  0.4)  grid 2x64x1 blk 384  nvjet_sm90_tst_64x8_64x16_2x1_v_bz_NNT
+   11    7.01 us (gap  0.4)  grid 36x1x1 blk 512  one_shot::gather_cat_kernel
+   12   10.94 us (gap  0.2)  grid 1x8x16 blk 384  flash_fwd_splitkv_mla_fp8_sparse_kernel
+   13    7.65 us (gap -4.0)  grid 1x8x8 blk 256  smxx::decode::flash_fwd_mla_combine_kernel
+   14    6.34 us (gap  0.4)  grid 16x1x1 blk 512  one_shot::lse_reduce_scatter_kernel
+   15    3.97 us (gap  0.4)  grid 4x16x1 blk 384  nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+   16   16.74 us (gap  0.1)  grid 384x1x1 blk 128  decode_gemm_kernel
+   17    6.66 us (gap -0.6)  grid 32x1x1 blk 192  allreduce_fusion_kernel_oneshot_lamport
+   18    3.78 us (gap  0.1)  grid 1x16x6 blk 256  kernel_cutlass_kernel_vllmmodel_executorkernelslinearcute_dsl_ll_bf16_
+   19    4.00 us (gap  0.1)  grid 8x1x1 blk 384  vllm::moe::grouped_topk_fused_small_expert_count_kernel
+   20    5.15 us (gap -1.4)  grid 9x1x1 blk 1024  tiered_decode::route_prep_kernel
+   21    6.69 us (gap  0.2)  grid 36x1x1 blk 512  one_shot::gather_cat_kernel
+   22    3.87 us (gap  0.1)  grid 8x1x1 blk 256  _convert_req_index_to_global_index_kernel
+   23    1.28 us (gap  0.1)  grid 1x1x1 blk 128  _dcp_decode_sched_kernel
+   24   10.66 us (gap  0.2)  grid 1x8x16 blk 384  flash_fwd_splitkv_mla_fp8_sparse_kernel
+   25    7.71 us (gap -4.1)  grid 1x8x8 blk 256  smxx::decode::flash_fwd_mla_combine_kernel
+   26    0.90 us (gap  0.2)  grid 1x1x1 blk 128  at::native::vectorized_elementwise_kernel
+   27    7.01 us (gap -0.7)  grid 16x1x1 blk 512  one_shot::lse_reduce_scatter_kernel
+   28    2.88 us (gap -6.2)  grid 6x1x1 blk 128  _mark_rows_kernel
+   29    4.93 us (gap  0.1)  grid 49x1x1 blk 128  _compact_rows_kernel
+   30    4.74 us (gap -1.2)  grid 4x16x1 blk 384  nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT
+   31    2.91 us (gap -3.4)  grid 6x1x1 blk 128  _remap_rows_kernel
+   32   23.14 us (gap  0.1)  grid 8x3x1 blk 128  _gather_rows_kernel
+   33   19.87 us (gap -22.1)  grid 384x1x1 blk 128  decode_gemm_kernel
+   34    7.17 us (gap -1.5)  grid 32x1x1 blk 192  allreduce_fusion_kernel_oneshot_lamport
+   35    3.90 us (gap  0.1)  grid 1x16x6 blk 256  kernel_cutlass_kernel_vllmmodel_executorkernelslinearcute_dsl_ll_bf16_
+   36    4.00 us (gap  0.1)  grid 8x1x1 blk 384  vllm::moe::grouped_topk_fused_small_expert_count_kernel
+   37    5.15 us (gap -1.4)  grid 9x1x1 blk 1024  tiered_decode::route_prep_kernel
+  chain total 279.0 us

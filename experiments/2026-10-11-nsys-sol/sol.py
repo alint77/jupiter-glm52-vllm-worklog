@@ -8,6 +8,7 @@ past the producer's end (memory: PDL kernel time is not cost).
 """
 import collections
 import json
+import os
 import sqlite3
 import statistics as st
 import sys
@@ -16,6 +17,10 @@ from pathlib import Path
 ROOT = Path("/e/fscratch/profound/naeimitabiei1/sliced-prof")
 RUNS = {1: "nsol-c1-2272145", 2: "nsol-c2-2272143", 4: "nsol-c4-2272144",
         8: "nsol-c8-2272142", 16: "nsol-c16-2272141"}
+# SOL_RUNS="1:<run>,2:<run>,..." and SOL_AN=<dir> analyse another set of runs
+if os.environ.get("SOL_RUNS"):
+    RUNS = {int(k): v for k, v in (kv.split(":") for kv in os.environ["SOL_RUNS"].split(","))}
+AN = Path(os.environ.get("SOL_AN", Path(__file__).parent / "an"))
 HBM, C2C, NVL, BF16 = 3.6e12, 0.419e12, 0.43e12, 630e12
 # MoE layer_kernel floor per call, us: max(hot/HBM, cold/C2C) at the mean
 # routing mix (../2026-10-09-tp-sliced-experts README); c1 = DFlash2 8 tokens
@@ -110,7 +115,7 @@ def main():
             res[g] = {"calls": st.mean(len(p) / k for p, k in zip(per, nsteps)),
                       "us": st.mean(st.mean(p) for p in per), "min_us": st.mean(mins),
                       "ms_step": ms_step}
-        bd = [json.loads((Path(__file__).parent / "an" / f"bd-c{conc}-w{w}-d{d}.json").read_text())
+        bd = [json.loads((AN / f"bd-c{conc}-w{w}-d{d}.json").read_text())
               for d in range(4)]
         res["_period"] = st.mean(b["period_ms"] for b in bd)
         res["_outside"] = st.mean(b["ms"]["outside the verify graph (draft, lm_head, sampling, prep)"]
@@ -146,7 +151,7 @@ def main():
                                                     f"{'' if gap != gap else f'{gap:.2f}'} | {model} |"))
         for _, line in sorted(rows, key=lambda x: -x[0]):
             print(line)
-    (Path(__file__).parent / "an" / f"sol-w{w}.json").write_text(json.dumps(out, indent=1))
+    (AN / f"sol-w{w}.json").write_text(json.dumps(out, indent=1))
 
 
 main()

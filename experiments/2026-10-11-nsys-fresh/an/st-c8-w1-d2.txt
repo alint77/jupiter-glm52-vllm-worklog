@@ -1,0 +1,1 @@
+steps 53  gather mean 52.6 us (p90 75.2)  stall 0.000 ms/step (0.0 late groups/step)  layer_kernel overlap with staging 0.16 ms/step, slope +0.102 -> contention ~+0.017 ms/step
