@@ -6,7 +6,10 @@ side thread).** Goal: quantify how much DRAM-visible memory timing state
 the measurement platform only — HBM3e has no user timing path on JUPITER
 (power-on firmware training, GSP-owned MC registers, no host root; site
 policy aside). `experiments/2026-10-11-mem-timing-gh200` holds a 1h full-node
-standby allocation (job 2287088, `standby.sbatch`) with `node-submit.sh`
+standby allocation (job 2287122, `standby.sbatch`; the first attempt
+2287088 failed in 54 s because Parastation runs sbatch scripts from a
+/var/spool copy, so BASH_SOURCE-relative repo detection broke — fixed with
+the claude-server hardcoded-fallback pattern) with `node-submit.sh`
 submitting steps via the verified `srun --jobid --overlap` pattern, GPU
 pinned through `CUDA_VISIBLE_DEVICES`. probe1 (in flight) records the
 read-only inventory (ECC modes, memory clock bins, topo) and the

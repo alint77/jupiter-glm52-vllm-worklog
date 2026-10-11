@@ -5,7 +5,8 @@
 # granularities is the readout for how much DRAM timing state each pattern
 # is exposed to (row activation/precharge vs plain sector streaming).
 set -euo pipefail
-repo_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../.." && pwd)"
+repo_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../.." 2>/dev/null && pwd)"
+[[ -f "${repo_dir}/agent_space/jupiter-env.sh" ]] || repo_dir=/e/project1/profound/alint77/vllm
 cd "$repo_dir"
 source agent_space/jupiter-env.sh
 E=agent_space/experiments/2026-10-11-mem-timing-gh200

@@ -13,7 +13,8 @@
 # GH200 node so ad-hoc probes can be launched into it with node-submit.sh
 # (srun --jobid --overlap). No GPU work runs here.
 set -euo pipefail
-repo_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]:-$0}")/../../.." && pwd)"
+repo_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]:-$0}")/../../.." 2>/dev/null && pwd)"
+[[ -f "${repo_dir}/agent_space/jupiter-env.sh" ]] || repo_dir=/e/project1/profound/alint77/vllm
 cd "$repo_dir"
 E=agent_space/experiments/2026-10-11-mem-timing-gh200
 printf 'JOB_ID=%s\nNODE=%s\nSTART=%s\n' \

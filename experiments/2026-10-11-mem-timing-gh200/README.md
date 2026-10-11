@@ -36,6 +36,12 @@ bash agent_space/experiments/2026-10-11-mem-timing-gh200/node-submit.sh 0 \
 (`srun --jobid ... --overlap --cpu-bind=none --gres=gpu:4`) and pins the GPU
 via `CUDA_VISIBLE_DEVICES`; concurrent steps must pin different indices.
 
+Note: Parastation runs sbatch scripts from a copy under
+`/var/spool/parastation/jobs/<id>`, so `BASH_SOURCE`-relative repo
+detection silently resolves wrong and relative writes fail (job 2287088
+died in 54 s on exactly this). All scripts here carry the
+`claude-server.sbatch` hardcoded-fallback repo detection.
+
 ## probe1
 
 Read-only, single GPU, NUMA-bound to the GPU's local Grace node:

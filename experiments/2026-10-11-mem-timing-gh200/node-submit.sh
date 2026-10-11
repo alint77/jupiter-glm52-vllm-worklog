@@ -5,7 +5,8 @@
 # the step claims gpu:4 with --overlap (the verified Booster pattern), so
 # concurrent steps must pin different GPU indices. Log lands in logs/.
 set -euo pipefail
-repo_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../.." && pwd)"
+repo_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../.." 2>/dev/null && pwd)"
+[[ -f "${repo_dir}/agent_space/jupiter-env.sh" ]] || repo_dir=/e/project1/profound/alint77/vllm
 cd "$repo_dir"
 E=agent_space/experiments/2026-10-11-mem-timing-gh200
 jobid="$(<"${E}/alloc.jobid")"
