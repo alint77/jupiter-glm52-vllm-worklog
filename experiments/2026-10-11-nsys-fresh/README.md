@@ -97,6 +97,38 @@ Prefill (c4, `step_groups.py`, `moe_span.py`):
 | DCP q all-gather + lse_combine, 4K | 125 ms | ~75 ms | 60% | NVLink ~450 GB/s |
 | dense GEMMs, 4K | 78 ms | ~48 ms | 62% | bf16 compute |
 
+### fastokens (`VLLM_USE_FASTOKENS=1`): measured
+
+- **Tokenizer bench** (`tok_bench.py`, `tok_bench2.py`, Booster node, no
+  server). GLM-5.3 already loads the Rust HF `tokenizers` 0.22.2, at ~1.4-1.6
+  us per token. fastokens 0.3.3 runs in ~1 ms for distinct 64K-token texts
+  and 0.7 ms for a 40K-prefix turn with a new suffix (HF: ~100 / 63 ms). Its
+  first call is ~28 ms (warm-up; it caches across calls).
+- **Identity** (`tok_ident.py`): 0 mismatches over 17.7M tokens. That covers
+  all 5,643 text files in the repo, unicode/emoji/control stress strings,
+  and 20 chat-templated turns with system/tool messages and tool calls.
+  Decode matches too.
+- **Served A/B**, same time on two fresh holds (`launch_host.sh`;
+  `nfr-host-hf-2280330` vs `nfr-host-ft-2280329`). Fastokens installed into
+  `/e/fscratch/profound/$USER/pylibs/fastokens` (not the venv), on
+  PYTHONPATH. Client TTFT in ms, mean of reps 1-2; the change column is the
+  fastokens delta:
+
+| prompt | HF tokenizers | fastokens | change | server /tokenize HF -> ft |
+|--:|--:|--:|--:|--:|
+| 1K | 123 | 120 | -3 | 2 -> 1 |
+| 10K | 136 | 124 | -12 | 14 -> 3 |
+| 30K | 175 | 137 | -38 | 41 -> 6 |
+| 60K | 234 | 154 | **-80** | 84 -> 11 |
+| 100K | 299 | 181 | **-118** | 127 -> 17 |
+
+- Prefill time (GPU step) is unchanged. The remaining host time at 60K is
+  ~22 ms before the engine (client minus server TTFT), plus ~6 ms
+  between engine arrival and scheduling.
+- To ship: `uv pip install fastokens==0.3.3` into the venv, and
+  `VLLM_USE_FASTOKENS=1` in serve.sh.
+
+
 ## Prefill breakdown and floors (`prefill_bd.py`)
 
 Wall time per prefill step: each instant goes to the highest-priority
@@ -140,7 +172,7 @@ come from `nfr-sizes-2277153`:
 
 | # | lever | turn @60K 1024 | 4K chunk | notes |
 |--:|---|--:|--:|---|
-| P1 | **Tokenizer (fastokens, `VLLM_USE_FASTOKENS=1`)** | -79 (host) | -80 (host, once per request) | ids identical on 17.7M tokens; served A/B running |
+| P1 | **Tokenizer (fastokens, `VLLM_USE_FASTOKENS=1`)** | -80 (measured, host) | -80 to -118 per request at 60-100K | ids identical on 17.7M tokens; served A/B done (above) |
 | P2 | **DCP prefill dataflow: all-gather the context KV instead of q + LSE combine.** Each rank then attends its own 16 heads over the full KV: 60K x 656 B = 42 MB per layer, ~7-10 ms per step at any T. | -22 | -118 | Biggest GPU lever at 2-4K. Same math, different reduction order (one pass vs 4 partials + LSE merge): not bitwise, needs an eval. Transient workspace ~42 MB per layer at 64K. |
 | P3 | **MoE GEMM at small T toward the HBM floor** (runs at 1.6 TB/s at 1K; isolated 807 vs served 860 us per layer) plus the 4K compute gap (48%) | -34 | -54 | kernel work; copy contention (+150 us per layer, finding 1) is part of the small-T gap |
 | P4 | **Fewer prefill steps**: multi-request prefill steps (finding 2), no 257-512-token recompute (finding 1) | -27 per turn; -134 when a turn crosses 4K | | scheduler + DCP sparse prefill for N requests; MTP last-block drop |
