@@ -25,15 +25,22 @@ inv="${E}/logs/probe1-inventory-${ts}.txt"
 } >"${inv}" 2>&1
 echo "inventory: ${inv}"
 
-numa="$(nvidia-smi topo -m | awk -v d="GPU${gpu}" '$1==d {print $NF}' | head -1)"
+# Topo rows end with "... CPU Affinity NUMA Affinity GPU NUMA ID": $(NF-1) is
+# the CPU/NUMA node (0-3, one per superchip); $NF is the memory-only GPU-HBM
+# node (4/12/20/28) with no schedulable CPUs.
+numa="$(nvidia-smi topo -m | awk -v d="GPU${gpu}" '$1==d {print $(NF-1)}' | head -1)"
 out="${E}/logs/probe1-bw-${ts}.json"
-if command -v numactl >/dev/null 2>&1 && [ -n "${numa}" ]; then
-  echo "binding to NUMA node ${numa} for GPU ${gpu}"
-  numactl --cpunodebind="${numa}" --membind="${numa}" \
-    .venv/bin/python "${E}/probe1.py" --out "${out}"
-else
+bind=(numactl --cpunodebind="${numa}" --membind="${numa}")
+if ! command -v numactl >/dev/null 2>&1 || [ -z "${numa}" ]; then
+  bind=()
   echo "numactl or NUMA affinity unavailable, running unbound"
-  .venv/bin/python "${E}/probe1.py" --out "${out}"
+elif numactl --cpunodebind="${numa}" --membind="${numa}" true 2>/dev/null; then
+  echo "binding to NUMA node ${numa} for GPU ${gpu}"
+  numactl -H 2>/dev/null | grep -E "node [0-9]+ (cpus|size):" | head -8
+else
+  bind=()
+  echo "WARN: cpunodebind=${numa} failed, running unbound"
 fi
+"${bind[@]}" .venv/bin/python "${E}/probe1.py" --out "${out}"
 nvidia-smi --query-gpu=index,clocks.mem,clocks.sm,power.draw,temperature.gpu \
   --format=csv >"${E}/logs/probe1-postclocks-${ts}.txt"
