@@ -60,6 +60,43 @@ Per-layer MoE wall span, served vs the isolated bench (same kernel):
 | 2K | 1181 | 1222 |
 | 4K | 1974 | 2048 |
 
+## SOL efficiency (`an/sol-w2.md`, ~50K window; `an/sol-w1.md` ~5K)
+
+Decode, us/call (min over ranks) and % of roofline. Rooflines and byte/FLOP
+models are as in `../2026-10-11-nsys-sol`: HBM 3.6 TB/s, C2C 0.419 TB/s,
+NVLink ~0.43 TB/s, bf16 ~630 TFLOP/s. The gap column is ms/step over the
+roofline.
+
+| kernel group | c1 | c2 | c4 | c8 | gap c1 / c4 / c8 (ms/step) |
+|---|--:|--:|--:|--:|--:|
+| step period (ms) | 19.81 | 20.26 | 25.64 | 38.58 | |
+| MoE layer_kernel | 104.7 us, 59% | 104.0, 59% | 159.4, 75% | 254.0, 87% | 3.26 / 3.03 / 2.47 |
+| dense GEMMs (8.92 GB/step) | 4.27 ms, 58% | 4.28, 58% | 4.58, 54% | 5.37, 46% | 1.80 / 2.10 / 2.90 |
+| AR + RMSNorm | 7.3 us, 9% | 7.5, 9% | 8.9, 15% | 12.3, 22% | 1.00 / 1.18 / 1.50 |
+| FlashMLA sparse | 10.9 us, 12% | 11.0, 12% | 13.8, 20% | 18.5, 29% | 0.74 / 0.86 / 1.02 |
+| DCP gather_cat | 7.5 us, 13% | 7.5, 14% | 9.4, 22% | 12.4, 33% | 0.51 / 0.57 / 0.65 |
+| DCP lse_reduce_scatter | 6.8 us, 13% | 6.7, 13% | 8.0, 23% | 10.9, 33% | 0.46 / 0.48 / 0.57 |
+
+- These match nsys-sol to within noise, except c1 MoE at ~50K (59% vs 70%,
+  content; the ~5K window matches).
+- c16 is omitted. Its windows hold prefill steps (finding 2), so verify steps
+  carry fewer than 64 tokens. MoE then shows 115-124% "SOL" against the
+  64-token floor, which is not meaningful. nsys-sol's c16 (98% MoE, dense 45%,
+  AR 32%) stands.
+- Small collectives and attention sit at 9-33%. They are latency-bound
+  (2-18 us kernels), so the lever is fewer launches, not bandwidth.
+
+Prefill (c4, `step_groups.py`, `moe_span.py`):
+
+| item | measured | floor | % SOL | floor basis |
+|---|--:|--:|--:|---|
+| 4096-token step | 516 ms | ~270 ms | 52% | prefill-sizes README dataflow floor |
+| MoE, 4K step (75 layers) | 153 ms (2048 us/layer) | 74 ms (982 us/layer) | 48% | bf16 compute |
+| MoE, 512-token step | 63.5 ms | ~63 ms | ~100% | 24.3 GiB cold experts over C2C |
+| 384/512-token step | 113-125 ms | ~63 ms C2C + ~50 ms non-MoE | | per-step fixed cost |
+| DCP q all-gather + lse_combine, 4K | 125 ms | ~75 ms | 60% | NVLink ~450 GB/s |
+| dense GEMMs, 4K | 78 ms | ~48 ms | 62% | bf16 compute |
+
 ## Findings
 
 ### 1. Every prefill step pays ~115 ms, set by C2C, and agentic turns add a step
