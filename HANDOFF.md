@@ -1,5 +1,18 @@
 # GLM-5.2 on JUPITER: agent handoff
 
+**Latest (2026-10-11, later still): FlashMLA sparse decode Phase 0 -- where
+the time goes.** At b=1 (DCP decode) FlashMLA's planner splits the 12-block
+row 9+3 at 64 tokens and 5+5+2 at 32 (fixed_overhead_num_blocks=5); balanced
+hand-built metadata saves 8.0 / 2.5 us/layer. Early stop at the max live
+count (width 576) saves 3.9 / 2.3 more. The stock kernel's 44 wgmmas are all
+serialized (ptxas C7512); setmaxnreg 208/160/136 (sum <= 504) removes it,
+bitwise-identical, -0.7..-2.1 us/layer. Together: **-1.06 ms/step at c16,
+-0.51 at c8, ~-0.31 at c4, -0.18 at c2** (microbench). Constant fill shows key
+loading is only 11-22% of a block, which rules out token packing. PDL is not
+worth carrying. Phase 1 (vLLM-built schedule + device early stop + register
+split) is proposed, not started. FlashMLA branch `phase0-probes`.
+`experiments/2026-10-11-flashmla-phase0/`.
+
 **Latest (2026-10-11, later): fused DCP tail (split combine + LSE
 reduce-scatter in one kernel) -- built, bitwise-correct, not adopted.** Slower
 at every size (+1.1 us/layer at 8 tokens, +9.7 at 64). FlashMLA's combine is
