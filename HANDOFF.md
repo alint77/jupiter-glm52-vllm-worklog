@@ -1,5 +1,20 @@
 # GLM-5.2 on JUPITER: agent handoff
 
+**Latest (2026-10-11, night): mem-timing research thread opens (read-only,
+side thread).** Goal: quantify how much DRAM-visible memory timing state
+(row activation/precharge/latency) matters to AI access patterns. GH200 is
+the measurement platform only — HBM3e has no user timing path on JUPITER
+(power-on firmware training, GSP-owned MC registers, no host root; site
+policy aside). `experiments/2026-10-11-mem-timing-gh200` holds a 1h full-node
+standby allocation (job 2287088, `standby.sbatch`) with `node-submit.sh`
+submitting steps via the verified `srun --jobid --overlap` pattern, GPU
+pinned through `CUDA_VISIBLE_DEVICES`. probe1 (in flight) records the
+read-only inventory (ECC modes, memory clock bins, topo) and the
+access-granularity bandwidth curve: stream copy/fill/sum vs random gathers
+at 2 B / 256 B / 64 KiB. Next: analyze the granularity curve, then map it
+onto serving access patterns (KV gather, MoE expert reads). No serving
+changes; the RTX 2080 Ti BAR0 actuator work happens off-cluster.
+
 **Latest (2026-10-11, evening): fastokens tokenizer is prod.** serve.sh
 exports `VLLM_USE_FASTOKENS=1` (fastokens 0.3.3 installed in the venv).
 - Token ids are identical to HF tokenizers on 17.7M tokens.
