@@ -1,0 +1,31 @@
+total samples 39258: wait 20%, dispatch 20%, barrier 17%, selected 15%, long_sb 10%, math 6%, not_selected 5%, short_sb 4%
+ 14.7%  81710  WARPGROUP.DEPBAR.LE gsb0, 0x0                                 barrier 99, selected 0, dispatch 0
+  2.0%  81940  @!P0  BRA 0x400466486fb0                                      long_sb 85, dispatch 6, wait 4
+  1.8%  7fc20  @P0   BRA 0x400466485a90                                      barrier 100, selected 0, wait 0
+  1.6%  81850  HGMMA.64x128x16.F32 R88, R208, gdesc[UR16], R88               wait 47, dispatch 32, not_selected 17
+  1.4%  86290  @!P0  BRA 0x400466487010                                      long_sb 99, wait 1, not_selected 0
+  1.3%  86600  @!P0  BRA 0x400466487040                                      long_sb 100
+  1.3%  81880  HGMMA.64x128x16.F32 R24, R204, gdesc[UR16], R24               wait 37, dispatch 33, not_selected 17
+  1.2%  86c40  @!P0  BRA 0x4004664870a0                                      long_sb 100
+  1.2%  81890  HGMMA.64x128x16.F32 R88, R212, gdesc[UR16], R88, gsb0         wait 60, mio 18, dispatch 14
+  1.2%  86920  @!P0  BRA 0x400466487070                                      long_sb 100, dispatch 0
+  1.1%  80ba0  HGMMA.64x128x16.F32 R24, R152, gdesc[UR16], R24               selected 3, mio 2, dispatch 0
+  1.0%  817d0  HGMMA.64x128x16.F32 R88, R196, gdesc[UR16], R88               wait 56, dispatch 24, not_selected 15
+  1.0%  81a20  LOP3.LUT R21, R8, 0xf000f0, R2, 0xea, !PT                     short_sb 71, math 10, dispatch 8
+  1.0%  81970  LOP3.LUT R6, R3, 0xfffffffe, R6, 0xe2, !PT                    math 29, dispatch 28, wait 21
+  0.9%  81a60  LOP3.LUT R17, R6, 0xf000f0, R2, 0xea, !PT                     short_sb 63, math 13, dispatch 13
+  0.9%  81830  PLOP3.LUT P0, PT, PT, PT, UP0, 0x80, 0x0                      wait 34, math 32, dispatch 16
+  0.8%  81670  @!P1  IMAD.SHL.U32 R4, R4, 0x8, RZ                            wait 74, dispatch 9, math 7
+  0.8%  81a00  IMAD.U32 R5, R14, 0x10000, RZ                                 short_sb 67, dispatch 13, math 11
+  0.8%  80e00  LOP3.LUT R23, R10, 0xf000f, R2, 0xea, !PT                     short_sb 78, wait 7, selected 6
+  0.7%  80dd0  LOP3.LUT R21, R12, 0xf000f0, R2, 0xea, !PT                    short_sb 83, wait 11, selected 4
+  0.7%  819f0  LDS.64 R6, [R3]                                               dispatch 53, wait 27, not_selected 16
+  0.7%  819d0  LDS.64 R14, [R10+0x4000]                                      dispatch 50, wait 24, not_selected 20
+  0.7%  81820  UISETP.GE.AND UP0, UPT, UR5, UR14, UPT                        dispatch 47, not_selected 32, wait 15
+  0.7%  814d0  HFMA2 R211, R11, R0.H1_H1, -72, -72                           dispatch 38, math 22, wait 19
+  0.7%  816b0  HGMMA.64x128x16.F32 R88, R168, gdesc[UR16], R88, gsb0         wait 77, not_selected 10, selected 6
+  0.7%  81c40  FMUL R6, R6, UR12                                             math 45, wait 22, not_selected 16
+  0.6%  81650  LOP3.LUT P1, RZ, R4, 0x1f, R3, 0xf8, !PT                      dispatch 37, wait 21, math 20
+  0.6%  81d70  HFMA2 R165, R3, R0.H0_H0, -1032, -1032                        dispatch 34, wait 30, math 22
+  0.6%  81ae0  LOP3.LUT R17, R13, 0xf000f, R2, 0xea, !PT                     dispatch 43, math 19, wait 16
+  0.6%  81250  HFMA2 R206, R21, R0.H1_H1, -72, -72                           math 42, wait 21, not_selected 16

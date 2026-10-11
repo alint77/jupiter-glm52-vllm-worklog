@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-10-11-sliced-prefill-moe/src_top.py", line 9, in <module>
+    reasons = [k for k in rows[0] if k.startswith("stall_") and "Not Issued" not in k]
+                          ~~~~^^^
+IndexError: list index out of range
