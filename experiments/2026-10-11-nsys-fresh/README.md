@@ -190,6 +190,102 @@ For the agentic turn (303 ms TTFT at 60K, 1024 step), P1 + P2 + P3 + P6 +
 P7 alone come to ~-160 ms (to ~145 ms). For a 4K chunk, P2 + P3 + P5 + P6 come
 to ~-230 ms of 536 (to ~305 ms).
 
+## 512-4K steps: per-layer anatomy and the next target
+
+### One layer of a 4053-token step (fresh, window 7, layer 40, GPU 0): 6.07 ms
+
+| block | kernels (us) | us | share |
+|---|---|--:|--:|
+| routed MoE | route 18, gather 144, w13 x7 classes (PDL) ~1130, act 34, w2 x7 ~640, combine 131 | 2100 | 35% |
+| **DCP attention comms** | q all-gather 755 (NCCL), lse_combine 597, barriers 37 | **1389** | **23%** |
+| sparse attention | sparse_attn_fwd 622 (64 heads, local quarter of the top-2048) | 622 | 10% |
+| attention projections | qkv_a 240, q_b 152, W_UK 36, W_UV 33, o_proj 326 | 787 | 13% |
+| TP all-reduce x2 | 284 + 252 (NCCL) | 536 | 9% |
+| shared expert | gate_up 91, silu 17, down 57, add 50 | 215 | 4% |
+| norms, rope/split, KV write, router | 83 + 58 + 21, 100, 6, 32 + 23 | 343 | 6% |
+
+- Dense GEMMs are near peak once the shapes are counted: per GPU ~10.3
+  GFLOP per token (MLA projections with the absorbed W_UK/W_UV, shared
+  expert, router, 3 dense-MLP layers).
+  - Floor: 16.4 us per token at 630 TFLOP/s. Measured 70-86% across
+    640-4053 tokens.
+  - o_proj runs at ~100%, qkv_a 86%, shared gate_up 89%.
+  - (The earlier "48 ms floor / 62%" undercounted the shapes; the @60K
+    dense numbers also include the indexer's deep_gemm logits.)
+- NCCL protocol is not a lever (`nccl_proto.py`, 4 GH200, prefill message
+  sizes):
+
+  | protocol | 4K all-gather, us | in GB/s | 4K all-reduce, us | bus GB/s |
+  |---|--:|--:|--:|--:|
+  | default | 792 | 286 | 290 | 260 |
+  | Simple | 784 | 289 | 287 | 263 |
+  | LL128 | 826 | 274 | 312 | 242 |
+  | LL (forced) | 1735 | 131 | 582 | 130 |
+
+  Default ≈ Simple, and serving matches the default (755 / 284 us). The
+  `RING_LL` in the kernel name labels the generic kernel, not the protocol.
+  The collectives cost by **volume**.
+
+### Where the volume is: DCP prefill moves ~3x more than it needs to
+
+- Today, per layer, each rank all-gathers q for all 64 heads, attends to
+  its KV quarter, and reduce-scatters the partial outputs (one-shot
+  lse_combine). Inbound per rank at 4K:
+  - q all-gather: 3 x T x 16 h x 576 x 2 B = 224 MB;
+  - lse_combine: 3 x T x 16 h x 512 x 2 B = 199 MB;
+  - total ~423 MB. At ~290-330 GB/s that is the 1.39 ms.
+- **Sequence-split alternative.** Each rank owns T/4 queries with all 64
+  heads; heads stay padded to the kernel's 64-head tile, so no extra
+  compute. Per layer:
+  1. all-to-all q to the query split: T/4 x 48 h x 576 x 2 B = 57 MB at 4K;
+  2. pull the 3 remote KV quarters shard by shard (fp8, 656 B per token:
+     30 MB at 60K context, 2 MB for a fresh 4K), and run today's
+     per-shard sparse attention on each;
+  3. combine the 4 partials locally with the same LSE arithmetic;
+  4. all-to-all the outputs back to the head split: 3T/4 x 16 h x 512 x 2 B
+     = 50 MB.
+
+  Inbound drops to ~108-136 MB at 4K (3.1-3.9x less).
+- **Bitwise identical.** Every (query, head) partial is computed by the
+  same kernel over the same shard indices, and combined with the same
+  arithmetic, only on a different rank. Attention FLOPs per rank are
+  unchanged (T/4 queries x 64 h x all 4 shards = T x 64 h x 1 shard).
+- **Workspace** stays one bf16 KV quarter (as today) plus a ~10 MB fp8
+  receive buffer at 60K. Pulling shard s+1 can overlap attention on shard s.
+- Indexer top-k is then needed only for the rank's own T/4 queries.
+
+Estimated per step (time ∝ inbound bytes at today's achieved bandwidth;
+not built):
+
+| step | DCP comms now | after | saved | % of step |
+|---|--:|--:|--:|--:|
+| @60K 1024 (911 new) | 31.8 ms | ~17 | ~-15 | 8% |
+| @60K 2394 | 77.5 | ~29 | ~-48 | 14% |
+| @60K 4096 | 127.9 | ~45 | ~-83 | 15% |
+| fresh 4053 | 125.2 | ~28 | ~-97 | 19% |
+
+### Ranking for 512-4K (gap to floor, ms per step; realistic share in brackets)
+
+| target | 640 fresh | 1024 @60K | 2394 @60K | 4096 @60K | nature |
+|---|--:|--:|--:|--:|---|
+| **DCP prefill dataflow (sequence split)** | 0 (short fresh prompts skip it) | 32 -> 17 [-15] | 78 -> 29 [-48] | 128 -> 45 [-83] | volume, structural, bitwise |
+| MoE GEMM (floor max(30 ms HBM, 18 us/token)) | 57 vs 30 | 65 vs 30 | 86 vs 43 | 128 vs 74 | kernel, just had a round. Small T: narrow classes stream weights at ~1.7 TB/s. 4K: ~59% of compute. [-15 to -30] |
+| TP all-reduce (overlap with GEMMs, or a better AR) | 15 vs 4 | 18.5 vs 6 | 30 vs 15 | 46 vs 26 | [-10 to -25]; overlap could hide more |
+| idle / launch gaps | 7 | 18 | 8 | 7 | the eager attention region between piecewise graphs at <= 1024 |
+| glue (norms 50%, rope/split 100 us at 4K) | 10 | 8.5 | 20 | 31 | fusion, [-5 to -15] |
+| attention compute (~75% of bf16) | 0 | 14 | 35 | 60 | kernel [-5 to -15] |
+| dense GEMMs (70-86%) | 15 vs 10.5 | 23 vs 17 | 55 vs 39 | 89 vs 67 (incl. indexer logits) | [-5 to -15] |
+
+**Next target: the DCP prefill dataflow.**
+- It is the largest gap at 2-4K and in the top two at 1K.
+- It is structural (bytes moved), not tuning, so the estimate is robust.
+- It keeps the output bitwise identical.
+- It touches one place: `flashmla_sparse.py`'s DCP prefill path plus a q /
+  output all-to-all.
+
+Second is the MoE GEMM at small T (memory-bound narrow classes), then
+overlapping the TP all-reduce with compute.
+
 ## Findings
 
 ### 1. Every prefill step pays ~115 ms, set by C2C, and agentic turns add a step
