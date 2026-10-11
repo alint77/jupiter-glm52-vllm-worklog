@@ -1,5 +1,19 @@
 # GLM-5.2 on JUPITER: agent handoff
 
+**Latest (2026-10-11, evening): FlashMLA Phase 1 shipped.** vLLM builds
+the b=1 split schedule on device (`dcp_decode_sched_meta`, vLLM `80bd3cce5c`):
+balanced splits, early stop at the longest live row. The indexer layers build
+it, the reuse layers share it, and the call goes straight to
+`sparse_decode_fwd`. The FlashMLA setmaxnreg 208/160/136 build (branch
+`dcp-decode-regs` `e2f70d4`, not pushed; patch in the experiment dir) is
+bitwise identical to prod on 3168 configs. 133 tests pass, a mutant fails 26,
+and Astra found no bug. Microbench -143..-1027 us/step (T=1..64). Served
+same-node A/B (MTP3 sliced): -0.3 ms/step at 1-4 requests, **-1.0 / -1.7 ms
+at 16** (5K / 50K), 20 of 24 pairs better, GSM8K and acceptance unchanged.
+`serve.sh` exports `VLLM_DCP_DECODE_SCHED=1` and the main tree has the
+register library (prod backup in `build/fmla-prod-backup`). c2/c4/c8/c16 MTP3
+launchers in vLLM `244d3997a5`. `experiments/2026-10-11-flashmla-phase1/`.
+
 **Latest (2026-10-11, later still): FlashMLA sparse decode Phase 0 -- where
 the time goes.** At b=1 (DCP decode) FlashMLA's planner splits the 12-block
 row 9+3 at 64 tokens and 5+5+2 at 32 (fixed_overhead_num_blocks=5); balanced

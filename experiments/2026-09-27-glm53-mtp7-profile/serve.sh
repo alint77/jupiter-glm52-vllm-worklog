@@ -133,6 +133,12 @@ export VLLM_DFLASH2_EAGER_DRAFT="${VLLM_DFLASH2_EAGER_DRAFT:-0}"
 # unchanged; served max 597 live slots per row, 0 over 768 (logged every 1000
 # steps). VLLM_DCP_SPARSE_DECODE_WIDTH=0 restores the full width.
 export VLLM_DCP_SPARSE_DECODE_WIDTH="${VLLM_DCP_SPARSE_DECODE_WIDTH:-768}"
+# DCP sparse decode: vLLM builds FlashMLA's split schedule on device (vllm
+# 80bd3cce5c, 2026-10-11-flashmla-phase1): balanced splits, stop at the longest
+# live row. Pairs with the setmaxnreg 208/160/136 FlashMLA build installed as
+# vllm/_flashmla_C.abi3.so (md5 9c2356f2; prod backup 3c6f31e7 in
+# build/fmla-prod-backup). VLLM_DCP_DECODE_SCHED=0 restores the planner.
+export VLLM_DCP_DECODE_SCHED="${VLLM_DCP_DECODE_SCHED:-1}"
 # REPLICAS=exact activates the profile's Grace replicas (1,351-1,962 per rank
 # in the agentic profile). Replicas add pinned Grace the planner does not see
 # each worker's own share of, hence the larger host reserve (as for MiMo).

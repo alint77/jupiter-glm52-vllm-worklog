@@ -1,0 +1,86 @@
+From e2f70d4e3d93809046aeed0c2e24e89147554109 Mon Sep 17 00:00:00 2001
+From: alint77 <ali.nt1377@gmail.com>
+Date: Sun, 11 Oct 2026 10:28:36 +0200
+Subject: [PATCH] sm90 sparse fp8 decode (V3.2, h64): setmaxnreg 208/160/136 so
+ wgmmas are not serialized
+
+192/160/152 makes ptxas serialize all 44 wgmmas of the kernel (C7512).
+208/160/136 (sum <= 3 x 168) keeps them in flight; outputs are bitwise
+identical. A host assert checks the split against the compiled register
+count, since an over-budget setmaxnreg.inc never returns.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ csrc/sm90/decode/sparse_fp8/config.h        | 10 ++++++++++
+ csrc/sm90/decode/sparse_fp8/splitkv_mla.cuh | 13 ++++++++++---
+ 2 files changed, 20 insertions(+), 3 deletions(-)
+
+diff --git a/csrc/sm90/decode/sparse_fp8/config.h b/csrc/sm90/decode/sparse_fp8/config.h
+index e5631f3..76334d1 100644
+--- a/csrc/sm90/decode/sparse_fp8/config.h
++++ b/csrc/sm90/decode/sparse_fp8/config.h
+@@ -33,6 +33,16 @@ static constexpr int BLOCK_M = 64;
+ static constexpr int TOPK_BLOCK_SIZE = 64;
+ static constexpr int NUM_K_BUFS = 2;
+ 
++// setmaxnreg split: consumer WG0 / PV WG1 / producer WG2. The sum must stay
++// <= 3 * 168 (the launch-time allocation), since setmaxnreg only moves
++// registers within the CTA. For V3.2 h64, 192/160/152 makes ptxas serialize
++// every wgmma (C7512); 208/160/136 keeps them in flight.
++static constexpr bool TUNED_REGS = MODEL_TYPE == ModelType::V32 && NUM_HEADS == 64;
++static constexpr int NUM_REGS_WG0 = TUNED_REGS ? 208 : 192;
++static constexpr int NUM_REGS_WG1 = 160;
++static constexpr int NUM_REGS_PRODUCER = TUNED_REGS ? 136 : 152;
++static_assert(NUM_REGS_WG0 + NUM_REGS_WG1 + NUM_REGS_PRODUCER <= 3 * 168);
++
+ using SmemLayoutQTile = decltype(tile_to_shape(
+     GMMA::Layout_SW128_Atom<bf16, GMMA::Major::K>{},
+     Shape<Int<BLOCK_M>, Int<64>>{}
+diff --git a/csrc/sm90/decode/sparse_fp8/splitkv_mla.cuh b/csrc/sm90/decode/sparse_fp8/splitkv_mla.cuh
+index 9994568..9c4b9fd 100644
+--- a/csrc/sm90/decode/sparse_fp8/splitkv_mla.cuh
++++ b/csrc/sm90/decode/sparse_fp8/splitkv_mla.cuh
+@@ -184,7 +184,7 @@ __device__ void KernelTemplate<MODEL_TYPE, NUM_HEADS>::devfunc(const SparseAttnD
+     };
+ 
+     if (warpgroup_idx == 0) {
+-        cutlass::arch::warpgroup_reg_alloc<192>();
++        cutlass::arch::warpgroup_reg_alloc<NUM_REGS_WG0>();
+ 
+         TiledMMA tiled_mma_QK = TiledMMA_QK{};
+         ThrMMA thr_mma_QK = tiled_mma_QK.get_slice(idx_in_warpgroup);
+@@ -364,7 +364,7 @@ __device__ void KernelTemplate<MODEL_TYPE, NUM_HEADS>::devfunc(const SparseAttnD
+             sync_all_threads_in_cluster();
+         }
+     } else if (warpgroup_idx == 1) {
+-        cutlass::arch::warpgroup_reg_dealloc<160>();
++        cutlass::arch::warpgroup_reg_dealloc<NUM_REGS_WG1>();
+ 
+         TiledMMA tiled_mma_PV = TiledMMA_PV_RemoteP{};
+         ThrMMA thr_mma_PV = tiled_mma_PV.get_slice(idx_in_warpgroup);
+@@ -453,7 +453,7 @@ __device__ void KernelTemplate<MODEL_TYPE, NUM_HEADS>::devfunc(const SparseAttnD
+         }
+     } else {
+         // Producer warpgroup
+-        cutlass::arch::warpgroup_reg_dealloc<152>();
++        cutlass::arch::warpgroup_reg_dealloc<NUM_REGS_PRODUCER>();
+ 
+         static_assert(CLUSTER_SIZE == 1 || CLUSTER_SIZE == 2);
+         static constexpr int NUM_TOKENS_PER_THREAD = CLUSTER_SIZE == 1 ? 2 : 1;
+@@ -752,6 +752,13 @@ void KernelTemplate<MODEL_TYPE, NUM_HEADS>::run(const SparseAttnDecodeParams &pa
+ 
+     constexpr size_t smem_size = sizeof(SharedMemoryPlan);
+     KU_CUDA_CHECK(cudaFuncSetAttribute(mla_kernel, cudaFuncAttributeMaxDynamicSharedMemorySize, smem_size));
++    static const int num_regs = [&] {
++        cudaFuncAttributes attr;
++        KU_CUDA_CHECK(cudaFuncGetAttributes(&attr, mla_kernel));
++        return attr.numRegs;
++    }();
++    // setmaxnreg.inc would wait forever for registers the CTA does not own
++    KU_ASSERT(NUM_REGS_WG0 + NUM_REGS_WG1 + NUM_REGS_PRODUCER <= 3 * num_regs);
+ 
+     // NOTE Don't use PDL because of potential compiler bugs!
+     // cudaLaunchAttribute mla_kernel_attributes[1];
+-- 
+2.52.0
+
