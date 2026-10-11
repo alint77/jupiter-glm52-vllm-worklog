@@ -1,5 +1,20 @@
 # GLM-5.2 on JUPITER: agent handoff
 
+**Latest (2026-10-11): DCP one-shot collectives at 64 tokens, shipped.**
+At c16 (MTP3, 64 tokens) the query gather took 34 us and the LSE combine 19 us
+per layer. The gather's grid-stride loop was rank-major, so one NVLink carried
+the whole grid at a time. vllm `4524b36e4e` interleaves source ranks every 32
+uint4, keeps 8 loads in flight and adds a warp-per-pair combine (>= 512 pairs,
+<= 4 GPUs); bitwise-identical outputs. Microbench at 64 tokens: gather 34.1 ->
+16.5 us, combine 18.5 -> 15.4. Served same-node A/B (2 nodes, swapped order):
+**-1.46 / -0.76 ms/step at 16 requests (5K / 50K), -0.77 / -0.55 at 8**.
+NVIDIA's push / barrier-free design was prototyped and correct but no faster.
+The prod sliced server was restarted on it. FlashMLA token packing (4 MTP tokens
+per CTA or per cluster) went to Astra: not worth building before balanced
+early stop and a constant-fill producer ablation.
+`experiments/2026-10-11-dcp-oneshot-bw/`,
+`experiments/2026-10-11-flashmla-token-packing/`.
+
 **Latest (2026-10-07): new-prod decode dive -- where the 21.8 ms step goes.**
 Kernel-level breakdown of the full-memory-stack prod window
 (`skipkv-newprod`, 92 steps x 4 ranks): target busy 19.44 whose schedule is

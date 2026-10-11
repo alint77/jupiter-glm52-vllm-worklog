@@ -85,8 +85,26 @@ The paper's other levers don't fit:
 ## Served A/B
 
 `ab_launch.sh`: c16 config (MTP3, tp_sliced, 1.6M pool, reserve 4.0), frozen
-worktrees `dcp-base` (`25c3ed40c4`) and `dcp-new` (`4524b36e4e`). Two nodes,
-arms in opposite order; `conc_scale.py` at n = 1, 4, 8, 16, contexts 5K and
-50K, 2 reps.
+worktrees `dcp-base` (`25c3ed40c4`) and `dcp-new` (`4524b36e4e`). Two nodes
+(holds 2269099, 2269100), arms in opposite order on each; `conc_scale.py` at
+n = 8 and 16, contexts 5K and 50K, 2 reps. torch.compile came from the seeded
+cache (42-46 s). Same residency in all arms (13528 hot / 5672 cold per rank).
 
-(pending)
+Decode step time, same-node pairs (new - base, mean of 2 reps per arm;
+`ab_table.py`):
+
+| context | requests | base ms | new ms | node 2269099 | node 2269100 | mean |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 5K | 8 | 39.29 | 38.52 | -0.73 | -0.80 | **-0.77** |
+| 50K | 8 | 41.06 | 40.51 | -0.49 | -0.61 | **-0.55** |
+| 5K | 16 | 57.75 | 56.30 | -1.38 | -1.53 | **-1.46** |
+| 50K | 16 | 59.74 | 58.98 | -0.38 | -1.14 | **-0.76** |
+
+All 8 pairs favour the new kernel. At 8 requests the ~0.65 ms the microbench
+predicts is met (-0.55 to -0.77). At 16 requests 5K is close to the 1.6 ms
+prediction (-1.46); 50K is noisier (-0.38 / -1.14 between nodes). Acceptance
+is unchanged (2.84-3.31 in both arms). Overall about **-1.1 ms/step (-2%) at
+16 requests and -0.66 ms (-1.7%) at 8**.
+
+Shipped to prod: the sliced Claude Code server (`claude-glm53-sliced-df2-dcp4.sh`)
+was restarted on `4524b36e4e` the same day.
