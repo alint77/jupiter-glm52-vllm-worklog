@@ -385,3 +385,27 @@ For the agentic workload (cached prefix plus a small delta, bursts of
 subagents), 1-3 together remove roughly 100-250 ms from a 60K-context turn's
 ~234 ms + steps. Lever 2 also removes the c >= 8 burst regression that
 interleave introduced.
+
+## Live prod check (job 2281388, Claude Code c4, 18:44-19:13)
+
+`live_stats.py server-claude-<job>.out` (Engine 000 / SpecDecoding log lines);
+`hist_q.py an/live-2281388-metrics-1913.txt` (live /metrics, histogram buckets,
+so quantiles are bucket upper bounds). Earlier c4 runs only have the log lines.
+
+| | 2272115 (11:49-12:20) | 2276997 (17:02-17:13) | 2281388 live |
+|---|---|---|---|
+| code | ~80bd3cce5c, mixed steps, old prefill MoE, HF tok | c8d61506be + interleave | + fastokens |
+| active min | 24.3 | 10.3 | 5.8 |
+| prompt tok computed | 5.51M | 3.55M | 1.60M |
+| generated | 54K | 38K | 41K |
+| windows with waiting>0 | 54% | 32% | 30% |
+| peak KV | 65.7% | 37.5% | 24.9% |
+| prefix hit | 56.9% | 49.8% | 52.6% |
+| MTP3 accept len | 2.94 | 3.02 | 3.05 |
+
+Live /metrics (102 req): prompt p50 <=50K, computed p50 <=10K (mean 15.7K);
+TTFT mean 3.86 s (p50 <=5, p90 <=10), of which queue 1.47 s (p50 <=0.3);
+per-step ITL p50 <=25 ms at 3.05 tok/step, mean 64.7 ms (interleaved prefill
+steps, p99 <=0.75 s); per-request TPOT p50 <=25 ms. Traffic is uncontrolled
+(the live run is decode-heavier: 2.6% generated/computed vs ~1%), so the
+cross-run rows describe load, not speed; speed claims stay with the A/Bs above.
