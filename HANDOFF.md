@@ -11,16 +11,22 @@ standby allocation (job 2287122, `standby.sbatch`; the first attempt
 /var/spool copy, so BASH_SOURCE-relative repo detection broke — fixed with
 the claude-server hardcoded-fallback pattern) with `node-submit.sh`
 submitting steps via the verified `srun --jobid --overlap` pattern, GPU
-pinned through `CUDA_VISIBLE_DEVICES`. probe1 (GPU 0) landed: stream copy
-3395.8 GiB/s (~0.9x of the ~4 TB/s class), sum 3300.1, fill 3156.3; random
-gathers fall off a cliff — 2 B: 122.9 GiB/s (0.036x copy), 256 B: 791.3
-(0.233x), 64 KiB: 3084.7 (0.908x, effectively streaming). ECC enabled on
-all GPUs, single memory clock bin (2619 MHz) — nothing clock-side to vary
-on this platform. In flight: probe2 cold-vs-hot row sweep (2 B..64 KiB,
-separates the row-activation tax from sector waste) plus probe1/probe2
-replicates on GPUs 1-3. Next: interpret the cold/hot gap, then map onto
-serving access patterns (KV gather, MoE expert reads). No serving
-changes; the RTX 2080 Ti BAR0 actuator work happens off-cluster.
+pinned through `CUDA_VISIBLE_DEVICES`. probe1 (GPU 0, GPU 2 replicate
+within 0.3%) landed: stream copy 3395.8 GiB/s (~0.9x of the ~4 TB/s
+class), sum 3300.1, fill 3156.3; random gathers fall off a cliff — 2 B:
+122.9 GiB/s (0.036x copy), 256 B: 791.3 (0.233x), 64 KiB: 3084.7 (0.908x,
+effectively streaming). ECC enabled on all GPUs, single memory clock bin
+(2619 MHz) — nothing clock-side to vary on this platform. probe2 (GPUs
+1+3, replicated to <=1%) swept 2 B..64 KiB cold/hot: 2-8 B gathers run at
+0.58-0.60x the sector-efficiency bound — the ~1.7x activation/scheduling
+tax this thread is after; >=1 KiB random gathers hit ~3090 GiB/s = stream
+(the tax is a sub-1 KiB phenomenon); the 32-256 B band is an
+index_select kernel artifact (hot=cold exactly there; needs a custom
+gather kernel), and the hot arm measures L2-vs-DRAM, not row-buffer
+state, because the hot working set fits the 60 MB L2. Next: custom
+triton gather to de-confound 32-256 B, then a trace-driven histogram of
+serving gather sizes before claiming any headroom. No serving changes;
+the RTX 2080 Ti BAR0 actuator work happens off-cluster.
 
 **Latest (2026-10-11, evening): fastokens tokenizer is prod.** serve.sh
 exports `VLLM_USE_FASTOKENS=1` (fastokens 0.3.3 installed in the venv).
