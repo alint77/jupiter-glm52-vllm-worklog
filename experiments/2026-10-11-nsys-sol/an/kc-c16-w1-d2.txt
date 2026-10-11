@@ -1,0 +1,103 @@
+41 steps, period 49.13 ms; G = inside the verify graph; us per step (sum of durations)
+   28733.5 us  x  75.0  mean  383.11  G tiered_decode::layer_kernel
+    4313.7 us  x  19.0  mean  227.04  G _gather_rows_kernel
+    2908.9 us  x 157.0  mean   18.53  G allreduce_fusion_kernel_oneshot_lamport
+    2299.5 us  x  75.0  mean   30.66  G tiered_decode::finalize_kernel
+    1840.4 us  x  78.0  mean   23.59  G flash_fwd_splitkv_mla_fp8_sparse_kernel
+    1832.3 us  x  81.0  mean   22.62  G nvjet_sm90_tst_48x64_64x15_2x1_v_bz_TNN
+    1470.2 us  x  78.0  mean   18.85  G one_shot::gather_cat_kernel
+    1327.5 us  x  78.0  mean   17.02  G one_shot::lse_reduce_scatter_warp_kernel
+    1204.3 us  x  78.0  mean   15.44  G nvjet_sm90_tst_64x32_64x16_4x2_h_bz_TNT
+     921.8 us  x  99.0  mean    9.31  G nvjet_sm90_tst_48x64_64x15_4x1_v_bz_TNN
+     763.7 us  x   6.0  mean  127.28    marlin_moe_wna16::Marlin
+     701.8 us  x  21.0  mean   33.42  G one_shot::gather_kernel
+     545.4 us  x  78.0  mean    6.99  G smxx::decode::flash_fwd_mla_combine_kernel
+     502.5 us  x  19.0  mean   26.45  G _remap_rows_kernel
+     447.6 us  x  75.0  mean    5.97  G tiered_decode::route_prep_kernel
+     430.7 us  x   3.0  mean  143.57    nvjet_sm90_tst_192x16_64x8_2x1_v_bz_TNT
+     415.7 us  x  75.0  mean    5.54  G nvjet_sm90_tss_64x32_64x16_4x2_h_bz_splitK_TNT
+     393.8 us  x  78.0  mean    5.05  G nvjet_sm90_tst_64x32_64x16_1x2_h_bz_TNT
+     345.0 us  x  78.0  mean    4.42  G nvjet_sm90_tst_64x64_64x13_2x1_v_bz_NNT
+     321.6 us  x  75.0  mean    4.29  G vllm::moe::grouped_topk_fused_small_expert_count_kernel
+     300.4 us  x  21.0  mean   14.30  G kernel_cutlass_kernel_vllmmodel_executorkernelsattentiondsadcp_indexer
+     275.5 us  x 135.0  mean    2.04  G vllm::concat_and_cache_ds_mla_kernel
+     239.5 us  x   1.0  mean  239.52    _topk_topp_kernel
+     215.7 us  x  19.0  mean   11.35  G _mark_rows_kernel
+     206.0 us  x   4.0  mean   51.49    ncclDevKernel_AllGather_RING_LL
+     195.7 us  x  78.0  mean    2.51  G triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqu
+     164.4 us  x  96.0  mean    1.71  G cublasLt::splitKreduce_kernel
+     150.9 us  x   1.0  mean  150.89    nvjet_sm90_tst_320x64_64x4_2x1_v_bz_TNT
+     140.9 us  x   3.0  mean   46.96    flash_fwd_splitkv_mla_fp8_sparse_kernel
+     125.5 us  x  21.0  mean    5.98  G deep_gemm::sm90_fp8_paged_mqa_logits
+     125.2 us  x  59.0  mean    2.12  G triton_red_fused_1
+     115.7 us  x  21.0  mean    5.51  G nvjet_sm90_tst_32x64_64x16_4x1_v_bz_splitK_TNN
+     107.3 us  x  19.0  mean    5.65  G _compact_rows_kernel
+     106.3 us  x   2.0  mean   53.13    nvjet_sm90_tst_192x16_64x8_2x1_v_bz_splitK_TNT
+     101.7 us  x  57.0  mean    1.78  G triton_poi_fused_0
+      97.7 us  x   8.0  mean   12.21    decode_gemm_kernel
+      91.0 us  x   3.0  mean   30.35  G nvjet_sm90_tst_64x64_64x13_4x1_v_bz_TNT
+      84.6 us  x  21.0  mean    4.03  G _convert_req_index_to_global_index_kernel
+      72.3 us  x   6.0  mean   12.04    at::native::reduce_kernel
+      64.0 us  x  11.0  mean    5.82    at::native::elementwise_kernel
+      60.4 us  x   2.0  mean   30.21    vllm::cross_device_reduce_2stage
+      58.1 us  x  53.0  mean    1.10    at::native::vectorized_elementwise_kernel
+      58.0 us  x   4.0  mean   14.50    vllm::cross_device_reduce_1stage
+      57.1 us  x   3.0  mean   19.03    one_shot::gather_kernel
+      55.6 us  x  21.0  mean    2.65  G _fused_indexer_q_rope_quant_kernel
+      54.9 us  x   1.0  mean   54.90    nvjet_sm90_tst_96x64_64x10_2x1_v_bz_splitK_TNN
+      49.9 us  x   1.0  mean   49.88    one_shot::lse_reduce_scatter_warp_kernel
+      46.8 us  x  21.0  mean    2.23  G vllm::indexer_k_quant_and_cache_kernel
+      45.6 us  x  11.0  mean    4.14    at::native::unrolled_elementwise_kernel
+      43.0 us  x  19.0  mean    2.26  G triton_poi_fused_1
+      41.7 us  x  42.0  mean    0.99  G at::native::vectorized_elementwise_kernel
+      40.9 us  x  21.0  mean    1.95  G _pack_dcp_topk_candidates_triton_kernel
+      40.4 us  x  18.0  mean    2.24  G triton_red_fused_0
+      37.3 us  x   3.0  mean   12.42    kernel_cutlass_kernel_vllmmodel_executorkernelsattentiondsadcp_indexer
+      35.5 us  x   3.0  mean   11.84    one_shot::gather_cat_kernel
+      34.2 us  x   2.0  mean   17.08    one_shot::lse_reduce_scatter_kernel
+      32.6 us  x  21.0  mean    1.55  G vllm::filtered_topk::FilteredTopKUnifiedKernel
+      28.6 us  x   4.0  mean    7.14    nvjet_sm90_tst_64x16_64x16_4x1_v_bz_splitK_TNT
+      28.4 us  x   3.0  mean    9.48    allreduce_fusion_kernel_oneshot_lamport
+      27.2 us  x  21.0  mean    1.30  G _dcp_decode_sched_kernel
+
+median chain from one layer_kernel to the next (layers 20-40):
+    0  348.96 us (gap  0.0)  grid 132x1x1 blk 352  tiered_decode::layer_kernel
+    1   30.70 us (gap -26.3)  grid 6x64x1 blk 256  tiered_decode::finalize_kernel
+    2   19.92 us (gap  0.1)  grid 128x1x1 blk 384  allreduce_fusion_kernel_oneshot_lamport
+    3   15.22 us (gap  0.4)  grid 8x11x1 blk 384  nvjet_sm90_tst_64x32_64x16_4x2_h_bz_TNT
+    4    1.82 us (gap  0.3)  grid 8x1x1 blk 256  triton_poi_fused_0
+    5    2.05 us (gap  0.4)  grid 64x1x1 blk 512  triton_red_fused_1
+    6    9.28 us (gap  0.4)  grid 4x22x1 blk 384  nvjet_sm90_tst_48x64_64x15_4x1_v_bz_TNN
+    7    2.45 us (gap  0.4)  grid 512x1x1 blk 256  triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqu
+    8    2.18 us (gap  0.4)  grid 64x1x1 blk 96  vllm::concat_and_cache_ds_mla_kernel
+    9    1.92 us (gap  0.4)  grid 64x1x1 blk 96  vllm::concat_and_cache_ds_mla_kernel
+   10    4.51 us (gap  0.4)  grid 2x64x1 blk 384  nvjet_sm90_tst_64x64_64x13_2x1_v_bz_NNT
+   11   17.82 us (gap  0.4)  grid 36x1x1 blk 512  one_shot::gather_cat_kernel
+   12   23.20 us (gap  0.4)  grid 1x64x2 blk 384  flash_fwd_splitkv_mla_fp8_sparse_kernel
+   13    6.82 us (gap -2.8)  grid 1x64x8 blk 256  smxx::decode::flash_fwd_mla_combine_kernel
+   14   15.97 us (gap  0.4)  grid 36x1x1 blk 512  one_shot::lse_reduce_scatter_warp_kernel
+   15    4.74 us (gap  0.4)  grid 2x64x1 blk 384  nvjet_sm90_tst_64x32_64x16_1x2_h_bz_TNT
+   16   22.38 us (gap  0.4)  grid 2x64x1 blk 384  nvjet_sm90_tst_48x64_64x15_2x1_v_bz_TNN
+   17   13.63 us (gap  0.0)  grid 128x1x1 blk 384  allreduce_fusion_kernel_oneshot_lamport
+   18    5.41 us (gap  0.4)  grid 8x4x1 blk 384  nvjet_sm90_tss_64x32_64x16_4x2_h_bz_splitK_TNT
+   19    1.73 us (gap  0.1)  grid 8x4x1 blk 32  cublasLt::splitKreduce_kernel
+   20    4.19 us (gap  0.4)  grid 64x1x1 blk 384  vllm::moe::grouped_topk_fused_small_expert_count_kernel
+   21    5.95 us (gap -1.4)  grid 65x1x1 blk 1024  tiered_decode::route_prep_kernel
+   22    4.06 us (gap  0.1)  grid 64x1x1 blk 256  _convert_req_index_to_global_index_kernel
+   23    1.28 us (gap  0.1)  grid 1x1x1 blk 128  _dcp_decode_sched_kernel
+   24   23.26 us (gap  0.1)  grid 1x64x2 blk 384  flash_fwd_splitkv_mla_fp8_sparse_kernel
+   25    7.04 us (gap -3.1)  grid 1x64x8 blk 256  smxx::decode::flash_fwd_mla_combine_kernel
+   26    0.90 us (gap  0.1)  grid 1x1x1 blk 128  at::native::vectorized_elementwise_kernel
+   27   16.93 us (gap -0.6)  grid 36x1x1 blk 512  one_shot::lse_reduce_scatter_warp_kernel
+   28   11.55 us (gap -16.2)  grid 48x1x1 blk 128  _mark_rows_kernel
+   29    5.60 us (gap  0.2)  grid 98x1x1 blk 128  _compact_rows_kernel
+   30    5.38 us (gap -0.6)  grid 2x64x1 blk 384  nvjet_sm90_tst_64x32_64x16_1x2_h_bz_TNT
+   31   29.06 us (gap -4.6)  grid 48x1x1 blk 128  _remap_rows_kernel
+   32   23.01 us (gap -24.5)  grid 2x64x1 blk 384  nvjet_sm90_tst_48x64_64x15_2x1_v_bz_TNN
+   33   16.29 us (gap  0.0)  grid 128x1x1 blk 384  allreduce_fusion_kernel_oneshot_lamport
+   34  184.67 us (gap -13.6)  grid 8x3x1 blk 128  _gather_rows_kernel
+   35    6.11 us (gap -171.1)  grid 8x4x1 blk 384  nvjet_sm90_tss_64x32_64x16_4x2_h_bz_splitK_TNT
+   36    1.73 us (gap  0.1)  grid 8x4x1 blk 32  cublasLt::splitKreduce_kernel
+   37    4.35 us (gap  0.4)  grid 64x1x1 blk 384  vllm::moe::grouped_topk_fused_small_expert_count_kernel
+   38    6.18 us (gap -1.6)  grid 65x1x1 blk 1024  tiered_decode::route_prep_kernel
+  chain total 649.3 us

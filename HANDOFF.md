@@ -1,5 +1,24 @@
 # GLM-5.2 on JUPITER: agent handoff
 
+**Latest (2026-10-11, night): nsys SOL of the shipped config, c=1..16.**
+Per-kernel rooflines at c=1 (prod DFlash2) and the c2/c4/c8/c16 MTP3
+launchers, ~5K and ~50K windows. The step period at 50K is 18.8 / 20.1 /
+25.9 / 36.7 / 49.8 ms.
+- **MoE.** layer_kernel is at 98% of its C2C floor at c16 but only 60-74% at
+  c1-c4 (gap 1.9-3.1 ms).
+- **Dense GEMMs.** They are 1.8-3.1 ms over the HBM floor at every c, the
+  biggest gap at c >= 8.
+- **Latency-bound layer tail.** AR, the DCP one-shots and FlashMLA are 2.8 ms
+  over roofline at c1 and 4.5 at c16.
+- **Skip-KV staging gathers** grow to 285-340 us per group at c16 50K (17 at
+  c1). They overlap the C2C-bound MoE kernel: an estimated 0.8-1.0 ms/step of
+  contention at c16 and 0.2-0.5 ms at c4/c8 (regression, needs a controlled
+  probe).
+- **Drafter outside the graph** costs ~1 ms at c16: untiered Marlin MoE, and
+  sparse FlashMLA without the Phase 1 schedule.
+
+Ranked levers are in `experiments/2026-10-11-nsys-sol/`.
+
 **Latest (2026-10-11, evening): FlashMLA Phase 1 shipped.** vLLM builds
 the b=1 split schedule on device (`dcp_decode_sched_meta`, vLLM `80bd3cce5c`):
 balanced splits, early stop at the longest live row. The indexer layers build

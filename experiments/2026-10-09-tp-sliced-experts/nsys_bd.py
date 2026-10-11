@@ -44,7 +44,10 @@ def main():
                                    "CUPTI_ACTIVITY_KIND_KERNEL where deviceId = ?", (dev,)):
         by_corr[corr].append((s, e, names[n]))
     other = []
+    tables = {t for (t,) in c.execute("select name from sqlite_master where type = 'table'")}
     for tbl in ("CUPTI_ACTIVITY_KIND_MEMCPY", "CUPTI_ACTIVITY_KIND_MEMSET"):
+        if tbl not in tables:
+            continue
         other += [(s, e, len(CATS)) for s, e in
                   c.execute(f"select start, end from {tbl} where deviceId = ?", (dev,))]
     verify = sorted((min(k[0] for k in ks), corr) for corr, ks in by_corr.items() if len(ks) >= 500)
