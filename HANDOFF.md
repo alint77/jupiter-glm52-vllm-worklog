@@ -1,5 +1,11 @@
 # GLM-5.2 on JUPITER: agent handoff
 
+**Latest (2026-10-11, afternoon): interleaved prefill is prod.** serve.sh
+exports `VLLM_SCHED_INTERLEAVE_PREFILL=1` (vLLM `dc78b9b294`): no mixed
+prefill/decode steps. At c4, prefill TTFT with decoders -27% and swarm makespan
+-22%; GSM8K within noise (`experiments/2026-10-11-interleave`). It applies to
+every launcher started after agent_space `73308e9`.
+
 **Latest (2026-10-11, late night): prefill nsys + MTP KV fix.**
 - **MTP layer 78 KV.** It was on Grace while the planner charged it to HBM.
   Fixed in vLLM `c047194130`: the drafter's FlashMLA goes from 138 to 25 us at
