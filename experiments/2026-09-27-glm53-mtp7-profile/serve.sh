@@ -139,6 +139,12 @@ export VLLM_DCP_SPARSE_DECODE_WIDTH="${VLLM_DCP_SPARSE_DECODE_WIDTH:-768}"
 # vllm/_flashmla_C.abi3.so (md5 9c2356f2; prod backup 3c6f31e7 in
 # build/fmla-prod-backup). VLLM_DCP_DECODE_SCHED=0 restores the planner.
 export VLLM_DCP_DECODE_SCHED="${VLLM_DCP_DECODE_SCHED:-1}"
+# No mixed prefill/decode steps: a step is decode-only or one request's
+# prefill chunk, 1 decode step between chunks (vllm dc78b9b294,
+# 2026-10-11-interleave, c4): prefill TTFT with decoders -27%, swarm makespan
+# -22%, longest decoder stall 0.93 -> 0.65 s, GSM8K within noise.
+# VLLM_SCHED_INTERLEAVE_PREFILL=0 restores mixed steps.
+export VLLM_SCHED_INTERLEAVE_PREFILL="${VLLM_SCHED_INTERLEAVE_PREFILL:-1}"
 # REPLICAS=exact activates the profile's Grace replicas (1,351-1,962 per rank
 # in the agentic profile). Replicas add pinned Grace the planner does not see
 # each worker's own share of, hence the larger host reserve (as for MiMo).
