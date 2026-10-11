@@ -97,6 +97,63 @@ Prefill (c4, `step_groups.py`, `moe_span.py`):
 | DCP q all-gather + lse_combine, 4K | 125 ms | ~75 ms | 60% | NVLink ~450 GB/s |
 | dense GEMMs, 4K | 78 ms | ~48 ms | 62% | bf16 compute |
 
+## Prefill breakdown and floors (`prefill_bd.py`)
+
+Wall time per prefill step: each instant goes to the highest-priority
+category with a kernel running, so PDL overlap and side streams are not
+double-counted. Values are ms, mean of 4 GPUs, c4 config. The windows
+come from `nfr-sizes-2277153`:
+
+- the agentic turn: a cached 60K prefix plus 911 new tokens (incl. the
+  257-512 recomputed), padded to a 1024-token step (window 2);
+- a 384-token tail step after a 4K chunk at 60K (window 8, step 1);
+- a full 4096-token chunk at 60K (window 8, step 0).
+
+| category | turn @60K, 1024 | tail @60K, 384 | chunk @60K, 4096 | floor (1024 / 4096) | floor basis |
+|---|--:|--:|--:|--:|---|
+| **step wall** | **195** | **134** | **536** | | |
+| MoE GEMM | 64.5 | 69.2 | 127.8 | 30 / 74 | max(weights 102 GB per step / HBM, 18 us/token bf16). The 384 step has no prefetch: C2C 63 |
+| MoE route/gather/act/combine | 7.1 | 3.1 | 24.7 | ~fusion only | gather and combine are at HBM speed (~118 us each per layer at 4K) |
+| DCP q all-gather (NCCL) | 19.4 | 9.7 | 76.9 | 11 / 38 | q T x 64 h x 576 x 2 B, 3/4 inbound, 450 GB/s |
+| DCP lse_combine | 12.4 | 5.7 | 51.0 | 8 / 33 | outputs T x 64 h x 512 x 2 B reduce-scatter |
+| dense GEMM | 23.2 | 12.6 | 89.3 | 12 / 48 | bf16 compute |
+| TP all-reduce | 18.5 | 7.4 | 45.6 | 6 / 25 | 2 x T x 6144 x 2 B per layer, NVLink |
+| attention (sparse fwd) | 13.7 | 5.7 | 60.4 | ~10 / ~36-45 | 2048 keys x 64 h per token, local quarter |
+| indexer | 7.7 | 4.8 | 20.5 | | |
+| glue (triton norm/rope/quant, elementwise, KV write) | 8.5 | 4.7 | 31.4 | | |
+| MTP drafter MoE (Marlin) | 1.3 | 4.3 | 0 | | |
+| router top-k | 0.6 | 0.5 | 1.7 | | |
+| idle (launch gaps) | 18.2 | 6.9 | 7.1 | ~0 | |
+
+- Outside the GPU, per request at 60K: tokenizer ~80 ms and front end ~30 ms
+  (finding 3). Client TTFT for the 1024 turn is 303 ms against 195 ms of GPU.
+- Other sizes are in the same proportions (`prefill_bd.py` on windows 1-8):
+  - fresh 640: 116 ms, MoE 57;
+  - @60K 1422: 253 ms, q all-gather 39;
+  - @60K 2394: 344 ms;
+  - fresh 4053: 504 ms.
+- Steps above 1024 tokens run eagerly (captures end at 1024). Idle is 7-14 ms
+  there; at the captured 1024 step it is 18 ms (the eager attention part
+  between piecewise graphs).
+
+### Opportunities (ms saved per step, from the table; estimates, not A/B'd)
+
+| # | lever | turn @60K 1024 | 4K chunk | notes |
+|--:|---|--:|--:|---|
+| P1 | **Tokenizer (fastokens, `VLLM_USE_FASTOKENS=1`)** | -79 (host) | -80 (host, once per request) | ids identical on 17.7M tokens; served A/B running |
+| P2 | **DCP prefill dataflow: all-gather the context KV instead of q + LSE combine.** Each rank then attends its own 16 heads over the full KV: 60K x 656 B = 42 MB per layer, ~7-10 ms per step at any T. | -22 | -118 | Biggest GPU lever at 2-4K. Same math, different reduction order (one pass vs 4 partials + LSE merge): not bitwise, needs an eval. Transient workspace ~42 MB per layer at 64K. |
+| P3 | **MoE GEMM at small T toward the HBM floor** (runs at 1.6 TB/s at 1K; isolated 807 vs served 860 us per layer) plus the 4K compute gap (48%) | -34 | -54 | kernel work; copy contention (+150 us per layer, finding 1) is part of the small-T gap |
+| P4 | **Fewer prefill steps**: multi-request prefill steps (finding 2), no 257-512-token recompute (finding 1) | -27 per turn; -134 when a turn crosses 4K | | scheduler + DCP sparse prefill for N requests; MTP last-block drop |
+| P5 | **Dense GEMMs** (52-62% of bf16) | -11 | -35 | cuBLAS nvjet tiles; tune or a custom GEMM at these shapes |
+| P6 | **TP all-reduce** (NCCL ring LL, ~55% of NVLink) | -12 | -21 | custom two-shot AR or AR+RMSNorm fusion at prefill sizes (decode already uses trtllm fusion) |
+| P7 | **Launch gaps** (idle) | -13 | -5 | capture more of the step; the eager attention part |
+| P8 | **Cold prefetch for the 384-token tails** (threshold 512 -> 256) | -20 per tail step | | env knob only: the tail's MoE then reads HBM instead of C2C (69 ms). Cheapest A/B. |
+| P9 | glue + MoE gather/combine fusion, indexer, MTP drafter MoE on the tiered kernel | ~-10 | ~-30 | many small items |
+
+For the agentic turn (303 ms TTFT at 60K, 1024 step), P1 + P2 + P3 + P6 +
+P7 alone come to ~-160 ms (to ~145 ms). For a 4K chunk, P2 + P3 + P5 + P6 come
+to ~-230 ms of 536 (to ~305 ms).
+
 ## Findings
 
 ### 1. Every prefill step pays ~115 ms, set by C2C, and agentic turns add a step
@@ -104,14 +161,17 @@ Prefill (c4, `step_groups.py`, `moe_span.py`):
 - A prefill step of 384-512 tokens costs 113-125 ms of GPU at 20-68K context
   (`step_groups.py` on the fanout window), against ~510 ms for 4096 tokens:
   ~75 ms fixed plus ~0.107 ms per token.
-- The fixed part is mostly MoE, and that MoE is at its C2C floor. Every step
-  touches all 65 cold experts of every layer: 24.3 GiB per GPU per step over
-  C2C at ~390 GB/s, ~63 ms.
-  - At >= 512 tokens the 2-slot prefetch copies them (0.86 ms per layer).
+- Every step touches all 65 cold experts of every layer: 24.3 GiB per GPU
+  over C2C at ~390 GB/s, ~63 ms. That bounds the whole step from below.
+  - At >= 512 tokens a 2-slot prefetch copies the cold experts on a side
+    stream (0.86 ms per layer), overlapped with the whole step.
   - Below 512 (`VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS`) the GEMM reads
-    them in place.
-  - Both take the same ~117 ms per step. The fresh-512 MoE wall total is
-    63.5 ms per step, i.e. at that floor.
+    them in place over C2C, so it is C2C-bound itself. The 384-token tails
+    show 69 ms of MoE GEMM.
+  - (Corrected: an earlier version of this note called the MoE GEMM at 512
+    "at its C2C floor". With prefetch it reads HBM. Its floor is
+    max(102 GB / 3.4 TB/s = 30 ms, compute) per step, and it runs at ~50%
+    of that at <= 1K tokens. See the prefill breakdown.)
   - The served-vs-isolated gap at 512/1K (+260 / +190 us per layer) comes
     from layers that overlap the copies: 869 us overlapped vs 713 us
     copy-free (`moe_copy.py`; only 3-7 copy-free layers, a lead not a
