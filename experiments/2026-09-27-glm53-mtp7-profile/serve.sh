@@ -145,6 +145,10 @@ export VLLM_DCP_DECODE_SCHED="${VLLM_DCP_DECODE_SCHED:-1}"
 # -22%, longest decoder stall 0.93 -> 0.65 s, GSM8K within noise.
 # VLLM_SCHED_INTERLEAVE_PREFILL=0 restores mixed steps.
 export VLLM_SCHED_INTERLEAVE_PREFILL="${VLLM_SCHED_INTERLEAVE_PREFILL:-1}"
+# fastokens tokenizer (fastokens 0.3.3 in the venv): same token ids as HF
+# tokenizers on 17.7M tokens, TTFT -80 ms at 60K and -118 ms at 100K
+# (2026-10-11-nsys-fresh). VLLM_USE_FASTOKENS=0 restores HF tokenizers.
+export VLLM_USE_FASTOKENS="${VLLM_USE_FASTOKENS:-1}"
 # REPLICAS=exact activates the profile's Grace replicas (1,351-1,962 per rank
 # in the agentic profile). Replicas add pinned Grace the planner does not see
 # each worker's own share of, hence the larger host reserve (as for MiMo).

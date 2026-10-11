@@ -1,5 +1,15 @@
 # GLM-5.2 on JUPITER: agent handoff
 
+**Latest (2026-10-11, evening): fastokens tokenizer is prod.** serve.sh
+exports `VLLM_USE_FASTOKENS=1` (fastokens 0.3.3 installed in the venv).
+- Token ids are identical to HF tokenizers on 17.7M tokens.
+- TTFT -80 ms at 60K context and -118 ms at 100K.
+
+The same fresh nsys pass (`experiments/2026-10-11-nsys-fresh`) ranks the
+prefill levers. Its top GPU lever is the DCP prefill dataflow: all-gather the
+KV instead of q, ~-118 ms per 4K chunk. It also found that interleave
+serializes bursts of small prefills at c >= 8.
+
 **Latest (2026-10-11, afternoon): interleaved prefill is prod.** serve.sh
 exports `VLLM_SCHED_INTERLEAVE_PREFILL=1` (vLLM `dc78b9b294`): no mixed
 prefill/decode steps. At c4, prefill TTFT with decoders -27% and swarm makespan

@@ -125,8 +125,12 @@ Prefill (c4, `step_groups.py`, `moe_span.py`):
 - Prefill time (GPU step) is unchanged. The remaining host time at 60K is
   ~22 ms before the engine (client minus server TTFT), plus ~6 ms
   between engine arrival and scheduling.
-- To ship: `uv pip install fastokens==0.3.3` into the venv, and
-  `VLLM_USE_FASTOKENS=1` in serve.sh.
+- **Shipped.** fastokens 0.3.3 is installed in the venv and serve.sh
+  exports `VLLM_USE_FASTOKENS=1`.
+  - Prod-path check (`nfr-host-prod-2281365`, no scratch PYTHONPATH):
+    60K 152 ms, 100K 175 ms client TTFT, matching the A/B.
+  - The server log shows "[fastokens] patch_transformers: successfully
+    patched".
 
 
 ## Prefill breakdown and floors (`prefill_bd.py`)
