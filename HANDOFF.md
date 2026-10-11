@@ -1,5 +1,19 @@
 # GLM-5.2 on JUPITER: agent handoff
 
+**Latest (2026-10-11, late night): prefill nsys + MTP KV fix.**
+- **MTP layer 78 KV.** It was on Grace while the planner charged it to HBM.
+  Fixed in vLLM `c047194130`: the drafter's FlashMLA goes from 138 to 25 us at
+  c16, but the served A/B is within noise (`experiments/2026-10-11-mtp-kv-hbm`).
+- **Prefill rate.** A pure 4096-token chunk takes ~565 ms and a mixed one
+  (decoders present) ~895 ms. That is 3.1x / 4.9x the ~180 ms compute floor.
+- **Why mixed steps are slow.** Prefill tokens go through the decode kernel,
+  and the skip-layer KV is read from Grace at 4.5 ms per layer.
+- **MoE.** It has a ~137 ms fixed cost per chunk, consistent with the
+  cold-expert C2C stream.
+- **DCP prefill comms.** The q all-gather plus the LSE combine cost ~125 ms per
+  chunk.
+- Ranked levers are in `experiments/2026-10-11-prefill-nsys/README.md`.
+
 **Latest (2026-10-11, night): nsys SOL of the shipped config, c=1..16.**
 Per-kernel rooflines at c=1 (prod DFlash2) and the c2/c4/c8/c16 MTP3
 launchers, ~5K and ~50K windows. The step period at 50K is 18.8 / 20.1 /
