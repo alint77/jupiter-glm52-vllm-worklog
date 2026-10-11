@@ -1,5 +1,14 @@
 # GLM-5.2 on JUPITER: agent handoff
 
+**Latest (2026-10-11, later): fused DCP tail (split combine + LSE
+reduce-scatter in one kernel) -- built, bitwise-correct, not adopted.** Slower
+at every size (+1.1 us/layer at 8 tokens, +9.7 at 64). FlashMLA's combine is
+PDL-launched and overlaps the main kernel, so it adds only 2.8 us (8 tokens) /
+4.3 us (64) to the critical path, not its ~6 us profiler time. Fusion's ceiling
+is <= ~0.1 ms/step. Price boundaries by removing them from a graph, not by
+kernel durations. Side branches: FlashMLA `dcp-split-partials`, vllm
+`dcp-fused-tail`. `experiments/2026-10-11-dcp-split-combine/`.
+
 **Latest (2026-10-11): DCP one-shot collectives at 64 tokens, shipped.**
 At c16 (MTP3, 64 tokens) the query gather took 34 us and the LSE combine 19 us
 per layer. The gather's grid-stride loop was rank-major, so one NVLink carried
