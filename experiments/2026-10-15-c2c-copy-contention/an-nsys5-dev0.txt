@@ -1,0 +1,19 @@
+== device 0: 300 H2D copies >= 1 MiB, 24.3 GiB, busy 69.1 ms, median 380 GB/s, bytes-weighted 377 GB/s
+   kernels overlapping copies most (ms of overlap):
+      15.57  other  nvjet_sm90_tst_128x256_64x4_2x1_v_bz_coopA_TNN
+      15.56  comm   ncclDevKernel_AllReduce_Sum_bf16_RING_LL
+       6.98  other  nvjet_sm90_tst_128x168_64x5_2x1_v_bz_TNT
+       4.61  comm   ncclDevKernel_AllGather_RING_LL
+       3.64  other  device_kernel
+       3.15  other  triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_
+       2.97  other  triton_red_fused_fused_add_rms_norm_1
+       2.90  other  nvjet_sm90_tst_128x128_64x6_1x2_h_bz_TNT
+       2.00  other  elementwise_kernel
+       1.62  other  vectorized_elementwise_kernel
+   hostkv overlap = 0                 n= 236   13.3 GiB  median  376  p10  297  p90  409 GB/s
+   hostkv overlap 0-20%               n=  63   11.0 GiB  median  387  p10  327  p90  414 GB/s
+   hostkv overlap >= 20%              n=   1    0.0 GiB  median  369  p10  369  p90  369 GB/s
+   attn overlap >= 50%                n=   4    0.1 GiB  median  373  p10  370  p90  396 GB/s
+   moe overlap >= 50%                 n=   7    0.1 GiB  median  332  p10  297  p90  367 GB/s
+   comm overlap >= 50%                n=  68    2.4 GiB  median  307  p10  259  p90  367 GB/s
+   nothing running (< 5% busy)        n=   5    0.1 GiB  median  399  p10  335  p90  406 GB/s

@@ -1,0 +1,7 @@
+fresh512      slack before MoE (route start - its copies done): min 244 us, p10 291 us, median 565 us
+@60k512       slack before MoE (route start - its copies done): min 1120 us, p10 1300 us, median 1550 us
+fresh1000     slack before MoE (route start - its copies done): min 621 us, p10 730 us, median 1007 us
+@60k1000      slack before MoE (route start - its copies done): min 1794 us, p10 3301 us, median 4210 us
+fresh2000     slack before MoE (route start - its copies done): min 2383 us, p10 2552 us, median 3279 us
+@60k2000      slack before MoE (route start - its copies done): min 3777 us, p10 5105 us, median 5876 us
+fresh4000     slack before MoE (route start - its copies done): min 4816 us, p10 8823 us, median 9414 us
