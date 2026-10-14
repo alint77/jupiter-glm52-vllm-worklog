@@ -1,0 +1,15 @@
+bad headers 0
+other                    1357.03 GiB  tensors 495613
+attn                       67.43 GiB  tensors 1158
+shared_experts             22.64 GiB  tensors 276
+lm_head                     2.19 GiB  tensors 1
+embed                       2.19 GiB  tensors 1
+dense_mlp(layer0)           1.35 GiB  tensors 3
+vision                      0.83 GiB  tensors 168
+TOTAL                    1453.66 GiB
+{'attn:F32': 0.04, 'other:BF16': 9.91, 'dense_mlp(layer0):BF16': 1.35, 'attn:BF16': 67.39, 'other:F32': 0.0, 'shared_experts:BF16': 22.64, 'other:U8': 1347.12, 'lm_head:BF16': 2.19, 'embed:BF16': 2.19, 'vision:BF16': 0.83}
+layers 0 .. 92 93
+0 {'attn': 846.7, 'other': 0.1, 'dense_mlp(layer0)': 1386.0} MiB
+1 {'other': 15104.3, 'attn': 846.7, 'shared_experts': 252.0} MiB
+3 {'other': 15104.3, 'shared_experts': 252.0, 'attn': 442.9} MiB
+4 {'other': 15104.3, 'attn': 846.7, 'shared_experts': 252.0} MiB
