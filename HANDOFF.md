@@ -1,5 +1,14 @@
 # GLM-5.2 on JUPITER: agent handoff
 
+**Latest (2026-10-15): cold-prefetch threshold 384 is prod.** serve.sh
+`VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS` default 512 -> 384. The gate sees
+the graph-padded size, so 512 already prefetched real steps of 385-512 tokens;
+384 adds 257-384 (padded 384): 350-token pure prefill step 105.2 -> 100.3 ms
+GPU span (TTFT 106.8 -> 98.6 ms), other sizes unchanged beyond node offset.
+Copy still hidden: 0 wait on 75 layers x 4 GPUs, min slack 162-180 us. One
+recompile per cache root (env var is in the compile hash).
+`experiments/2026-10-15-prefetch-384/`.
+
 **Latest (2026-10-11, night): mem-timing research thread opens (read-only,
 side thread).** Goal: quantify how much DRAM-visible memory timing state
 (row activation/precharge/latency) matters to AI access patterns. GH200 is

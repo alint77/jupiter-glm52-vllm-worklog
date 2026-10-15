@@ -1,0 +1,28 @@
+ready 03:32:28 interleave=serve.sh default
+      4 Tiered MoE observed HBM reserve: 2.84 GiB free (minimum 2.53 GiB)
+{"label": "fresh320", "profiled": false, "ttft_s": 0.48992109298706055, "prompt_tokens": 350}
+{"label": "fresh320", "profiled": false, "ttft_s": 0.10342645645141602, "prompt_tokens": 352}
+{"label": "@60k320", "profiled": false, "ttft_s": 0.21486902236938477, "prompt_tokens": 60900}
+{"label": "@60k320", "profiled": false, "ttft_s": 0.20300722122192383, "prompt_tokens": 60902}
+{"label": "fresh384", "profiled": false, "ttft_s": 0.10896611213684082, "prompt_tokens": 416}
+{"label": "fresh384", "profiled": false, "ttft_s": 0.10612893104553223, "prompt_tokens": 413}
+{"label": "@60k384", "profiled": false, "ttft_s": 0.22989201545715332, "prompt_tokens": 60954}
+{"label": "@60k384", "profiled": false, "ttft_s": 0.207275390625, "prompt_tokens": 60963}
+{"label": "fresh448", "profiled": false, "ttft_s": 0.10795855522155762, "prompt_tokens": 480}
+{"label": "fresh448", "profiled": false, "ttft_s": 0.10359668731689453, "prompt_tokens": 473}
+{"label": "@60k448", "profiled": false, "ttft_s": 0.2130756378173828, "prompt_tokens": 61022}
+{"label": "@60k448", "profiled": false, "ttft_s": 0.2059156894683838, "prompt_tokens": 61029}
+{"label": "fresh512", "profiled": false, "ttft_s": 0.1293947696685791, "prompt_tokens": 542}
+{"label": "fresh512", "profiled": false, "ttft_s": 0.11392521858215332, "prompt_tokens": 549}
+{"label": "@60k512", "profiled": false, "ttft_s": 0.2263782024383545, "prompt_tokens": 61086}
+{"label": "@60k512", "profiled": false, "ttft_s": 0.22805166244506836, "prompt_tokens": 61098}
+{"label": "fresh320", "profiled": true, "window": 1, "ttft_s": 0.10840415954589844, "prompt_tokens": 350}
+{"label": "@60k320", "profiled": true, "window": 2, "ttft_s": 0.20818495750427246, "prompt_tokens": 60891}
+{"label": "fresh384", "profiled": true, "window": 3, "ttft_s": 0.10922527313232422, "prompt_tokens": 420}
+{"label": "@60k384", "profiled": true, "window": 4, "ttft_s": 0.21689558029174805, "prompt_tokens": 60958}
+{"label": "fresh448", "profiled": true, "window": 5, "ttft_s": 0.11130142211914062, "prompt_tokens": 485}
+{"label": "@60k448", "profiled": true, "window": 6, "ttft_s": 0.22083401679992676, "prompt_tokens": 61028}
+{"label": "fresh512", "profiled": true, "window": 7, "ttft_s": 0.11575770378112793, "prompt_tokens": 540}
+{"label": "@60k512", "profiled": true, "window": 8, "ttft_s": 0.22881174087524414, "prompt_tokens": 61086}
+0
+=== done 03:34:20
