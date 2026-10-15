@@ -17,15 +17,18 @@ from vllm.v1.kv_cache_interface import (
 )
 
 
-def spec(head):
+def spec(head, shardable=True):
     return MLAAttentionSpec(block_size=64, num_kv_heads=1, head_size=head,
-                            dtype=torch.uint8)
+                            dtype=torch.uint8, dcp_shardable=shardable)
 
 
 def layout(name, eagle):
     groups = [KVCacheGroupSpec(["mla"], spec(656))]
-    if name in ("mla_idx", "mla_idx_drafter"):
+    if name in ("mla_idx", "mla_idx_drafter", "mla_idx_drafter_repl"):
         groups.append(KVCacheGroupSpec(["idx"], spec(132)))
+    if name == "mla_idx_drafter_repl":
+        groups += [KVCacheGroupSpec(["d_mla"], spec(656, False), is_eagle_group=eagle),
+                   KVCacheGroupSpec(["d_idx"], spec(132, False), is_eagle_group=eagle)]
     if name == "mla_idx_drafter":
         groups += [KVCacheGroupSpec(["d_mla"], spec(656), is_eagle_group=eagle),
                    KVCacheGroupSpec(["d_idx"], spec(132), is_eagle_group=eagle)]

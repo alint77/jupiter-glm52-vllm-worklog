@@ -87,8 +87,11 @@ Window 1 (t = 60-67 s): prefill 574 ms/step (11 steps), decode 18.2 ms.
      prefix while other requests grew (800K-token pool, ~750K live).
    - #113 -> #114 (241K): rendered 100% append-only, server hit 15% (37K):
      ~204K recomputed, TTFT 33.6 s. KV was 43% used at that moment, so pool
-     pressure alone does not explain it. **Root cause open**; repro: replay
-     #112-#114 alone at c=1 and log per-group block hits.
+     pressure alone does not explain it. **Root cause (found later):** the
+     Anthropic frontend merged Claude Code's inline system reminders into
+     the leading system block (no `--chat-template` -> merge), shifting the
+     prompt after ~35K; fixed by upstream #58754 (fork 144f2f4aee), see
+     `../2026-10-15-prefix-miss/`.
    - #16 -> #17 (76K): append-only, hit 46%.
    - #160 -> #161 (302K): real client-side change: Claude Code's tool list
      gained `mcp__ide__executeCode` mid-list; tools render before the
@@ -129,10 +132,13 @@ Holds 2334599/2334600/2334606 (fix arms), 2334590/2334591 (SRPT A/B).
   `logs/fix-pfx-2334600.log`): #112 cold, #113 hits 99.8% of it, but #114
   (append-only) hits 37,376 of 241K; #16 and #17 both hit 35,072; #63/#64
   36,096/36,352; #160/#161 24,320/22,784. Not eviction, not concurrency.
-  Rendered prompts are append-only and fastokens == HF token-for-token on all
-  three pairs (login CPU check), so the server's own prompt or its KV cache
-  manager diverges. Root cause in progress: `launch_pdump.sh` dumps per-request
-  block hashes, per-group cached prefix and prompt ids (debug probe, pf4).
+  **Root cause: the server's own prompt.** Without `--chat-template`,
+  `/v1/messages` merged Claude Code's inline `role: system` reminders into
+  the leading system block, which GLM renders right after the tools (~35K);
+  each new reminder shifts the rest of the conversation. (The earlier
+  "rendered prompts are append-only" check went through paths that do not
+  merge.) Fix: cherry-pick of upstream #58754, fork 144f2f4aee; details and
+  served check in `../2026-10-15-prefix-miss/`.
 - **SRPT prefill order: no win** (vLLM 877df9b262, `VLLM_SCHED_INTERLEAVE_SRPT`,
   default off). 600 s timeline, `ab_srpt.py`:
 
@@ -143,7 +149,7 @@ Holds 2334599/2334600/2334606 (fix arms), 2334590/2334591 (SRPT A/B).
 
   The slow turns are the same in both arms: deterministic prefix misses that
   recompute 150-300K tokens. Waiting behind another prefill is second order
-  next to them. Revisit after the prefix fix.
+  next to them. Re-run on the prefix fix: `../2026-10-15-prefix-miss/`.
 - **Prefill prep** (7 indexer metadata builds per step, ~0.68 ms each under
   nsys): CPU dispatch of ~25 small torch ops per build, not the two host
   syncs (6 us each). ~1% of a short turn; deferred.

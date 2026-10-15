@@ -1,5 +1,9 @@
 # Append-only prefix-cache misses (~35K cap)
 
+**Root cause: the Anthropic frontend merged Claude Code's inline system
+reminders into the leading system prompt.** Fixed by cherry-picking upstream
+vllm-project/vllm#58754 (fork 144f2f4aee).
+
 2026-10-15. Started from `2026-10-15-c4-timeline` (the 30-70 s TTFT turns at
 c=4 are mostly these misses).
 
@@ -17,12 +21,52 @@ c=4 are mostly these misses).
 Every earlier turn of the session is a prefix of the later ones (so #16
 should hit ~68K from #112's blocks).
 
-## Ruled out
+## Root cause
 
-- **Server-side prompt.** `render_diverge.py` on a GPU-less render server
-  (`vllm launch render`, same parsers as serve.sh, `render-server.log`) fed
-  the server's own Anthropic->OpenAI conversion: #112->#113->#114, #16->#17,
-  #63->#64 are 100% token prefixes of each other (`renders/`).
+- serve builds `AnthropicServingMessages` with
+  `chat_template=load_chat_template(args.chat_template)`: `None` without
+  `--chat-template`. `_detect_merge_inline_system(None)` returns True (the
+  conservative default); GLM-5.3's real `chat_template.jinja` returns False.
+- With merge on, `_convert_system_message` drops Claude Code's mid-conversation
+  `role: "system"` messages (e.g. "The task tools haven't been used
+  recently...") and appends their text to the leading system block.
+- GLM renders tools + system first (~35K tokens). Every turn that adds a
+  reminder grows that block, so everything after ~35K shifts: the cache hit
+  caps at the system block. Turns without a new reminder (#112 -> #113) hit
+  99.8%.
+- Proof (`inproc_diverge.py`, in-process render, the server's exact path):
+  `MERGE_MODE=old_server` reproduces the server's prompt lengths to the token
+  (68,738 / 76,334 / 155,927 / 156,492 / 240,176 / 240,430 / 241,223) and
+  diverges at 37,702 (#113 -> #114), 35,394 (#16 -> #17), 36,591 (#63 -> #64):
+  the server's hits are these floored to the 256-token block, minus the
+  block MTP holds back. `MERGE_MODE=template` gives append-only prompts 9-23
+  tokens longer (the reminders stay in place).
+
+## Fix
+
+Upstream #58754 (merged 2026-09-25, "Detect Anthropic inline-system merge
+against the resolved chat template"): `_should_merge_inline_system` probes the
+template the renderer actually applies (`resolve_chat_template`, tools None
+and []) and warns at startup if it merges. Cherry-picked as fork 144f2f4aee
+(conflicts: only the probe and its call site; the fork's render server has no
+merge flag). Prod launchers serve from the main tree and pass no
+`--chat-template`, so a server restart picks it up; no launcher change.
+
+- Unit: `tests/entrypoints/anthropic/test_anthropic_messages_conversion.py`
+  + `test_chat_error.py` + `test_completion_error.py`: 98 passed.
+- CPU, real GLM tokenizer, server's probe (`MERGE_MODE=server
+  inproc_diverge.py 112,113,114 16,17 63,64`): merge False; every pair's
+  common prefix is the whole previous prompt (#112 240,198 -> #113 240,452 ->
+  #114 241,246; #16 68,747 -> #17 76,345; #63 155,944 -> #64 156,510).
+- Served (`launch_fixed.sh`, worktree pf5 = pf3 + fix): pending, see below.
+
+## Ruled out (before the root cause; note the caveat)
+
+- **Server-side prompt** (wrong): `render_diverge.py` on a GPU-less render
+  server (`vllm launch render`) showed append-only prompts, but the fork's
+  render server never merges inline system messages, unlike `/v1/messages`
+  on the real server. The earlier in-process renders used GLM's template
+  (merge False) for the same reason.
 - **Tokenizer.** fastokens == HF token-for-token on these prompts.
 - **Pool pressure / concurrency.** c=1, 800K-token pool, KV usage 0 after
   each request.
@@ -41,12 +85,12 @@ tokens. Best probe: snapshot #113's reused `(group, hash) -> block_id` and
 diff at #114 at the first hole: key changed / mapping gone / mapping valid but
 finder stops / block metadata disagrees.
 
-## Probe (worktree pf4 = 877df9b262 + debug, not for commit)
+## Probe (worktree pf4 = 877df9b262 + debug, not for commit; not run)
 
 `VLLM_DEBUG_PREFIX_DUMP=<dir>`: at every `get_computed_blocks`, one JSON per
 request: hit, per group (manager, spec, block size, dcp_shardable, eagle) the
 block id the table resolves each hash to (-1 missing, -2-id if the block's own
 hash disagrees), block hashes, prompt ids, and a Counter of call stacks of
 every un-cache (`BlockPool._remove_cached_block_hashes`).
-`../2026-10-15-c4-timeline/launch_pdump.sh` (holds 2335444, 2336722/23;
-queued behind a maintenance reservation).
+`../2026-10-15-c4-timeline/launch_pdump.sh`. Its holds were cancelled
+unrun (maintenance) once the frontend cause was found.

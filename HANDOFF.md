@@ -1,5 +1,16 @@
 # GLM-5.2 on JUPITER: agent handoff
 
+**Latest (2026-10-15, late): prefix-cache misses root-caused and fixed.**
+Claude Code turns hit only ~35K of the prefix cache because, without
+`--chat-template`, `/v1/messages` merged Claude Code's inline `role: system`
+reminders into the leading system block (rendered right after the ~35K of
+tools), so each new reminder shifted the rest of the prompt. Fix: cherry-pick
+of upstream #58754 (fork 144f2f4aee) probes the template the renderer
+actually applies; GLM-5.3 -> no merge, prompts append-only (CPU-verified on
+the replayed turns). Prod launchers pick it up on restart. Served check
+(`launch_fixed.sh`: c=1 hits, c=4 600 s timeline FCFS + SRPT) queued behind
+booster maintenance. `experiments/2026-10-15-prefix-miss/`.
+
 **Latest (2026-10-15): cold-prefetch threshold 384 is prod.** serve.sh
 `VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS` default 512 -> 384. The gate sees
 the graph-padded size, so 512 already prefetched real steps of 385-512 tokens;
