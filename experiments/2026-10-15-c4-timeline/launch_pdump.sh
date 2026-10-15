@@ -8,7 +8,7 @@ A=agent_space/experiments/2026-10-11-nsys-fresh/arm.sh
 E=agent_space/experiments/2026-09-27-glm53-mtp7-profile
 C=/e/fscratch/profound/${USER}/caches/marlin
 W=/e/fscratch/profound/${USER}/worktrees/pf4
-j=$(sbatch --parsable --time=01:00:00 "${E}/hold.sbatch")
+j=$(sbatch --parsable --time=${TIME:-01:00:00} "${E}/hold.sbatch")
 cb=${C}/vllm-cache-glm53-pdump-${j}; mkdir -p ${cb}
 cp -an ${C}/vllm-cache-glm53-c4tl-2333343/{modelinfos,tiered_sliced,torch_extensions,torch_compile_cache} ${cb}/ 2>/dev/null
 until [[ $(squeue -h -j "${j}" -o %T) == RUNNING ]]; do sleep 20; done
