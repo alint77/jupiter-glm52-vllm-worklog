@@ -1,0 +1,95 @@
+Do not run any commands; answer from the material below only. Be concise (<= 400 words).
+
+Context: GLM-5.3 decode on 4x GH200 (TP4, DCP4), CUDA-graph verify step, ~25.6 ms/step at c=4. Dense GEMMs:
+261 calls/step of our own decode_gemm (M<=32 bf16, weights streamed from HBM into registers; PDL consumer:
+first weight batch loaded BEFORE griddepcontrol.wait, activations after; launch_dependents after its main loop)
++ 177 cuBLAS nvjet calls. Isolated model of decode_gemm: 3.3 us + MB / 3.49 TB/s. In the served trace the
+durations match isolated (qkv_a after AR: 13.9 us vs 12.8 model; o_proj: 17.7 vs 17.7), i.e. the ~3.3 us ramp
+is fully exposed. Same-stream gap from producer end to decode_gemm start: -128..-256 ns (so PDL only lets it
+come up as the producer drains). Predecessors per step: 81x FlashInfer allreduce_fusion_kernel_oneshot_lamport
+(AR+residual+RMSNorm, ~9 us, NVLink-latency bound), 78x cuBLAS nvjet (W_UV bmm), 57x inductor triton RMSNorm.
+
+vLLM forces trigger_completion_at_end=True for the one-shot path, with this comment:
+"The one-shot Lamport all-reduce signals PDL completion before its output buffer is committed when
+trigger_completion_at_end is False, so the next PDL-launched kernel can read the uninitialized Lamport buffer
+and produce NaN. This only fires for num_tokens <= PDL_ADVANCE_LAUNCH_TOKENS (the batch=1 / spec-decode shapes)".
+
+Kernel (FlashInfer):
+__global__ void allreduce_fusion_kernel_oneshot_lamport(AllReduceFusionParams<T> params) {
+  static constexpr int VEC_SIZE = details::kBytesPerAccess / sizeof(T);
+  IndexHelper<T> index_helper(params);
+  int token_id = index_helper.token_id;
+  int access_id_in_token = index_helper.access_id_in_token;
+  int token_stride = index_helper.token_stride;
+  int access_id = index_helper.access_id;
+  int access_stride = index_helper.access_stride;
+  int tot_access = index_helper.tot_access;
+  vec_t<T, VEC_SIZE> clear_vec;
+  clear_vec.fill(neg_zero_v<T>);
+  FusedOp<Pattern, T> fused_op(params, access_id, access_id_in_token);
+
+#if (defined(__CUDA_ARCH__) && (__CUDA_ARCH__ >= 900))
+  cudaGridDependencySynchronize();
+  if constexpr (!TriggerCompletionAtEnd) {
+    cudaTriggerProgrammaticLaunchCompletion();
+  }
+#endif
+  LamportComm<NRanks> comm(params.workspace, params.rank);
+  int clear_access = comm.clear_size / VEC_SIZE;
+
+  for (int idx = access_id; idx < tot_access; idx += access_stride) {
+    vec_t<T, VEC_SIZE> val;
+    val.load(reinterpret_cast<T*>(params.allreduce_in) + idx * VEC_SIZE);
+    remove_neg_zero<T, VEC_SIZE>(val);
+#pragma unroll
+    for (int r = 0; r < NRanks; ++r) {
+      // Push data to other ranks
+      val.store(reinterpret_cast<T*>(comm.data_bufs[r]) +
+                (params.rank * tot_access + idx) * VEC_SIZE);
+    }
+  }
+  for (int idx = access_id; idx < clear_access; idx += access_stride) {
+    // Clear comm buffer that previous kernel used
+    clear_vec.store(reinterpret_cast<T*>(comm.clear_buf) + idx * VEC_SIZE);
+  }
+
+  for (int idx = access_id, tidx = token_id; idx < tot_access;
+       idx += access_stride, tidx += token_stride) {
+    fused_op.update(idx);
+    vec_t<T, VEC_SIZE> vals[NRanks];
+    bool done = false;
+
+    while (!done) {
+      done = true;
+#pragma unroll
+      for (int r = 0; r < NRanks; ++r) {
+        // LDG.128 from local rank
+        vals[r].load_global_volatile(reinterpret_cast<T*>(comm.data_bufs[params.rank]) +
+                                     (r * tot_access + idx) * VEC_SIZE);
+        done &= !has_neg_zero<T, VEC_SIZE>(vals[r]);
+      }
+    }
+    vec_t<T, VEC_SIZE> sum_val = allreduce_sum<T, VEC_SIZE, NRanks, Fp32Acc>(vals);
+    fused_op(sum_val, tidx);
+  }
+
+  comm.update(params.size * NRanks);
+
+#if (defined(__CUDA_ARCH__) && (__CUDA_ARCH__ >= 900))
+  if constexpr (TriggerCompletionAtEnd) {
+    cudaTriggerProgrammaticLaunchCompletion();
+  }
+#endif
+}
+
+
+Idea (from a public CUDA optimization contest): producers trigger launch_dependents early so the consumer's
+pre-fence weight loads overlap the producer's body ("the fence-first form has nothing to overlap").
+Questions:
+1. Is early trigger right after the AR's own cudaGridDependencySynchronize safe for a consumer that executes
+   griddepcontrol.wait before reading activations? PTX says wait blocks until prerequisite grids have completed
+   and their memory is visible. So what plausibly caused the NaN vLLM saw? (consumers that don't wait?
+   transitive early start of pre-wait code two hops down? the Lamport clear/flag protocol?)
+2. Is hiding ~1-2 us of the decode_gemm ramp per AR->GEMM edge a realistic expectation, given the AR's CTAs
+   occupy SMs and the consumer's pre-wait loads only cover one batch per thread? What is the biggest risk?
+3. Anything I'm missing that makes this a non-starter?
