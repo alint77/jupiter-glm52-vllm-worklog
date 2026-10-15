@@ -4,6 +4,7 @@
 # prefill), graph kernels traced per node, one report per profiler window:
 #   sizes: prof_sizes.py (pure prefill steps, fresh and after a cached 60K)
 #   ttft: un-profiled TTFT at SIZES (no nsys)
+#   script: SCRIPT --out <OUT>/timings.jsonl (waits for the file)
 #   mixed: prof_mixed.py (decoders + a 68K prefill; a 4-way fanout)
 #   ./onnode.sh "<D>/arm.sh <tag> sizes|mixed [env...]"
 set -uo pipefail
@@ -36,6 +37,9 @@ elif [[ ${what} == sizes ]]; then
 elif [[ ${what} == ttft ]]; then
   .venv/bin/python agent_space/experiments/2026-10-15-prefetch-384/ttft_sizes.py \
     --sizes "${SIZES}" --reps "${REPS:-8}" --out "${OUT}/ttft.jsonl"
+elif [[ ${what} == script ]]; then
+  until [[ -f ${SCRIPT} ]]; do sleep 5; done
+  .venv/bin/python ${SCRIPT} --out "${OUT}/timings.jsonl"
 else
   .venv/bin/python ${D}/prof_mixed.py --out "${OUT}/timings.jsonl"
 fi
