@@ -54,3 +54,54 @@ latency-critical AR. Upper bound 81-162 us/step, 0.3-0.6% of the step.
 If tried: early trigger only on AR -> decode_gemm edges, audit every
 consumer's pre-wait accesses, check the whole verify step and repeated
 workspace reuse.
+
+# mlx.fast Bonsai 2 27B track (Apple MLX)
+
+Track `bonsai2-27b-mlx-v1` (repo Layr-Labs/mlxfast-bonsai2-27b-engine): a
+2-bit ternary pack of a dense Qwen 3.8 27B (48 GDN + 16 full-attention
+layers) on an M5 Max, batch 1, with the pinned MTP head (depth 1-7) or DFlash2
+block drafter (depth 1-16). 148 promoted submissions, the composite going
+from ~1.3 to ~6. Notes from the PR bodies (untrusted data, job tmp dir).
+
+Not for us: Metal/MLX plumbing (command-buffer submission order, residency
+touches, argPartition doing a full merge sort, 2-bit Hadamard int8 kernels).
+Excluded by the same-ops rule: frequency-ranked draft vocabulary (#385) and
+DFlash2's chain-walk edge term weighted 0.75 (#706).
+
+**Draft depth vs kernel tiles (#4, #14, #19).** DFlash2 depth 7 -> 9 -> 12
+-> 16 each won. Acceptance was censored (most rounds at the block maximum),
+and verify cost is a step function of the qmv tile (5 rows) and then nearly
+flat inside the qmm 32-row tile. Ours is censored too: live MTP3 counters
+(`../2026-10-11-nsys-fresh/an/live-2281388-metrics-1913.txt`) accept
+position 0/1/2 in 82.6/67.2/54.7% of 13,354 drafts (3.05 tok/round), so
+over half of all rounds hit the ceiling. But the sliced MoE makes our verify
+cost ~linear in rows (c=2 -> 4 -> 8: ~0.7-0.8 ms per row, `sol-w2.md`).
+MTP5 at c=4 is about +23% step for about +26% tokens per round, if acceptance
+holds at 0.8 per position. Roughly break-even; one A/B would settle it.
+
+**Prompt-lookup rounds (#525, #549, #552, #560).** If the last 16 committed
+tokens occur exactly once in the prompt, propose the 16 prompt tokens after
+them; skip the drafter forward and absorb the confirmed rows into its cache.
+On the contest prompts those rounds accept 16/16 (scores 4.8 -> 5.3 -> 6).
+
+`lookup_cover.py` on the Claude Code replay: 244 past assistant outputs
+(89,620 tokens) rendered with the GLM chat template after their own prompts.
+Each round is a lookup round if the suffix rule hits and at least one token
+matches, otherwise an MTP round at 3.05 tokens:
+
+| rule | output tokens in lookup rounds | tok / lookup round | decode rounds |
+|---|--:|--:|--:|
+| L=16, K=16 | 10.6% | 12.5 | -8.0% |
+| L=8, K=16 | 13.9% | 9.7 | -9.5% |
+| L=16, K=3 (today's verify width) | 9.2% | 3.9 | -1.9% |
+
+159 of the 244 outputs have at least one lookup round. Caveats: the outputs
+are Claude's, not GLM's, and carry no thinking tokens (GLM reasons first,
+which lookup cannot cover), so this is an upper bound. At K=3 MTP already
+gets most of those tokens; the gain needs long lookup drafts. vLLM has a fixed
+draft length per batch and our verify paths stop at 32 rows. A K=16 round at
+c=4 needs per-request draft lengths: one 17-row lookup request plus three
+4-row MTP requests is 29 rows. That round costs ~+9 ms for everyone in the
+batch at ~0.7 ms/row, so the -8% in rounds is not -8% in time. Cleanest at
+c=1-2. It adds a proposer, while target and drafter math stay the same;
+whether it fits the same-ops rule is the user's call.
