@@ -12,7 +12,7 @@ on its own fresh hold. The load is the 600 s c=4 closed-loop replay
 (`timeline_save.py`: the c4-timeline driver plus saved outputs and /metrics
 snapshots). Both arms capture 1-8, 12, 16, 18, 24, ... .
 
-    launch.sh                       # ARMS="k3 k5"
+    run_queue.sh <hold>...          # queue/k3 k5 k5-r2 k3-r2; holds never cancelled
     ab_depth.py <arm dir>...        # tok/s, per-turn decode rate, acceptance per position
     lookup_glm.py <arm dir>         # prompt-lookup coverage on GLM's own outputs
 
