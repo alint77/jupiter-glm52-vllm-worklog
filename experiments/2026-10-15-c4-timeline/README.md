@@ -137,8 +137,9 @@ Holds 2334599/2334600/2334606 (fix arms), 2334590/2334591 (SRPT A/B).
   the leading system block, which GLM renders right after the tools (~35K);
   each new reminder shifts the rest of the conversation. (The earlier
   "rendered prompts are append-only" check went through paths that do not
-  merge.) Fix: cherry-pick of upstream #58754, fork 144f2f4aee; details and
-  served check in `../2026-10-15-prefix-miss/`.
+  merge.) Fix: cherry-pick of upstream #58754, fork 144f2f4aee. Served, 600 s
+  c=4 timeline: 69 -> 146 turns, 97 -> 229 out tok/s, TTFT mean 9.10 -> 2.85
+  s, p90 33.8 -> 1.47 s (`../2026-10-15-prefix-miss/`).
 - **SRPT prefill order: no win** (vLLM 877df9b262, `VLLM_SCHED_INTERLEAVE_SRPT`,
   default off). 600 s timeline, `ab_srpt.py`:
 
@@ -149,7 +150,8 @@ Holds 2334599/2334600/2334606 (fix arms), 2334590/2334591 (SRPT A/B).
 
   The slow turns are the same in both arms: deterministic prefix misses that
   recompute 150-300K tokens. Waiting behind another prefill is second order
-  next to them. Re-run on the prefix fix: `../2026-10-15-prefix-miss/`.
+  next to them. On the prefix fix SRPT wins on follow-ups (mean 1.07 vs
+  1.92 s, 155 vs 146 turns; `../2026-10-15-prefix-miss/`).
 - **Prefill prep** (7 indexer metadata builds per step, ~0.68 ms each under
   nsys): CPU dispatch of ~25 small torch ops per build, not the two host
   syncs (6 us each). ~1% of a short turn; deferred.

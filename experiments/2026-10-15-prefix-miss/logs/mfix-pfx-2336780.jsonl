@@ -1,0 +1,9 @@
+{"seq": "112,113,114", "index": 112, "input": 240198, "queried": 240198.0, "hit": 0.0, "hit_pct": 0.0, "wall_s": 34.99, "kv_after": 0.0}
+{"seq": "112,113,114", "index": 113, "input": 240452, "queried": 240452.0, "hit": 239872.0, "hit_pct": 99.8, "wall_s": 0.45, "kv_after": 0.0}
+{"seq": "112,113,114", "index": 114, "input": 241246, "queried": 241246.0, "hit": 240128.0, "hit_pct": 99.5, "wall_s": 0.49, "kv_after": 0.0}
+{"seq": "16,17", "index": 16, "input": 68747, "queried": 68747.0, "hit": 68352.0, "hit_pct": 99.4, "wall_s": 0.23, "kv_after": 0.0}
+{"seq": "16,17", "index": 17, "input": 76345, "queried": 76345.0, "hit": 76032.0, "hit_pct": 99.6, "wall_s": 0.25, "kv_after": 0.0}
+{"seq": "63,64", "index": 63, "input": 155944, "queried": 155944.0, "hit": 155648.0, "hit_pct": 99.8, "wall_s": 0.29, "kv_after": 0.0}
+{"seq": "63,64", "index": 64, "input": 156510, "queried": 156510.0, "hit": 156160.0, "hit_pct": 99.8, "wall_s": 0.27, "kv_after": 0.0}
+{"seq": "160,161", "index": 160, "input": 294969, "queried": 294969.0, "hit": 24320.0, "hit_pct": 8.2, "wall_s": 39.64, "kv_after": 0.0}
+{"seq": "160,161", "index": 161, "input": 301784, "queried": 301784.0, "hit": 22784.0, "hit_pct": 7.5, "wall_s": 41.06, "kv_after": 0.0}

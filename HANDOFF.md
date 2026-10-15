@@ -7,9 +7,13 @@ reminders into the leading system block (rendered right after the ~35K of
 tools), so each new reminder shifted the rest of the prompt. Fix: cherry-pick
 of upstream #58754 (fork 144f2f4aee) probes the template the renderer
 actually applies; GLM-5.3 -> no merge, prompts append-only (CPU-verified on
-the replayed turns). Prod launchers pick it up on restart. Served check
-(`launch_fixed.sh`: c=1 hits, c=4 600 s timeline FCFS + SRPT) queued behind
-booster maintenance. `experiments/2026-10-15-prefix-miss/`.
+the replayed turns). Prod launchers pick it up on restart. Served: c=1 #114
+hits 240,128 of 241,246 (was 37,376); c=4 600 s agentic timeline 69 -> 146
+turns, 97 -> 229 out tok/s, TTFT mean 9.10 -> 2.85 s, p90 33.8 -> 1.47 s,
+hit/prompt 76% -> 95%. With the fix SRPT (VLLM_SCHED_INTERLEAVE_SRPT=1) beats
+FCFS on follow-ups (mean 1.07 vs 1.92 s, one run each); still default off.
+Remaining misses are client-side (tool list, git-status snapshot, reasoning
+effort). `experiments/2026-10-15-prefix-miss/`.
 
 **Latest (2026-10-15): cold-prefetch threshold 384 is prod.** serve.sh
 `VLLM_TIERED_MOE_COLD_PREFETCH_MIN_TOKENS` default 512 -> 384. The gate sees

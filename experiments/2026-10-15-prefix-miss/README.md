@@ -58,7 +58,54 @@ merge flag). Prod launchers serve from the main tree and pass no
   inproc_diverge.py 112,113,114 16,17 63,64`): merge False; every pair's
   common prefix is the whole previous prompt (#112 240,198 -> #113 240,452 ->
   #114 241,246; #16 68,747 -> #17 76,345; #63 155,944 -> #64 156,510).
-- Served (`launch_fixed.sh`, worktree pf5 = pf3 + fix): pending, see below.
+- Served (`launch_fixed.sh`, worktree pf5 = pf3 + fix, holds 2336780-82,
+  no merge warning in any server log): see below.
+
+## Served result
+
+c=1 replay, fresh server (`sliced-prof/mfix-pfx-2336780/timings.jsonl`):
+
+| request | prompt | hit before | hit after |
+|---|---|---|---|
+| #112 (cold) | 240,198 | 0 | 0 |
+| #113 | 240,452 | 239,872 | 239,872 (99.8%) |
+| #114 | 241,246 | 37,376 | 240,128 (99.5%), 0.49 s |
+| #16 / #17 | 68,747 / 76,345 | 35,072 / 35,072 | 68,352 / 76,032 |
+| #63 / #64 | 155,944 / 156,510 | 36,096 / 36,352 | 155,648 / 156,160 |
+| #160 / #161 | 294,969 / 301,784 | 24,320 / 22,784 | 24,320 / 22,784 (tool list changed) |
+
+#16 now hits 68K from #112's blocks (earlier turns are prefixes of later
+ones).
+
+c=4 agentic timeline, 600 s, no profiler (`timeline_run.py`, analyzed with
+`../2026-10-15-c4-timeline/ab_srpt.py`; before = pf3 holds 2334591/90 on the
+same code without the fix):
+
+| arm | turns | out tok/s | hit / prompt | TTFT mean / p50 / p90 (s) | follow-up mean / p90 |
+|---|---|---|---|---|---|
+| FCFS before | 69 | 97.3 | 75.9% | 9.10 / 0.58 / 33.8 | 6.80 / 30.4 |
+| SRPT before | 64 | 89.7 | 75.5% | 9.29 / 0.69 / 39.0 | 6.38 / 34.7 |
+| **FCFS fix** | 146 | 229.1 | 95.1% | 2.85 / 0.39 / 1.47 | 1.92 / 0.98 |
+| **SRPT fix** | 155 | 232.9 | 95.5% | 2.39 / 0.39 / 1.02 | 1.07 / 0.90 |
+
+2.1-2.4x the turns and output tokens in the same 600 s; prefill tokens
+computed 3.09M -> 1.55M while serving 2.5x the prompt tokens.
+(`ab_srpt.py`'s "prefix hit" uses the queries counter; SRPT re-runs the
+lookup on every admission retry, 180M queried vs 33M prompt tokens, so use
+hits / prompt tokens.)
+
+Remaining slow turns (> 10 s, FCFS fix), all explained:
+- cold first turns of each agent: #63 (156K, 23 s), #111 (237K, 36 s),
+  #159 (294K, 77 s);
+- second turns queued behind another agent's cold prefill (FCFS): #64 20 s,
+  #112 43 s. SRPT removes these (follow-up mean 1.92 -> 1.07 s, one run
+  each, different nodes);
+- client-side prompt changes (`MERGE_MODE=server inproc_diverge.py`):
+  #161 tool list gained `mcp__ide__executeCode`; #133 the git-status
+  snapshot in Claude Code's system prompt changed at token 24,733; #195 and
+  #162 changed `Reasoning Effort: High` -> `Max`, which GLM's template renders
+  as the very first system token (#162 is also a different request, a
+  security-monitor side call).
 
 ## Ruled out (before the root cause; note the caveat)
 
