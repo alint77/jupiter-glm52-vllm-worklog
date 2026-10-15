@@ -112,3 +112,38 @@ Window 1 (t = 60-67 s): prefill 574 ms/step (11 steps), decode 18.2 ms.
 Not inefficient here: API server, tokenizer/template, scheduler CPU, IPC,
 cold-expert prefetch (H2D fully hidden), decode launch overhead (verify graph,
 0.3-0.4 ms idle/step).
+
+## Fixes and follow-ups (same day)
+
+Holds 2334599/2334600/2334606 (fix arms), 2334590/2334591 (SRPT A/B).
+
+- **Triton recompile: fixed** (vLLM 7284232eb5, strides as runtime ints).
+  Served check: a fresh Triton cache holds 24 entries for the candidate-pack
+  kernel after a 600 s c=4 timeline on the fix (fixed set, no growth), vs 232
+  after only the short TTFT sweep on the old code. `ttft_sizes.py` cannot show
+  the TTFT win (its shapes repeat; rep 4 old vs new equal within noise:
+  fresh 512-4000 114/240/246/498 vs 119/144/248/503 ms rep 1); the per-step
+  cost was measured in the nsys windows above (13-94 ms per long-context
+  prefill chunk).
+- **Prefix misses reproduce at c=1 on an empty pool** (`prefix_repro.py`,
+  `logs/fix-pfx-2334600.log`): #112 cold, #113 hits 99.8% of it, but #114
+  (append-only) hits 37,376 of 241K; #16 and #17 both hit 35,072; #63/#64
+  36,096/36,352; #160/#161 24,320/22,784. Not eviction, not concurrency.
+  Rendered prompts are append-only and fastokens == HF token-for-token on all
+  three pairs (login CPU check), so the server's own prompt or its KV cache
+  manager diverges. Root cause in progress: `launch_pdump.sh` dumps per-request
+  block hashes, per-group cached prefix and prompt ids (debug probe, pf4).
+- **SRPT prefill order: no win** (vLLM 877df9b262, `VLLM_SCHED_INTERLEAVE_SRPT`,
+  default off). 600 s timeline, `ab_srpt.py`:
+
+  | arm | turns | out tok/s | prefix hit | TTFT mean / p50 / p90 (s) | follow-up mean |
+  |---|---|---|---|---|---|
+  | FCFS | 69 | 97.3 | 75.9% | 9.10 / 0.58 / 33.8 | 6.80 |
+  | SRPT | 64 | 89.7 | 74.9% | 9.29 / 0.69 / 39.0 | 6.38 |
+
+  The slow turns are the same in both arms: deterministic prefix misses that
+  recompute 150-300K tokens. Waiting behind another prefill is second order
+  next to them. Revisit after the prefix fix.
+- **Prefill prep** (7 indexer metadata builds per step, ~0.68 ms each under
+  nsys): CPU dispatch of ~25 small torch ops per build, not the two host
+  syncs (6 us each). ~1% of a short turn; deferred.

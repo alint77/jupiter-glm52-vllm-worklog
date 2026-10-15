@@ -22,7 +22,7 @@ c=/e/fscratch/profound/${USER}/caches
 # several nodes (concurrent writers corrupt shared torch.compile artifacts)
 export VLLM_CACHE_ROOT=${SERVE_CACHE_ROOT:-${c}/marlin/vllm-cache-glm53-mtp7}
 export TRTLLM_DG_CACHE_DIR=${c}/marlin/trtllm-dg-glm53-mtp7
-export TRITON_CACHE_DIR=${c}/triton
+export TRITON_CACHE_DIR=${TRITON_CACHE_DIR:-${c}/triton}
 export TORCHINDUCTOR_CACHE_DIR=${c}/inductor
 export FLASHINFER_CACHE_DIR=${c}/flashinfer
 export TIERED_MOE_MODEL_PATH=/e/fscratch/profound/${USER}/models/GLM-5.3-W4A16

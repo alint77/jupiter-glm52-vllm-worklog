@@ -18,7 +18,7 @@ export TIERED_MOE_LAYOUT=tp_sliced REPLICAS=
 export SPEC=mtp SPEC_K=3 COMPILE_SIZES= MAX_NUM_SEQS=4 VLLM_TIERED_MOE_KV_POOL_SEQS=2 RESERVE_GB=3.6
 export CAPTURE_SIZES=1,2,3,4,5,6,7,8,12,16,64,128,256,384,512,640,768,896,1024
 export TRACE_ROOT="${OUT}/trace" NSYS_OUT="${OUT}/nsys" NSYS_BIN=${PWD}/agent_space/experiments/2026-10-09-tp-sliced-experts/nsys_node.sh
-[[ ${what} == host || ${what} == ttft ]] && unset NSYS_OUT NSYS_BIN TRACE_ROOT
+[[ ${what} == host || ${what} == ttft || -n ${TIMELINE_NOPROF:-} ]] && unset NSYS_OUT NSYS_BIN TRACE_ROOT
 bash agent_space/experiments/2026-09-27-glm53-mtp7-profile/serve.sh >"${OUT}/server.out" 2>"${OUT}/server.err" &
 pid=$!
 trap 'pkill -f "bin/vllm [s]erve" 2>/dev/null; kill ${pid} 2>/dev/null; sleep 30; pkill -9 -f "VLLM::[W]orker" 2>/dev/null; wait ${pid} 2>/dev/null' EXIT

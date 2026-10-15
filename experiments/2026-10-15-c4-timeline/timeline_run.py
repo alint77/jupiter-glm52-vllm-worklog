@@ -5,9 +5,13 @@ thread logs the server's scheduler gauges and node memory/CPU every 0.5 s, and
 two Nsight Systems windows (WINDOWS) are taken mid-run.
 
     timeline_run.py --out timings.jsonl   (events.jsonl, samples.jsonl beside)
+
+TIMELINE_DURATION=<s> changes the run length; TIMELINE_NOPROF=1 takes no
+profiler windows (A/B runs).
 """
 import argparse
 import json
+import os
 import re
 import subprocess
 import threading
@@ -19,8 +23,8 @@ BASE = "http://127.0.0.1:8027"
 REPLAY = Path("/e/fscratch/profound/naeimitabiei1/agentic-bench/cc-replay.jsonl")
 SESSION = "898193f4"
 OFFSETS = (0, 48, 96, 144)
-DURATION = 270.0
-WINDOWS = ((60.0, 6.0), (170.0, 6.0))
+DURATION = float(os.environ.get("TIMELINE_DURATION", 270))
+WINDOWS = () if os.environ.get("TIMELINE_NOPROF") else ((60.0, 6.0), (170.0, 6.0))
 MAX_TOKENS = 2048
 GAUGES = ("vllm:num_requests_running", "vllm:num_requests_waiting",
           "vllm:kv_cache_usage_perc", "vllm:prompt_tokens_total",
