@@ -1,0 +1,44 @@
+device 0: 62 verify graphs, mean span 30.62 ms (p10 28.27, p90 32.89)
+   19.06 ms   62.3%  MoE expert GEMMs (sliced: + shared expert)
+    3.36 ms   11.0%  dense GEMMs (decode_gemm)
+    1.47 ms    4.8%  DCP collectives
+    1.43 ms    4.7%  all-reduce + RMSNorm (incl. wait)
+    1.11 ms    3.6%  DSA indexer
+    1.09 ms    3.6%  dense GEMMs (cuBLAS etc.)
+    1.05 ms    3.4%  attention (FlashMLA)
+    0.56 ms    1.8%  MoE route/act/finalize + router
+    0.51 ms    1.7%  GPU idle
+    0.47 ms    1.5%  other verify-graph kernels
+    0.27 ms    0.9%  KV write / skip-KV staging
+    0.23 ms    0.8%  attention (split-KV combine)
+  top kernels (summed over streams, ms per graph):
+    19.065  tiered_decode::layer_kernel(tiered_decode::Params)
+     2.456  void decode_gemm_kernel<(int)4, (int)4, (int)2, (bool)1>(const __nv_bfloat16 *, const __nv_bfloat16 *, __nv_bf
+     2.349  tiered_decode::finalize_kernel(tiered_decode::Workspace *, __nv_bfloat16 *)
+     1.435  void flashinfer::trtllm_allreduce_fusion::allreduce_fusion_kernel_oneshot_lamport<(flashinfer::trtllm_allreduc
+     1.051  void sm90::decode::sparse_fp8::flash_fwd_splitkv_mla_fp8_sparse_kernel<sm90::decode::sparse_fp8::KernelTemplat
+     0.969  void decode_gemm_kernel<(int)2, (int)4, (int)2, (bool)1>(const __nv_bfloat16 *, const __nv_bfloat16 *, __nv_bf
+     0.882  _gather_rows_kernel
+     0.657  void one_shot::gather_cat_kernel<(int)4>(vllm::RankData *, vllm::RankData *, long, long, vllm::RankSignals, vl
+     0.610  void one_shot::lse_reduce_scatter_kernel<__nv_bfloat16, (int)4, (bool)1>(vllm::RankData *, vllm::RankData *, l
+     0.468  void smxx::decode::flash_fwd_mla_combine_kernel<cutlass::bfloat16_t, (int)512, (int)8, (int)32, (int)256>(Comb
+     0.396  void tiered_decode::route_prep_kernel<int>(tiered_decode::Workspace *, const __nv_bfloat16 *, const T1 *, cons
+     0.353  nvjet_sm90_tst_64x8_64x16_1x2_h_bz_TNT
+     0.310  void vllm::moe::grouped_topk_fused_small_expert_count_kernel<float, float, int, (vllm::moe::ScoringFunc)1, (in
+     0.307  kernel_cutlass_kernel_vllmmodel_executorkernelslinearcute_dsl_ll_bf16_splitkLLBf16SplitK_object_at__tensorptrb
+     0.305  void vllm::cooperative::cooperative_topk_cs4<(unsigned int)2048>(vllm::cooperative::CooperativeTopKParams<T1>)
+     0.304  void deep_gemm::sm90_fp8_paged_mqa_logits<(unsigned int)1, (unsigned int)32, (unsigned int)128, (unsigned int)
+     0.301  kernel_cutlass_kernel_vllmmodel_executorkernelsattentiondsadcp_indexer_cutedslStableTopKFromGatheredCandidates
+     0.299  nvjet_sm90_tst_64x16_64x16_2x1_v_bz_NNT
+     0.252  void vllm::concat_and_cache_ds_mla_kernel<__nv_bfloat16, unsigned char, (vllm::Fp8KVCacheDataType)1>(const T1 
+     0.203  void one_shot::gather_kernel<(int)4>(vllm::RankData *, vllm::RankSignals, vllm::Signal *, uint4 *, int, long, 
+     0.120  triton_red_fused_1
+     0.116  triton_poi_fused_add_copy_index_select_mul_slice_split_stack_sub_unsqueeze_view_2
+     0.114  _remap_rows_kernel
+     0.105  nvjet_sm90_tst_64x16_64x16_4x1_v_bz_splitK_TNT
+     0.096  _compact_rows_kernel
+     0.084  triton_poi_fused_0
+     0.082  _convert_req_index_to_global_index_kernel
+     0.066  _mark_rows_kernel
+     0.043  void vllm::indexer_k_quant_and_cache_kernel<__nv_bfloat16, unsigned char, (vllm::Fp8KVCacheDataType)1>(const T
+     0.039  triton_red_fused_0

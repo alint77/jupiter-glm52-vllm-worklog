@@ -11,7 +11,7 @@ prefill: one chunk of N new tokens after a cached replay prompt of length C
         (a user message of repo source appended), max_tokens 1; first timed
         un-profiled on different text, then one Nsight window.
 
-    PROF_WHAT=decode|prefill prof_longctx.py --out timings.jsonl
+    PROF_WHAT=decode|prefill|decode,prefill prof_longctx.py --out timings.jsonl
 """
 import argparse
 import json
@@ -151,7 +151,8 @@ def main():
             f.write(json.dumps(row) + "\n")
             f.flush()
             print(json.dumps(row), flush=True)
-        {"decode": decode, "prefill": prefill}[a.what](name, emit)
+        for what in a.what.split(","):
+            {"decode": decode, "prefill": prefill}[what](name, emit)
 
 
 if __name__ == "__main__":

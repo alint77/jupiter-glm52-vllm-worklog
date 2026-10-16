@@ -88,3 +88,51 @@ Prefill (4K chunk at long context, ~650-700 ms):
 3. Dense GEMMs, ~37 ms over the floor.
 4. Bigger chunks when no decoder waits (prefill-nsys lever 3): amortizes the
    flat MoE cost.
+
+## Measured at 80K-300K (hold 2342504, 2026-10-16)
+
+`prof_longctx.py` on pf5 (144f2f4aee), c4 launcher config. Decode: 4 live
+replay requests per context, one 2 s window each (`an/lc/dec*-d*.txt`, mean
+of 4 ranks). Prefill: one ~3.9K chunk after a cached replay prompt, and
+0.5-2K at 250K (`prefill_tab.py`, `an/lc/prefill.md`).
+
+| decode, ms per step | 80K | 155K | 250K | 300K |
+|---|--:|--:|--:|--:|
+| period (window / graphs) | 26.80 | 33.03 | 29.80 | 26.86 |
+| verify span | 24.41 | 30.61 | 27.38 | 24.42 |
+| MoE layer_kernel | 12.97 | 19.14 | 15.65 | 12.42 |
+| decode_gemm + cuBLAS | 4.49 | 4.44 | 4.48 | 4.53 |
+| AR + RMSNorm | 1.33 | 1.35 | 1.36 | 1.39 |
+| DCP collectives | 1.51 | 1.48 | 1.49 | 1.52 |
+| FlashMLA + combine | 1.30 | 1.28 | 1.29 | 1.31 |
+| DSA indexer | 0.98 | 1.11 | 1.29 | 1.42 |
+| (mqa_logits / top-k / side-stream gather_rows) | 0.20 / 0.62 / 0.72 | 0.30 / 0.65 / 0.88 | 0.43 / 0.70 / 0.95 | 0.52 / 0.74 / 0.87 |
+| idle | 0.51 | 0.51 | 0.51 | 0.51 |
+
+Decode is flat in context: only the indexer grows (+0.44 ms from 80K to
+300K). The step moves with the MoE term (12.4-19.1 ms), which follows the
+prompt content (cold experts over C2C), not its length. The c=4/50K SOL table
+stands for agentic lengths.
+
+| prefill, ms | fresh+3.9K | 80K+3.9K | 155K+3.9K | 250K+3.9K | 300K+3.9K | 250K+2K | 250K+1K | 250K+0.5K |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|
+| TTFT (un-profiled) | 503 | 735 | 809 | 966 | 1036 | 541 | 457 | 386 |
+| GPU span of the window | 502 | 706 | 714 | 791 | 815 | 421 | 296 | 233 |
+| TTFT - GPU span (host) | 1 | 29 | 95 | 175 | 220 | 120 | 161 | 152 |
+| MoE GEMM | 170 | 315 | 266 | 300 | 263 | 134 | 99 | 101 |
+| q all-gather (DCP) | 75 | 93 | 81 | 95 | 91 | 52 | 33 | 21 |
+| dense GEMMs | 77 | 87 | 87 | 87 | 85 | 46 | 28 | 20 |
+| indexer logits + top-k + KV gather | 1 | 40 | 76 | 109 | 145 | 61 | 51 | 33 |
+| sparse attention | 47 | 65 | 64 | 65 | 63 | 37 | 22 | 15 |
+| all-reduce | 44 | 46 | 50 | 47 | 56 | 31 | 20 | 17 |
+| LSE combine | 46 | 51 | 48 | 51 | 48 | 29 | 17 | 12 |
+
+- Host time before the first kernel grows with the prompt: ~150-220 ms of a
+  250-300K TTFT (tokenize, render, prefix lookup), the same at 0.5K new
+  tokens as at 3.9K. That is new, per turn, and not GPU work.
+- The indexer is the only GPU term that grows: 1 -> 145 ms per 3.9K chunk
+  from 0 to 300K (logits 89 + top-k 40 + KV gather 17 at 300K).
+- MoE has a ~100 ms floor (0.5K and 1K chunks cost the same), so small chunks
+  are expensive per token: 0.5K costs 233 ms, 3.9K costs 791 ms.
+- MoE at the same 3.9K varies 170-315 ms with the text (routing / cold
+  experts), as in decode.
