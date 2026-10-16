@@ -53,3 +53,5 @@ consistently: mean -30 to -45%, p90 about halved. It costs the cold long turns
 (worst TTFT 77 -> 107 s, both nodes) and ~6% geomean per-turn decode rate.
 Throughput is -6% on one node and +7% on the other, within run-to-run spread.
 A trade, not a free default.
+
+Adopted 2026-10-16: `serve.sh` now exports `VLLM_SCHED_INTERLEAVE_SRPT=1` by default (all claude-glm / opencode / codex launchers; `=0` restores FCFS).

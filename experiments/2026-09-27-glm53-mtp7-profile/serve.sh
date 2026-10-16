@@ -147,6 +147,11 @@ export VLLM_DCP_DECODE_SCHED="${VLLM_DCP_DECODE_SCHED:-1}"
 # -22%, longest decoder stall 0.93 -> 0.65 s, GSM8K within noise.
 # VLLM_SCHED_INTERLEAVE_PREFILL=0 restores mixed steps.
 export VLLM_SCHED_INTERLEAVE_PREFILL="${VLLM_SCHED_INTERLEAVE_PREFILL:-1}"
+# Shortest remaining prefill first (vllm 877df9b262; 2026-10-16-mtp-depth-c4,
+# two same-node pairs + 2026-10-15-c4-timeline): follow-up TTFT -30 to -45%,
+# p90 about halved; the longest cold first turns wait ~30 s more.
+# VLLM_SCHED_INTERLEAVE_SRPT=0 restores FCFS.
+export VLLM_SCHED_INTERLEAVE_SRPT="${VLLM_SCHED_INTERLEAVE_SRPT:-1}"
 # fastokens tokenizer (fastokens 0.3.3 in the venv): same token ids as HF
 # tokenizers on 17.7M tokens, TTFT -80 ms at 60K and -118 ms at 100K
 # (2026-10-11-nsys-fresh). VLLM_USE_FASTOKENS=0 restores HF tokenizers.
