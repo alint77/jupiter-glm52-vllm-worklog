@@ -3,7 +3,7 @@
 # (queue/<item> -> claimed/, atomic mv) and runs them one after another while
 # it has >= 30 min left. Holds are never cancelled here: an idle hold stays
 # available for more work until its time limit.
-#   run_queue.sh <hold id>...     items: queue/k3, queue/k5, queue/k5-r2, queue/k3-r2
+#   run_queue.sh <hold id>...     items: queue/k<spec k>[-tag], contents = extra arm env
 cd /e/project1/profound/alint77/vllm
 P=agent_space/experiments/2026-10-16-mtp-depth-c4
 E=agent_space/experiments/2026-09-27-glm53-mtp7-profile
@@ -36,12 +36,13 @@ for j in "$@"; do (
     [[ -z ${item} ]] && break
     mv ${P}/queue/${item} ${P}/queue/claimed/${item}.${j} 2>/dev/null || continue
     k=${item%%-*}; k=${k#k}
+    extra=$(cat ${P}/queue/claimed/${item}.${j})  # the item file holds extra arm env
     cb=${C}/vllm-cache-glm53-mtpd-${item}-${j}; mkdir -p ${cb}
     cp -an ${C}/vllm-cache-glm53-c4tl-2333343/{modelinfos,tiered_sliced,torch_extensions,torch_compile_cache} ${cb}/ 2>/dev/null
     tc=/e/fscratch/profound/${USER}/caches/triton-mtpd-${item}-${j}; mkdir -p ${tc}
     tag=mtpd-${item}-${j}
     echo "$(date +%T) hold ${j}: ${tag} (SPEC_K=${k})"
-    HOLD_JOB=${j} ${E}/onnode.sh "${P}/arm.sh ${tag} script PYTHONPATH=${W} SERVE_CACHE_ROOT=${cb} TRITON_CACHE_DIR=${tc} SPEC_K=${k} CAPTURE_SIZES=${CS} SCRIPT=${P}/timeline_save.py TIMELINE_NOPROF=1 TIMELINE_DURATION=600 VLLM_SCHED_INTERLEAVE_SRPT=0" > ${P}/logs/${tag}.log 2>&1
+    HOLD_JOB=${j} ${E}/onnode.sh "${P}/arm.sh ${tag} script PYTHONPATH=${W} SERVE_CACHE_ROOT=${cb} TRITON_CACHE_DIR=${tc} SPEC_K=${k} CAPTURE_SIZES=${CS} SCRIPT=${P}/timeline_save.py TIMELINE_NOPROF=1 TIMELINE_DURATION=600 VLLM_SCHED_INTERLEAVE_SRPT=0 ${extra}" > ${P}/logs/${tag}.log 2>&1
     echo "$(date +%T) hold ${j}: ${tag} finished ($(tail -1 ${P}/logs/${tag}.log))"
   done
   echo "$(date +%T) hold ${j} IDLE, $(( $(left ${j}) / 60 )) min left (not cancelled)"

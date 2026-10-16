@@ -1,0 +1,1 @@
+mtpd-k3-r2-2344299 L=16 K=3: 159 outputs, 131553 rendered tokens (server counted 131534; thinking ~88191); 3.3% in lookup rounds, 3.83 tok/lookup round; rounds 47492 -> 47053 (0.9% fewer)
