@@ -105,3 +105,8 @@ c=4 needs per-request draft lengths: one 17-row lookup request plus three
 batch at ~0.7 ms/row, so the -8% in rounds is not -8% in time. Cleanest at
 c=1-2. It adds a proposer, while target and drafter math stay the same;
 whether it fits the same-ops rule is the user's call.
+
+**On GLM's own outputs** (`../2026-10-16-mtp-depth-c4/lookup_glm.py`, the two MTP3 timeline arms, thinking
+included; the rendering matches the server's output token count within 0.2%):
+thinking is 67% of GLM's output, and lookup rounds cover 3.4-3.8% of tokens.
+At K=16 that is -2.6 to -2.9% rounds as an upper bound, and -0.8 to -0.9% at K=3. Not worth building.
