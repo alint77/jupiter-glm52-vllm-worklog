@@ -36,3 +36,20 @@ but MTP5 also produced longer outputs and finished fewer turns (155/150 vs
 157/159). No win: MTP3 stays. On this replay MTP3's last position accepts
 in 43% of rounds, not 55% as on the live counters, so the censoring was
 smaller than it looked.
+
+## SRPT paired rerun (same nodes, MTP3, `VLLM_SCHED_INTERLEAVE_SRPT=1`, queue items k3-srpt-a/b)
+
+Each SRPT arm is compared with the FCFS MTP3 arm from the same node (`ab_depth.py`, `../2026-10-15-c4-timeline/ab_srpt.py`):
+
+| node | arm | turns | output tok/s | TTFT follow-up mean / p90 | TTFT max | per-turn decode, SRPT / FCFS |
+|---|---|--:|--:|---|--:|---|
+| 35 | FCFS | 157 | 227.5 | 2.04 / 1.44 | 77.9 | |
+| 35 | SRPT | 147 | 213.6 | 1.45 / 0.77 | 107.5 | median 0.987, geomean 0.937 |
+| 36 | FCFS | 159 | 224.0 | 1.92 / 1.86 | 76.9 | |
+| 36 | SRPT | 159 | 239.4 | 1.05 / 0.81 | 106.0 | median 1.002, geomean 0.944 |
+
+As in the first pair (2026-10-15: 2.39 vs 2.85 s mean), SRPT cuts follow-up TTFT
+consistently: mean -30 to -45%, p90 about halved. It costs the cold long turns
+(worst TTFT 77 -> 107 s, both nodes) and ~6% geomean per-turn decode rate.
+Throughput is -6% on one node and +7% on the other, within run-to-run spread.
+A trade, not a free default.
