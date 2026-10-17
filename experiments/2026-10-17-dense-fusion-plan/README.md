@@ -130,3 +130,36 @@ us per chain, median of 5 x 20 replays):
 layers ~0.12 ms/step at c=1 (~0.6% of 18.9 ms), ~0.12 at c=4 (0.4%); 2.0 us of
 glue cost remains over the floor (the glue's own latency, which q_b's
 griddepcontrol.wait must sit out). Not integrated; no served A/B.
+
+## M=4 profile (c=4 serving config, 1 request in flight; holds 2383231/2)
+
+`m4_on_hold.sh` -> `nsys_arm_n.sh <tag> 4 1` (copy of the 10-11 arm with a
+separate in-flight count): MTP3, pool 2 seqs, reserve 3.6, 14290 hot / 4910
+cold per rank, tree pf5. Two servers x 4 ranks, `an/bd-m4-*`, `an/kc-m4-*`.
+Acceptance 2.9 (5K) / 3.7 (50K).
+
+| ms/step (mean of 8 rank-runs) | ~5K | ~50K |
+|---|--:|--:|
+| **step period** | **16.64** | **18.22** |
+| MoE expert GEMMs (+ shared) | 4.70 | 5.81 |
+| dense decode_gemm | 3.07 | 3.07 |
+| outside the verify graph | 2.02 | 2.07 |
+| DCP collectives | 1.15 | 1.15 |
+| AR + RMSNorm (incl. wait) | 1.04 | 1.08 |
+| dense cuBLAS / cute (W_UV, W_UK, router, shared) | 0.98 | 0.98 |
+| GPU idle | 0.88 | 0.97 |
+| DSA indexer | 0.55 | 0.84 |
+| FlashMLA | 0.78 | 0.79 |
+| other | 1.47 | 1.47 |
+
+Median layer chain (~50K, rank 0, `an/kc-m4-2383231-w2-d0.txt`): 244 us per
+layer, of which layer_kernel 62.3 us (floor ~37 us at n=1, HBM-bound,
+`../2026-10-09-tp-sliced-experts` mix 21.8 hot / 2.5 cold) and ~35 other
+kernels: qkv_a 12.4 (floor 9.0), RoPE k 1.4, norms 2.8 (2 CTAs at M=4), q_b
+7.6 (4.7), q RoPE 1.4, 2x concat_and_cache 3.6, W_UK 3.7 (~0.9), gather_cat
+6.5, FlashMLA 10.0, combine tail ~3.4, lse_rs 5.9, W_UV 3.8 (~1.2), o_proj
+15.9 (14.0), AR 6.0 + 7.5, router 3.3 (~0.9), topk 4.0, route_prep ~3.7.
+Positive inter-kernel gaps sum to ~8.7 us per layer (~0.68 ms/step; most
+boundaries without PDL are 0.4-0.7 us). Outside the graph ~1.45 ms of
+kernels: 4 lm_head calls 553 us (at the 3.4 TB/s floor), a 205 us
+`tensor_kernel_scan_innermost_dim` (sampler), drafter Marlin 122 us.

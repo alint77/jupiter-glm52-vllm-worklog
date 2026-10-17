@@ -1,0 +1,14 @@
+device 3: 110 steps, mean period 18.22 ms (p10 17.03, p90 19.35)
+    5.81 ms   31.9%  MoE expert GEMMs (sliced: + shared expert)
+    3.07 ms   16.8%  dense GEMMs (decode_gemm)
+    2.12 ms   11.6%  outside the verify graph (draft, lm_head, sampling, prep)
+    1.12 ms    6.2%  all-reduce + RMSNorm (incl. wait)
+    1.11 ms    6.1%  DCP collectives
+    0.98 ms    5.4%  dense GEMMs (cuBLAS etc.)
+    0.86 ms    4.7%  GPU idle
+    0.83 ms    4.6%  DSA indexer
+    0.79 ms    4.3%  attention (FlashMLA)
+    0.54 ms    2.9%  other verify-graph kernels
+    0.48 ms    2.6%  MoE route/act/finalize + router
+    0.26 ms    1.4%  attention (split-KV combine)
+    0.24 ms    1.3%  KV write / skip-KV staging
