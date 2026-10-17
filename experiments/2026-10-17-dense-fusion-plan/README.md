@@ -163,3 +163,37 @@ Positive inter-kernel gaps sum to ~8.7 us per layer (~0.68 ms/step; most
 boundaries without PDL are 0.4-0.7 us). Outside the graph ~1.45 ms of
 kernels: 4 lm_head calls 553 us (at the 3.4 TB/s floor), a 205 us
 `tensor_kernel_scan_innermost_dim` (sampler), drafter Marlin 122 us.
+
+## Step 3: glue2 = glue + both fp8_ds_mla KV writes (lever 2, larger glue)
+
+Per layer the served graph also writes the same KV entry twice after q_b:
+`concat_and_cache_mla(fp8_ds_mla)` into the main cache
+(`v1/attention/backend.py:1038`) and, on the 57 skip layers, into the skip-KV
+stage's reserved rows (`v1/attention/backends/mla/skip_kv_stage.py:316`).
+Both depend only on the normalized kv_c and the rotated k_pe, so `glue2`
+(`glue.cu`) builds the 656-byte entry once (per-128 tile scale
+max(|x|max / 448, FLT_MIN), `__nv_cvt_float_to_fp8(x / scale, SATFINITE,
+E4M3)`, bf16 RoPE after 512 + 16 bytes) and writes both caches (slot -1
+skipped), still releasing q_b at entry. One kernel replaces four (k RoPE,
+norms, 2x concat_and_cache).
+
+`bench_glue2.py`: correctness against inductor + `ops.concat_and_cache_mla`;
+chain timing as bench_qchain.py with both KV writes in every chain (served
+does the second write on 57 of 78 layers). Two nodes (holds 2383231/2), GPU 0,
+agree to 0.06 us; us per chain:
+
+| M | served | glue + 2x cache | **glue2** | floor | glue2 saves |
+|--:|--:|--:|--:|--:|--:|
+| 4 | 25.25 | 23.68 | **20.66** | 17.92 | 4.59 |
+| 8 | 25.76 | 23.91 | **20.81** | 18.18 | 4.94 |
+| 16 | 27.42 | 25.33 | **22.34** | 19.68 | 5.07 |
+| 32 (qkv_a, q_b on cuBLAS) | 29.33 | 27.94 | **25.04** | 22.84 | 4.29 |
+
+Correctness: rows 4-32 bitwise (q_c and every cache byte, both caches, padded
+slot included); 4096 rows: 26 of 8.4M q_c elements one bf16 ulp off (sum
+order), 1 + 1 cache bytes of 5.4M.
+
+Estimated step gain, 78 layers less one concat (~1.8 us) on the 21 anchor
+layers: ~0.32 / 0.35 / 0.36 / 0.30 ms at M = 4 / 8 / 16 / 32, i.e. ~1.8% /
+1.7% / 1.3% / 0.8% of the profiled steps (18.2 / 20.1 / 27.8 / 36.7 ms).
+Not integrated yet.
