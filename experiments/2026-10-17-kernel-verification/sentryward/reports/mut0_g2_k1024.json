@@ -1,35 +1,11 @@
 {
- "result": "not_wellsynced",
+ "result": "race_free",
  "checks": {
-  "equivalence": "not_run",
-  "memory": "not_run",
-  "synchronization": "failed"
+  "equivalence": "not_requested",
+  "memory": "passed",
+  "synchronization": "passed"
  },
- "diagnostics": [
-  {
-   "code": "issue_not_ordered_before_next_phase",
-   "details": {
-    "issue": 11622,
-    "phase": {
-     "barrier": 0,
-     "generation": 1
-    },
-    "required_events": {
-     "events": [
-      1489662,
-      1490354,
-      1490444,
-      1491136,
-      1491226
-     ],
-     "total": 5,
-     "truncated": false
-    }
-   },
-   "message": "Wait check failed: issue_not_ordered_before_next_phase.",
-   "stage": "synchronization_check"
-  }
- ],
+ "diagnostics": [],
  "scope": {
   "operation": "kernel_verification"
  },
@@ -40,7 +16,7 @@
    "key": "duplicate_tma_store_benign",
    "label": "Duplicate TMA stores",
    "text": "Matching same-warp duplicate TMA stores are races in the model, but are reported as warnings under the assumption that their stored values agree.",
-   "triggered": null
+   "triggered": false
   },
   {
    "category": "analysis assumption",
@@ -82,6 +58,6 @@
   "representative_branches": false,
   "representative_election": true
  },
- "pipeline_elapsed_seconds": 15.493864064,
- "peak_rss_mib": 2662.9375
+ "pipeline_elapsed_seconds": 3.540042438,
+ "peak_rss_mib": 726.0625
 }

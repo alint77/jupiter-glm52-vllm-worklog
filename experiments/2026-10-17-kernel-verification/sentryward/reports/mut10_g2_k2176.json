@@ -1,11 +1,21 @@
 {
- "result": "race_free",
+ "result": "potential_race",
  "checks": {
   "equivalence": "not_requested",
-  "memory": "passed",
+  "memory": "failed",
   "synchronization": "passed"
  },
- "diagnostics": [],
+ "diagnostics": [
+  {
+   "code": "conflicting_accesses_unordered",
+   "details": {
+    "count": 1,
+    "witnesses_path": "races"
+   },
+   "message": "Conflicting accesses have no proven required ordering",
+   "stage": "memory_check"
+  }
+ ],
  "scope": {
   "operation": "kernel_verification"
  },
@@ -58,6 +68,6 @@
   "representative_branches": false,
   "representative_election": true
  },
- "pipeline_elapsed_seconds": 78.224015001,
- "peak_rss_mib": 2800.6875
+ "pipeline_elapsed_seconds": 7.946832962,
+ "peak_rss_mib": 1468.1875
 }

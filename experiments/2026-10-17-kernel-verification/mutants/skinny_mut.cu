@@ -124,9 +124,9 @@ __global__ void __launch_bounds__(Cfg<TILE_N, CHUNK_K>::THREADS, 1)
   if (threadIdx.x == 0) {
     for (int s = 0; s < STAGES; ++s) {
       mbar_init(&full[s], 1);
-      mbar_init(&empty[s], CONSUMERS);
+      mbar_init(&empty[s], MUT == 9 ? CONSUMERS - 1 : CONSUMERS);
     }
-    asm volatile("fence.mbarrier_init.release.cluster;" ::: "memory");
+    if (MUT != 11) asm volatile("fence.mbarrier_init.release.cluster;" ::: "memory");
   }
   __syncthreads();
   if (u0 >= u1) return;
@@ -139,13 +139,14 @@ __global__ void __launch_bounds__(Cfg<TILE_N, CHUNK_K>::THREADS, 1)
                    : "memory");
       for (int u = u0, it = 0; u < u1; ++u, ++it) {
         const int t = u / p.chunks, c = u - t * p.chunks, s = it % STAGES;
-        if (it >= STAGES) mbar_wait(&empty[s], ((it / STAGES) - 1) & 1);
-        unsigned char* st = ring + s * STAGE_BYTES;
-        mbar_expect_tx(&full[s], STAGE_BYTES);
+        if (it >= STAGES) mbar_wait(&empty[s], (MUT == 8 ? (it / STAGES) : (it / STAGES) - 1) & 1);
+        unsigned char* st = ring + (MUT == 12 ? (s + 1) % STAGES : s) * STAGE_BYTES;
+        mbar_expect_tx(&full[s], STAGE_BYTES + (MUT == 4 ? -1024 : MUT == 5 ? 1024 : 0));
         for (int h = 0; h < BOXES; ++h) {
           const int k = c * CHUNK_K + h * HALF_K;
           tma_2d(st + h * (W_BYTES / BOXES), &wmap, k, t * TILE_N, &full[s]);
-          tma_2d(st + W_BYTES + h * (X_BYTES / BOXES), &xmap, k, 0, &full[s]);
+          if (!(MUT == 6 && h == BOXES - 1))
+            tma_2d(st + W_BYTES + h * (X_BYTES / BOXES), &xmap, k, 0, &full[s]);
         }
       }
     }
@@ -159,7 +160,7 @@ __global__ void __launch_bounds__(Cfg<TILE_N, CHUNK_K>::THREADS, 1)
   for (int u = u0, it = 0; u < u1; ++u, ++it) {
     const int t = u / p.chunks, c = u - t * p.chunks, s = it % STAGES;
     if (first_chunk < 0) first_chunk = c;
-    if (!(MUT == 1 && it == 0)) mbar_wait(&full[s], (it / STAGES) & 1); if (MUT == 2 && lane == 0) mbar_arrive(&empty[s]);
+    if (!(MUT == 1 && it == 0)) mbar_wait(&full[s], ((it / STAGES) + (MUT == 7)) & 1); if (MUT == 2 && lane == 0) mbar_arrive(&empty[s]);
     const uint32_t w = smem_u32(ring + s * STAGE_BYTES);
     const uint32_t x = w + W_BYTES;
 #pragma unroll
@@ -176,7 +177,7 @@ __global__ void __launch_bounds__(Cfg<TILE_N, CHUNK_K>::THREADS, 1)
         mma(acc, a, b);
       }
     }
-    __syncwarp();
+    if (MUT != 10) __syncwarp();
     if (MUT != 2 && lane == 0) mbar_arrive(&empty[s]);
 
     const bool tile_end = c == p.chunks - 1 || u == u1 - 1;

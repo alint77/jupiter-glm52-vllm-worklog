@@ -3,6 +3,14 @@
 MUT=1 first consumer stage skips its full-barrier wait (reads before TMA lands)
 MUT=2 consumers release the stage before reading it (TMA may overwrite it)
 MUT=3 no named barrier between thread 0 writing `last` and the others reading
+MUT=4/5 expect_tx 1024 bytes short / long (early / never completion)
+MUT=6 one X box not loaded, expected bytes unchanged
+MUT=7/8 consumer full / producer empty wait on the wrong parity
+MUT=9 empty barrier initialized with one arrival too few
+MUT=10 no __syncwarp before lane 0 releases the stage
+MUT=11 no fence.mbarrier_init
+MUT=12 producer fills the next stage's buffer but signals this stage
+MUT=5, 6 and 8 can hang on hardware; run them only in SentryWard.
 """
 import sys
 from pathlib import Path

@@ -169,6 +169,6 @@
   "representative_branches": false,
   "representative_election": true
  },
- "pipeline_elapsed_seconds": 0.59792438,
- "peak_rss_mib": 129.5
+ "pipeline_elapsed_seconds": 0.562594078,
+ "peak_rss_mib": 134.8125
 }

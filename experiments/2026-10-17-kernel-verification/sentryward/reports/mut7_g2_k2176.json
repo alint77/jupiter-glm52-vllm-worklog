@@ -1,0 +1,73 @@
+{
+ "result": "not_wellsynced",
+ "checks": {
+  "equivalence": "not_run",
+  "memory": "not_run",
+  "synchronization": "failed"
+ },
+ "diagnostics": [
+  {
+   "code": "missing_successful_wait_handoff",
+   "details": {
+    "barrier": 0,
+    "event": 405570
+   },
+   "message": "next-phase arrival occurred before a successful prior-phase wait",
+   "stage": "synchronization_check"
+  }
+ ],
+ "scope": {
+  "operation": "kernel_verification"
+ },
+ "assumptions": [
+  {
+   "category": "analysis assumption",
+   "enabled": true,
+   "key": "duplicate_tma_store_benign",
+   "label": "Duplicate TMA stores",
+   "text": "Matching same-warp duplicate TMA stores are races in the model, but are reported as warnings under the assumption that their stored values agree.",
+   "triggered": null
+  },
+  {
+   "category": "analysis assumption",
+   "enabled": true,
+   "key": "representative_election",
+   "label": "Representative election",
+   "text": "Election selects lane zero when participating, otherwise the lowest participating lane.",
+   "triggered": false
+  },
+  {
+   "category": "analysis assumption",
+   "enabled": true,
+   "key": "clc_always_fails",
+   "label": "Failed launch cancellation",
+   "text": "Every cluster launch cancellation request fails.",
+   "triggered": false
+  },
+  {
+   "category": "analysis assumption",
+   "enabled": false,
+   "key": "representative_branches",
+   "label": "Representative branches",
+   "text": "Choose fallthrough for an unresolved structured if/else; unknown ordinary instruction guards execute. Terminal control uses CFG classification. Known control and explicit choices take precedence.",
+   "triggered": false
+  },
+  {
+   "category": "analysis assumption",
+   "enabled": false,
+   "key": "bounded_computation_loops",
+   "label": "Bounded computation loops",
+   "text": "Execute a configured number of body iterations for unresolved recognized computation loops, counted separately per invocation. Polling and unclassified loops are never forced to complete.",
+   "triggered": false
+  }
+ ],
+ "semantic_assumptions": {
+  "bounded_computation_loops": false,
+  "clc_always_fails": true,
+  "duplicate_tma_store_benign": true,
+  "representative_branches": false,
+  "representative_election": true
+ },
+ "pipeline_elapsed_seconds": 5.648621918,
+ "peak_rss_mib": 1255.4375
+}

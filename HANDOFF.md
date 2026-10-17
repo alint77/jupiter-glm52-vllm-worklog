@@ -1,21 +1,34 @@
 # GLM-5.2 on JUPITER: agent handoff
 
-**Latest (2026-10-17): kernel verification, login node only (Booster full).**
-compute-sanitizer racecheck, synccheck and memcheck are clean on skinny_gemm,
-sliced_decode, tiered_decode and tiered_prefill (correctness-suite subsets).
-initcheck is clean in our kernels. Its only hits are in the tests' Marlin
-reference (`act_and_mul` reading `torch.empty` padding), and it must run
-without `--kernel-name`. Planted bugs show racecheck and synccheck miss a TMA
-ring WAR (consumer releases the stage before reading it).
-SentryWard 60a1ebc runs on our sm_90a PTX after three PTX-prep workarounds:
-drop `prefetch.tensormap`, which its model wrongly clobbers; lower `bfi`;
-assume the aligned dynamic-smem base. It proves skinny_gemm's in-CTA
-TMA/mbarrier pipeline race-free and well-synced (grid 2 K=512; grid 1 K=4096,
-which wraps the ring) and catches both ring mutants, including the one the
-sanitizer misses. It cannot reach wgmma (tiered_prefill) or global atomics
-(split-K, decode work stealing). No released tool verifies Hopper async
-kernels. `experiments/2026-10-17-kernel-verification/`
-(`sentryward/run.sh` reproduces it in about 3 min of CPU).
+**Latest (2026-10-17): kernel verification, login node, Astra-reviewed.**
+compute-sanitizer racecheck, synccheck and memcheck: no diagnostics on the
+four kernels' test subsets. They also reported nothing for MUT2, a stage
+released before it is read, which gives wrong output; so the sanitizer is no
+evidence of TMA-ring correctness.
+
+SentryWard 60a1ebc on prepared sm_90a PTX of `skinny_kernel<64,128>`:
+- `race_free` at 7 launches (4–64 ring iterations, including S±1, 2S+1,
+  3S+1);
+- rejects all 9 planted ring bugs (waits, parity, expect_tx, arrival count,
+  stage buffer);
+- covers that config only, with no proxy/fence model.
+
+**Open question for the user:** skinny_gemm and tiered_decode refill TMA
+stages after generic reads without `fence.proxy.async.shared::cta`, while
+sliced_decode and tiered_prefill have it. The fix is cheap but touches
+production kernels.
+
+Extending SentryWard to sliced `layer_kernel` is scoped in
+`sentryward/EXTENSION.md`. Astra:
+- found no definite sync bug in it;
+- found the `done_s` path relies on full SC-fence semantics (hardening
+  option: acq_rel RMW before the `bar.sync`);
+- recommends litmus tests first (2–5 days), then GRID=1 SentryWard with an
+  executable replay of atomics and flags (5–10 days).
+
+`sliced_decode.cu` has uncommitted `TD_HIDDEN`/`TD_GRID` overrides (PTX
+byte-identical at the defaults) for the verification build.
+`experiments/2026-10-17-kernel-verification/`
 
 **Latest (2026-10-15, late): prefix-cache misses root-caused and fixed.**
 Claude Code turns hit only ~35K of the prefix cache because, without
