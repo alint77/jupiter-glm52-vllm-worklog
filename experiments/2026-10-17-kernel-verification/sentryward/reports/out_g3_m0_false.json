@@ -1,0 +1,174 @@
+{
+ "result": "unsupported",
+ "checks": {
+  "equivalence": "not_requested",
+  "memory": "not_run",
+  "synchronization": "incomplete"
+ },
+ "diagnostics": [
+  {
+   "code": "atomic_add_memory_semantics_unsupported",
+   "details": {
+    "actor_ranges": [
+     [
+      0,
+      127
+     ],
+     [
+      160,
+      287
+     ],
+     [
+      320,
+      447
+     ]
+    ],
+    "occurrence_count": 512,
+    "ptx_line": 786
+   },
+   "message": "Atomic add memory semantics are unsupported",
+   "stage": "event_view_construction"
+  },
+  {
+   "code": "atomic_add_memory_semantics_unsupported",
+   "details": {
+    "actor_ranges": [
+     [
+      0,
+      127
+     ],
+     [
+      160,
+      287
+     ],
+     [
+      320,
+      447
+     ]
+    ],
+    "occurrence_count": 512,
+    "ptx_line": 811
+   },
+   "message": "Atomic add memory semantics are unsupported",
+   "stage": "event_view_construction"
+  },
+  {
+   "code": "atomic_add_memory_semantics_unsupported",
+   "details": {
+    "actor_ranges": [
+     [
+      0,
+      127
+     ],
+     [
+      160,
+      287
+     ],
+     [
+      320,
+      447
+     ]
+    ],
+    "occurrence_count": 512,
+    "ptx_line": 845
+   },
+   "message": "Atomic add memory semantics are unsupported",
+   "stage": "event_view_construction"
+  },
+  {
+   "code": "atomic_add_memory_semantics_unsupported",
+   "details": {
+    "actor_ranges": [
+     [
+      0,
+      127
+     ],
+     [
+      160,
+      287
+     ],
+     [
+      320,
+      447
+     ]
+    ],
+    "occurrence_count": 512,
+    "ptx_line": 871
+   },
+   "message": "Atomic add memory semantics are unsupported",
+   "stage": "event_view_construction"
+  },
+  {
+   "code": "atomic_add_memory_semantics_unsupported",
+   "details": {
+    "actor_ranges": [
+     [
+      0,
+      0
+     ],
+     [
+      160,
+      160
+     ],
+     [
+      320,
+      320
+     ]
+    ],
+    "occurrence_count": 4,
+    "ptx_line": 891
+   },
+   "message": "Atomic add memory semantics are unsupported",
+   "stage": "event_view_construction"
+  }
+ ],
+ "scope": {
+  "operation": "kernel_verification"
+ },
+ "assumptions": [
+  {
+   "enabled": true,
+   "key": "duplicate_tma_store_benign",
+   "label": "Duplicate TMA stores",
+   "text": "Matching same-warp duplicate TMA stores are races in the model, but are reported as warnings under the assumption that their stored values agree.",
+   "triggered": null
+  },
+  {
+   "enabled": true,
+   "key": "representative_election",
+   "label": "Representative election",
+   "text": "Election selects lane zero when participating, otherwise the lowest participating lane.",
+   "triggered": null
+  },
+  {
+   "enabled": true,
+   "key": "clc_always_fails",
+   "label": "Failed launch cancellation",
+   "text": "Every cluster launch cancellation request fails.",
+   "triggered": null
+  },
+  {
+   "enabled": false,
+   "key": "representative_branches",
+   "label": "Representative branches",
+   "text": "Choose fallthrough for an unresolved structured if/else; unknown ordinary instruction guards execute. Terminal control uses CFG classification. Known control and explicit choices take precedence.",
+   "triggered": false
+  },
+  {
+   "enabled": false,
+   "key": "bounded_computation_loops",
+   "label": "Bounded computation loops",
+   "text": "Execute a configured number of body iterations for unresolved recognized computation loops, counted separately per invocation. Polling and unclassified loops are never forced to complete.",
+   "triggered": false
+  }
+ ],
+ "semantic_assumptions": {
+  "bounded_computation_loops": false,
+  "clc_always_fails": true,
+  "duplicate_tma_store_benign": true,
+  "representative_branches": false,
+  "representative_election": true
+ },
+ "pipeline_elapsed_seconds": 0.59792438,
+ "peak_rss_mib": 129.5
+}

@@ -1,0 +1,4 @@
+========= COMPUTE-SANITIZER
+MUT=2 K=4096 grid=1: err=2.37e-03
+MUT=2 K=512 grid=3: err=2.62e-03
+========= ERROR SUMMARY: 0 errors

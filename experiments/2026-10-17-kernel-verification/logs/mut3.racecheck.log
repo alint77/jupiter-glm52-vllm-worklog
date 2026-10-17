@@ -1,0 +1,7 @@
+========= COMPUTE-SANITIZER
+========= Error: Race reported between Read access at void skinny::skinny_kernel<(int)64, (int)128>(CUtensorMap_st, CUtensorMap_st, skinny::Params)+0x15d0
+=========     and Write access at void skinny::skinny_kernel<(int)64, (int)128>(CUtensorMap_st, CUtensorMap_st, skinny::Params)+0x16c0 [20 hazards]
+========= 
+MUT=3 K=4096 grid=1: err=2.37e-03
+MUT=3 K=512 grid=3: err=1.07e+38
+========= RACECHECK SUMMARY: 1 hazard displayed (1 error, 0 warnings)

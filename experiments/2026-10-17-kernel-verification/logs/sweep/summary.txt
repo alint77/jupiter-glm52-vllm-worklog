@@ -1,0 +1,19 @@
+01:53:16 skinny racecheck rc=0 6s ========= RACECHECK SUMMARY: 0 hazards displayed (0 errors, 0 warnings) 
+01:53:44 sliced racecheck rc=0 28s ========= RACECHECK SUMMARY: 0 hazards displayed (0 errors, 0 warnings) 4 passed, 6 deselected, 14 warnings in 10.96s
+01:54:29 decode racecheck rc=0 45s ========= RACECHECK SUMMARY: 0 hazards displayed (0 errors, 0 warnings) 6 passed, 8 deselected, 14 warnings in 31.39s
+01:55:51 prefill racecheck rc=0 82s ========= RACECHECK SUMMARY: 0 hazards displayed (0 errors, 0 warnings) 10 passed, 7 deselected, 14 warnings in 65.33s (0:01:05)
+01:55:57 skinny synccheck rc=0 6s ========= ERROR SUMMARY: 0 errors 
+01:56:27 sliced synccheck rc=0 30s ========= ERROR SUMMARY: 0 errors 4 passed, 6 deselected, 14 warnings in 12.66s
+01:56:57 decode synccheck rc=0 30s ========= ERROR SUMMARY: 0 errors 6 passed, 8 deselected, 14 warnings in 16.23s
+01:57:22 prefill synccheck rc=0 25s ========= ERROR SUMMARY: 0 errors 10 passed, 7 deselected, 14 warnings in 6.50s
+01:57:27 skinny memcheck rc=0 5s ========= ERROR SUMMARY: 0 errors 
+01:57:56 sliced memcheck rc=0 29s ========= ERROR SUMMARY: 0 errors 4 passed, 6 deselected, 14 warnings in 14.44s
+01:58:30 decode memcheck rc=0 34s ========= ERROR SUMMARY: 0 errors 6 passed, 8 deselected, 14 warnings in 18.38s
+01:58:56 prefill memcheck rc=0 26s ========= ERROR SUMMARY: 0 errors 10 passed, 7 deselected, 14 warnings in 9.37s
+01:59:03 skinny initcheck rc=0 7s ========= ERROR SUMMARY: 18 errors 
+(skinny initcheck above used --kernel-name: host-copy artifacts; unfiltered rerun below)
+02:18:38 skinny initcheck rc=0 6s ========= ERROR SUMMARY: 0 errors 
+02:19:24 sliced initcheck rc=0 46s ========= ERROR SUMMARY: 5484 errors were not printed. Use --print-limit option to adjust the number of printed errors 4 passed, 6 deselected, 14 warnings in 30.14s
+02:20:12 decode initcheck rc=0 48s ========= ERROR SUMMARY: 19436 errors were not printed. Use --print-limit option to adjust the number of printed errors 6 passed, 8 deselected, 14 warnings in 33.51s
+02:20:39 prefill initcheck rc=0 27s ========= ERROR SUMMARY: 0 errors 10 passed, 7 deselected, 14 warnings in 10.61s
+DONE

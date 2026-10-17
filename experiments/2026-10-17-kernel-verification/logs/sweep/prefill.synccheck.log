@@ -1,0 +1,11 @@
+========= COMPUTE-SANITIZER
+Running 10 items in this shard
+..........                                                               [100%]
+=============================== warnings summary ===============================
+tests/kernels/moe/test_tiered_prefill_moe.py: 14 warnings
+  /e/project1/profound/alint77/vllm/.venv/lib/python3.12/site-packages/torch/jit/_script.py:365: DeprecationWarning: `torch.jit.script_method` is deprecated. Please switch to `torch.compile` or `torch.export`.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+10 passed, 7 deselected, 14 warnings in 6.50s
+========= ERROR SUMMARY: 0 errors

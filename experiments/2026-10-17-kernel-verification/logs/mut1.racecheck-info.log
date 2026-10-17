@@ -1,0 +1,4 @@
+========= COMPUTE-SANITIZER
+MUT=1 K=4096 grid=1: err=9.62e-02
+MUT=1 K=512 grid=3: err=4.48e-01
+========= RACECHECK SUMMARY: 0 hazards displayed (0 errors, 0 warnings)

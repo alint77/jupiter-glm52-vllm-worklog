@@ -1,0 +1,54 @@
+--- /e/home/jusers/naeimitabiei1/jupiter/.claude/jobs/14fe1b4a/tmp/sentryward_src/cpp/src/frontend/ptx/resources.cpp	2026-10-17 01:02:23.215318059 +0200
++++ /e/fscratch/profound/naeimitabiei1/tools/sentryward/cpp/src/frontend/ptx/resources.cpp	2026-10-17 02:06:23.825541000 +0200
+@@ -1,3 +1,5 @@
++#include <cstdio>
++#include <cstdlib>
+ #include "sentryward/frontend/ptx/resources.h"
+ #include "sentryward/frontend/ptx/layouts.h"
+ #include "sentryward/frontend/ptx/tensor_maps.h"
+@@ -348,6 +350,10 @@
+         owner ? Target(*owner) : coordinates,
+         Unsigned(bits, "shared address", UINT32_MAX)};
+   }
++  if (std::getenv("SWDBG2"))
++    std::fprintf(stderr, "SWDBG2 Shared token=%s idx=%d line=%u\n",
++                 std::string(token).c_str(), int(value.index()),
++                 unsigned(program.function->instructions.at(e.instruction_id()).line));
+   if (auto p = std::get_if<ClusterSharedPointer>(&value))
+     return SharedAddress{Target(p->target_rank),
+                          Unsigned(p->local_address + displacement,
+@@ -748,8 +754,15 @@
+     if (!d.contains("parameter_location") && !d.contains("address"))
+       return d;
+   }
+-  throw SemanticError("missing_tma_descriptor",
+-                      "tensor operand has no matching captured map");
++  {
++    std::string why = "operand=" + std::string(base) + " kind=" + std::to_string(value.index());
++    if (auto p = std::get_if<ParameterPointer>(&value)) why += " param=" + p->region + "+" + p->offset.str();
++    if (auto p = std::get_if<AllocationPointer>(&value)) why += " alloc=" + p->resource;
++    for (auto it = program.config.tma_descriptors.begin(); it != program.config.tma_descriptors.end(); ++it)
++      why += " | " + it.key() + ":" + it.value().value("parameter_location", Json()).dump();
++    throw SemanticError("missing_tma_descriptor",
++                        "tensor operand has no matching captured map: " + why);
++  }
+ }
+ TmaAccesses Resources::Tma(const ExecutedInstruction &e, const Json &contract,
+                            bool store) {
+--- /e/home/jusers/naeimitabiei1/jupiter/.claude/jobs/14fe1b4a/tmp/sentryward_src/cpp/src/frontend/ptx/execution.cpp	2026-10-17 01:02:23.211137292 +0200
++++ /e/fscratch/profound/naeimitabiei1/tools/sentryward/cpp/src/frontend/ptx/execution.cpp	2026-10-17 02:00:49.408942000 +0200
+@@ -1,3 +1,4 @@
++#include <cstdio>
+ #include "sentryward/frontend/ptx/execution.h"
+ #include "template_execution.h"
+ #include "sentryward/frontend/ptx/shared_execution.h"
+@@ -1731,6 +1732,9 @@
+       return;
+     }
+     auto value = val(1);
++    if (op == "cvta" && value.index() == 0)
++      std::fprintf(stderr, "SWDBG cvta unknown src=%s reg=%d line=%u\n",
++                   d.operands[1].text.c_str(), int(d.operands[1].reg), unsigned(i.line));
+     auto width = Width(i);
+     if (std::holds_alternative<ClusterSharedPointer>(value) &&
+         (!width || *width < 32))

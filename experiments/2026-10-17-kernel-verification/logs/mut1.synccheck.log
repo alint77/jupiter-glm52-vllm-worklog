@@ -1,0 +1,37 @@
+========= COMPUTE-SANITIZER
+========= Barrier error detected. Missing wait.
+=========     at void skinny::skinny_kernel<(int)64, (int)128>(CUtensorMap_st, CUtensorMap_st, skinny::Params)+0x2750
+=========     by thread (128,0,0) in block (0,0,0)
+=========     Barrier is located at shared address 0x400
+=========     Saved host backtrace up to driver entry point at kernel launch time
+=========         Host Frame:  [0x16f8f] in libcudart.so.13
+=========         Host Frame: cudaLaunchKernel [0x6d283] in libcudart.so.13
+=========         Host Frame: void skinny::launch<64, 128>(skinny::Params, at::Tensor const&, at::Tensor const&, int) [0xd33f] in skinny_mut1.so
+=========         Host Frame: skinny::gemm(at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor, long, long) [0xec03] in skinny_mut1.so
+=========         Host Frame: pybind11::cpp_function::initialize<void (*&)(at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor, long, long), void, at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor, long, long, pybind11::name, pybind11::scope, pybind11::sibling, char [28]>(void (*&)(at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor, long, long), void (*)(at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor, long, long), pybind11::name const&, pybind11::scope const&, pybind11::sibling const&, char const (&) [28])::{lambda(pybind11::detail::function_call&)#3}::_FUN(pybind11::detail::function_call&) [0x20e63] in skinny_mut1.so
+=========         Host Frame: pybind11::cpp_function::dispatcher(_object*, _object*, _object*) [0x1e9b3] in skinny_mut1.so
+=========         Host Frame: cfunction_call [0x352e4f] in python
+=========         Host Frame: _PyEval_EvalFrameDefault [0x3ca613] in python
+=========         Host Frame: PyEval_EvalCode [0x4e5d27] in python
+=========         Host Frame: run_mod.llvm.10064272052675021686 [0x51c957] in python
+=========         Host Frame: pyrun_file [0x264027] in python
+=========         Host Frame: _PyRun_SimpleFileObject [0x2633c7] in python
+=========         Host Frame: _PyRun_AnyFileObject [0x262fab] in python
+=========         Host Frame: pymain_run_file_obj [0x270167] in python
+=========         Host Frame: pymain_run_file [0x26fe9f] in python
+=========         Host Frame: Py_RunMain [0x530e2f] in python
+=========         Host Frame: pymain_main.llvm.529527987861879264 [0x531357] in python
+=========         Host Frame: main [0x4188af] in python
+========= 
+Traceback (most recent call last):
+  File "/e/project1/profound/alint77/vllm/agent_space/experiments/2026-10-17-kernel-verification/mutants/run_mut.py", line 31, in <module>
+    want = x.float() @ w.float().t()
+           ^^^^^^^^^
+torch.AcceleratorError: CUDA error: unspecified launch failure
+Search for `cudaErrorLaunchFailure' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+========= Target application returned an error
+========= ERROR SUMMARY: 1 error

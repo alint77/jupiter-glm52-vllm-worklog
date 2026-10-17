@@ -1,0 +1,8 @@
+========= COMPUTE-SANITIZER
+M=8 N=128 K=512 cfg=1 grid=2: err=2.11e-03 dirty=0 ok
+M=8 N=128 K=512 cfg=1 grid=3: err=2.62e-03 dirty=0 ok
+M=5 N=256 K=1024 cfg=0 grid=7: err=3.10e-03 dirty=0 ok
+M=1 N=192 K=768 cfg=2 grid=5: err=2.21e-03 dirty=0 ok
+M=8 N=200 K=520 cfg=3 grid=4: err=1.78e-03 dirty=0 ok
+M=8 N=6144 K=2048 cfg=0 grid=0: err=2.94e-03 dirty=0 ok
+========= RACECHECK SUMMARY: 0 hazards displayed (0 errors, 0 warnings)
