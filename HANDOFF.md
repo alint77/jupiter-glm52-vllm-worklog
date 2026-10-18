@@ -1,6 +1,20 @@
 # GLM-5.2 on JUPITER: agent handoff
 
-**Latest (2026-10-17): kernel verification, login node, Astra-reviewed.**
+**Latest (2026-10-18): c=4 swarm whole-engine campaign** (`experiments/2026-10-18-c4-swarm-timeline/`).
+Ten full-node arms on pf5 (144f2f4aee): 900 s c=4 Claude Code replays, decode at
+n = 1..4 and 5K-380K context, prefill, 1 Hz DRAM/VRAM sampler, allocator
+snapshots. Results:
+- the main TTFT loss is KV pool overflow: live contexts reach 0.93-1.0M
+  tokens against the 800K pool, so 270-330K append-only prefixes recompute,
+  37-51 s each, ~150 s of an 850 s run;
+- decode starves behind long prefills;
+- the M=16 swarm decode step is 27.0 ms, 48% of it MoE;
+- the 4K prefill chunk is 0.58-0.65 s; its indexer grows with context;
+- the CPU side is not a bottleneck;
+- HBM leaves 1.33 GiB free while serving (prefill working set, +1.49 GiB
+  after startup).
+
+**Previous (2026-10-17): kernel verification, login node, Astra-reviewed.**
 compute-sanitizer racecheck, synccheck and memcheck: no diagnostics on the
 four kernels' test subsets. They also reported nothing for MUT2, a stage
 released before it is read, which gives wrong output; so the sanitizer is no
