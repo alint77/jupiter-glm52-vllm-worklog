@@ -1,0 +1,17 @@
+run variant        acc_greedy acc_sampled greedy_lp sampled_lp (mean token logprob per request, averaged)
+mgp glue          3.02 2.66 -0.204 -0.546
+mgp glue2         3.00 2.61 -0.210 -0.563
+mgp krope         2.97 2.84 -0.135 -0.270
+mgp nodraft       2.93 2.83 -0.232 -0.387
+mgp nopdl         3.02 2.43 -0.177 -0.312
+mgp nopdlnodraft  3.04 2.94 -0.172 -0.277
+mgp prod          2.98 2.75 -0.124 -0.290
+mgp prod2         3.10 3.01 -0.123 -0.236
+mgq glue          3.02 2.48 -0.196 -0.600
+mgq glue2         3.17 2.51 -0.171 -0.583
+mgq krope         3.12 2.73 -0.116 -0.318
+mgq krope2        3.00 2.87 -0.137 -0.237
+mgq kvorig        3.05 2.86 -0.124 -0.246
+mgq prod          3.07 2.92 -0.128 -0.262
+mgq prod2         3.09 3.03 -0.126 -0.241
+mgq qorig         3.08 2.85 -0.130 -0.308

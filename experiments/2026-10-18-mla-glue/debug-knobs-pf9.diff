@@ -1,0 +1,74 @@
+diff -ru -x __pycache__ -x '*.so' pf8/vllm/model_executor/layers/mla_glue/__init__.py pf9/vllm/model_executor/layers/mla_glue/__init__.py
+--- pf8/vllm/model_executor/layers/mla_glue/__init__.py	2026-10-18 16:15:06.122173000 +0200
++++ pf9/vllm/model_executor/layers/mla_glue/__init__.py	2026-10-18 16:56:45.973028000 +0200
+@@ -49,6 +49,13 @@
+     from vllm.platforms import current_platform
+     from vllm.v1.attention.backends.mla.flashmla_sparse import FlashMLASparseImpl
+ 
++    import os
++
++    from vllm.model_executor.models.utils import extract_layer_index
++
++    max_layer = int(os.environ.get("VLLM_MLA_GLUE_MAX_LAYER", "100000"))  # debug
++    if extract_layer_index(wrapper.prefix) >= max_layer:
++        return False
+     rope = wrapper.rotary_emb
+     norms = (wrapper.q_a_layernorm, wrapper.kv_a_layernorm)
+     return (
+diff -ru -x __pycache__ -x '*.so' pf8/vllm/model_executor/layers/mla_glue/mla_glue.cu pf9/vllm/model_executor/layers/mla_glue/mla_glue.cu
+--- pf8/vllm/model_executor/layers/mla_glue/mla_glue.cu	2026-10-18 15:48:52.920887000 +0200
++++ pf9/vllm/model_executor/layers/mla_glue/mla_glue.cu	2026-10-18 16:56:45.971869000 +0200
+@@ -212,7 +212,8 @@
+   attr.id = cudaLaunchAttributeProgrammaticStreamSerialization;
+   attr.val.programmaticStreamSerializationAllowed = 1;
+   cfg.attrs = &attr;
+-  cfg.numAttrs = 1;
++  static const bool pdl = getenv("VLLM_MLA_GLUE_NOPDL") == nullptr;  // debug
++  cfg.numAttrs = pdl ? 1 : 0;
+   auto B = [](const torch::Tensor& x) {
+     return reinterpret_cast<__nv_bfloat16*>(x.data_ptr());
+   };
+diff -ru -x __pycache__ -x '*.so' pf8/vllm/model_executor/layers/mla.py pf9/vllm/model_executor/layers/mla.py
+--- pf8/vllm/model_executor/layers/mla.py	2026-10-18 15:48:52.919799000 +0200
++++ pf9/vllm/model_executor/layers/mla.py	2026-10-18 17:19:13.762965000 +0200
+@@ -142,8 +142,9 @@
+         if self.qkv_glue:
+             assert self.fused_qkv_a_proj is not None
+             assert self.q_a_layernorm is not None and self.q_b_proj is not None
++            qkv_dbg = self.fused_qkv_a_proj(hidden_states)[0]
+             q_c, kv_c_normed, k_pe = torch.ops.vllm.mla_qkv_glue(
+-                    self.fused_qkv_a_proj(hidden_states)[0],
++                    qkv_dbg,
+                     positions,
+                     self.rotary_emb.cos_sin_cache,
+                     self.q_a_layernorm.weight,
+@@ -152,11 +153,26 @@
+                     self.kv_a_layernorm.variance_epsilon,
+                     _encode_layer_name(self.mla_attn.layer_name),
+             )
++            import os
++
++            if os.environ.get("VLLM_MLA_GLUE_QORIG") == "1":  # debug
++                q_c = self.q_a_layernorm(qkv_dbg[..., : self.q_lora_rank])
++            if os.environ.get("VLLM_MLA_GLUE_KVORIG") == "1":  # debug
++                kv_c_normed = self.kv_a_layernorm(
++                    qkv_dbg[..., self.q_lora_rank : self.q_lora_rank + self.kv_lora_rank]
++                )
+             q = self.q_b_proj(q_c)[0].view(-1, self.num_heads, self.qk_head_dim)
+             k_pe = k_pe.unsqueeze(1)
+-            q[..., self.qk_nope_head_dim :], _ = self.rotary_emb(
+-                positions, q[..., self.qk_nope_head_dim :]
+-            )
++
++            if os.environ.get("VLLM_MLA_GLUE_KROPE", "1") == "0":  # debug
++                k_pe = qkv_dbg[..., -self.qk_rope_head_dim :].unsqueeze(1)
++                q[..., self.qk_nope_head_dim :], k_pe = self.rotary_emb(
++                    positions, q[..., self.qk_nope_head_dim :], k_pe
++                )
++            else:
++                q[..., self.qk_nope_head_dim :], _ = self.rotary_emb(
++                    positions, q[..., self.qk_nope_head_dim :]
++                )
+         elif self.q_lora_rank is not None:
+             assert self.fused_qkv_a_proj is not None, (
+                 "fused_qkv_a_proj is required when q_lora_rank is not None"

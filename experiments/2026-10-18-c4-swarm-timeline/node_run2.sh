@@ -36,5 +36,7 @@ case ${kind} in
       PYTHONPATH=/e/fscratch/profound/${USER}/worktrees/pf5mem MEM_SNAPSHOT_DIR=${OUT}/snap ;;
   sizes) ${A} ${tag} sizes "${env[@]}" ;;
 esac
-wait $(jobs -p | grep -v "^${ms}$") 2>/dev/null
+# not a bare wait: with no other job it would wait on mem_sampler forever
+others=$(jobs -p | grep -v "^${ms}$")
+[[ -n ${others} ]] && wait ${others} 2>/dev/null
 echo "=== ${tag} node_run done $(date +%T)"
