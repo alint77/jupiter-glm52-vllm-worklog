@@ -94,8 +94,13 @@ Swarm decode step (4 decoders at 100-330K, M=16), 27.02 ms: MoE expert GEMMs
 decode_gemm 3.41, outside the verify graph 2.10, DCP collectives 1.60,
 AR + RMSNorm 1.49, indexer 1.31, FlashMLA 1.09 + combine 0.26, small cuBLAS
 1.08, route/act/router 0.56, other graph kernels 0.47, idle 0.47, KV write
-0.27. Skip-layer KV staging `_gather_rows` x19 is 1.34 ms/step of kernel time
-(+0.36 remap/compact/mark), on the critical path only partly.
+0.27. Skip-layer KV staging (`_mark/_remap/_compact/_gather_rows`, UVA reads
+of the Grace KV, a parallel branch of the verify graph) is ~2.0 ms/step of
+kernel time but almost fully hidden (`stage_exposed.py` + a contention
+check): 15 us/step with no other kernel running, no main-chain kernel ever
+waits on it, and the kernels it overlaps run slower by ~0.10 ms/step (swarm
+window) to 0.26 ms/step (4 x 190K), mostly decode_gemm (17.6 -> 20.7-23.8
+us) and the Lamport AR. Exposed cost ~0.1-0.27 ms/step (0.4-1%).
 
 Context costs little in decode (n=4: 25.8 at 100K -> 26.9 at 190K; the
 indexer 0.84 -> 1.23); the step grows with M through the MoE (n=1 -> 4:
@@ -166,7 +171,8 @@ GHz median while serving.
    1.58 ms/step at M=16).
 4. **Prefill at long context**: indexer 55 -> 116 ms per chunk (19% at 290K);
    NCCL AG + AR ~21% of every chunk.
-5. **Skip-layer KV staging** 1.34-1.7 ms/step kernel time at swarm contexts.
+5. ~~Skip-layer KV staging~~: 2 ms/step of kernel time but only ~0.1-0.27
+   ms/step exposed (contention); not a lever.
 6. **HBM**: 1.33 GiB stays free while serving (reserve 3.6 sized for the
    long-prefill working set); a fixed prefill workspace would let the reserve
    (hence the hot set or the KV pool) grow.
