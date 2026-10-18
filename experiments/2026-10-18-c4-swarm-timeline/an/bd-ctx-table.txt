@@ -1,0 +1,17 @@
+ms/step (mean of 4 ranks)                               n1 w1    n2 w1    n3 w1    n4 w1    n1 w2    n2 w2    n3 w2    n4 w2    n1 w3    n2 w3    n3 w3
+M (verify tokens)                                           4        8       12       16        4        8       12       16        4        8       12
+MoE expert GEMMs (sliced: + shared expert)               4.69     7.58     9.71    12.19     5.44     7.78     9.85    12.93     4.97     7.39     9.84
+dense GEMMs (decode_gemm)                                3.07     3.17     3.35     3.37     3.08     3.22     3.39     3.39     3.10     3.33     3.42
+outside the verify graph (draft, lm_head, sampling, prep)     2.05     1.97     2.11     2.21     2.09     1.98     2.12     2.24     2.10     2.00     2.13
+DCP collectives                                          1.22     1.27     1.41     1.52     1.21     1.27     1.41     1.53     1.21     1.27     1.42
+all-reduce + RMSNorm (incl. wait)                        1.06     1.18     1.32     1.38     1.10     1.27     1.39     1.48     1.10     1.32     1.44
+dense GEMMs (cuBLAS etc.)                                0.97     1.04     1.07     1.07     0.97     1.04     1.07     1.07     0.98     1.04     1.07
+DSA indexer                                              0.84     0.90     0.97     1.04     0.91     1.00     1.11     1.21     1.03     1.12     1.23
+attention (FlashMLA)                                     0.79     0.85     0.93     1.07     0.79     0.86     0.93     1.07     0.80     0.86     0.93
+GPU idle                                                 0.73     0.76     0.51     0.47     0.85     0.79     0.53     0.46     0.77     0.76     0.48
+MoE route/act/finalize + router                          0.47     0.50     0.52     0.53     0.48     0.50     0.52     0.56     0.47     0.50     0.54
+other verify-graph kernels                               0.48     0.47     0.47     0.47     0.48     0.46     0.46     0.47     0.48     0.46     0.46
+attention (split-KV combine)                             0.26     0.28     0.37     0.25     0.26     0.28     0.37     0.25     0.26     0.28     0.37
+KV write / skip-KV staging                               0.25     0.26     0.27     0.27     0.25     0.26     0.27     0.27     0.25     0.26     0.27
+step period                                             16.88    20.25    23.01    25.83    17.91    20.73    23.43    26.93    17.54    20.60    23.61
+steps kept / dropped (rank 0)                         110/2     99/0     87/0     78/0    111/1     97/0     86/0     75/0    115/0     93/2     85/0  

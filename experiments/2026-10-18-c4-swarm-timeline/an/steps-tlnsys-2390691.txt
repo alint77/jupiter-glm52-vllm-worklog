@@ -1,0 +1,19 @@
+window 1: +62 s, 6.31 s, prefill 11 (95%), other 43 (0%), decode 11 (4%) | decoders Counter({3: 6, 2: 5}) waiting Counter({1: 34, 2: 31})
+window 2: +180 s, 6.05 s, decode 207 (88%), other 419 (4%), prefill 3 (8%) | decoders Counter({4: 191, 3: 16}) waiting Counter({0: 572, 1: 57})
+window 3: +300 s, 6.48 s, decode 210 (79%), other 423 (5%), prefill 2 (16%) | decoders Counter({4: 194, 3: 16}) waiting Counter({0: 580, 1: 55})
+window 4: +420 s, 6.05 s, decode 204 (91%), other 411 (4%), prefill 2 (5%) | decoders Counter({4: 195, 3: 9}) waiting Counter({0: 581, 1: 36})
+window 5: +540 s, 6.03 s, decode 199 (87%), other 403 (4%), prefill 3 (8%) | decoders Counter({4: 179, 3: 20}) waiting Counter({0: 536, 1: 69})
+window 6: +661 s, 6.58 s, prefill 10 (96%), other 39 (0%), decode 10 (4%) | decoders Counter({3: 10}) waiting Counter({1: 59})
+window 7: +780 s, 6.03 s, prefill 7 (74%), other 119 (1%), decode 53 (24%) | decoders Counter({3: 38, 2: 15}) waiting Counter({0: 115, 1: 64})
+
+decode verify step wall (ms) by decoders at that moment and their mean context (K tokens); idle = wall - GPU busy:
+  2 decoding, ctx 100-200K  wall n    5  med   22.29  p10   19.71  p90   25.08  mean   22.21 | idle 0.42
+  2 decoding, ctx 200-300K  wall n   15  med   24.16  p10   21.28  p90   26.17  mean   24.36 | idle 0.38
+  3 decoding, ctx 100-200K  wall n   31  med   24.23  p10   21.45  p90   26.23  mean   24.16 | idle 0.35
+  3 decoding, ctx 200-300K  wall n   84  med   27.51  p10   22.22  p90   30.18  mean   26.92 | idle 0.35
+  4 decoding, ctx 100-200K  wall n  386  med   26.68  p10   24.00  p90   28.52  mean   26.47 | idle 0.34
+  4 decoding, ctx 200-300K  wall n  373  med   25.16  p10   23.77  p90   28.11  mean   25.58 | idle 0.34
+
+prefill chunk wall (ms): n   38  med  618.10  p10  141.34  p90  675.00  mean  502.07 | idle 14.51
+other steps (draft passes etc.): n 1857  med    0.62  p10    0.59  p90    0.66  mean    0.65, 2.08 per decode step
+engine time over all windows: decode 53.4%, prefill 43.8%, other 2.8%

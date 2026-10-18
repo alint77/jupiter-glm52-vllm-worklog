@@ -1,0 +1,17 @@
+ms/step (mean of 4 ranks)                               n1 w1    n2 w1    n3 w1    n4 w1    n1 w2    n2 w2    n3 w2    n4 w2
+M (verify tokens)                                           4        8       12       16        4        8       12       16
+MoE expert GEMMs (sliced: + shared expert)               5.09     7.25     9.08     9.59     5.58     8.30    11.07    12.44
+dense GEMMs (decode_gemm)                                3.06     3.15     3.34     3.38     3.05     3.15     3.32     3.37
+outside the verify graph (draft, lm_head, sampling, prep)     2.03     1.94     2.07     2.18     2.05     1.97     2.09     2.23
+DCP collectives                                          1.16     1.22     1.38     1.53     1.19     1.24     1.39     1.54
+all-reduce + RMSNorm (incl. wait)                        1.07     1.14     1.29     1.46     1.07     1.16     1.28     1.40
+dense GEMMs (cuBLAS etc.)                                0.96     1.01     1.06     1.08     0.95     1.02     1.07     1.09
+attention (FlashMLA)                                     0.79     0.85     0.91     1.03     0.80     0.86     0.92     1.06
+DSA indexer                                              0.56     0.57     0.59     0.59     0.84     0.87     0.91     0.94
+GPU idle                                                 0.62     0.58     0.55     0.75     0.67     0.55     0.52     0.73
+MoE route/act/finalize + router                          0.47     0.50     0.52     0.54     0.47     0.49     0.52     0.55
+other verify-graph kernels                               0.48     0.46     0.47     0.47     0.47     0.46     0.47     0.47
+attention (split-KV combine)                             0.26     0.28     0.36     0.24     0.26     0.28     0.36     0.24
+KV write / skip-KV staging                               0.26     0.25     0.26     0.26     0.26     0.25     0.27     0.27
+step period                                             16.80    19.20    21.89    23.11    17.67    20.61    24.18    26.32
+steps kept / dropped (rank 0)                         119/0    105/0     92/0     20/1    114/0     98/0     80/1     77/0  

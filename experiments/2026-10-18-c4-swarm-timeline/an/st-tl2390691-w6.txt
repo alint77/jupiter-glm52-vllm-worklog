@@ -1,0 +1,73 @@
+device 0, 59 steps, window 6582 ms
+
+== decode: 10 steps, mean wall 27.02 ms, GPU busy 26.66 ms, idle 0.35 ms (1%)
+   kernel time by group (ms/step, summed over streams):
+       14.074  moe_decode
+        6.805  moe_prefill
+        1.891  other
+        1.881  dcp_combine
+        1.731  ar_fused
+        1.456  dense_gemm
+        0.937  attn_decode
+        0.716  sampler
+        0.584  norm/elementwise
+        0.518  indexer
+        0.263  kv_gather/cache
+        0.164  drafter_moe
+        0.057  nccl_allgather
+        0.016  prep(MRv2 input)
+   memcpy per step: D2D 10.0x 0.36 MiB, H2D 3.0x 0.00 MiB, D2H 2.0x 0.00 MiB
+   worker main-thread CUDA API (ms/step):
+   idle gaps >= 50 us: 0.0/step, 0.00 ms/step
+
+== prefill: 10 steps, mean wall 628.69 ms, GPU busy 615.15 ms, idle 13.54 ms (2%)
+   kernel time by group (ms/step, summed over streams):
+      235.528  moe_prefill
+       94.056  nccl_allgather
+       81.381  indexer
+       71.118  dense_gemm
+       59.077  nccl_allreduce
+       58.548  attn_prefill
+       31.429  norm/elementwise
+        9.353  dcp_combine
+        7.240  barrier
+        5.567  kv_gather/cache
+        3.375  drafter_moe
+        1.677  sampler
+        0.170  other
+        0.144  prep(MRv2 input)
+   memcpy per step: D2H 14.8x 0.00 MiB, H2D 458.0x 24857.83 MiB, D2D 89.4x 178.17 MiB
+   worker main-thread CUDA API (ms/step):
+       73.737  cuLaunchKernelEx
+       47.182  cudaLaunchKernelExC
+       38.116  cudaStreamSynchronize
+       37.978  cudaLaunchKernel
+       12.797  cuLaunchKernel
+       10.531  cudaMemsetAsync
+        7.197  cudaMemcpyAsync
+        3.491  cudaGraphLaunch
+        2.592  cudaStreamWaitEvent
+        1.983  cudaEventQuery
+   idle gaps >= 50 us: 37.4/step, 5.83 ms/step
+     gap   2749.0 us at +  5.84 ms of step (t=3905.9): CPU in cudaMemcpyAsync 17us, cudaEventQuery 8us, cudaStreamIsCapturing 1us
+     gap   2612.8 us at +  6.43 ms of step (t=2598.4): CPU in cudaMemcpyAsync 18us, cudaEventQuery 9us, cudaStreamIsCapturing 2us
+     gap   2458.5 us at +  6.44 ms of step (t=1301.8): CPU in cudaMemcpyAsync 19us, cudaEventQuery 9us, cudaStreamIsCapturing 2us
+
+== other: 39 steps, mean wall 0.59 ms, GPU busy 0.53 ms, idle 0.07 ms (11%)
+   kernel time by group (ms/step, summed over streams):
+        0.214  dense_gemm
+        0.070  norm/elementwise
+        0.061  moe_prefill
+        0.042  drafter_moe
+        0.036  ar_fused
+        0.029  dcp_combine
+        0.018  sampler
+        0.017  indexer
+        0.016  nccl_allgather
+        0.012  prep(MRv2 input)
+        0.012  other
+        0.010  attn_decode
+        0.001  kv_gather/cache
+   memcpy per step: D2D 3.0x 0.01 MiB, H2D 2.5x 0.00 MiB
+   worker main-thread CUDA API (ms/step):
+   idle gaps >= 50 us: 0.0/step, 0.00 ms/step

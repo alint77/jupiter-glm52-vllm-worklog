@@ -1,0 +1,57 @@
+== sw-dec4-2390689: 692 samples, 691 s; serving from +691 s
+
+1. startup (MiB)
+phase               +s | GPU used 0..3               | Grace used cache  mlock | CPU node used 0..3           | RSS api / EC / W0
+server start        39 |    857    875    861    894 |     89404   4335  16384 |   21343   31982   18202   17877 | 1198 / - / -
+dist init           63 |    856    875    860    894 |     91411   4586  16384 |   21343   33972   18218   17878 | 2681 / 1199 / -
+residency plan      99 |   3968   4000   3987   3582 |    100629   5006  16384 |   23488   36226   20531   20384 | 2682 / 1201 / -
+weights loaded     443 |  87632  87636  87633  87633 |    449816 284660  16384 |  113097  112792  111875  112052 | 2682 / 1204 / -
+KV allocated       510 |  91590  91898  91591  91591 |    452418 255997  16384 |  112588  114032  113074  112724 | 2656 / 1195 / -
+graphs captured    562 |  94962  94966  94961  94967 |    453508 242124  16384 |  112904  113758  113250  113596 | 2656 / 1196 / -
+HBM check          563 |  94964  94968  94963  94967 |    454219 242155  16384 |  113091  113929  113435  113764 | 2656 / 1196 / -
+
+2. serving (1 samples, 0 s): min / median / max
+  GPU0: used 596 / 596 / 596 of 97,871 MiB | SM util 0 / 0 / 0 % | mem util 0 / 0 / 0 % | 113 / 113 / 113 W | clk 345 / 345 / 345 | rx 0 / 0 / 0 tx 0 / 0 / 0 MB/s
+        per process: 
+  GPU1: used 600 / 600 / 600 of 97,871 MiB | SM util 0 / 0 / 0 % | mem util 0 / 0 / 0 % | 142 / 142 / 142 W | clk 390 / 390 / 390 | rx 0 / 0 / 0 tx 0 / 0 / 0 MB/s
+        per process: 
+  GPU2: used 597 / 597 / 597 of 97,871 MiB | SM util 0 / 0 / 0 % | mem util 0 / 0 / 0 % | 90 / 90 / 90 W | clk 345 / 345 / 345 | rx 0 / 0 / 0 tx 0 / 0 / 0 MB/s
+        per process: 
+  GPU3: used 597 / 597 / 597 of 97,871 MiB | SM util 0 / 0 / 0 % | mem util 0 / 0 / 0 % | 122 / 122 / 122 W | clk 390 / 390 / 390 | rx 0 / 0 / 0 tx 0 / 0 / 0 MB/s
+        per process: 
+  host MemTotal      878,535 / 878,535 / 878,535 MiB
+  host MemAvailable  750,278 / 750,278 / 750,278 MiB
+  host Cached        236,799 / 236,799 / 236,799 MiB
+  host Shmem         932 / 932 / 932 MiB
+  host AnonPages     19,639 / 19,639 / 19,639 MiB
+  host Mlocked       16,384 / 16,384 / 16,384 MiB
+  host Mapped        4,185 / 4,185 / 4,185 MiB
+  host Committed_AS  23,318 / 23,318 / 23,318 MiB
+  host PageTables    32 / 32 / 32 MiB
+  host SUnreclaim    6,403 / 6,403 / 6,403 MiB
+  Grace used (CPU nodes) 279,561 / 279,561 / 279,561
+  HBM nodes used         46 / 46 / 46
+  NUMA node  0: MemUsed 68,829 / 68,829 / 68,829 | FilePages 58,864 / 58,864 / 58,864 | AnonPages 4,519 / 4,519 / 4,519 | Shmem 69 / 69 / 69 | Mlocked 4,096 / 4,096 / 4,096
+  NUMA node  1: MemUsed 68,418 / 68,418 / 68,418 | FilePages 55,943 / 55,943 / 55,943 | AnonPages 5,712 / 5,712 / 5,712 | Shmem 722 / 722 / 722 | Mlocked 4,096 / 4,096 / 4,096
+  NUMA node  2: MemUsed 70,137 / 70,137 / 70,137 | FilePages 59,421 / 59,421 / 59,421 | AnonPages 4,787 / 4,787 / 4,787 | Shmem 28 / 28 / 28 | Mlocked 4,096 / 4,096 / 4,096
+  NUMA node  3: MemUsed 72,177 / 72,177 / 72,177 | FilePages 62,570 / 62,570 / 62,570 | AnonPages 4,614 / 4,614 / 4,614 | Shmem 111 / 111 / 111 | Mlocked 4,096 / 4,096 / 4,096
+  NUMA node  4: MemUsed 11 / 11 / 11 | FilePages 0 / 0 / 0 | AnonPages 1 / 1 / 1 | Shmem 0 / 0 / 0 | Mlocked 0 / 0 / 0
+  NUMA node 12: MemUsed 15 / 15 / 15 | FilePages 4 / 4 / 4 | AnonPages 1 / 1 / 1 | Shmem 0 / 0 / 0 | Mlocked 0 / 0 / 0
+  NUMA node 20: MemUsed 12 / 12 / 12 | FilePages 0 / 0 / 0 | AnonPages 1 / 1 / 1 | Shmem 0 / 0 / 0 | Mlocked 0 / 0 / 0
+  NUMA node 28: MemUsed 8 / 8 / 8 | FilePages 0 / 0 / 0 | AnonPages 1 / 1 / 1 | Shmem 0 / 0 / 0 | Mlocked 0 / 0 / 0
+  per process (MiB): Rss | Pss_Anon | Pss_File | Pss_Shmem | VmLck | VmPin | threads | cores
+
+3. serving, 30 s bins (MiB): GPU0..3 used | Grace used | cache | W0..3 Rss | GPU0 SM% / W
+      0 |    596    600    597    597 |  279561 |  236799 |      0      0      0      0 |   0 / 113
+
+4. numastat -p (last sample), MiB per node; took s
+  EngineCore       +  665s took 0.4s: n0=1 n1=1,903 n2=364 n3=4 | total 2272.12
+  Worker           +   95s took 0.6s: n0=1,913 n1=521 n2=19 n3=16 n4=40 | total 2509.75
+  Worker-3800234   +   95s took 0.6s: n0=2 n1=2,430 n2=19 n3=16 n12=40 | total 2507.94
+  Worker-3800251   +   95s took 0.7s: n0=2 n1=521 n2=1,928 n3=16 n20=40 | total 2507.94
+  Worker-3800265   +   95s took 0.7s: n0=2 n1=521 n2=19 n3=1,924 n28=40 | total 2507.25
+  Worker_TP0_DCP0  +  665s took 0.5s: n0=41,902 n1=647 n2=54 n3=48 n4=40 | total 42691.50
+  Worker_TP1_DCP1  +  665s took 0.5s: n0=29 n1=43,075 n2=54 n3=48 n12=40 | total 43246.81
+  Worker_TP2_DCP2  +  665s took 0.5s: n0=29 n1=647 n2=43,241 n3=48 n20=40 | total 44005.75
+  Worker_TP3_DCP3  +  665s took 0.6s: n0=29 n1=647 n2=54 n3=42,016 n28=40 | total 42786.62
+  api              +  665s took 0.4s: n1=3,091 n2=27 n3=3 | total 3121.38

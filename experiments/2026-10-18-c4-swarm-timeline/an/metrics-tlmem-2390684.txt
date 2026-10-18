@@ -1,0 +1,27 @@
+16 dumps, 00000.0 .. 00902.0 s
+  histogram                                 count      mean    p50<=    p90<=    p99<=
+  time_to_first_token_seconds                 192     2.932      0.5        5       80
+  request_queue_time_seconds                  192     0.301      0.3      0.3       10
+  request_prefill_time_seconds                192     2.510      0.3      1.5      120
+  request_decode_time_seconds                 192    13.302       10       40      120
+  request_inference_time_seconds              192    15.812       10       40      120
+  inter_token_latency_seconds               60513     0.042     0.05     0.05     0.75
+  request_time_per_output_token_seconds       192     0.019     0.01     0.05      0.2
+  iteration_tokens_total                    17280   147.748       16       16      512
+  request_prompt_tokens                       192 216277.880      inf      inf      inf
+  request_generation_tokens                   192   888.792    1e+03    5e+03    5e+03
+  request_prefill_kv_computed_tokens          192 12408.547      500    1e+04      inf
+  counters (delta):
+    generation_tokens_total                            170,648
+    num_preemptions_total                              1
+    prefix_cache_hits_total                            446,235,904
+    prefix_cache_queries_total                         456,594,002
+    prompt_tokens_by_source_total                      41,525,353
+    prompt_tokens_cached_total                         39,142,912
+    prompt_tokens_total                                41,525,353
+    request_success_total                              192
+    spec_decode_num_accepted_tokens_per_pos_total      110,125
+    spec_decode_num_accepted_tokens_total              110,125
+    spec_decode_num_draft_tokens_total                 181,536
+    spec_decode_num_drafts_total                       60,512
+  acceptance length 2.82 tokens per verify step

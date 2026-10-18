@@ -1,0 +1,91 @@
+device 0, 65 steps, window 6312 ms
+
+== decode: 11 steps, mean wall 23.77 ms, GPU busy 23.38 ms, idle 0.39 ms (2%)
+   kernel time by group (ms/step, summed over streams):
+       11.549  moe_decode
+        6.016  moe_prefill
+        1.762  dcp_combine
+        1.497  ar_fused
+        1.494  other
+        1.427  dense_gemm
+        0.918  attn_decode
+        0.663  sampler
+        0.585  norm/elementwise
+        0.411  indexer
+        0.252  kv_gather/cache
+        0.146  drafter_moe
+        0.048  nccl_allgather
+        0.016  prep(MRv2 input)
+   memcpy per step: D2D 10.0x 0.32 MiB, H2D 3.0x 0.00 MiB, D2H 2.0x 0.00 MiB
+   worker main-thread CUDA API (ms/step):
+        2.211  cudaStreamSynchronize
+        0.016  cudaLaunchKernel
+        0.006  cuLaunchKernelEx
+        0.004  cudaMemcpyAsync
+        0.002  cudaEventQuery
+        0.001  cudaEventRecordWithFlags
+        0.000  cudaStreamIsCapturing
+        0.000  cuKernelGetName
+   idle gaps >= 50 us: 0.0/step, 0.00 ms/step
+
+== prefill: 11 steps, mean wall 547.64 ms, GPU busy 536.19 ms, idle 11.45 ms (2%)
+   kernel time by group (ms/step, summed over streams):
+      222.586  moe_prefill
+       80.857  nccl_allgather
+       65.823  dense_gemm
+       53.020  attn_prefill
+       51.963  nccl_allreduce
+       50.391  indexer
+       28.787  norm/elementwise
+        7.561  dcp_combine
+        7.122  barrier
+        3.898  kv_gather/cache
+        3.112  drafter_moe
+        1.562  sampler
+        1.071  ar_fused
+        0.158  other
+        0.090  prep(MRv2 input)
+   memcpy per step: D2H 9.3x 0.00 MiB, H2D 458.0x 24857.51 MiB, D2D 87.0x 162.37 MiB
+   worker main-thread CUDA API (ms/step):
+       51.757  cuLaunchKernelEx
+       44.531  cudaLaunchKernelExC
+       43.609  cudaLaunchKernel
+       30.623  cudaStreamSynchronize
+       15.861  cuLaunchKernel
+       12.954  cudaMemsetAsync
+        8.524  cudaMemcpyAsync
+        6.891  cudaProfilerStop
+        6.028  cudaGraphLaunch
+        1.904  cudaStreamWaitEvent
+   idle gaps >= 50 us: 26.2/step, 5.23 ms/step
+     gap   3423.0 us at +  7.22 ms of step (t=2745.9): CPU in cuKernelSetAttribute 115us, cuLibraryLoadData 92us, cuLaunchKernelEx 19us, cudaStreamIsCapturing 2us
+     gap   3200.9 us at +  0.93 ms of step (t=2739.7): CPU in cudaMemcpyAsync 17us, cudaEventQuery 9us, cudaStreamIsCapturing 2us
+     gap   3144.4 us at +  8.95 ms of step (t=2058.6): CPU in cudaMemcpyAsync 18us, cudaEventQuery 9us, cudaStreamIsCapturing 2us
+
+== other: 43 steps, mean wall 0.58 ms, GPU busy 0.51 ms, idle 0.07 ms (12%)
+   kernel time by group (ms/step, summed over streams):
+        0.214  dense_gemm
+        0.069  norm/elementwise
+        0.059  moe_prefill
+        0.040  drafter_moe
+        0.029  dcp_combine
+        0.028  ar_fused
+        0.016  sampler
+        0.015  nccl_allgather
+        0.015  indexer
+        0.012  prep(MRv2 input)
+        0.012  other
+        0.010  attn_decode
+        0.001  kv_gather/cache
+   memcpy per step: D2D 3.0x 0.01 MiB, H2D 2.5x 0.00 MiB
+   worker main-thread CUDA API (ms/step):
+        0.002  cudaGraphLaunch
+        0.002  cudaLaunchKernel
+        0.001  cudaMemcpyAsync
+        0.001  cuLaunchKernelEx
+        0.000  cudaHostAlloc
+        0.000  cudaEventQuery
+        0.000  cudaEventRecordWithFlags
+        0.000  cudaStreamIsCapturing
+        0.000  cuKernelGetName
+   idle gaps >= 50 us: 0.0/step, 0.00 ms/step

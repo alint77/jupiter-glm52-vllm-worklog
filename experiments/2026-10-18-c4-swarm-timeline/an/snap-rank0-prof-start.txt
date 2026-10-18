@@ -1,0 +1,48 @@
+live 88.473 GiB in 1828 blocks
+  pool (0, 0): reserved 90.430 GiB, allocated 88.442, free 1.988, 570 segments
+  pool (0, 2): reserved 0.527 GiB, allocated 0.031, free 0.496, 27 segments
+  70.729 GiB     75  model_executor/model_loader/tiered_moe_storage.py:258:allocate_layer_expert_storage < model_executor/layers/quantization/compressed_tensors/compressed_tensors_moe/compressed_tensors_moe_wna16_marlin.py:281:create_weights
+   3.703 GiB     79  model_executor/models/deepseek_v2.py:1062:__init__ < model_executor/models/deepseek_v2.py:1252:__init__
+   3.266 GiB     44  v1/worker/gpu/attn_utils.py:220:_allocate_kv_cache < v1/worker/gpu/attn_utils.py:579:init_kv_cache
+   2.469 GiB     79  model_executor/models/deepseek_v2.py:932:__init__ < model_executor/models/deepseek_v2.py:1022:__init__
+   1.234 GiB     79  model_executor/models/deepseek_v2.py:1039:__init__ < model_executor/models/deepseek_v2.py:1252:__init__
+   0.920 GiB      1  model_executor/model_loader/tiered_moe_prefetch.py:224:_ensure_ready < model_executor/model_loader/tiered_moe_prefetch.py:328:fork
+   0.907 GiB     76  model_executor/models/deepseek_v2.py:246:__init__ < model_executor/models/deepseek_v2.py:356:__init__
+   0.820 GiB      2  v1/worker/workspace.py:176:_ensure_workspace_size < v1/worker/workspace.py:110:get_simultaneous
+   0.750 GiB      1  model_executor/layers/fused_moe/oracle/int_wna16.py:590:_process_weights_marlin < model_executor/layers/fused_moe/oracle/int_wna16.py:1386:convert_to_wna16_moe_kernel_format
+   0.540 GiB     79  model_executor/models/deepseek_v2.py:1055:__init__ < model_executor/models/deepseek_v2.py:1252:__init__
+   0.461 GiB     76  model_executor/models/deepseek_v2.py:254:__init__ < model_executor/models/deepseek_v2.py:356:__init__
+   0.443 GiB      1  model_executor/layers/vocab_parallel_embedding.py:50:create_weights < model_executor/layers/vocab_parallel_embedding.py:317:__init__
+   0.375 GiB      1  model_executor/layers/fused_moe/oracle/int_wna16.py:598:_process_weights_marlin < model_executor/layers/fused_moe/oracle/int_wna16.py:1386:convert_to_wna16_moe_kernel_format
+   0.344 GiB     22  model_executor/models/deepseek_v2.py:671:__init__ < model_executor/models/deepseek_v2.py:1131:__init__
+   0.254 GiB     76  model_executor/layers/fused_moe/router/gate_linear.py:70:__init__ < model_executor/models/deepseek_v2.py:312:__init__
+   0.211 GiB      3  model_executor/models/deepseek_v2.py:246:__init__ < model_executor/models/deepseek_v2.py:1281:__init__
+   0.141 GiB      1  model_executor/models/deepseek_mtp.py:103:__init__ < model_executor/models/deepseek_mtp.py:183:__init__
+   0.125 GiB      1  model_executor/layers/rotary_embedding/base.py:61:__init__ < model_executor/layers/rotary_embedding/base.py:150:__init__
+   0.105 GiB      3  model_executor/models/deepseek_v2.py:254:__init__ < model_executor/models/deepseek_v2.py:1281:__init__
+   0.094 GiB      3  model_executor/layers/decode_gemm/__init__.py:86:_impl < compilation/piecewise_backend.py:382:__call__
+   0.094 GiB      1  model_executor/layers/fused_moe/oracle/int_wna16.py:608:_process_weights_marlin < model_executor/layers/fused_moe/oracle/int_wna16.py:1386:convert_to_wna16_moe_kernel_format
+   0.048 GiB      2  v1/attention/backends/mla/indexer.py:345:__init__ < v1/worker/utils.py:268:create_metadata_builders
+   0.047 GiB      1  v1/worker/gpu/spec_decode/autoregressive/speculator.py:32:__init__ < v1/worker/gpu/spec_decode/__init__.py:38:init_speculator
+   0.047 GiB      1  model_executor/layers/fused_moe/oracle/int_wna16.py:616:_process_weights_marlin < model_executor/layers/fused_moe/oracle/int_wna16.py:1386:convert_to_wna16_moe_kernel_format
+   0.042 GiB     22  model_executor/models/deepseek_v2.py:680:__init__ < model_executor/models/deepseek_v2.py:1131:__init__
+   0.031 GiB      1  model_executor/models/deepseek_v2.py:1384:__init__ < compilation/decorators.py:383:__init__
+   0.031 GiB      1  model_executor/layers/quantization/input_quant_fp8.py:68:__init__ < model_executor/layers/attention/mla_attention.py:562:__init__
+   0.031 GiB      1  model_executor/models/deepseek_mtp.py:110:__init__ < model_executor/models/deepseek_mtp.py:183:__init__
+   0.031 GiB      1  model_executor/layers/decode_gemm/__init__.py:86:_impl < model_executor/layers/decode_gemm/__init__.py:108:decode_unquantized_gemm
+   0.031 GiB      1  compilation/piecewise_backend.py:382:__call__ < compilation/cuda_graph.py:254:__call__
+   0.031 GiB      1  [graph pool] model_executor/layers/decode_gemm/__init__.py:86:_impl < compilation/piecewise_backend.py:382:__call__
+   0.029 GiB      2  v1/attention/backends/mla/sparse_utils.py:381:triton_filter_and_convert_dcp_index < v1/attention/backends/mla/flashmla_sparse.py:1063:_dcp_converted_indices
+   0.023 GiB      2  model_executor/layers/attention/sparse_mla_attention.py:84:__init__ < v1/attention/backends/mla/flashmla_sparse.py:350:__init__
+   0.023 GiB      1  v1/attention/backends/mla/skip_kv_stage.py:181:__init__ < v1/attention/backends/mla/skip_kv_stage.py:338:get_stager
+   0.012 GiB      1  v1/worker/gpu/cudagraph_utils.py:537:forward_fn < v1/worker/gpu/cudagraph_utils.py:327:capture
+   0.009 GiB      1  v1/sample/ops/topk_topp_triton.py:914:apply_top_k_top_p_triton < v1/sample/ops/topk_topp_sampler.py:357:apply_top_k_top_p
+   0.008 GiB      1  distributed/device_communicators/custom_all_reduce.py:184:__init__ < distributed/device_communicators/cuda_communicator.py:140:__init__
+   0.006 GiB      1  model_executor/layers/fused_moe/tiered_decode/sliced.py:97:_workspace < model_executor/layers/fused_moe/tiered_decode/sliced.py:170:sliced_decode_moe
+   0.002 GiB      1  v1/worker/gpu/sample/penalties.py:40:__init__ < v1/worker/gpu/sample/sampler.py:49:__init__
+   0.001 GiB      1  v1/sample/ops/topk_topp_sampler.py:521:flashinfer_sample < v1/worker/gpu/sample/sampler.py:232:sample
+   0.001 GiB     79  model_executor/layers/layernorm.py:63:__init__ < model_executor/models/deepseek_v2.py:1288:__init__
+   0.001 GiB     79  model_executor/layers/layernorm.py:63:__init__ < model_executor/models/deepseek_v2.py:1289:__init__
+   0.001 GiB      1  v1/attention/backends/mla/skip_kv_stage.py:222:__init__ < v1/attention/backends/mla/skip_kv_stage.py:338:get_stager
+   0.000 GiB      1  model_executor/layers/attention/mla_attention.py:1617:build_mla_chunked_context_metadata < model_executor/layers/attention/sparse_mla_attention.py:151:_build_chunked_context_fields
+   0.000 GiB     79  model_executor/layers/layernorm.py:63:__init__ < model_executor/models/deepseek_v2.py:1038:__init__
