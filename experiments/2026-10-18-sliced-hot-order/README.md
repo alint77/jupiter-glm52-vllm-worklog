@@ -90,6 +90,22 @@ released by hand):
 The swarm b on 2392845 (+3.5 ms MoE) is beyond what the cold-count change can
 move (the fits put a whole -10% at ~-0.5 ms); round two runs a on that hold.
 
+Paired (both rounds, b - a on the same hold, `ab_compare.py` ->
+`an/ab_compare.txt`; verify-step medians, ms):
+
+| arm | M | span b-a per hold | MoE b-a per hold | mean span / MoE |
+|---|--:|---|---|---|
+| dec1 ~5K | 4 | -0.14, -0.16 | -0.06, -0.04 | -0.15 / -0.05 |
+| dec1 ~50K | 4 | -0.20, +0.58 | -0.13, +0.74 | +0.19 / +0.30 |
+| dec4 ~5K | 16 | -0.43, -0.43 | -0.23, -0.38 | -0.43 / -0.30 |
+| dec4 ~50K | 16 | +0.20, -1.11 | +0.21, -1.11 | -0.46 / -0.45 |
+| c=4 swarm | 16 | +0.04, -0.25, -0.09, -0.33 | +0.08, -0.34, -0.00, -0.36 | -0.16 / -0.16 |
+
+Hold 2392845 is slow for both arms (a 26.65 / 14.90 ms span / MoE vs ~23 /
+~11 on the others): the round-one swarm outlier was the node; b - a there is
+-0.34 MoE. MoE b <= a in 9 of 12 pairs, mean -0.14 ms/step; the ~50K dec
+windows swing +-1 ms between holds (few, long steps), the rest agree in sign.
+
 Shipped before round two on the user's call (the order ranks by the quantity
 the per-call fit says sets MoE time, it wins held out at every M and budget,
 and it removes the id-sorted trim): `claude-glm53-sliced-mtp3.sh` sets
