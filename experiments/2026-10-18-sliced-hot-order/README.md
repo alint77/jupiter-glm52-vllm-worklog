@@ -74,3 +74,24 @@ to -0.6 ms per M=16 step, before the served shrink seen before.
 `launch_ab.sh`: ABBA on 8 holds (2392844-45, 2393362-67), a = pf5 + ccfreq3676,
 b = pf6 (65d9b56fb1) + the new profile, fresh compile caches; two holds per
 kind x order: c=4 swarm replay with nsys windows, dec1 (M=4), dec4 (M=16).
+
+Round one (unpaired: a and b on different holds; verify-step medians, ms;
+round two stalled 25 min on node_run2.sh's `wait` for its own mem_sampler,
+released by hand):
+
+| arm | M | span a | span b | MoE a | MoE b |
+|---|--:|--:|--:|--:|--:|
+| dec1 ~5K | 4 | 14.31 | 14.25 | 4.69 | 4.63 |
+| dec1 ~50K | 4 | 15.80 | 15.41 | 5.89 | 5.49 |
+| dec4 ~5K | 16 | 20.59 | 20.38 | 9.41 | 9.40 |
+| dec4 ~50K | 16 | 23.68 | 23.25 | 12.16 | 11.85 |
+| swarm (2 holds each) | 16 | 23.21 / 22.83 | 26.40 / 23.25 | 10.98 / 10.66 | 14.56 / 11.09 |
+
+The swarm b on 2392845 (+3.5 ms MoE) is beyond what the cold-count change can
+move (the fits put a whole -10% at ~-0.5 ms); round two runs a on that hold.
+
+Shipped before round two on the user's call (the order ranks by the quantity
+the per-call fit says sets MoE time, it wins held out at every M and budget,
+and it removes the id-sorted trim): `claude-glm53-sliced-mtp3.sh` sets
+`PROFILE=glm53-w4a16-sliced-touch-order.json`. serve.sh's default stays the
+EP replica profile (the EP launcher needs its replicas).
