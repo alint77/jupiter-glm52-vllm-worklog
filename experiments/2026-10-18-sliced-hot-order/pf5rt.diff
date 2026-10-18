@@ -1,0 +1,38 @@
+diff --git a/vllm/model_executor/model_loader/tiered_moe_execution.py b/vllm/model_executor/model_loader/tiered_moe_execution.py
+index eb2636736c..f8da905096 100644
+--- a/vllm/model_executor/model_loader/tiered_moe_execution.py
++++ b/vllm/model_executor/model_loader/tiered_moe_execution.py
+@@ -838,6 +838,9 @@ def _sliced_decode(
+             layer.register_buffer(f"tiered_{name}_expert_map", tier_map)
+         maps.append(tier_map)
+     shared_w13, shared_w2 = shared if shared is not None else (None, None)
++    from vllm.model_executor.model_loader import route_record
++
++    route_record.record(layer, topk_ids, maps[0], maps[1])
+     logger.info_once("Tiered MoE decode steps run the TP-sliced kernel")
+     return sliced_decode_moe(
+         x,
+diff --git a/vllm/v1/worker/gpu_worker.py b/vllm/v1/worker/gpu_worker.py
+index fc31e6f0b9..9bfe885f61 100644
+--- a/vllm/v1/worker/gpu_worker.py
++++ b/vllm/v1/worker/gpu_worker.py
+@@ -1174,12 +1174,19 @@ class Worker(WorkerBase):
+ 
+             # If profiler already initialized, restart profiling but keep
+             # the original trace name from the first initialization.
++            from vllm.model_executor.model_loader import route_record
++
++            self._route_dumps = getattr(self, "_route_dumps", 0) + 1
++            route_record.dump(f"start{self._route_dumps}", self.rank)
+             self.profiler.start()
+         else:
+             if self.profiler is None:
+                 logger.warning("Profiler was not started, nothing to stop.")
+                 return
+             self.profiler.stop()
++            from vllm.model_executor.model_loader import route_record
++
++            route_record.dump(f"stop{getattr(self, '_route_dumps', 0)}", self.rank)
+ 
+     def execute_dummy_batch(self) -> None:
+         num_tokens = getattr(self.model_runner, "uniform_decode_query_len", 1)
