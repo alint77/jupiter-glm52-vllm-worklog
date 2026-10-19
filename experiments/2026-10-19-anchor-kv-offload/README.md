@@ -155,3 +155,26 @@ Astra review v1: `kernel/astra-v1-review.md`, disposition in
 replaced in v3c by the inverse invariant + audit). HBM correction: 21 anchors
 are 2.57 GiB/rank at the 800K pool (2.69 was 22 layers); after the buffers and
 tables ~2.33 GiB/rank freed.
+
+## vLLM integration (worktrees/ahc-b1 = e9d65055e3, branch anchor-hot-cache)
+
+`VLLM_ANCHOR_HOT_CACHE=same|free` (under skip_host_uva) moves the 21 target
+anchors' main cache to Grace; the MTP layer stays in HBM. Each anchor gets
+`anchor_hot_cache.AnchorHotCache`: 16384 + 64 reserved rows, built from
+anchor_hot.cu (v3e, new_slots now int64 = slot_mapping) under VLLM_CACHE_ROOT.
+- Decode step: the KV write also puts this step's tokens into the reserved
+  rows. `start_mqa` (MLAAttention.forward_impl, before the q absorb and
+  its DCP all-gather) forks a side stream that runs the DCP conversion and
+  then the map. forward_mqa waits for it and runs FlashMLA on the hot buffer.
+  The stager still gets the Grace cache and the original slots.
+- Any other step reads Grace directly and drops the written slots
+  (`_invalidate_kernel` in do_kv_cache_update).
+- Planner: host += 21 anchors; "same" keeps the HBM charge, so the hot set
+  matches prod (14,284 hot per rank); "free" charges only the hot tables.
+- `VLLM_ANCHOR_HOT_CACHE_CHECK=1` reruns each mapped FlashMLA call on Grace
+  and counts mismatching bits.
+
+In-situ check (`launch_check.sh`, hold 2412782, dec4): ~11.4K mapped calls
+per rank, 0 mismatches. Free HBM after startup is 5.14 GiB (prod
+2.84–2.91 GiB). Astra review: `kernel/astra-int-*.md` (no blocker; ship
+items listed). ABC campaign: `launch_abc.sh`, compared by `ak_compare.py`.
