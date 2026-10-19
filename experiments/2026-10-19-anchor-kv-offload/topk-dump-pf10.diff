@@ -1,0 +1,38 @@
+diff --git a/vllm/v1/attention/backends/mla/flashmla_sparse.py b/vllm/v1/attention/backends/mla/flashmla_sparse.py
+index c2756abf45..9dde3badfc 100644
+--- a/vllm/v1/attention/backends/mla/flashmla_sparse.py
++++ b/vllm/v1/attention/backends/mla/flashmla_sparse.py
+@@ -29,6 +29,7 @@ from vllm.v1.attention.backend import (
+     MultipleOf,
+ )
+ from vllm.v1.attention.backends.mla import skip_kv_stage
++from vllm.v1.attention.backends.mla import topk_dump
+ from vllm.v1.attention.backends.mla.sparse_utils import (
+     dcp_decode_sched_meta,
+     triton_convert_req_index_to_global_index,
+@@ -906,6 +907,8 @@ class FlashMLASparseImpl(SparseMLACommonImpl[FlashMLASparseMetadata]):
+                 BLOCK_SIZE=attn_metadata.block_size,
+                 NUM_TOPK_TOKENS=topk_indices.shape[1],
+             )
++        if topk_dump.DIR and not self._reuses_topk and attn_metadata.num_prefills == 0:
++            topk_dump.record(kv_c_and_k_pe_cache, topk_indices, attn_metadata)
+         stager = (
+             skip_kv_stage.get_stager(q.device)
+             if self._skip_kv
+diff --git a/vllm/v1/worker/gpu/model_runner.py b/vllm/v1/worker/gpu/model_runner.py
+index 7f00f16012..46af978370 100644
+--- a/vllm/v1/worker/gpu/model_runner.py
++++ b/vllm/v1/worker/gpu/model_runner.py
+@@ -1385,6 +1385,12 @@ class GPUModelRunner(LoRAModelRunnerMixin):
+             aux_hidden_states = None
+             output_intermediate_tensors = model_output
+ 
++        if not dummy_run:
++            from vllm.v1.attention.backends.mla import topk_dump
++
++            if topk_dump.DIR:
++                topk_dump.flush(input_batch)
++
+         finished_req_ids = scheduler_output.finished_req_ids
+         self.execute_model_state = ExecuteModelState(
+             input_batch=input_batch,
