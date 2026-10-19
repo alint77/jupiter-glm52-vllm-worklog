@@ -1,4 +1,4 @@
-// Anchor hot cache (v3d): an HBM buffer of N rows in front of an anchor
+// Anchor hot cache (v3e): an HBM buffer of N rows in front of an anchor
 // layer's fp8_ds_mla main cache on Grace. Per decode step and anchor, the
 // converted top-k (rank-local slots) becomes buffer rows in one launch, one
 // thread per entry:
@@ -11,8 +11,8 @@
 //           order (block scan over a window of candidates: a row read this
 //           step is skipped, a set reference bit is cleared and passed),
 //           publishes where[s], advances the step and releases the others.
-//           Every block has started once the last one arrives, so waiting
-//           blocks never hold an SM a pending block needs.
+//           The launch is cooperative, so every block is resident and the
+//           waiting blocks cannot keep a later block from starting.
 //   copy    the other blocks: once the last block arrives the claim list is
 //           final, so they read the missed rows from Grace (16 B words over
 //           their threads) while it sweeps, and store them to their rows
@@ -36,7 +36,7 @@ constexpr int SH_MISS = 4096;  // claims the sweep stages in shared memory
 // ctl: [0] step (epoch; status holds it << 1, so < 2^30 steps), [1] CLOCK
 // hand, [2 + 2 * (step & 1)] claims of the call at that step, [6] overflow
 // (claim without a victim: must stay 0), [7] candidates swept, [8] claims so
-// far, [9] blocks arrived, [10..15] and [24..26] AHC_PROF timers,
+// far ([7], [8] wrap: telemetry), [9] blocks arrived, [10..15] and [24..26] AHC_PROF timers,
 // [16] released step, [20] step whose claim list is final, [21] its sweeping
 // block.
 constexpr int CTL = 32;
@@ -171,7 +171,7 @@ __device__ void sweep(State st, int step, int nrows, int nmiss, int hand) {
     }
     hand = (hand + stop) % nrows;
     assigned += sh_taken;
-    if (threadIdx.x == 0) st.ctl[7] += stop;
+    if (threadIdx.x == 0) st.ctl[7] = (int32_t)((uint32_t)st.ctl[7] + stop);
 #ifdef AHC_PROF
     if (threadIdx.x == 0) st.ctl[14] += 1;
 #endif
@@ -184,7 +184,7 @@ __device__ void sweep(State st, int step, int nrows, int nmiss, int hand) {
   if (threadIdx.x == 0) {
     st.ctl[1] = hand;
     st.ctl[6] += nmiss - assigned;
-    st.ctl[8] += nmiss;
+    st.ctl[8] = (int32_t)((uint32_t)st.ctl[8] + nmiss);
 #ifdef AHC_PROF
     st.ctl[12] += (int32_t)(t_scan ? gtime() - t_scan : 0);
     st.ctl[24] += (int32_t)(t_pre - t_enter);
@@ -362,15 +362,38 @@ void anchor_hot_map(torch::Tensor idx, torch::Tensor new_slots, torch::Tensor ou
   TORCH_CHECK(src.nbytes() >= nslots * ROW_WORDS * 16 &&
               dst.nbytes() >= (int64_t)(nrows + 64) * ROW_WORDS * 16);
   TORCH_CHECK(nslots < (1ll << 31));
+  const auto dev = idx.device();
+  for (auto* x : {&new_slots, &out, &dst, &where, &slot_of, &status, &ctl, &miss, &miss_row}) {
+    TORCH_CHECK(x->device() == dev);
+  }
+  TORCH_CHECK(reinterpret_cast<uintptr_t>(src.data_ptr()) % 16 == 0 &&
+              reinterpret_cast<uintptr_t>(dst.data_ptr()) % 16 == 0);
   State st{where.data_ptr<int32_t>(), slot_of.data_ptr<int32_t>(),
            status.data_ptr<int32_t>(), ctl.data_ptr<int32_t>(),
            miss.data_ptr<int32_t>(), miss_row.data_ptr<int32_t>()};
   auto stream = at::cuda::getCurrentCUDAStream();
   const int blocks = std::max<int>((n + THREADS - 1) / THREADS, 1);
-  map_kernel<4><<<blocks, THREADS, 0, stream>>>(
-      st, idx.data_ptr<int32_t>(), n, new_slots.data_ptr<int32_t>(), t,
-      out.data_ptr<int32_t>(), reinterpret_cast<const int4*>(src.data_ptr()),
-      reinterpret_cast<int4*>(dst.data_ptr()), nrows);
+  static int resident = 0;  // blocks the device can hold at once
+  if (!resident) {
+    int per_sm = 0, sms = 0;
+    C10_CUDA_CHECK(cudaOccupancyMaxActiveBlocksPerMultiprocessor(&per_sm, map_kernel<4>,
+                                                                 THREADS, 0));
+    C10_CUDA_CHECK(cudaDeviceGetAttribute(&sms, cudaDevAttrMultiProcessorCount, dev.index()));
+    resident = per_sm * sms;
+  }
+  TORCH_CHECK(blocks <= resident, "anchor_hot_map: grid exceeds co-resident blocks");
+  // the grid barrier needs every block resident: a cooperative launch
+  // guarantees it (an ordinary launch can leave a block waiting for an SM
+  // that the spinning blocks hold)
+  const int32_t* idx_p = idx.data_ptr<int32_t>();
+  const int32_t* new_p = new_slots.data_ptr<int32_t>();
+  int32_t* out_p = out.data_ptr<int32_t>();
+  const int4* src_p = reinterpret_cast<const int4*>(src.data_ptr());
+  int4* dst_p = reinterpret_cast<int4*>(dst.data_ptr());
+  int n32 = (int)n, t32 = t, nrows32 = nrows;
+  void* args[] = {&st, &idx_p, &n32, &new_p, &t32, &out_p, &src_p, &dst_p, &nrows32};
+  C10_CUDA_CHECK(cudaLaunchCooperativeKernel((void*)map_kernel<4>, dim3(blocks), dim3(THREADS),
+                                             args, 0, stream));
 }
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) { m.def("anchor_hot_map", &anchor_hot_map); }
