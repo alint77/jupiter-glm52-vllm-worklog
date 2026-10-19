@@ -178,3 +178,15 @@ In-situ check (`launch_check.sh`, hold 2412782, dec4): ~11.4K mapped calls
 per rank, 0 mismatches. Free HBM after startup is 5.14 GiB (prod
 2.84–2.91 GiB). Astra review: `kernel/astra-int-*.md` (no blocker; ship
 items listed). ABC campaign: `launch_abc.sh`, compared by `ak_compare.py`.
+
+## Hot-cache size from the decode step (ahc-dev, after the c=4 ABC tree)
+
+rows = 4/3 of the entries a decode step can map (max_num_seqs x (1 + k),
+capped at 64, x the 768 DCP width), rounded to 64, at least 4096:
+c=1 MTP7 8192, c=4 MTP3 16384 (unchanged), c=8 32768, c=16 MTP3 65536.
+No decode step falls back to Grace; only prefill reads it. The pool size
+only scales the slot->row table (4 B per slot per layer). Adversarial,
+graph and stress tests at 8192 / 65536 / 16384 rows (`adversarial.py
+--rows`): 0 failing steps, overflow 0, no hang
+(`logs/ahc-rows-adversarial-login.log`). Kernel time at Q=64 is not
+measured yet (needs a c=16 dump).

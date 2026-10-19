@@ -7,7 +7,11 @@ no slot stays claimed. Between steps the source rows of the step's new
 tokens are rewritten (the KV write), so a stale hot row shows up as wrong
 bytes.
 
-  adversarial.py [--graph] [--stress]
+  adversarial.py [--graph] [--stress] [--rows N]
+
+N defaults to 16384 (c=4 MTP3); the source holds 4N slots and steps map up
+to Q = 3N/4/768 queries (the auto size: N = 4/3 of the entries per step),
+so --rows 8192 is c=1 MTP7 and --rows 65536 is c=16 MTP3.
 """
 
 import argparse
@@ -20,8 +24,8 @@ import torch
 from replay import ROW, RES, build
 
 N = 16384
-S = 65536
-MAXE = 64 * 768
+S = 4 * N
+Q = N * 3 // 4 // 768
 
 
 class Cache:
@@ -35,8 +39,8 @@ class Cache:
         self.status = torch.zeros(N, dtype=torch.int32, device=dev)
         self.ctl = torch.zeros(32, dtype=torch.int32, device=dev)
         self.ctl[10:12] = -1
-        self.miss = torch.zeros(MAXE, dtype=torch.int32, device=dev)
-        self.miss_row = torch.zeros(MAXE, dtype=torch.int32, device=dev)
+        self.miss = torch.zeros(N, dtype=torch.int32, device=dev)
+        self.miss_row = torch.zeros(N, dtype=torch.int32, device=dev)
         self.bufs, self.graphs = {}, {}
         self.steps = self.bad = 0
         self._claims = self._swept = 0
@@ -129,8 +133,8 @@ def scenarios(cache, rng):
     cache.step(rng.permutation(np.concatenate([keep, fresh])).astype(np.int32), none, "half")
     # heavy multiplicity and -1: 12288 entries over 40 slots
     few = rng.choice(S, 40, replace=False)
-    d = rng.choice(few, 12288).astype(np.int32)
-    d[rng.random(12288) < 0.3] = -1
+    d = rng.choice(few, Q * 768).astype(np.int32)
+    d[rng.random(Q * 768) < 0.3] = -1
     cache.step(d, none, "dups")
     # new tokens that are cached and also selected, then read again next step
     new = rng.choice(few, 16, replace=False).astype(np.int32)
@@ -141,9 +145,9 @@ def scenarios(cache, rng):
     new64 = rng.choice(S, 64, replace=False).astype(np.int32)
     cache.step(np.concatenate([new64, rng.choice(S, 960)]).astype(np.int32), new64, "t64-alone")
     # random traffic with locality, sizes from 1 to 16 query tokens
-    hot = rng.choice(S, 6000, replace=False)
-    for _ in range(3000):
-        m = int(rng.integers(1, 17))
+    hot = rng.choice(S, 6000 * N // 16384, replace=False)
+    for _ in range(max(3000 * 16384 // N, 750)):
+        m = int(rng.integers(1, Q + 1))
         n = m * 768
         s = np.where(rng.random(n) < 0.8, rng.choice(hot, n), rng.integers(0, S, n)).astype(np.int32)
         s[rng.random(n) < 0.3] = -1
@@ -153,7 +157,7 @@ def scenarios(cache, rng):
             nw[rng.random(t) < 0.25] = -1
             s[: t] = nw
         if rng.random() < 0.02:
-            hot = rng.choice(S, 6000, replace=False)  # request change: cold rows
+            hot = rng.choice(S, 6000 * N // 16384, replace=False)  # request change
         cache.step(s, nw, "random")
 
 
@@ -178,7 +182,7 @@ def stress(ext, dev):
             os._exit(2)
 
     threading.Thread(target=watchdog, daemon=True).start()
-    hot = rng.choice(S, 6000, replace=False)
+    hot = rng.choice(S, 6000 * N // 16384, replace=False)
     calls = 0
     for it in range(400):
         with torch.cuda.stream(hog):
@@ -186,11 +190,11 @@ def stress(ext, dev):
                 y = x @ x
         with torch.cuda.stream(mp):
             for _ in range(8):
-                n = 16 * 768
+                n = Q * 768
                 s = rng.choice(hot, n).astype(np.int32)
-                idx, nw, out = cache.buf(n, 16)
+                idx, nw, out = cache.buf(n, Q)
                 idx.copy_(torch.from_numpy(s), non_blocking=False)
-                cache.run(n, 16)
+                cache.run(n, Q)
                 calls += 1
         if it % 50 == 0:
             torch.cuda.synchronize()
@@ -205,7 +209,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--graph", action="store_true")
     ap.add_argument("--stress", action="store_true")
+    ap.add_argument("--rows", type=int, default=16384)
     a = ap.parse_args()
+    global N, S, Q
+    N, S, Q = a.rows, 4 * a.rows, a.rows * 3 // 4 // 768
     ext = build()
     dev = torch.device("cuda")
     if a.stress:
@@ -213,7 +220,7 @@ def main():
         return
     cache = Cache(ext, dev, a.graph)
     scenarios(cache, np.random.default_rng(0))
-    print(f"{'graph' if a.graph else 'eager'}: {cache.steps} steps, {cache.claims()} claims, "
+    print(f"N={N} Q={Q} {'graph' if a.graph else 'eager'}: {cache.steps} steps, {cache.claims()} claims, "
           f"{cache.bad} failing steps, rounds-heavy steps swept {int(cache.ctl[7].item())}")
     sys.exit(1 if cache.bad else 0)
 
