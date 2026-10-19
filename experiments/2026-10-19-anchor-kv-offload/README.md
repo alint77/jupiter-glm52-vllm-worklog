@@ -190,3 +190,26 @@ graph and stress tests at 8192 / 65536 / 16384 rows (`adversarial.py
 --rows`): 0 failing steps, overflow 0, no hang
 (`logs/ahc-rows-adversarial-login.log`). Kernel time at Q=64 is not
 measured yet (needs a c=16 dump).
+
+## Served ABC (2026-10-19, `launch_abc.sh`, 6 holds, c=4 launcher config)
+
+a = prod (ahc-a = 24175ed0d3), b = ahc-b1 `same` (14,284 hot experts, as a),
+c = ahc-b1 `free` (14,773 hot, 4,427 cold, +489 hot experts per rank).
+`ak_compare.py` (`ak_compare.txt`): verify steps M=16, medians per arm,
+x - a per hold:
+
+| kind | holds | span b-a | rest b-a | span c-a |
+|---|--:|--:|--:|--:|
+| dec4 ~5K | 2 | -0.296 ms | -0.189 ms | |
+| dec4 ~50K | 2 | -0.143 ms | -0.171 ms | |
+| tlnsys (real c=4 replay) | 4 (b), 2 (c) | -0.042 ms | -0.188 ms | -0.569 ms |
+
+(The step is ~22.5 ms; rest = span minus the MoE layer kernels.) The map
+kernels, 21 per step at 10–12.7 µs each (208–267 µs of kernel time), run on
+the side stream and do not lengthen the step. FlashMLA time is unchanged
+(`ak_kdiff.py`). Rest is 0.17–0.19 ms lower in b in all 6 holds, a cause
+not attributed yet (nothing on the anchor path got faster). Matched-request
+TTFT (`ak_ttft.py`): big prefills b/a 0.998–1.004 (anchors read from Grace
+in prefill cost nothing visible); small TTFT -4 to +27 ms (queueing noise).
+c's extra 489 hot experts take 0.57 ms off the step (~2.5%).
+Free HBM after startup: a 2.88, b 5.14, c 2.83 GiB.
