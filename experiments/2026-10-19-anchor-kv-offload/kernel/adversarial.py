@@ -49,7 +49,7 @@ class Cache:
     def buf(self, n, t):
         if (n, t) not in self.bufs:
             self.bufs[(n, t)] = (torch.full((n,), -1, dtype=torch.int32, device=self.dev),
-                                 torch.full((t,), -1, dtype=torch.int32, device=self.dev),
+                                 torch.full((t,), -1, dtype=torch.int64, device=self.dev),
                                  torch.full((n,), -1, dtype=torch.int32, device=self.dev))
         return self.bufs[(n, t)]
 
@@ -58,7 +58,7 @@ class Cache:
         n, t = len(slots), len(new)
         idx, nw, out = self.buf(n, t)
         idx.copy_(torch.from_numpy(slots.astype(np.int32)))
-        nw.copy_(torch.from_numpy(new.astype(np.int32)))
+        nw.copy_(torch.from_numpy(new.astype(np.int64)))
         if self.graph:
             if (n, t) not in self.graphs:
                 gr = torch.cuda.CUDAGraph()

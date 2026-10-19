@@ -197,11 +197,11 @@ __device__ void sweep(State st, int step, int nrows, int nmiss, int hand) {
 template <int UNROLL>
 __global__ void __launch_bounds__(THREADS)
 map_kernel(State st, const int32_t* __restrict__ idx, int n,
-           const int32_t* __restrict__ new_slots, int t, int32_t* __restrict__ out,
+           const int64_t* __restrict__ new_slots, int t, int32_t* __restrict__ out,
            const int4* __restrict__ src, int4* __restrict__ dst, int nrows) {
   __shared__ int32_t sh_new[64];
   __shared__ bool last;
-  if (threadIdx.x < 64) sh_new[threadIdx.x] = threadIdx.x < t ? new_slots[threadIdx.x] : -1;
+  if (threadIdx.x < 64) sh_new[threadIdx.x] = threadIdx.x < t ? (int32_t)new_slots[threadIdx.x] : -1;
   __syncthreads();
   const int step = st.ctl[0] + 1;
   const int hand = st.ctl[1];  // written only by the previous launch's sweep
@@ -346,9 +346,12 @@ void anchor_hot_map(torch::Tensor idx, torch::Tensor new_slots, torch::Tensor ou
                     torch::Tensor src, torch::Tensor dst, torch::Tensor where,
                     torch::Tensor slot_of, torch::Tensor status, torch::Tensor ctl,
                     torch::Tensor miss, torch::Tensor miss_row) {
-  for (auto* x : {&idx, &new_slots, &out, &where, &slot_of, &status, &ctl, &miss, &miss_row}) {
+  for (auto* x : {&idx, &out, &where, &slot_of, &status, &ctl, &miss, &miss_row}) {
     TORCH_CHECK(x->is_cuda() && x->is_contiguous() && x->scalar_type() == at::kInt);
   }
+  // this step's slot mapping, as the KV write takes it
+  TORCH_CHECK(new_slots.is_cuda() && new_slots.is_contiguous() &&
+              new_slots.scalar_type() == at::kLong);
   TORCH_CHECK(dst.is_cuda() && dst.is_contiguous() && src.is_contiguous());
   const int64_t n = idx.numel();
   const int t = new_slots.numel();
@@ -386,7 +389,7 @@ void anchor_hot_map(torch::Tensor idx, torch::Tensor new_slots, torch::Tensor ou
   // guarantees it (an ordinary launch can leave a block waiting for an SM
   // that the spinning blocks hold)
   const int32_t* idx_p = idx.data_ptr<int32_t>();
-  const int32_t* new_p = new_slots.data_ptr<int32_t>();
+  const int64_t* new_p = new_slots.data_ptr<int64_t>();
   int32_t* out_p = out.data_ptr<int32_t>();
   const int4* src_p = reinterpret_cast<const int4*>(src.data_ptr());
   int4* dst_p = reinterpret_cast<int4*>(dst.data_ptr());

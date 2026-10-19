@@ -107,7 +107,7 @@ def main():
     def get(t, w):
         if (t, w) not in bufs:
             idx = torch.full((t, w), -1, dtype=torch.int32, device=dev)
-            new = torch.full((t,), -1, dtype=torch.int32, device=dev)
+            new = torch.full((t,), -1, dtype=torch.int64, device=dev)
             out = torch.full((t, w), -1, dtype=torch.int32, device=dev)
             bufs[(t, w)] = (idx, new, out)
         return bufs[(t, w)]
@@ -141,7 +141,7 @@ def main():
             break
         idx, new, out = get(t, w)
         idx.copy_(torch.from_numpy(s.copy()))
-        new.copy_(torch.from_numpy(nw.copy()))
+        new.copy_(torch.from_numpy(nw.astype(np.int64)))
         before = int(ctl[OVF].item()) if a.check else 0
         if a.profile and prof is None and n >= 200:
             prof = profile(activities=[ProfilerActivity.CUDA])
