@@ -68,11 +68,44 @@ synchronously, no prefetch. At a 56K-token shard: anchors 30 us, skips 93 us
 whether the rows come from HBM or Grace; anchor KV on Grace would add the
 same ~63 us per anchor layer (~1.3 ms per chunk, 0.2%).
 
-## Top-k locality (pending)
+## Top-k locality: LRU hot buffer on real c=4 agentic traffic
 
 `topk-dump-pf10.diff` on worktree pf10 (= prod 44153148ba):
 `VLLM_ANCHOR_TOPK_DUMP=<dir>` records on rank 0 every decode step's 21
-target anchors' converted top-k (rank-local slots), new-token slots and
-token -> batch row; `launch_dump.sh` runs the c=4 agentic timeline (900 s)
-on two holds; `sim_lru.py` replays it through per-request and global LRU
-buffers.
+target anchors' converted top-k (rank-local slots, width 768, ~519 valid per
+token), new-token slots and token -> batch row; `launch_dump.sh` runs the c=4
+agentic timeline (900 s, contexts ~290-330K global) on two holds (akv-d1,
+akv-d2: 17.2K / 17.8K decode steps, 73% / 69% at M=16). (First attempt hung:
+`written[i] = 1` is a CPU->GPU copy, illegal in capture; now `fill_`.)
+`sim_lru_nb.py` (numba) replays them; the step's new tokens are inserted by
+the KV write and never miss. `req` = one LRU per (request, layer), dropped
+when the request leaves the batch; `global` = one LRU per layer with 4x the
+capacity (same total rows). Warm = steps where every request is >= 8 steps
+old (barely differs: new turns reuse rows already resident).
+
+Misses per anchor call (summed over the batch) on akv-d1, warm; akv-d2 agrees
+to within 0.2 pp:
+
+| M | rows read | policy | cap 1024 | 2048 | 4096 | 8192 |
+|---|--:|---|--:|--:|--:|--:|
+| 16 | 3558 | req miss% | 41.7 | 15.3 | 7.4 | 4.0 |
+| 16 | | req mean / p99 rows | 1482 / 4209 | 543 / 1752 | 265 / 946 | 141 / 517 |
+| 16 | | global miss% | 35.6 | 13.8 | 6.3 | 2.7 |
+| 16 | | global mean / p99 | 1266 / 4642 | 492 / 1584 | 223 / 783 | 95 / 371 |
+| 4 | 839 | req miss% | 31.4 | 11.1 | 4.8 | 2.3 |
+| 4 | | global miss% | 6.0 | 3.6 | 2.2 | 1.3 |
+
+A request reads ~890 distinct rows per layer per step (its 4 query tokens
+overlap), so caps below ~1024 thrash. HBM per rank for the buffers (4
+requests x 21 layers x 656 B): cap 2048 108 MiB, 4096 215 MiB, 8192 430 MiB,
+against 2.69 GiB for the full anchor KV at the 800K pool: 2.48 GiB (~500 hot
+experts) saved at cap 4096.
+
+Cost on the anchor's critical path (top-k is known only after the merge): at
+cap 4096, M=16 fetches a mean 223-265 rows (146-174 KB) per anchor, p99
+~800-950 rows (~0.6 MB); at C2C rates that is 1-3 us of transfer, so the
+cost is the lookup/insert bookkeeping, not bandwidth. Today's stager chain
+(mark + compact + remap ~12-15 us) would not fit the 11-15 us window; a
+fused lookup+gather kernel would need to run in ~10 us to keep the anchor's
+FlashMLA on time, else ~21 x few us = ~0.1 ms/step (~0.4%). M=4 (one
+request) misses ~40-50 rows per anchor at cap 4096 (global: ~15-20).
