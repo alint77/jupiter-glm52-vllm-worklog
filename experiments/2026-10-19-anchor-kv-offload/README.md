@@ -109,3 +109,49 @@ cost is the lookup/insert bookkeeping, not bandwidth. Today's stager chain
 fused lookup+gather kernel would need to run in ~10 us to keep the anchor's
 FlashMLA on time, else ~21 x few us = ~0.1 ms/step (~0.4%). M=4 (one
 request) misses ~40-50 rows per anchor at cap 4096 (global: ~15-20).
+
+## Hot-cache kernel (kernel/, 2026-10-19)
+
+Policy sim (`sim_policy_nb.py`, one buffer per layer shared by the batch,
+16384 rows, M=16): exact LRU 6.5-6.6% miss (~228 rows/call), CLOCK (ref bit,
+skip rows read this step) the same, FIFO ~1-1.5 pp worse; inserting the
+step's new tokens into real rows instead of reserved ones changes nothing.
+Per layer the claims differ a lot (layer 0 ~22/step, 1 ~300, 10 ~235, 20
+~275): per-layer capacity is a later lever.
+
+`anchor_hot.cu` maps one anchor's converted top-k to hot-buffer rows
+(N=16384 + 64 reserved rows for this step's tokens) and copies the missed
+rows Grace -> HBM; entries keep position, multiplicity and -1, so FlashMLA
+reads the same bytes in the same order. `replay.py` replays the akv-d1 dump
+(rank 0) for one layer and checks every entry byte for byte against the
+Grace source, the overflow counter and the where/slot_of inverse; `--prof`
+builds in-kernel globaltimer splits. All versions: 0 bad entries on login
+(layers 1 eager, 10 and 20 graph) and Booster.
+
+Booster (GPU 0, NUMA 0, C2C 421 GB/s), CUDA graph, M=16 span median
+(5000 profiled steps):
+
+| version | launches | layer 1 | layer 10 |
+|---|--:|--:|--:|
+| v1: lookup, select (per-warp CLOCK, atomic hand), copy, finish | 4 | 15.46 us | 16.42 |
+| v2: select in lookup's last block (block-scan sweep), finish in copy's last block | 2 | 15.65 | 14.91 |
+| v2b: finish in lookup's last block, parity counters; copy has no barrier | 2 | 14.21 | 14.01 |
+| v3: one kernel; last block sweeps, others spin on a release flag, then copy | 1 | 14.30 | 13.50 |
+| v3b: plain __ldcg loads in the sweep | 1 | 14.05 | 13.57 |
+| v3c: no where[old] check (4096 random loads from one SM, ~2 us) | 1 | 11.49 | 11.07 |
+| v3d: copiers read Grace while the sweep runs; sweeper not a copier | 1 | 10.30 (p99 12.26) | 10.02 (p99 12.23) |
+
+v3d split (layer 1 / 10): lookup body 3.9 / 3.6 us, sweep 4.2 / 3.9 (candidate
+loads 1.2, block scan 0.4, stores 1.8 / 1.5), post-release ~2.1. Lessons:
+the cost is serial latency in one block and one SM's request rate, not
+bandwidth (300 rows x 656 B is ~0.5 us of C2C); relaxed atomics vs plain
+loads made no difference. Budget (see "Slack" above): the side-stream chain
+is conversion (~4-5 us) + map; it delays FlashMLA only past ~19-20 us, and
+is fully hidden behind the 11-15 us of top-k-independent work if the map is
+<= ~6-10 us, before contention with that work.
+
+Astra review v1: `kernel/astra-v1-review.md`, disposition in
+`kernel/astra-v1-disposition.md` (conditional eviction adopted in v2, then
+replaced in v3c by the inverse invariant + audit). HBM correction: 21 anchors
+are 2.57 GiB/rank at the 800K pool (2.69 was 22 layers); after the buffers and
+tables ~2.33 GiB/rank freed.

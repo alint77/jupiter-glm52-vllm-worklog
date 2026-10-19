@@ -1,4 +1,4 @@
-// Anchor hot cache (v3): an HBM buffer of N rows in front of an anchor
+// Anchor hot cache (v3d): an HBM buffer of N rows in front of an anchor
 // layer's fp8_ds_mla main cache on Grace. Per decode step and anchor, the
 // converted top-k (rank-local slots) becomes buffer rows in one launch, one
 // thread per entry:
@@ -13,8 +13,10 @@
 //           publishes where[s], advances the step and releases the others.
 //           Every block has started once the last one arrives, so waiting
 //           blocks never hold an SM a pending block needs.
-//   copy    every block: missed rows Grace -> HBM (16 B words over the grid);
-//           each entry that missed reads its row.
+//   copy    the other blocks: once the last block arrives the claim list is
+//           final, so they read the missed rows from Grace (16 B words over
+//           their threads) while it sweeps, and store them to their rows
+//           after the release; each entry that missed reads its row.
 // Entries keep position, multiplicity and -1, so FlashMLA reads the same
 // bytes in the same order as from the full cache.
 #include <cub/block/block_scan.cuh>
@@ -34,9 +36,13 @@ constexpr int SH_MISS = 4096;  // claims the sweep stages in shared memory
 // ctl: [0] step (epoch; status holds it << 1, so < 2^30 steps), [1] CLOCK
 // hand, [2 + 2 * (step & 1)] claims of the call at that step, [6] overflow
 // (claim without a victim: must stay 0), [7] candidates swept, [8] claims so
-// far, [9] blocks arrived, [10..15] AHC_PROF timers, [16] released step.
-constexpr int CTL = 20;
+// far, [9] blocks arrived, [10..15] and [24..26] AHC_PROF timers,
+// [16] released step, [20] step whose claim list is final, [21] its sweeping
+// block.
+constexpr int CTL = 32;
 constexpr int REL = 16;
+constexpr int ARR = 20;
+constexpr int LASTB = 21;
 
 struct State {
   int32_t* where;     // [S] slot -> row, -1 absent, -2 claimed this step
@@ -84,7 +90,8 @@ __device__ __forceinline__ int64_t gtime_after(int dep) {
 // is row (hand + p) % N; the hand stops right after the candidate taken by
 // the last claim, so exactly the rows it passed lose their reference bit.
 // Everything a candidate needs is loaded before the scan; after it, stores.
-__device__ void sweep(State st, int step, int nrows, int nmiss) {
+// The other blocks wait at the barrier, so plain (L2) loads see final values.
+__device__ void sweep(State st, int step, int nrows, int nmiss, int hand) {
   using Scan = cub::BlockScan<int, THREADS>;
   __shared__ typename Scan::TempStorage scan;
   __shared__ int sh_stop, sh_taken;
@@ -92,35 +99,36 @@ __device__ void sweep(State st, int step, int nrows, int nmiss) {
 #ifdef AHC_PROF
   int64_t t_scan = 0, t_enter = gtime();
 #endif
-  for (int i = threadIdx.x; i < min(nmiss, SH_MISS); i += THREADS) sh_miss[i] = ld_rlx(&st.miss[i]);
-  int hand = ld_rlx(&st.ctl[1]);
 #ifdef AHC_PROF
-  int64_t t_pre = gtime_after(hand), t_cand = 0;
+  int64_t t_pre = gtime(), t_cand = 0;
 #endif
   int assigned = 0;
   const int max_rounds = 2 * (nrows / (THREADS * SWEEP_V) + 1) + 1;
   for (int round = 0; assigned < nmiss && round < max_rounds; ++round) {
     const int need = nmiss - assigned;
     // thread t owns candidates p = t * V + v (contiguous, scan in hand order)
-    int c[SWEEP_V], stv[SWEEP_V], old[SWEEP_V], oldw[SWEEP_V];
+    int c[SWEEP_V], stv[SWEEP_V], old[SWEEP_V];
     bool ok[SWEEP_V], refd[SWEEP_V];
 #pragma unroll
     for (int v = 0; v < SWEEP_V; ++v) {
       c[v] = (hand + threadIdx.x * SWEEP_V + v) % nrows;
-      stv[v] = ld_rlx(&st.status[c[v]]);
-      old[v] = ld_rlx(&st.slot_of[c[v]]);
+      stv[v] = __ldcg(&st.status[c[v]]);
+      old[v] = __ldcg(&st.slot_of[c[v]]);
+    }
+    if (round == 0) {
+      for (int i = threadIdx.x; i < min(nmiss, SH_MISS); i += THREADS)
+        sh_miss[i] = __ldcg(&st.miss[i]);
     }
     int cnt = 0;
 #pragma unroll
     for (int v = 0; v < SWEEP_V; ++v) {
-      oldw[v] = old[v] >= 0 ? ld_rlx(&st.where[old[v]]) : -1;
       bool fresh = (stv[v] >> 1) != step;
       refd[v] = fresh && (stv[v] & 1);
       ok[v] = fresh && !refd[v];
       cnt += ok[v];
     }
 #ifdef AHC_PROF
-    if (round == 0) t_cand = gtime_after(cnt + oldw[0] + oldw[SWEEP_V - 1]);
+    if (round == 0) t_cand = gtime_after(cnt + old[0] + old[SWEEP_V - 1]);
 #endif
     int off, total;
     Scan(scan).ExclusiveSum(cnt, off, total);
@@ -151,8 +159,10 @@ __device__ void sweep(State st, int step, int nrows, int nmiss) {
       if (ok[v]) {
         int i = assigned + r;
         ++r;
-        int s = i < SH_MISS ? sh_miss[i] : ld_rlx(&st.miss[i]);
-        if (old[v] >= 0 && oldw[v] == c[v]) st.where[old[v]] = -1;
+        int s = i < SH_MISS ? sh_miss[i] : __ldcg(&st.miss[i]);
+        // where/slot_of stay inverse (every writer clears both), so the
+        // victim's slot maps to it
+        if (old[v] >= 0) st.where[old[v]] = -1;
         st.slot_of[c[v]] = s;
         st.status[c[v]] = step << 1;
         st.where[s] = c[v];
@@ -168,7 +178,7 @@ __device__ void sweep(State st, int step, int nrows, int nmiss) {
     __syncthreads();
   }
   for (int i = assigned + threadIdx.x; i < nmiss; i += THREADS) {
-    st.where[i < SH_MISS ? sh_miss[i] : ld_rlx(&st.miss[i])] = -1;
+    st.where[i < SH_MISS ? sh_miss[i] : __ldcg(&st.miss[i])] = -1;
     st.miss_row[i] = -1;
   }
   if (threadIdx.x == 0) {
@@ -177,9 +187,9 @@ __device__ void sweep(State st, int step, int nrows, int nmiss) {
     st.ctl[8] += nmiss;
 #ifdef AHC_PROF
     st.ctl[12] += (int32_t)(t_scan ? gtime() - t_scan : 0);
-    st.ctl[17] += (int32_t)(t_pre - t_enter);
-    st.ctl[18] += (int32_t)(t_cand - t_pre);
-    st.ctl[19] += (int32_t)(t_scan - t_cand);
+    st.ctl[24] += (int32_t)(t_pre - t_enter);
+    st.ctl[25] += (int32_t)(t_cand - t_pre);
+    st.ctl[26] += (int32_t)(t_scan - t_cand);
 #endif
   }
 }
@@ -194,6 +204,7 @@ map_kernel(State st, const int32_t* __restrict__ idx, int n,
   if (threadIdx.x < 64) sh_new[threadIdx.x] = threadIdx.x < t ? new_slots[threadIdx.x] : -1;
   __syncthreads();
   const int step = st.ctl[0] + 1;
+  const int hand = st.ctl[1];  // written only by the previous launch's sweep
   int32_t* cnt = st.ctl + 2 + 2 * (step & 1);
 #ifdef AHC_PROF
   const int64_t t_start = gtime();
@@ -241,12 +252,17 @@ map_kernel(State st, const int32_t* __restrict__ idx, int n,
   __syncthreads();
   if (threadIdx.x == 0) last = atomicAdd(&st.ctl[9], 1) == (int)gridDim.x - 1;
   __syncthreads();
+  cuda::atomic_ref<int32_t, cuda::thread_scope_device> arr(st.ctl[ARR]), rel(st.ctl[REL]);
   if (last) {
     __threadfence();
+    if (threadIdx.x == 0) {
+      st.ctl[LASTB] = blockIdx.x;
+      arr.store(step, cuda::memory_order_release);
+    }
 #ifdef AHC_PROF
     const int64_t t_last = gtime();
 #endif
-    sweep(st, step, nrows, ld_rlx(&cnt[0]));
+    sweep(st, step, nrows, __ldcg(&cnt[0]), hand);
     __threadfence();
     __syncthreads();
     if (threadIdx.x == 0) {
@@ -260,20 +276,49 @@ map_kernel(State st, const int32_t* __restrict__ idx, int n,
       st.ctl[15] += (int32_t)(gtime() - t_last);
       *(unsigned long long*)(st.ctl + 10) = ~0ull;
 #endif
-      cuda::atomic_ref<int32_t, cuda::thread_scope_device>(st.ctl[REL]).store(
-          step, cuda::memory_order_release);
+      rel.store(step, cuda::memory_order_release);
     }
   } else if (threadIdx.x == 0) {
-    cuda::atomic_ref<int32_t, cuda::thread_scope_device> rel(st.ctl[REL]);
-    while (rel.load(cuda::memory_order_acquire) != step) __nanosleep(64);
+    while (arr.load(cuda::memory_order_acquire) != step) __nanosleep(32);
   }
   __syncthreads();
 
-  if (pend) out[e] = ld_rlx(&st.where[s]);
-  const int nmiss = ld_rlx(&cnt[0]);
-  const int stride = gridDim.x * THREADS;
-  const int total = nmiss * ROW_WORDS;
-  for (int f0 = e; f0 < total; f0 += stride * UNROLL) {
+  // claim list final: the copiers (all blocks but the sweeping one, unless it
+  // is alone) read their words from Grace now, store them after the release
+  const int nmiss = __ldcg(&cnt[0]);
+  const int lastb = __ldcg(&st.ctl[LASTB]);
+  const bool alone = gridDim.x == 1;
+  const bool copier = alone || !last;
+  const int ncp = alone ? 1 : gridDim.x - 1;
+  const int cb = alone || (int)blockIdx.x < lastb ? blockIdx.x : blockIdx.x - 1;
+  const int ce = copier ? cb * THREADS + threadIdx.x : 0;
+  const int stride = ncp * THREADS;
+  const int total = copier ? nmiss * ROW_WORDS : 0;
+  int4 pre[UNROLL];
+#pragma unroll
+  for (int u = 0; u < UNROLL; ++u) {
+    int f = ce + u * stride;
+    if (f < total) {
+      int i = f / ROW_WORDS;
+      pre[u] = src[(int64_t)__ldcg(&st.miss[i]) * ROW_WORDS + (f - i * ROW_WORDS)];
+    }
+  }
+  if (!last && threadIdx.x == 0) {
+    while (rel.load(cuda::memory_order_acquire) != step) __nanosleep(32);
+  }
+  __syncthreads();
+
+  if (pend) out[e] = __ldcg(&st.where[s]);
+#pragma unroll
+  for (int u = 0; u < UNROLL; ++u) {
+    int f = ce + u * stride;
+    if (f < total) {
+      int i = f / ROW_WORDS;
+      int r = __ldcg(&st.miss_row[i]);
+      if (r >= 0) dst[(int64_t)r * ROW_WORDS + (f - i * ROW_WORDS)] = pre[u];
+    }
+  }
+  for (int f0 = ce + UNROLL * stride; f0 < total; f0 += stride * UNROLL) {
     int4 v[UNROLL];
     int64_t to[UNROLL];
 #pragma unroll
@@ -282,9 +327,9 @@ map_kernel(State st, const int32_t* __restrict__ idx, int n,
       to[u] = -1;
       if (f < total) {
         int i = f / ROW_WORDS, w = f - i * ROW_WORDS;
-        int r = ld_rlx(&st.miss_row[i]);
+        int r = __ldcg(&st.miss_row[i]);
         if (r >= 0) {
-          v[u] = src[(int64_t)ld_rlx(&st.miss[i]) * ROW_WORDS + w];
+          v[u] = src[(int64_t)__ldcg(&st.miss[i]) * ROW_WORDS + w];
           to[u] = (int64_t)r * ROW_WORDS + w;
         }
       }

@@ -97,7 +97,7 @@ def main():
     where = torch.full((S,), -1, dtype=torch.int32, device=dev)
     slot_of = torch.full((N,), -1, dtype=torch.int32, device=dev)
     status = torch.zeros(N, dtype=torch.int32, device=dev)
-    ctl = torch.zeros(20, dtype=torch.int32, device=dev)
+    ctl = torch.zeros(32, dtype=torch.int32, device=dev)
     ctl[10:12] = -1  # AHC_PROF: min start time (u64)
     miss = torch.zeros(MAXE, dtype=torch.int32, device=dev)
     miss_row = torch.zeros(MAXE, dtype=torch.int32, device=dev)
@@ -207,8 +207,8 @@ def main():
         print(f"per step (ns): first block start -> last block {c[13] / k:.0f}, "
               f"sweep {c[15] / k:.0f} (round-0 scan -> end {c[12] / k:.0f}), "
               f"rounds {c[14] / k:.2f}")
-        print(f"  sweep parts (ns): preload+hand {c[17] / k:.0f}, candidate loads "
-              f"{c[18] / k:.0f}, scan {c[19] / k:.0f}, scan->end {c[12] / k:.0f}")
+        print(f"  sweep parts (ns): preload+hand {c[24] / k:.0f}, candidate loads "
+              f"{c[25] / k:.0f}, scan {c[26] / k:.0f}, scan->end {c[12] / k:.0f}")
 
 
 def report(prof, tsteps):
