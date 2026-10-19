@@ -1,0 +1,17 @@
+# Astra v1 review: what v2 does with it
+
+Review: `astra-v1-review.md` (gpt-6-astra, xhigh, static review of the v1
+draft inlined in `astra-v1-prompt.md`).
+
+| # | Finding | Disposition |
+|---|---|---|
+| 1 | Bounded victim search can find no victim with ample capacity; failure turns a valid entry into -1 | Adopted. Found the same bug independently (v1 fixed before the review landed). v2: one block sweeps for every claim in hand order, up to two laps (lap 1 clears ref bits, lap 2 must find every unprotected row). The wrapper requires n <= nrows, so hits + claims <= N and every claim gets a victim; the overflow counter stays as an assert. No gather fallback: the bound covers every shape we launch (M <= 16 x 768 = 12288 < 16384). |
+| 2 | Plain concurrent accesses (duplicate hit stores, where[] load vs CAS, hand-wrap selectors) are data races in the CUDA C++ model | Adopted. v2 packs stamp and ref into one status word (epoch << 1 \| ref), so a hit is a single relaxed device-scope store. The where[] read in lookup and the new-slot invalidation are relaxed atomics. Selection runs in a single block, so the cross-selector races are gone. Conditional eviction (`where[old] == victim`) is added as defense. |
+| 3 | Invalidation must clear both directions; enumerate every content mutation; allocation generations | Both directions: already the case in v1 lookup and kept. The full inventory of mutation paths (block reuse, spec rewrites, prefill writes) is an integration item. Generations are noted as an alternative to the per-slot scatter; decide at integration. |
+| 4 | Phases are safe with stream order; FlashMLA must wait for the whole copy; don't reset counters from one CTA of copy | v2 resets counters in the *last* CTA of copy (done-counter pattern, after every CTA has read them). That addresses the concern without adding a launch. Lookup's grid barrier uses the same pattern before the sweep. |
+| 5 | Keep `anchor_source` + slot-valued indices for `stager.stage`; hot indices only for FlashMLA; keep valid_counts and schedule | Adopted for integration (it is a real trap: stager groups are keyed by the anchor cache pointer). Pack the current token once and store it twice. |
+| 6 | DCP reserved row N + j with the original j; padding all -1; pure-decode only, but invalidate on every other write path; MTP drafter reads | Adopted. The kernel already uses the original j (new_slots[j] = -1 for tokens other ranks own). Contracts go in the integration. |
+| 7 | Epoch overflow; define counters; init; wrapper validation | Validation adopted (dtypes, sizes, contiguity, n <= nrows). Epoch: < 2^30 steps (decades at ~50 steps/s), documented and not handled. Counters 4/5/6 are cumulative, 2/3 per call. |
+| 8 | 4 launches + atomics not shown to fit | Measured: v1 15.5-16.4 us. v2 is 2 launches; measure on Booster against the main-branch overlap. |
+| 9 | 3 phases; FIFO via partitioned scan; drop pending list | v2 selection *is* a block scan over a window of candidates (CLOCK keeps the ~1-1.5 pp over FIFO for one extra bit in the same word). The pending list stays for now; trying a full remap in copy is next if copy's tail shows up. |
+| 10 | Simpler baseline (gather all distinct rows each call); HBM accounting | Baseline: ~2.3 MB per anchor per call is ~6 us of C2C alone, on top of the stager bookkeeping we measured at 9-13 us. Rejected as the target but kept as a reference point. Accounting adopted: 2.69 GiB was 22 layers; 21 anchors = 2.57 GiB; minus 215 MiB buffers, ~16 MiB where[] and ~2 MiB row state, that frees ~2.33 GiB/rank. |
