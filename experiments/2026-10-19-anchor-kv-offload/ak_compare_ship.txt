@@ -1,0 +1,131 @@
+kind   win   M | hold     arm     n a/x  span a    x-a rest x-a  map x calls fmla x-a  (ms span/rest, us map/fmla)
+dec4     1  16 | 2413889   b    82/83     22.44 -0.509   -0.272  208.2    21     +0.0
+                       launches/step b-a  +21.0  map_kernel
+                       launches/step b-a  +21.0  concat_and_cache_ds_mla_kernel
+                       launches/step b-a   +2.0  vectorized_elementwise_kernel
+                       launches/step b-a   +1.0  elementwise_kernel
+dec4     1  16 | 2413892   b    81/82     22.55 -0.082   -0.105  214.5    21     +0.0
+                       launches/step b-a  +21.0  map_kernel
+                       launches/step b-a  +21.0  concat_and_cache_ds_mla_kernel
+                       launches/step b-a   +2.0  vectorized_elementwise_kernel
+                       launches/step b-a   +1.0  elementwise_kernel
+                 | b: mean over 2 holds: span -0.296 ms  rest -0.189 ms  fmla +0.0 us
+dec4     1  16 | 2414782   s    82/83     22.46 -0.304   +0.040  194.7    21     +0.0
+                       launches/step s-a  +42.0  vectorized_elementwise_kernel
+                       launches/step s-a  +21.0  map_kernel
+                       launches/step s-a  +21.0  concat_and_cache_ds_mla_kernel
+                       launches/step s-a  +21.0  elementwise_kernel
+dec4     1  16 | 2414783   s    80/82     22.85 -0.850   +0.190  201.9    21     +0.0
+                       launches/step s-a  +42.0  vectorized_elementwise_kernel
+                       launches/step s-a  +21.0  map_kernel
+                       launches/step s-a  +21.0  concat_and_cache_ds_mla_kernel
+                       launches/step s-a  +21.0  elementwise_kernel
+                 | s: mean over 2 holds: span -0.577 ms  rest +0.115 ms  fmla +0.0 us
+dec4     1  16 | 2415855   t    82/83     22.44 -0.431   -0.079  211.1    21     +0.0
+                       launches/step t-a  +21.0  map_kernel
+                       launches/step t-a  +21.0  concat_and_cache_ds_mla_kernel
+                       launches/step t-a   +2.0  vectorized_elementwise_kernel
+                       launches/step t-a   +1.0  elementwise_kernel
+dec4     1  16 | 2415858   t    82/82     22.30 -0.259   +0.247  207.3    21     +0.0
+                       launches/step t-a  +21.0  map_kernel
+                       launches/step t-a  +21.0  concat_and_cache_ds_mla_kernel
+                       launches/step t-a   +2.0  vectorized_elementwise_kernel
+                       launches/step t-a   +1.0  elementwise_kernel
+dec4     1  16 | 2415859   t    81/84     22.40 -0.689   +0.161  199.6    21     +0.0
+                       launches/step t-a  +21.0  map_kernel
+                       launches/step t-a  +21.0  concat_and_cache_ds_mla_kernel
+                       launches/step t-a   +2.0  vectorized_elementwise_kernel
+                       launches/step t-a   +1.0  elementwise_kernel
+                 | t: mean over 3 holds: span -0.460 ms  rest +0.109 ms  fmla +0.0 us
+dec4     2  16 | 2413889   b    80/81     22.94 -0.264   -0.165  236.9    21     +0.0
+                       launches/step b-a  +21.0  map_kernel
+                       launches/step b-a  +21.0  concat_and_cache_ds_mla_kernel
+                       launches/step b-a   +2.0  vectorized_elementwise_kernel
+                       launches/step b-a   +1.0  elementwise_kernel
+dec4     2  16 | 2413892   b    80/80     23.18 -0.021   -0.176  236.3    21     +0.0
+                       launches/step b-a  +21.0  map_kernel
+                       launches/step b-a  +21.0  concat_and_cache_ds_mla_kernel
+                       launches/step b-a   +2.0  vectorized_elementwise_kernel
+                       launches/step b-a   +1.0  elementwise_kernel
+                 | b: mean over 2 holds: span -0.143 ms  rest -0.171 ms  fmla +0.0 us
+dec4     2  16 | 2414782   s    80/83     23.38 -1.239   -0.056  217.3    21     +0.0
+                       launches/step s-a  +42.0  vectorized_elementwise_kernel
+                       launches/step s-a  +21.0  map_kernel
+                       launches/step s-a  +21.0  concat_and_cache_ds_mla_kernel
+                       launches/step s-a  +21.0  elementwise_kernel
+dec4     2  16 | 2414783   s    82/81     22.24 +0.471   +0.036  222.5    21     +0.0
+                       launches/step s-a  +42.0  vectorized_elementwise_kernel
+                       launches/step s-a  +21.0  map_kernel
+                       launches/step s-a  +21.0  concat_and_cache_ds_mla_kernel
+                       launches/step s-a  +21.0  elementwise_kernel
+                 | s: mean over 2 holds: span -0.384 ms  rest -0.010 ms  fmla +0.0 us
+dec4     2  16 | 2415855   t    79/81     23.53 -0.836   -0.120  233.8    21     +0.0
+                       launches/step t-a  +21.0  map_kernel
+                       launches/step t-a  +21.0  concat_and_cache_ds_mla_kernel
+                       launches/step t-a   +2.0  vectorized_elementwise_kernel
+                       launches/step t-a   +1.0  elementwise_kernel
+dec4     2  16 | 2415858   t    81/84     22.74 -1.000   +0.010  230.6    21     +0.0
+                       launches/step t-a  +21.0  map_kernel
+                       launches/step t-a  +21.0  concat_and_cache_ds_mla_kernel
+                       launches/step t-a   +2.0  vectorized_elementwise_kernel
+                       launches/step t-a   +1.0  elementwise_kernel
+dec4     2  16 | 2415859   t    81/82     22.68 -0.521   +0.168  222.6    21     +0.0
+                       launches/step t-a  +21.0  map_kernel
+                       launches/step t-a  +21.0  concat_and_cache_ds_mla_kernel
+                       launches/step t-a   +2.0  vectorized_elementwise_kernel
+                       launches/step t-a   +1.0  elementwise_kernel
+                 | t: mean over 3 holds: span -0.786 ms  rest +0.019 ms  fmla +0.0 us
+tlnsys   2  16 | 2412782   b   205/208    22.67 -0.046   -0.258  266.8    21     +0.0
+                       launches/step b-a  +21.0  map_kernel
+                       launches/step b-a  +21.0  concat_and_cache_ds_mla_kernel
+                       launches/step b-a   +2.0  vectorized_elementwise_kernel
+                       launches/step b-a   +1.0  elementwise_kernel
+tlnsys   2  16 | 2413890   b   186/150    22.85 -0.230   -0.175  265.9    21     +0.0
+                       launches/step b-a  +21.0  map_kernel
+                       launches/step b-a  +21.0  concat_and_cache_ds_mla_kernel
+                       launches/step b-a   +2.0  vectorized_elementwise_kernel
+                       launches/step b-a   +1.0  elementwise_kernel
+tlnsys   2  16 | 2413891   b   233/232    22.49 +0.134   +0.056  254.1    21     +0.0
+                       launches/step b-a  +21.0  map_kernel
+                       launches/step b-a  +21.0  concat_and_cache_ds_mla_kernel
+                       launches/step b-a   +2.0  vectorized_elementwise_kernel
+                       launches/step b-a   +1.0  elementwise_kernel
+tlnsys   2  16 | 2413893   b   149/212    22.87 -0.201   -0.303  267.7    21     +0.0
+                       launches/step b-a  +21.0  map_kernel
+                       launches/step b-a  +21.0  concat_and_cache_ds_mla_kernel
+                       launches/step b-a   +2.0  vectorized_elementwise_kernel
+                       launches/step b-a   +1.0  elementwise_kernel
+                 | b: mean over 4 holds: span -0.086 ms  rest -0.170 ms  fmla +0.0 us
+tlnsys   2  16 | 2412782   c   205/247    22.67 -0.679   -0.155  256.3    21     +0.0
+                       launches/step c-a  +21.0  map_kernel
+                       launches/step c-a  +21.0  concat_and_cache_ds_mla_kernel
+                       launches/step c-a   +2.0  vectorized_elementwise_kernel
+                       launches/step c-a   +1.0  elementwise_kernel
+tlnsys   2  16 | 2413891   c   233/241    22.49 -0.633   -0.142  255.1    21     +0.0
+                       launches/step c-a  +21.0  map_kernel
+                       launches/step c-a  +21.0  concat_and_cache_ds_mla_kernel
+                       launches/step c-a   +2.0  vectorized_elementwise_kernel
+                       launches/step c-a   +1.0  elementwise_kernel
+                 | c: mean over 2 holds: span -0.656 ms  rest -0.148 ms  fmla +0.0 us
+tlnsys   2  16 | 2413891   s   233/232    22.49 +0.047   +0.174  247.3    21     +0.0
+                       launches/step s-a  +42.0  vectorized_elementwise_kernel
+                       launches/step s-a  +21.0  map_kernel
+                       launches/step s-a  +21.0  concat_and_cache_ds_mla_kernel
+                       launches/step s-a  +21.0  elementwise_kernel
+tlnsys   2  16 | 2414784   s   214/244    22.61 -0.413   -0.011  248.6    21     +0.0
+                       launches/step s-a  +42.0  vectorized_elementwise_kernel
+                       launches/step s-a  +21.0  map_kernel
+                       launches/step s-a  +21.0  concat_and_cache_ds_mla_kernel
+                       launches/step s-a  +21.0  elementwise_kernel
+                 | s: mean over 2 holds: span -0.183 ms  rest +0.081 ms  fmla +0.0 us
+tlnsys   2  16 | 2415856   t   235/236    22.19 -0.030   -0.031  255.1    21     +0.0
+                       launches/step t-a  +21.0  map_kernel
+                       launches/step t-a  +21.0  concat_and_cache_ds_mla_kernel
+                       launches/step t-a   +2.0  vectorized_elementwise_kernel
+                       launches/step t-a   +1.0  elementwise_kernel
+tlnsys   2  16 | 2415857   t   151/169    22.67 +2.234   -0.183  267.8    21     +0.0
+                       launches/step t-a  +21.0  map_kernel
+                       launches/step t-a  +21.0  concat_and_cache_ds_mla_kernel
+                       launches/step t-a   +2.0  vectorized_elementwise_kernel
+                       launches/step t-a   +1.0  elementwise_kernel
+                 | t: mean over 2 holds: span +1.102 ms  rest -0.107 ms  fmla +0.0 us

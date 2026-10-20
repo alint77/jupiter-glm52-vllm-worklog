@@ -213,3 +213,54 @@ TTFT (`ak_ttft.py`): big prefills b/a 0.998–1.004 (anchors read from Grace
 in prefill cost nothing visible); small TTFT -4 to +27 ms (queueing noise).
 c's extra 489 hot experts take 0.57 ms off the step (~2.5%).
 Free HBM after startup: a 2.88, b 5.14, c 2.83 GiB.
+
+## Ship (2026-10-20, tp-sliced-moe e51272479d, serve.sh on by default)
+
+Fixes after the integration review (`kernel/astra-int-disposition.md`), in
+dde5b29b6d / fb61288200 / e51272479d:
+- `VLLM_ANCHOR_HOT_CACHE=1` is the old `free` (freed HBM to hot experts);
+  `VLLM_ANCHOR_HOT_CACHE_SAME_PLAN=1` keeps the charge, benchmarking only;
+- refused without DCP, with a KV connector, or with sleep mode;
+- hot caches built in `bind_kv_cache` (before warmup and capture);
+- runner block zeroing and copy-on-write destinations invalidated;
+- guards: entry/token bounds per map, every skipped invalidation must be
+  followed by its map; the stager records its stream on its indices.
+
+dde5b29b6d also moved the reserved-row write to the side stream (63 more
+small kernels there); e51272479d moves it back to the main-stream KV update,
+the kernel set b/c measured. Astra's ship review
+(`kernel/astra-ship-review.md`): ordering sound; adopted block ids to the
+cache's device and the sleep-mode refusal; piecewise graphs and DCP prefill
+checked against this config (attention is a split point; prefill writes go
+through the invalidating update).
+
+Correctness: login/Booster module test (`t_hot2.py` style: build from a
+forward context, 300 steps x 2 anchors, prefill invalidations, CoW) 0
+mismatches, unhooked CoW control 323-350 (the test sees stale rows), both
+guards trip. In-situ CHECK=1 (dec4): s 17,388 and t 17,850 mapped calls per
+rank, 0 mismatches. 14,773 hot / 4,427 cold experts per rank, 2.89 GiB free
+after startup (prod 2.88).
+
+Served A/B vs prod (`launch_abc.sh`, s = dde5b29b6d, t = e51272479d's tree
+a0ac78d84b, both orders, same-node pairs; `ak_compare_ship.txt`), verify
+step span x - a in ms (step ~22.5 ms):
+
+| kind | s | t |
+|---|---|---|
+| dec4 ~5K | -0.30, -0.85 | -0.43, -0.26, -0.69 |
+| dec4 ~50K | -1.24, +0.47 | -0.84, -1.00, -0.52 |
+| tlnsys (real c=4 replay) | +0.05, -0.41 | -0.03, +2.23 |
+
+dec4: 9 of 10 pairs negative, mean -0.57 ms (~2.5%), the MoE gain from 489
+more hot experts. tlnsys is noisier (replayed traffic lands different
+requests in the window; the +2.23 pair has +2.4 ms of MoE with rest -0.18).
+Rest (span minus MoE) is within noise of 0 for both s and t, so the
+0.17-0.19 ms rest gain of b/c above did not reproduce with the same kernel
+set: it was batch-to-batch noise, not the hot cache. (Mid-session I read
+s's rest as a 0.2 ms regression from the side-stream write; t disproved
+that.) dec4 tok/s is not a decode metric here (nsys/trace windows inside a
+1200-token decode) and is not quoted.
+
+One startup failure: s on 2414784, `NUMA page audit failed for 1 sampled
+pages` on a host-UVA KV allocation; the rerun on the same node passed and
+no other run in sliced-prof has it.

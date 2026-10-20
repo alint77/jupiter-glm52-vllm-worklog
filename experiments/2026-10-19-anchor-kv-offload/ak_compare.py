@@ -42,7 +42,7 @@ def steps(db):
 
 
 res = collections.defaultdict(lambda: collections.defaultdict(list))
-for d in sorted(root.glob("ak[abc]-*")):
+for d in sorted(root.glob("ak[abcst]-*")):
     arm, kind, hold = d.name[2], d.name.split("-")[1], d.name.split("-")[2]
     for db in sorted(d.glob("nsys.*.sqlite")):
         win = int(db.name.split(".")[1])
@@ -53,7 +53,7 @@ print(f"{'kind':6s} {'win':>3s} {'M':>3s} | {'hold':8s} arm {'n a/x':>9s} {'span
       f"{'rest x-a':>8s} {'map x':>6s} {'calls':>5s} {'fmla x-a':>8s}  (ms span/rest, us map/fmla)")
 for key in sorted(res):
     holds = sorted({h for h, _ in res[key]})
-    for arm in "bc":
+    for arm in "bcst":
         agg = collections.defaultdict(list)
         for h in holds:
             a, b = res[key].get((h, "a")), res[key].get((h, arm))

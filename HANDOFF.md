@@ -1,6 +1,14 @@
 # GLM-5.2 on JUPITER: agent handoff
 
-**Latest (2026-10-18): c=4 swarm whole-engine campaign** (`experiments/2026-10-18-c4-swarm-timeline/`).
+**Latest (2026-10-20): anchor KV offload shipped** (`experiments/2026-10-19-anchor-kv-offload/`,
+vllm tp-sliced-moe e51272479d, serve.sh `VLLM_ANCHOR_HOT_CACHE=1` for
+skip_host_uva + DCP). The 21 anchors' main KV moves to Grace behind a
+per-layer HBM hot cache (one cooperative map kernel per anchor on a side
+stream; FlashMLA reads the same bytes, in-situ 0 mismatches). The freed HBM
+buys 489 hot experts per rank: -0.57 ms/step at dec4 (9 of 10 same-node
+pairs), real c=4 replay noisier. Not pushed: awaiting human review.
+
+**Previous (2026-10-18): c=4 swarm whole-engine campaign** (`experiments/2026-10-18-c4-swarm-timeline/`).
 Ten full-node arms on pf5 (144f2f4aee): 900 s c=4 Claude Code replays, decode at
 n = 1..4 and 5K-380K context, prefill, 1 Hz DRAM/VRAM sampler, allocator
 snapshots. Results:

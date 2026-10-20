@@ -4,6 +4,8 @@
 #   b = worktrees/ahc-b1 + VLLM_ANCHOR_HOT_CACHE=same: anchors' main KV on
 #       Grace behind the hot cache, planner charge unchanged (same hot experts)
 #   c = the same with VLLM_ANCHOR_HOT_CACHE=free (freed HBM -> hot experts)
+#   s = the shipped tree (worktrees/ahc-s1 = dde5b29b6d), VLLM_ANCHOR_HOT_CACHE=1
+#   t = worktrees/ahc-s2 (a0ac78d84b: reserved write back on main), the same
 # Focus a vs b. Kinds from c4-swarm-timeline/node_run2.sh: tlnsys = real c=4
 # swarm replay with nsys windows, dec4 = 4 decoders at ~5K / ~50K. Fresh
 # compile/triton caches per server (seeded from prod's).
@@ -19,6 +21,8 @@ P="PROFILE=glm53-w4a16-sliced-touch-order.json"
 a_env="PYTHONPATH=${W}/ahc-a ${P}"
 b_env="PYTHONPATH=${W}/ahc-b1 ${P} VLLM_ANCHOR_HOT_CACHE=same"
 c_env="PYTHONPATH=${W}/ahc-b1 ${P} VLLM_ANCHOR_HOT_CACHE=free"
+s_env="PYTHONPATH=${W}/ahc-s1 ${P} VLLM_ANCHOR_HOT_CACHE=1"
+t_env="PYTHONPATH=${W}/ahc-s2 ${P} VLLM_ANCHOR_HOT_CACHE=1"
 mkdir -p ${X}/logs
 specs=("$@"); (( ${#specs[@]} )) || specs=("tlnsys abc" "tlnsys cba" "dec4 ab" "dec4 ba")
 for spec in "${specs[@]}"; do (

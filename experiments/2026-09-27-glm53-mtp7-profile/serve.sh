@@ -141,6 +141,15 @@ export VLLM_DCP_SPARSE_DECODE_WIDTH="${VLLM_DCP_SPARSE_DECODE_WIDTH:-768}"
 # vllm/_flashmla_C.abi3.so (md5 9c2356f2; prod backup 3c6f31e7 in
 # build/fmla-prod-backup). VLLM_DCP_DECODE_SCHED=0 restores the planner.
 export VLLM_DCP_DECODE_SCHED="${VLLM_DCP_DECODE_SCHED:-1}"
+# The 21 anchors' main KV on Grace too, behind a per-layer HBM hot cache (vllm
+# e51272479d, 2026-10-19-anchor-kv-offload): FlashMLA reads the same bytes in
+# the same order (in-situ check: 0 mismatches); the freed HBM goes to hot
+# experts (14284 -> 14773 per rank): -0.57 ms/step at 4 decoders x 5K/50K (10
+# same-node pairs, 9 negative); real c=4 swarm replay noisier. skip_host_uva
+# + DCP only; VLLM_ANCHOR_HOT_CACHE=0 keeps the anchors' KV in HBM.
+if [[ ${MLA_CACHE_TIER:-skip_host_uva} == skip_host_uva && ${DCP:-4} -gt 1 ]]; then
+  export VLLM_ANCHOR_HOT_CACHE="${VLLM_ANCHOR_HOT_CACHE:-1}"
+fi
 # No mixed prefill/decode steps: a step is decode-only or one request's
 # prefill chunk, 1 decode step between chunks (vllm dc78b9b294,
 # 2026-10-11-interleave, c4): prefill TTFT with decoders -27%, swarm makespan
