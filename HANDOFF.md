@@ -7,6 +7,13 @@ per-layer HBM hot cache (one cooperative map kernel per anchor on a side
 stream; FlashMLA reads the same bytes, in-situ 0 mismatches). The freed HBM
 buys 489 hot experts per rank: -0.57 ms/step at dec4 (9 of 10 same-node
 pairs), real c=4 replay noisier. Not pushed: awaiting human review.
+Accounting (same dir, README "Accounting"): HBM per rank per 100K pooled
+tokens A (all KV HBM) 1.31, B (skip on Grace) 0.42, C (prod) 0.09 GiB; at
+an equal hot set (VLLM_TIERED_MOE_HOT_EXPERTS=12831, vllm 3ab9242898) the
+offloads cost +0.36-0.40 (B) / +0.48 ms (C) of non-MoE step time, at the
+same pool they save 1.8-2.2 / 2.2-3.0 ms vs A. Write-up: gh200-tiered-moe
+glm/kv-offload. fscratch inode quota: per-arm cache copies are gone, copy
+once per hold.
 
 **Previous (2026-10-18): c=4 swarm whole-engine campaign** (`experiments/2026-10-18-c4-swarm-timeline/`).
 Ten full-node arms on pf5 (144f2f4aee): 900 s c=4 Claude Code replays, decode at

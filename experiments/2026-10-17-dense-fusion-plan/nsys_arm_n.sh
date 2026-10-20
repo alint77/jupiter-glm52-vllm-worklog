@@ -17,7 +17,7 @@ export TIERED_MOE_LAYOUT=tp_sliced REPLICAS=
 if (( conc > 1 )); then
   declare -A pool=([2]=2 [4]=2 [8]=4 [16]=4) reserve=([2]=3.6 [4]=3.6 [8]=3.6 [16]=4.0)
   export SPEC=mtp SPEC_K=3 COMPILE_SIZES= MAX_NUM_SEQS=${conc}
-  export VLLM_TIERED_MOE_KV_POOL_SEQS=${pool[${conc}]} RESERVE_GB=${reserve[${conc}]}
+  export VLLM_TIERED_MOE_KV_POOL_SEQS=${POOL_SEQS:-${pool[${conc}]}} RESERVE_GB=${reserve[${conc}]}
   sizes=$(seq 1 8; seq 12 4 $((4 * conc)); echo 64 128 256 384 512 640 768 896 1024)
   export CAPTURE_SIZES="$(tr ' ' '\n' <<<"${sizes}" | sort -nu | paste -sd,)"
 fi

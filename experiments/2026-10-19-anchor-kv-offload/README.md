@@ -264,3 +264,60 @@ that.) dec4 tok/s is not a decode metric here (nsys/trace windows inside a
 One startup failure: s on 2414784, `NUMA page audit failed for 1 sampled
 pages` on a host-UVA KV allocation; the rerun on the same node passed and
 no other run in sliced-prof has it.
+
+## Accounting: HBM per pooled token, cost at an equal hot set (2026-10-20)
+
+User: how much HBM per 100K tokens do the skip and anchor offloads free, how
+much more pool at the same hot count, at what verify-step cost. New knob
+`VLLM_TIERED_MOE_HOT_EXPERTS` (vllm 3ab9242898) pins the hot count per rank.
+Configs: A = `MLA_CACHE_TIER=hbm`, B = `skip_host_uva`, C = B + anchor hot
+cache (prod); c=4 launcher config, worktrees/ahc-s3 = 3ab9242898.
+
+Planner residency (TP0; `probe_plan.sh` via `launch_plan.sh`, C from
+`launch_pool.sh`), hot experts per rank:
+
+| pool | A | B | C |
+|--:|--:|--:|--:|
+| 0.8M | 12,831 | 14,284 | 14,773 |
+| 1.2M | | | 14,702 |
+| 1.6M | 10,715 | 13,609 | 14,631 |
+| 2.4M | | | 14,488 |
+| 3.2M | | | 14,345 |
+
+HBM per rank per 100K pooled tokens (5.0625 MiB per hot expert): A 1.31,
+B 0.42, C 0.088 GiB, so the skip offload frees 0.89 (57 x 656 B x 25K =
+0.87) and the anchor offload 0.33 (0.32), the latter less the fixed 0.23
+GiB of hot buffers. At A's 12,831 hot: B fits ~2.5M pooled tokens
+(extrapolated); C ~11.7M by HBM, but Grace binds first (node 0 holds 77.2
+GiB at 3.2M, +4.9 GiB per 400K).
+
+Step time, same-node pairs, verify steps at M=16, dec4 windows
+(`ak_pair.py`; `ak_eq.txt`, `ak_buy.txt`, pairs in `ak_pairs.json` /
+`akb_pairs.json`):
+- `launch_eq.sh`, all arms pinned to 12,831 hot, 6 holds (every arm order):
+  rest (span - MoE) y(B) - x(A) +0.40 / +0.36 ms (~5K / ~50K), z(C) - x
+  +0.48 / +0.48, every hold positive (B 0.05-0.57, C 0.27-0.70). Span is
+  noisier (MoE swings +-1.5 ms with the cold experts the traffic touches at
+  an equal hot set): B +0.39 / +0.73, C +0.82 / +0.26.
+- `launch_buy.sh`, own hot sets, 3 holds: span u(B) - x(A) -1.84 / -2.23
+  ms, w(C) - x -2.17 / -2.98 (MoE -2.6 to -3.8, rest +0.64 to +0.91).
+  C - B -0.33 / -0.75, as the ship A/B (-0.57).
+
+Kernel attribution at the equal hot set (`ak_eqdiff.py`, `ak_eqdiff.txt`,
+per step, mean of 6 holds): the stager's side-stream kernels (gather
+0.67 / 1.16 ms, mark + compact + remap 0.25 ms), the anchors' map 0.21 /
+0.24 ms (side stream), a second KV write of the step's tokens into the HBM
+buffers (+57 launches +0.10 ms for B, +78 +0.15 ms for C, main stream), and
+main-stream kernels slowed by contention (FlashMLA combine +33-49 us,
+decode_gemm +25-54 us, one nvjet GEMM +15-42 us). So C's anchor cache does
+cost rest, +0.09 / +0.13 ms over B (5 of 6 holds positive); the ship
+section's "rest within noise of 0" came from fewer pairs.
+
+Two incidents on the way: a JUPITER storage outage (/e/* stale on login and
+compute nodes 11:40-12:32) killed the first launch; the second hit EDQUOT on
+fscratch, our own 8.0M inodes against the project's 8M quota, ~520 per-arm
+cache copies (~20K files each). With the user's OK they were deleted (list
+in /e/fscratch/profound/naeimitabiei1/cache_delete_20261020.txt); the
+launchers now copy the cache once per hold and remove it after.
+
+Write-up: gh200-tiered-moe `glm/kv-offload/` (figures from `plot_kvoff.py`).

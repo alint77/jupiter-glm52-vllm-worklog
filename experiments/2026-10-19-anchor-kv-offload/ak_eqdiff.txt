@@ -1,0 +1,60 @@
+== y - x, window 1, per step
+    +671.3 us ( +630.8 to  +701.3)  x      0.0  launches   +19  _gather_rows_kernel
+    +105.0 us ( +103.2 to  +107.2)  x    146.6  launches   +57  concat_and_cache_ds_mla_kernel
+     +96.4 us (  +94.9 to   +98.5)  x      0.0  launches   +19  _compact_rows_kernel
+     +93.9 us (  +89.5 to  +101.8)  x      0.0  launches   +19  _remap_rows_kernel
+     +62.6 us (  +61.2 to   +63.2)  x      0.0  launches   +19  _mark_rows_kernel
+     +32.6 us (   +9.9 to   +43.7)  x    464.5  launches    +0  flash_fwd_mla_combine_kernel
+     +24.7 us (  +10.3 to   +41.8)  x   3412.3  launches    +0  decode_gemm_kernel
+     +23.6 us ( -132.3 to  +128.5)  x   2000.0  launches    +0  finalize_kernel
+     -20.7 us ( -130.4 to    +6.1)  x    225.0  launches    +0  gather_kernel
+     -20.6 us (  -28.3 to   -18.0)  x    424.4  launches    +0  route_prep_kernel
+     +18.6 us (  +18.2 to   +19.0)  x     19.7  launches   +21  vectorized_elementwise_kernel
+     -17.7 us ( -883.7 to  +551.2)  x  13963.9  launches    +0  layer_kernel
+     +15.0 us (   +9.6 to   +17.9)  x    341.2  launches    +0  nvjet_sm90_tst_64x8_64x16_1x2_h_bz_TNT
+     -14.1 us ( -181.2 to   +28.1)  x    683.9  launches    +0  gather_cat_kernel
+== z - x, window 1, per step
+    +681.4 us ( +652.2 to  +706.3)  x      0.0  launches   +19  _gather_rows_kernel
+    +341.7 us ( -269.9 to +1272.9)  x  13963.9  launches    +0  layer_kernel
+    +207.9 us ( +205.5 to  +212.7)  x      0.0  launches   +21  map_kernel
+    +152.8 us ( +148.3 to  +159.3)  x    146.6  launches   +78  concat_and_cache_ds_mla_kernel
+     +99.1 us (  -25.2 to  +319.4)  x   2000.0  launches    +0  finalize_kernel
+     +96.9 us (  +95.7 to   +98.6)  x      0.0  launches   +19  _compact_rows_kernel
+     +96.4 us (  +87.5 to  +114.0)  x      0.0  launches   +19  _remap_rows_kernel
+     +60.9 us (  +59.7 to   +61.9)  x      0.0  launches   +19  _mark_rows_kernel
+     +41.6 us (  +40.3 to   +42.5)  x    291.8  launches    +0  nvjet_sm90_tst_64x16_64x16_2x1_v_bz_NNT
+     +41.4 us (  +37.8 to   +44.9)  x    464.5  launches    +0  flash_fwd_mla_combine_kernel
+     +34.2 us ( -125.1 to  +158.6)  x   1311.4  launches    +0  allreduce_fusion_kernel_oneshot_lamport
+     +31.8 us (   -2.2 to   +57.8)  x   3412.3  launches    +0  decode_gemm_kernel
+     +20.6 us (  +20.1 to   +21.4)  x     19.7  launches   +23  vectorized_elementwise_kernel
+     +19.1 us ( -129.6 to   +97.3)  x    683.9  launches    +0  gather_cat_kernel
+== y - x, window 2, per step
+   +1158.1 us (+1126.9 to +1199.4)  x      0.0  launches   +19  _gather_rows_kernel
+    +386.5 us ( -919.2 to +1618.7)  x  14599.4  launches    +0  layer_kernel
+    +103.8 us ( +101.9 to  +107.2)  x    145.8  launches   +57  concat_and_cache_ds_mla_kernel
+    +101.0 us (  +94.3 to  +119.3)  x      0.0  launches   +19  _remap_rows_kernel
+     +93.1 us (  +90.8 to   +97.9)  x      0.0  launches   +19  _compact_rows_kernel
+     +72.8 us ( -100.9 to  +283.1)  x   2150.6  launches    +0  finalize_kernel
+     +69.3 us (  +67.5 to   +70.5)  x      0.0  launches   +19  _mark_rows_kernel
+     +41.9 us (  +34.8 to   +45.9)  x   3399.4  launches    +0  decode_gemm_kernel
+     +35.2 us (   +5.6 to   +44.3)  x    457.4  launches    +0  flash_fwd_mla_combine_kernel
+     +23.5 us ( -124.4 to  +127.5)  x   1307.7  launches    +0  allreduce_fusion_kernel_oneshot_lamport
+     -20.4 us ( -125.6 to    +4.1)  x    227.0  launches    +0  gather_kernel
+     +18.6 us (  +18.0 to   +18.9)  x     19.7  launches   +21  vectorized_elementwise_kernel
+     +15.1 us (  +13.3 to   +17.2)  x    341.4  launches    +0  nvjet_sm90_tst_64x8_64x16_1x2_h_bz_TNT
+     +13.8 us ( -159.1 to   +62.2)  x    680.2  launches    +0  gather_cat_kernel
+== z - x, window 2, per step
+   +1234.2 us (+1128.8 to +1410.8)  x      0.0  launches   +19  _gather_rows_kernel
+    +236.4 us ( +234.2 to  +240.0)  x      0.0  launches   +21  map_kernel
+    -202.1 us (-1373.6 to +1452.0)  x  14599.4  launches    +0  layer_kernel
+    +153.4 us ( +149.4 to  +159.3)  x    145.8  launches   +78  concat_and_cache_ds_mla_kernel
+     +95.6 us (  +79.5 to  +110.1)  x      0.0  launches   +19  _remap_rows_kernel
+     +92.9 us (  +91.8 to   +93.7)  x      0.0  launches   +19  _compact_rows_kernel
+     +67.9 us (  +66.9 to   +68.7)  x      0.0  launches   +19  _mark_rows_kernel
+     +64.1 us (  -63.4 to  +163.9)  x    680.2  launches    +0  gather_cat_kernel
+     +53.7 us (  +29.2 to   +72.4)  x   3399.4  launches    +0  decode_gemm_kernel
+     +49.7 us ( -121.3 to  +160.5)  x   1307.7  launches    +0  allreduce_fusion_kernel_oneshot_lamport
+     +49.3 us (  +46.9 to   +51.0)  x    457.4  launches    +0  flash_fwd_mla_combine_kernel
+     +41.7 us (  +39.0 to   +43.0)  x    290.4  launches    +0  nvjet_sm90_tst_64x16_64x16_2x1_v_bz_NNT
+     +23.7 us (  +12.0 to   +58.6)  x    609.8  launches    +0  lse_reduce_scatter_kernel
+     +20.6 us (  +20.1 to   +21.3)  x     19.7  launches   +23  vectorized_elementwise_kernel
