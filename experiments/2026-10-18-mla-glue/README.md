@@ -220,3 +220,33 @@ index-share layers keep the fused write. Glue tests 9 pass (the writes_kv test
 covers the anchor case). Requalification on current prod from
 worktrees/glue-ab2: quality `launch_probe5.sh` (pq5-*, 3 holds, a = glue off,
 g = on) and speed `RUN=mg5 TREE=glue-ab2 launch_ab4.sh` (6 holds).
+
+### Requalified on current prod (2026-10-23, worktrees/glue-ab2 = 569c42871c)
+
+Quality (`launch_probe5.sh`, `probe_pq5.txt`; a = glue off, g = on, 3 holds):
+
+| arm | servers | acc greedy | acc sampled | greedy lp | sampled lp |
+|---|--:|---|---|---|---|
+| glue off | 3 | 2.98-3.06 | 2.81-2.88 | -0.133 .. -0.150 | -0.257 .. -0.318 |
+| glue on | 3 | 3.02-3.09 | 2.76-2.88 | -0.135 .. -0.141 | -0.276 .. -0.344 |
+
+Prompt logprobs g vs a per hold: mean |d| 0.065 / 0.074 / 0.069 (prod vs prod
+0.065). All glue servers captured and served.
+
+Kernels per M=16 verify step (device 0): off 156 `concat_and_cache_ds_mla`;
+on 78 `qkv_glue_kernel` + 42 `concat_and_cache_ds_mla` (21 anchors x main +
+hot cache).
+
+Speed (`RUN=mg5 TREE=glue-ab2 launch_ab4.sh`, `ab_compare_mg5.txt`; g - a on
+the same hold, medians of verify steps; rest = span - MoE):
+
+| kind | M | prod step | rest g-a per hold | mean | span g-a mean |
+|---|--:|--:|---|--:|--:|
+| dec1 ~5K | 4 | 14.1 ms | -0.52, -0.64 | -0.58 | -0.50 |
+| dec1 ~50K | 4 | 14.4-15.5 | -0.56, -0.64 | -0.60 | -0.54 |
+| dec4 ~5K | 16 | 22.0-22.3 | -0.30, -0.33 | -0.31 | -0.34 |
+| dec4 ~50K | 16 | 22.3-22.7 | -0.32, -0.40 | -0.36 | -0.20 |
+| c=4 swarm | 16 | 22.1-23.1 | -0.32, -0.01 | -0.16 | -0.54 |
+
+11 of 12 pairs faster outside MoE (one -0.01). ~4% of the M=4 step, ~1.5% at
+M=16.

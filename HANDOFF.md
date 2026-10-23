@@ -2,7 +2,7 @@
 
 **Latest (2026-10-23): MLA qkv glue fixed, committed off by default**
 (`experiments/2026-10-18-mla-glue/`, vllm tp-sliced-moe bec3187c33 +
-d5e946cc43, not pushed). The glue's decode regression was decode_gemm: nvcc
+d5e946cc43 + 569c42871c, not pushed). The glue's decode regression was decode_gemm: nvcc
 hoisted its `__ldg` activation loads above `griddepcontrol.wait`, so q_b read
 q_c while the glue (which triggers dependents at entry) still wrote it. Fix:
 plain loads in volatile asm after the wait; SASS clean, race test 0 / 19,200
@@ -12,8 +12,10 @@ prod servers. Glue (`VLLM_MLA_QKV_GLUE=1`) is gated to servers whose decode
 steps are <= 16 tokens (c=4 MTP3 and smaller), the user's call. Those probes
 ran on a base without the anchor hot cache; on current prod the glue failed
 FULL capture (it skipped the anchors' hot-cache KV write). 569c42871c leaves
-hot-cache anchors' KV write to the module. Open: requalify on current prod
-(`launch_probe5.sh`, `RUN=mg5 TREE=glue-ab2 launch_ab4.sh`).
+hot-cache anchors' KV write to the module. Requalified on current prod: 3 glue
+servers match 3 glue-off servers (probe), and the verify step outside MoE is
+0.58-0.60 ms faster at M=4 and 0.31-0.36 ms at M=16 (dec4), 11 of 12 same-node
+pairs (README "Requalified"). Still off by default, not pushed.
 
 **Previous (2026-10-20): anchor KV offload shipped** (`experiments/2026-10-19-anchor-kv-offload/`,
 vllm tp-sliced-moe e51272479d, serve.sh `VLLM_ANCHOR_HOT_CACHE=1` for
