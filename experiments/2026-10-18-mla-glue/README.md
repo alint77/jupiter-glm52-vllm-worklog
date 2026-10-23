@@ -64,7 +64,7 @@ Run 3 (`launch_ab3.sh`, glue writes the KV): the first c trace has no
 `concat_and_cache_ds_mla_kernel` at all (`qkv_glue_kernel` 3.8 -> 4.5 us),
 but stopped after one pair: **the glue arms decode worse.**
 
-## Decode quality regression (open)
+## Decode quality regression (fixed 2026-10-23)
 
 MTP acceptance on the dec1 arms: prod 3.43 / 3.14, run-2 b 2.01 / 2.03, run-3
 c 1.64. pf6 and pf7 differ only by glue.diff. Op checks on the login GPU
@@ -111,10 +111,44 @@ sampled 4 x 5K; `probe_summary.txt`):
 The perf numbers above (run 2) measure a path that decodes worse; they are
 not a ship case.
 
+### Root cause: decode_gemm reads x before its PDL wait (2026-10-23)
+
+The source loads activations after `griddepcontrol.wait`, but they use
+`__ldg` (`ld.global.nc`), and nvcc hoists non-coherent loads above the wait:
+in the served `.so` every PDL instantiation issues 2-32
+`LDG.E.128.CONSTANT` x loads before `ACQBULK`. Glue calls
+`launch_dependents` at its entry, so `q_b`'s decode_gemm starts ~1.4 µs
+after glue and reads part of q_c before glue writes it. This fits all of the
+bisection: decode only (prefill uses F.linear); op tests pass (no PDL
+neighbour); qorig and krope put a kernel between glue and `q_b`; nopdl kept
+glue's `launch_dependents` and `q_b`'s PDL launch. Found by reading the code
+without a GPU (subagent + Astra, `astra/race-review.md`); Astra's top
+candidate was storage reuse under PDL.
+
+Fix (`ldx`, worktrees pf12 = pf6 + fix, pf13 = pf9 + fix): x through a
+volatile `ld.global.v4.u32`, which stays below the wait. Weights keep
+`__ldcs` before it.
+
+- SASS: in all 24 PDL instantiations, no load other than the weights'
+  `LDG.E.EF.128` comes before `ACQBULK`.
+- `race_test.py` + `producer.cu` (login GPU, correctness only): the producer
+  triggers dependents at entry and writes x after 20K cycles; a PDL
+  decode_gemm on x is then compared bit for bit with the serialized run, at
+  q_b / qkv_a, M = 4/8/16/32, all 6 configs, eager and graph. Old: 9,582 of
+  9,600 runs differ. Fixed: 0.
+- Other PDL consumers, same SASS check: sliced decode `layer_kernel` /
+  `route_prep` / `finalize` and the glue kernel load nothing before their
+  wait. `tiered_prefill` `gemm_xres_kernel` has 1, by design: only its tail
+  CTA waits.
+- Prod has the same hoist. Its fused_qkv_a decode_gemm follows the
+  allreduce-fusion kernel with PDL; whether prod reads early depends on
+  where that kernel triggers. The served probes (`launch_dgfix.sh`) test it.
+
 ## Astra (`astra/integration-review.md`, on design 1)
 
-- P1 PDL: resolved, decode_gemm reads activations after its wait
-  (`decode_gemm.cu:69-71`); cuBLAS consumers do not take part.
+- P1 PDL: marked resolved because decode_gemm's source reads activations
+  after its wait (`decode_gemm.cu:69-71`). Wrong: the SASS hoists them
+  above it (root cause above). cuBLAS consumers do not take part.
 - P1 splitting registration: moot after design 1.
 - P2 eligibility: `supported()` requires `FlashMLASparseImpl`, the exact
   RotaryEmbedding / RMSNorm types and dims, fp8_ds_mla.
@@ -123,3 +157,44 @@ not a ship case.
 
 The vLLM code (`glue.diff`: mla_glue/, mla.py, mla_attention.py, envs.py,
 the test) stays uncommitted in the main tree, off by default.
+
+### Scope gate (2026-10-23)
+
+The user: glue only where it is tested extensively. `supported()` now also
+requires the server's largest decode step, max_num_seqs x (1 + speculative
+tokens), to be <= 16 (`MAX_DECODE_TOKENS`): the c=4 MTP3 config (4 x 4) and
+smaller. c=8 (32) and c=16 (64) keep the module path. The gate is per server
+because a token-count branch in the forward would be traced once by
+torch.compile, not evaluated per step. Main tree only (uncommitted), along
+with the decode_gemm fix; the probe worktrees pf12 / pf13 are unchanged.
+
+Kernel time, old / new / clob (`bench_dgfix.py`, Booster hold 2473004, GPU 0
+NUMA-bound, L2 flushed, 2 runs x 5 alternations x median of 50; the five
+served shapes at M = 4..32 with decode_gemm.config's pick, PDL on and off):
+every new - old and clob - old is within -0.31 .. +0.31 us on 8-29 us
+kernels, no sign either way (`bench_dgfix-2473004.jsonl`). The clobber
+(Astra's hardening) costs nothing, so the main tree takes `clob.cu`; the
+probe worktrees run `new.cu` (same SASS ordering, both 0 in race_test).
+
+### Served check of the fix (`launch_dgfix.sh`, `probe_dgfix.txt`)
+
+probe.py at the c=4 config, 4 holds (2471698, 2472833-35), 2 servers each:
+p = prod (pf6), q = prod + fix (pf12), f = glue + fix (pf13).
+
+| arm | servers | acc greedy | acc sampled | greedy lp | sampled lp |
+|---|--:|---|---|---|---|
+| prod | 3 | 3.03-3.13 | 2.83-2.94 | -0.121 .. -0.131 | -0.256 .. -0.341 |
+| prod + fix | 2 | 3.07-3.10 | 2.89-2.99 | -0.131 .. -0.137 | -0.270 .. -0.280 |
+| glue + fix | 3 | 3.06-3.12 | 2.87-2.97 | -0.125 .. -0.129 | -0.259 .. -0.291 |
+| glue, unfixed (above) | 4 | 3.00-3.17 | 2.48-2.66 | -0.171 .. -0.210 | -0.546 .. -0.600 |
+
+The fix restores glue to prod. Prompt logprobs glue + fix vs prod on one hold:
+mean |d| 0.066 (prod vs prod 0.065). Prod + fix stays within prod's spread, so
+prod's own hoisted loads (fused_qkv_a after the allreduce-fusion kernel) did
+not show in output.
+
+Committed (vllm, local, not pushed): bec3187c33 decode_gemm fix with
+`test_pdl_reads_x_after_wait` in tests/kernels/test_decode_gemm.py (fails 4/4
+on the old kernel, passes on the fix); d5e946cc43 glue, off by default, with the
+<= 16 decode-token server gate. Speed: run 4 (`launch_ab4.sh`, worktrees/glue-ab
+= d5e946cc43, glue off vs on, dec1 / dec4 / tlnsys, ABBA on 6 holds).

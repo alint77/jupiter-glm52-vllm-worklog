@@ -6,7 +6,7 @@ calls; span - MoE is the part the glue can move (MoE swings with the cold
 experts the traffic touches). Grouped by kind, window (dec arms: 1 = ~5K, 2 = ~50K context) and M;
 medians per arm, then b - a per hold and the mean over holds.
 
-    ab_compare.py [run (mg2 = a vs b, mg3 = a vs c)] [sliced-prof root]
+    ab_compare.py [run (mg2 = a vs b, mg3 = a vs c, mg4 = a vs g)] [sliced-prof root]
 """
 import collections
 import sqlite3
@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 
 run = sys.argv[1] if len(sys.argv) > 1 else "mg2"
-B = {"mg2": "b", "mg3": "c"}[run]
+B = {"mg2": "b", "mg3": "c", "mg4": "g"}[run]
 root = Path(sys.argv[2] if len(sys.argv) > 2 else "/e/fscratch/profound/naeimitabiei1/sliced-prof")
 
 

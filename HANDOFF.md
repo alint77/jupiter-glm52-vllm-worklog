@@ -1,6 +1,18 @@
 # GLM-5.2 on JUPITER: agent handoff
 
-**Latest (2026-10-20): anchor KV offload shipped** (`experiments/2026-10-19-anchor-kv-offload/`,
+**Latest (2026-10-23): MLA qkv glue fixed, committed off by default**
+(`experiments/2026-10-18-mla-glue/`, vllm tp-sliced-moe bec3187c33 +
+d5e946cc43, not pushed). The glue's decode regression was decode_gemm: nvcc
+hoisted its `__ldg` activation loads above `griddepcontrol.wait`, so q_b read
+q_c while the glue (which triggers dependents at entry) still wrote it. Fix:
+plain loads in volatile asm after the wait; SASS clean, race test 0 / 19,200
+(old 9,582 / 9,600), kernel time unchanged, regression test in
+tests/kernels/test_decode_gemm.py. Served probes: 3 glue + fix servers match 3
+prod servers. Glue (`VLLM_MLA_QKV_GLUE=1`) is gated to servers whose decode
+steps are <= 16 tokens (c=4 MTP3 and smaller), the user's call. Open: speed
+A/B on current prod (`launch_ab4.sh`, run mg4).
+
+**Previous (2026-10-20): anchor KV offload shipped** (`experiments/2026-10-19-anchor-kv-offload/`,
 vllm tp-sliced-moe e51272479d, serve.sh `VLLM_ANCHOR_HOT_CACHE=1` for
 skip_host_uva + DCP). The 21 anchors' main KV moves to Grace behind a
 per-layer HBM hot cache (one cooperative map kernel per anchor on a side

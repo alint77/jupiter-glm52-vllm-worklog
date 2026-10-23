@@ -1,0 +1,72 @@
+{"shape": "o_proj", "m": 4, "cfg": [4, 4], "pdl": true, "old_us": 18.85, "new_us": 18.7, "clob_us": 18.69}
+{"shape": "o_proj", "m": 4, "cfg": [4, 4], "pdl": false, "old_us": 18.11, "new_us": 18.1, "clob_us": 18.08}
+{"shape": "o_proj", "m": 8, "cfg": [4, 4], "pdl": true, "old_us": 18.35, "new_us": 18.24, "clob_us": 18.78}
+{"shape": "o_proj", "m": 8, "cfg": [4, 4], "pdl": false, "old_us": 18.18, "new_us": 18.24, "clob_us": 18.21}
+{"shape": "o_proj", "m": 16, "cfg": [4, 4], "pdl": true, "old_us": 18.66, "new_us": 19.3, "clob_us": 18.51}
+{"shape": "o_proj", "m": 16, "cfg": [4, 4], "pdl": false, "old_us": 18.46, "new_us": 18.45, "clob_us": 18.45}
+{"shape": "o_proj", "m": 32, "cfg": [2, 4], "pdl": true, "old_us": 20.66, "new_us": 20.56, "clob_us": 20.61}
+{"shape": "o_proj", "m": 32, "cfg": [2, 4], "pdl": false, "old_us": 20.77, "new_us": 20.74, "clob_us": 20.7}
+{"shape": "fused_qkv_a", "m": 4, "cfg": [4, 4], "pdl": true, "old_us": 13.79, "new_us": 13.66, "clob_us": 13.63}
+{"shape": "fused_qkv_a", "m": 4, "cfg": [4, 4], "pdl": false, "old_us": 13.76, "new_us": 13.76, "clob_us": 13.79}
+{"shape": "fused_qkv_a", "m": 8, "cfg": [4, 4], "pdl": true, "old_us": 13.92, "new_us": 13.84, "clob_us": 13.82}
+{"shape": "fused_qkv_a", "m": 8, "cfg": [4, 4], "pdl": false, "old_us": 13.9, "new_us": 13.89, "clob_us": 13.89}
+{"shape": "fused_qkv_a", "m": 16, "cfg": [4, 4], "pdl": true, "old_us": 14.45, "new_us": 14.5, "clob_us": 14.49}
+{"shape": "fused_qkv_a", "m": 16, "cfg": [4, 4], "pdl": false, "old_us": 14.54, "new_us": 14.58, "clob_us": 14.56}
+{"shape": "q_b", "m": 4, "cfg": [2, 8], "pdl": true, "old_us": 8.45, "new_us": 8.38, "clob_us": 8.45}
+{"shape": "q_b", "m": 4, "cfg": [2, 8], "pdl": false, "old_us": 8.43, "new_us": 8.42, "clob_us": 8.42}
+{"shape": "q_b", "m": 8, "cfg": [2, 8], "pdl": true, "old_us": 8.5, "new_us": 8.56, "clob_us": 8.54}
+{"shape": "q_b", "m": 8, "cfg": [2, 8], "pdl": false, "old_us": 8.48, "new_us": 8.46, "clob_us": 8.45}
+{"shape": "q_b", "m": 16, "cfg": [2, 4], "pdl": true, "old_us": 9.31, "new_us": 9.12, "clob_us": 9.15}
+{"shape": "q_b", "m": 16, "cfg": [2, 4], "pdl": false, "old_us": 9.25, "new_us": 9.28, "clob_us": 9.26}
+{"shape": "dense gate_up", "m": 4, "cfg": [2, 8], "pdl": true, "old_us": 26.3, "new_us": 26.3, "clob_us": 26.35}
+{"shape": "dense gate_up", "m": 4, "cfg": [2, 8], "pdl": false, "old_us": 26.29, "new_us": 26.32, "clob_us": 26.32}
+{"shape": "dense gate_up", "m": 8, "cfg": [2, 8], "pdl": true, "old_us": 26.54, "new_us": 26.43, "clob_us": 26.42}
+{"shape": "dense gate_up", "m": 8, "cfg": [2, 8], "pdl": false, "old_us": 26.61, "new_us": 26.59, "clob_us": 26.61}
+{"shape": "dense gate_up", "m": 16, "cfg": [2, 4], "pdl": true, "old_us": 27.31, "new_us": 27.14, "clob_us": 27.12}
+{"shape": "dense gate_up", "m": 16, "cfg": [2, 4], "pdl": false, "old_us": 27.18, "new_us": 27.17, "clob_us": 27.2}
+{"shape": "dense gate_up", "m": 32, "cfg": [2, 4], "pdl": true, "old_us": 29.31, "new_us": 29.28, "clob_us": 29.23}
+{"shape": "dense gate_up", "m": 32, "cfg": [2, 4], "pdl": false, "old_us": 29.33, "new_us": 29.39, "clob_us": 29.28}
+{"shape": "dense down", "m": 4, "cfg": [2, 4], "pdl": true, "old_us": 15.2, "new_us": 15.12, "clob_us": 15.15}
+{"shape": "dense down", "m": 4, "cfg": [2, 4], "pdl": false, "old_us": 15.2, "new_us": 15.2, "clob_us": 15.17}
+{"shape": "dense down", "m": 8, "cfg": [2, 4], "pdl": true, "old_us": 15.34, "new_us": 15.26, "clob_us": 15.26}
+{"shape": "dense down", "m": 8, "cfg": [2, 4], "pdl": false, "old_us": 15.41, "new_us": 15.36, "clob_us": 15.39}
+{"shape": "dense down", "m": 16, "cfg": [2, 4], "pdl": true, "old_us": 15.55, "new_us": 15.49, "clob_us": 15.49}
+{"shape": "dense down", "m": 16, "cfg": [2, 4], "pdl": false, "old_us": 15.65, "new_us": 15.66, "clob_us": 15.68}
+{"shape": "dense down", "m": 32, "cfg": [2, 4], "pdl": true, "old_us": 17.01, "new_us": 16.93, "clob_us": 16.88}
+{"shape": "dense down", "m": 32, "cfg": [2, 4], "pdl": false, "old_us": 17.57, "new_us": 16.93, "clob_us": 16.99}
+{"shape": "o_proj", "m": 4, "cfg": [4, 4], "pdl": true, "old_us": 18.14, "new_us": 18.82, "clob_us": 18.11}
+{"shape": "o_proj", "m": 4, "cfg": [4, 4], "pdl": false, "old_us": 18.18, "new_us": 18.14, "clob_us": 18.13}
+{"shape": "o_proj", "m": 8, "cfg": [4, 4], "pdl": true, "old_us": 18.26, "new_us": 18.18, "clob_us": 18.14}
+{"shape": "o_proj", "m": 8, "cfg": [4, 4], "pdl": false, "old_us": 18.22, "new_us": 18.21, "clob_us": 18.24}
+{"shape": "o_proj", "m": 16, "cfg": [4, 4], "pdl": true, "old_us": 18.58, "new_us": 18.56, "clob_us": 18.53}
+{"shape": "o_proj", "m": 16, "cfg": [4, 4], "pdl": false, "old_us": 18.64, "new_us": 18.61, "clob_us": 18.62}
+{"shape": "o_proj", "m": 32, "cfg": [2, 4], "pdl": true, "old_us": 20.53, "new_us": 20.38, "clob_us": 20.45}
+{"shape": "o_proj", "m": 32, "cfg": [2, 4], "pdl": false, "old_us": 20.53, "new_us": 20.51, "clob_us": 20.51}
+{"shape": "fused_qkv_a", "m": 4, "cfg": [4, 4], "pdl": true, "old_us": 13.76, "new_us": 13.78, "clob_us": 13.78}
+{"shape": "fused_qkv_a", "m": 4, "cfg": [4, 4], "pdl": false, "old_us": 13.76, "new_us": 13.81, "clob_us": 13.76}
+{"shape": "fused_qkv_a", "m": 8, "cfg": [4, 4], "pdl": true, "old_us": 13.87, "new_us": 13.86, "clob_us": 13.89}
+{"shape": "fused_qkv_a", "m": 8, "cfg": [4, 4], "pdl": false, "old_us": 13.82, "new_us": 13.92, "clob_us": 13.86}
+{"shape": "fused_qkv_a", "m": 16, "cfg": [4, 4], "pdl": true, "old_us": 14.53, "new_us": 14.54, "clob_us": 14.53}
+{"shape": "fused_qkv_a", "m": 16, "cfg": [4, 4], "pdl": false, "old_us": 14.67, "new_us": 14.66, "clob_us": 14.7}
+{"shape": "q_b", "m": 4, "cfg": [2, 8], "pdl": true, "old_us": 8.38, "new_us": 8.42, "clob_us": 8.4}
+{"shape": "q_b", "m": 4, "cfg": [2, 8], "pdl": false, "old_us": 8.35, "new_us": 8.35, "clob_us": 8.38}
+{"shape": "q_b", "m": 8, "cfg": [2, 8], "pdl": true, "old_us": 8.45, "new_us": 8.4, "clob_us": 8.38}
+{"shape": "q_b", "m": 8, "cfg": [2, 8], "pdl": false, "old_us": 8.35, "new_us": 8.34, "clob_us": 8.35}
+{"shape": "q_b", "m": 16, "cfg": [2, 4], "pdl": true, "old_us": 9.38, "new_us": 8.96, "clob_us": 8.96}
+{"shape": "q_b", "m": 16, "cfg": [2, 4], "pdl": false, "old_us": 9.09, "new_us": 9.07, "clob_us": 9.09}
+{"shape": "dense gate_up", "m": 4, "cfg": [2, 8], "pdl": true, "old_us": 26.43, "new_us": 26.46, "clob_us": 26.42}
+{"shape": "dense gate_up", "m": 4, "cfg": [2, 8], "pdl": false, "old_us": 26.41, "new_us": 26.45, "clob_us": 26.42}
+{"shape": "dense gate_up", "m": 8, "cfg": [2, 8], "pdl": true, "old_us": 26.58, "new_us": 26.46, "clob_us": 26.48}
+{"shape": "dense gate_up", "m": 8, "cfg": [2, 8], "pdl": false, "old_us": 26.67, "new_us": 26.64, "clob_us": 26.69}
+{"shape": "dense gate_up", "m": 16, "cfg": [2, 4], "pdl": true, "old_us": 27.09, "new_us": 26.98, "clob_us": 27.04}
+{"shape": "dense gate_up", "m": 16, "cfg": [2, 4], "pdl": false, "old_us": 27.12, "new_us": 27.09, "clob_us": 27.07}
+{"shape": "dense gate_up", "m": 32, "cfg": [2, 4], "pdl": true, "old_us": 28.94, "new_us": 28.83, "clob_us": 28.89}
+{"shape": "dense gate_up", "m": 32, "cfg": [2, 4], "pdl": false, "old_us": 28.85, "new_us": 28.88, "clob_us": 28.89}
+{"shape": "dense down", "m": 4, "cfg": [2, 4], "pdl": true, "old_us": 15.44, "new_us": 15.36, "clob_us": 15.42}
+{"shape": "dense down", "m": 4, "cfg": [2, 4], "pdl": false, "old_us": 15.49, "new_us": 15.49, "clob_us": 15.49}
+{"shape": "dense down", "m": 8, "cfg": [2, 4], "pdl": true, "old_us": 15.36, "new_us": 15.29, "clob_us": 15.39}
+{"shape": "dense down", "m": 8, "cfg": [2, 4], "pdl": false, "old_us": 15.41, "new_us": 15.39, "clob_us": 15.39}
+{"shape": "dense down", "m": 16, "cfg": [2, 4], "pdl": true, "old_us": 16.02, "new_us": 15.65, "clob_us": 15.65}
+{"shape": "dense down", "m": 16, "cfg": [2, 4], "pdl": false, "old_us": 15.89, "new_us": 15.84, "clob_us": 15.84}
+{"shape": "dense down", "m": 32, "cfg": [2, 4], "pdl": true, "old_us": 17.04, "new_us": 16.93, "clob_us": 17.02}
+{"shape": "dense down", "m": 32, "cfg": [2, 4], "pdl": false, "old_us": 17.01, "new_us": 17.1, "clob_us": 17.06}
