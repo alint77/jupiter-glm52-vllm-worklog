@@ -198,3 +198,25 @@ Committed (vllm, local, not pushed): bec3187c33 decode_gemm fix with
 on the old kernel, passes on the fix); d5e946cc43 glue, off by default, with the
 <= 16 decode-token server gate. Speed: run 4 (`launch_ab4.sh`, worktrees/glue-ab
 = d5e946cc43, glue off vs on, dec1 / dec4 / tlnsys, ABBA on 6 holds).
+
+### Run 4: glue does not start on current prod (2026-10-23)
+
+All three glue-on arms (`mg4g-*`, worktrees/glue-ab = d5e946cc43) died in
+FULL graph capture: `AssertionError: anchor hot cache map without its KV
+write` (anchor_hot_cache.py:158), then "capturing stream has unjoined work".
+The anchor hot cache (e9d65055e3..e51272479d, on by default in serve.sh) came
+after the probe base (pf6 = 65d9b56fb1): on anchor layers
+`do_kv_cache_update` also writes the step's tokens into the hot cache's
+reserved rows and arms `expect_map`. The glue writes the main cache and the
+skip-KV rows, then skips `do_kv_cache_update`, so the anchor's map finds no
+write. So the probes validated glue on a base without the anchor hot cache,
+and the committed glue is broken on current prod (it fails loudly, at
+capture). The glue-off arms ran (nsys reps not exported).
+
+Fix (option 1, the user's pick): vllm 569c42871c. `writes_kv(impl)` is false on
+hot-cache anchors (`impl._hot_anchor`), so there the glue only normalizes and
+rotates and `do_kv_cache_update` writes main + hot cache as in prod; the 57
+index-share layers keep the fused write. Glue tests 9 pass (the writes_kv test
+covers the anchor case). Requalification on current prod from
+worktrees/glue-ab2: quality `launch_probe5.sh` (pq5-*, 3 holds, a = glue off,
+g = on) and speed `RUN=mg5 TREE=glue-ab2 launch_ab4.sh` (6 holds).

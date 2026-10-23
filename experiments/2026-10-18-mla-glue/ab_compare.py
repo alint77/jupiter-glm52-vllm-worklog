@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 
 run = sys.argv[1] if len(sys.argv) > 1 else "mg2"
-B = {"mg2": "b", "mg3": "c", "mg4": "g"}[run]
+B = {"mg2": "b", "mg3": "c", "mg4": "g", "mg5": "g"}[run]
 root = Path(sys.argv[2] if len(sys.argv) > 2 else "/e/fscratch/profound/naeimitabiei1/sliced-prof")
 
 

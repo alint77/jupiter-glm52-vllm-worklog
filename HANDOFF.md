@@ -9,8 +9,11 @@ plain loads in volatile asm after the wait; SASS clean, race test 0 / 19,200
 (old 9,582 / 9,600), kernel time unchanged, regression test in
 tests/kernels/test_decode_gemm.py. Served probes: 3 glue + fix servers match 3
 prod servers. Glue (`VLLM_MLA_QKV_GLUE=1`) is gated to servers whose decode
-steps are <= 16 tokens (c=4 MTP3 and smaller), the user's call. Open: speed
-A/B on current prod (`launch_ab4.sh`, run mg4).
+steps are <= 16 tokens (c=4 MTP3 and smaller), the user's call. Those probes
+ran on a base without the anchor hot cache; on current prod the glue failed
+FULL capture (it skipped the anchors' hot-cache KV write). 569c42871c leaves
+hot-cache anchors' KV write to the module. Open: requalify on current prod
+(`launch_probe5.sh`, `RUN=mg5 TREE=glue-ab2 launch_ab4.sh`).
 
 **Previous (2026-10-20): anchor KV offload shipped** (`experiments/2026-10-19-anchor-kv-offload/`,
 vllm tp-sliced-moe e51272479d, serve.sh `VLLM_ANCHOR_HOT_CACHE=1` for
