@@ -56,6 +56,8 @@ Run h1 places the arms in a ring over four holds, so every arm runs on two nodes
 
 Outputs go to `/e/fscratch/profound/naeimitabiei1/sliced-prof/h1-<arm>-<hold>/`.
 
+The worktree also carries the main tree's ignored build artifacts (`git status --ignored vllm`: the `.so` extensions, `vllm_flash_attn/{cute,layers,ops}`, `third_party/*`), copied in. MTP arms never import FlashAttention, but the DFlash2 drafter does. Without them the first smoke test (hold 2492777) failed with `vllm.vllm_flash_attn requires the CUDA flash attention extensions`.
+
 ## Results
 
 (pending)
