@@ -1,0 +1,65 @@
+
+== S2: predecessor -> successor (start order), median over 332 graphs x layers
+     gap    p10    p90 pred dur  edge
+   -0.26  -0.48   0.19     9.47  allreduce_fusion_kernel_oneshot_la -> decode_gemm_kernel
+   -0.77  -0.99  -0.32    14.21  decode_gemm_kernel -> qkv_glue_kernel
+   -3.17  -3.58  -2.59     4.06  qkv_glue_kernel -> decode_gemm_kernel
+    0.19   0.10   0.48    10.66  decode_gemm_kernel -> triton_poi_fused_add_copy_index_se
+    0.16   0.10   0.48     1.60  triton_poi_fused_add_copy_index_se -> nvjet_sm90_tst_64x16_64x16_2x1_v_b
+    0.16   0.10   0.45     3.84  nvjet_sm90_tst_64x16_64x16_2x1_v_b -> gather_cat_kernel
+    0.16   0.10   0.48     9.02  gather_cat_kernel -> flash_fwd_splitkv_mla_fp8_sparse_k
+   -3.36  -3.65  -3.04    14.02  flash_fwd_splitkv_mla_fp8_sparse_k -> flash_fwd_mla_combine_kernel
+    0.35   0.10   0.45     6.53  flash_fwd_mla_combine_kernel -> lse_reduce_scatter_kernel
+    0.16   0.10   0.48     7.94  lse_reduce_scatter_kernel -> nvjet_sm90_tst_64x8_64x16_1x2_h_bz
+   -0.13  -0.19   0.19     4.45  nvjet_sm90_tst_64x8_64x16_1x2_h_bz -> decode_gemm_kernel
+   -0.74  -0.86  -0.29    17.89  decode_gemm_kernel -> allreduce_fusion_kernel_oneshot_la
+   -0.13  -0.32   0.19     7.39  allreduce_fusion_kernel_oneshot_la -> cute:linearcute_dsl_ll_bf16_splitk
+   -0.26  -0.32   0.03     3.97  cute:linearcute_dsl_ll_bf16_splitk -> grouped_topk_fused_small_expert_co
+   -1.66  -1.76  -1.38     4.10  grouped_topk_fused_small_expert_co -> route_prep_kernel
+   -3.55  -3.71  -3.17     5.57  route_prep_kernel -> layer_kernel
+   -6.02 -32.03  -3.65   139.65  layer_kernel -> finalize_kernel
+   -0.06  -0.29   0.26     8.67  finalize_kernel -> allreduce_fusion_kernel_oneshot_la
+
+== A: predecessor -> successor (start order), median over 332 graphs x layers
+     gap    p10    p90 pred dur  edge
+   -0.35  -0.54  -0.26     9.65  allreduce_fusion_kernel_oneshot_la -> decode_gemm_kernel
+   -0.90  -1.06  -0.74    14.27  decode_gemm_kernel -> qkv_glue_kernel
+   -2.69  -3.04  -2.50     3.52  qkv_glue_kernel -> decode_gemm_kernel
+    0.13   0.10   0.19    10.27  decode_gemm_kernel -> triton_poi_fused_add_copy_index_se
+    0.13   0.10   0.16     1.60  triton_poi_fused_add_copy_index_se -> nvjet_sm90_tst_64x16_64x16_4x1_v_b
+   -0.19  -0.26  -0.16     5.12  nvjet_sm90_tst_64x16_64x16_4x1_v_b -> splitKreduce_kernel
+    0.13   0.06   0.16     1.70  splitKreduce_kernel -> triton_per_fused__to_copy_native_l
+   -0.19  -0.26  -0.13     1.73  triton_per_fused__to_copy_native_l -> decode_gemm_kernel
+    0.13   0.10   0.16     8.35  decode_gemm_kernel -> _fused_indexer_q_rope_quant_kernel
+    0.10   0.06   0.13     1.89  _fused_indexer_q_rope_quant_kernel -> triton_poi_fused_2
+    0.10   0.06   0.13     1.28  triton_poi_fused_2 -> indexer_k_quant_and_cache_kernel
+    0.10   0.06   0.16     2.05  indexer_k_quant_and_cache_kernel -> vectorized_elementwise_kernel
+   -0.13  -0.22  -0.10     0.96  vectorized_elementwise_kernel -> sm90_fp8_paged_mqa_logits
+    0.19   0.16   0.22     6.66  sm90_fp8_paged_mqa_logits -> cooperative_topk_cs4
+    0.13   0.06   0.16    13.18  cooperative_topk_cs4 -> _pack_dcp_topk_candidates_triton_k
+    0.10   0.06   0.16     1.66  _pack_dcp_topk_candidates_triton_k -> gather_kernel
+    0.10   0.06   0.13    10.18  gather_kernel -> cute:attentiondsadcp_indexer_cuted
+    0.10   0.06   0.16    14.98  cute:attentiondsadcp_indexer_cuted -> concat_and_cache_ds_mla_kernel
+    0.10   0.06   0.16     2.30  concat_and_cache_ds_mla_kernel -> concat_and_cache_ds_mla_kernel
+    0.10   0.06   0.13     1.82  concat_and_cache_ds_mla_kernel -> _convert_req_index_to_global_index
+   -4.19  -4.38  -4.00     4.54  _convert_req_index_to_global_index -> nvjet_sm90_tst_64x16_64x16_2x1_v_b
+   -1.15  -1.44  -0.96     5.44  nvjet_sm90_tst_64x16_64x16_2x1_v_b -> _dcp_decode_sched_kernel
+   -0.45  -0.70  -0.22     2.05  _dcp_decode_sched_kernel -> gather_cat_kernel
+   -8.22  -9.79  -7.62     8.83  gather_cat_kernel -> map_kernel
+    0.13   0.10   0.16    11.17  map_kernel -> flash_fwd_splitkv_mla_fp8_sparse_k
+   -3.36  -3.49  -3.23    13.50  flash_fwd_splitkv_mla_fp8_sparse_k -> flash_fwd_mla_combine_kernel
+    0.13   0.10   0.26     6.62  flash_fwd_mla_combine_kernel -> vectorized_elementwise_kernel
+   -0.58  -0.70  -0.48     0.90  vectorized_elementwise_kernel -> lse_reduce_scatter_kernel
+   -7.94 -10.21  -6.88     8.67  lse_reduce_scatter_kernel -> _mark_rows_kernel
+    0.10   0.00   0.16     3.55  _mark_rows_kernel -> _compact_rows_kernel
+   -0.77  -1.66   0.22     4.90  _compact_rows_kernel -> nvjet_sm90_tst_64x8_64x16_1x2_h_bz
+   -4.13  -4.64  -3.33     5.02  nvjet_sm90_tst_64x8_64x16_1x2_h_bz -> _remap_rows_kernel
+   -0.96  -4.99  -0.32     5.12  _remap_rows_kernel -> decode_gemm_kernel
+  -17.55 -18.88 -12.26    18.62  decode_gemm_kernel -> _gather_rows_kernel
+  -43.52 -60.70 -25.15    59.26  _gather_rows_kernel -> allreduce_fusion_kernel_oneshot_la
+    0.16  -0.16   0.26     8.13  allreduce_fusion_kernel_oneshot_la -> cute:linearcute_dsl_ll_bf16_splitk
+    0.00  -0.29   0.13     4.42  cute:linearcute_dsl_ll_bf16_splitk -> grouped_topk_fused_small_expert_co
+   -1.41  -1.86  -1.34     4.16  grouped_topk_fused_small_expert_co -> route_prep_kernel
+   -3.23  -3.58  -3.10     5.31  route_prep_kernel -> layer_kernel
+   -7.01 -35.07  -3.74   141.79  layer_kernel -> finalize_kernel
+   -0.06  -0.29   0.26     9.63  finalize_kernel -> allreduce_fusion_kernel_oneshot_la

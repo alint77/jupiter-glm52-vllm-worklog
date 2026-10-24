@@ -1,0 +1,34 @@
+
+agent_space/experiments/2026-10-24-verify-cycle/an/cycle-2489367-w2.json: cycle wall 1131 us, sum of medians 1106, step 22.36 ms
+    560.9 us   50.7%  x18 = 10.10 ms  MoE (layer_kernel + finalize)
+     99.0 us    8.9%  x18 =  1.78 ms  qkv_a GEMM + glue + q_b GEMM
+     91.8 us    8.3%  x18 =  1.65 ms  W_UV bmm + o_proj GEMM
+     68.9 us    6.2%  x18 =  1.24 ms  FlashMLA + combine
+     65.3 us    5.9%  x18 =  1.18 ms  all-reduce + RMSNorm (x2)
+     47.3 us    4.3%  x18 =  0.85 ms  MoE head: router GEMM + topk + route_prep
+     47.0 us    4.3%  x18 =  0.85 ms  indexer logits + top-k + DCP merge
+     35.8 us    3.2%  x18 =  0.65 ms  DCP q gather (gather_cat)
+     32.7 us    3.0%  x18 =  0.59 ms  DCP LSE reduce-scatter
+     20.4 us    1.8%  x18 =  0.37 ms  q RoPE (Inductor) + W_UK bmm
+     11.8 us    1.1%  x18 =  0.21 ms  indexer k branch (wk, LN, k quant/cache)
+     11.6 us    1.0%  x18 =  0.21 ms  indexer q branch (wq_b, q rope/quant)
+      9.5 us    0.9%  x18 =  0.17 ms  anchor index convert + hot-cache map (anchor_hot.cu)
+      4.3 us    0.4%  x18 =  0.08 ms  anchor main-KV writes (2x concat_and_cache)
+      0.0 us    0.0%  x18 =  0.00 ms  other
+
+agent_space/experiments/2026-10-24-verify-cycle/an/cycle-2489367-w1.json: cycle wall 1125 us, sum of medians 1102, step 21.98 ms
+    557.6 us   50.6%  x18 = 10.04 ms  MoE (layer_kernel + finalize)
+    101.1 us    9.2%  x18 =  1.82 ms  qkv_a GEMM + glue + q_b GEMM
+     92.7 us    8.4%  x18 =  1.67 ms  W_UV bmm + o_proj GEMM
+     70.1 us    6.4%  x18 =  1.26 ms  FlashMLA + combine
+     69.4 us    6.3%  x18 =  1.25 ms  all-reduce + RMSNorm (x2)
+     48.6 us    4.4%  x18 =  0.88 ms  MoE head: router GEMM + topk + route_prep
+     37.0 us    3.4%  x18 =  0.67 ms  DCP q gather (gather_cat)
+     33.9 us    3.1%  x18 =  0.61 ms  DCP LSE reduce-scatter
+     32.8 us    3.0%  x18 =  0.59 ms  indexer logits + top-k + DCP merge
+     22.4 us    2.0%  x18 =  0.40 ms  q RoPE (Inductor) + W_UK bmm
+     12.0 us    1.1%  x18 =  0.22 ms  indexer k branch (wk, LN, k quant/cache)
+     11.7 us    1.1%  x18 =  0.21 ms  indexer q branch (wq_b, q rope/quant)
+      8.4 us    0.8%  x18 =  0.15 ms  anchor index convert + hot-cache map (anchor_hot.cu)
+      4.2 us    0.4%  x18 =  0.08 ms  anchor main-KV writes (2x concat_and_cache)
+      0.0 us    0.0%  x18 =  0.00 ms  other
