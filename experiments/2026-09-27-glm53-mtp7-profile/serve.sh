@@ -45,7 +45,8 @@ SPEC="${SPEC:-dflash2}"
 SPEC_K="${SPEC_K:-7}"
 verify=$((SPEC_K + 1))
 if [[ "${SPEC}" == dflash2 ]]; then
-  drafter=/e/fscratch/profound/${USER}/models/GLM-5.3-DFlash2
+  # DRAFTER: another DFlash2 head (2026-10-24-dflash2-heads)
+  drafter=${DRAFTER:-/e/fscratch/profound/${USER}/models/GLM-5.3-DFlash2}
   # Drafter KV and weights in fp8 (2026-10-06-skip-layer-kv-grace): acceptance
   # unchanged on the agentic set; frees 1.15 GiB (KV) + 0.64 GB (weights) per
   # rank for hot experts. DRAFT_KV_DTYPE=auto / DRAFT_QUANT= restore bf16.
