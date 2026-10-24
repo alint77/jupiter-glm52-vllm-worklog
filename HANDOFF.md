@@ -15,7 +15,9 @@ FULL capture (it skipped the anchors' hot-cache KV write). 569c42871c leaves
 hot-cache anchors' KV write to the module. Requalified on current prod: 3 glue
 servers match 3 glue-off servers (probe), and the verify step outside MoE is
 0.58-0.60 ms faster at M=4 and 0.31-0.36 ms at M=16 (dec4), 11 of 12 same-node
-pairs (README "Requalified"). Still off by default, not pushed.
+pairs (README "Requalified"). On in prod since 2026-10-24: the c=4 launcher
+(claude-glm53-sliced-mtp3-c4.sh, vllm 23d2796ed5) sets
+VLLM_MLA_QKV_GLUE=1; vllm default and other launchers off. Not pushed.
 
 **Previous (2026-10-20): anchor KV offload shipped** (`experiments/2026-10-19-anchor-kv-offload/`,
 vllm tp-sliced-moe e51272479d, serve.sh `VLLM_ANCHOR_HOT_CACHE=1` for
