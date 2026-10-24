@@ -58,7 +58,7 @@ Outputs go to `/e/fscratch/profound/naeimitabiei1/sliced-prof/h1-<arm>-<hold>/`.
 
 The worktree also carries the main tree's ignored build artifacts (`git status --ignored vllm`: the `.so` extensions, `vllm_flash_attn/{cute,layers,ops}`, `third_party/*`), copied in. MTP arms never import FlashAttention, but the DFlash2 drafter does. Without them the first smoke test (hold 2492777) failed with `vllm.vllm_flash_attn requires the CUDA flash attention extensions`.
 
-## Results (run h1, 2026-10-24; h2-sub on hold 2492597)
+## Results (run h1 on 4 holds + run h2 on hold 2492597, 2026-10-24)
 
 These are 600 s c=4 replays. Tokens/step is 1 + accepted/drafts from /metrics. The per-turn decode rate is output tokens from the first token to the end of the turn, median over turns. ms/step is tokens/step divided by that rate. It is derived, so it includes the steps where other agents' prefills are interleaved.
 
@@ -66,19 +66,22 @@ These are 600 s c=4 replays. Tokens/step is 1 + accepted/drafts from /metrics. T
 |---|---|--:|---|--:|--:|
 | MTP3 | 065-15 | 2.764 | .761 .572 .431 | 105.8 | 26.1 |
 | MTP3 | 106-18 | 2.780 | .767 .576 .438 | 106.1 | 26.2 |
+| MTP3 | 044-46 | 2.819 | .774 .592 .454 | 107.6 | 26.2 |
 | incoai | 065-15 | 2.607 | .719 .517 .370 | 101.5 | 25.7 |
 | incoai | 065-16 | 2.628 | .726 .523 .379 | 99.6 | 26.4 |
 | SubconsciousDev | 065-16 | 2.622 | .723 .520 .379 | 98.8 | 26.5 |
 | SubconsciousDev | 106-17 | 2.632 | .726 .527 .379 | 97.3 | 27.0 |
-| SubconsciousDev | 044-46 | 2.630 | | 98.6 | 26.7 |
+| SubconsciousDev | 044-46 | 2.630 | .725 .525 .380 | 98.6 | 26.7 |
 | AlayaNeW | 106-17 | 2.565 | .701 .500 .364 | 90.8 | 28.3 |
 | AlayaNeW | 106-18 | 2.554 | .699 .496 .358 | 92.2 | 27.7 |
+| AlayaNeW | 044-46 | 2.563 | .704 .499 .360 | 90.4 | 28.4 |
 
 Same-node per-turn decode ratio on the turns both arms reached (median / geomean):
 - incoai / MTP3: 0.946 / 0.994
 - SubconsciousDev / incoai: 0.985 / 0.912
 - AlayaNeW / SubconsciousDev: 0.925 / 0.904
 - AlayaNeW / MTP3: 0.856 / 0.890
+- h2 (044-46): SubconsciousDev / MTP3 0.952 / 0.908; AlayaNeW / MTP3 0.879 / 0.869
 
 Findings:
 - **MTP3 stays ahead.** Its first draft position accepts 0.76-0.77, against 0.70-0.73 for every DFlash2 head. It gets ~5% more tokens per step at the same step time, so per-turn decode is ~5% faster than incoai, as in the write-up.
