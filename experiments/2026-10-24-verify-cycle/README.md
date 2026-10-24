@@ -82,3 +82,10 @@ Edges (`an/edges-2489367-w*.txt`) fall into two kinds:
 - Not overlapped: the remaining edges, at +0.1 to +0.2 us median with p90 about +0.45.
 
 The same edges measured +0.42 to +0.48 median in the 10-23 trace (mg5g-dec4-2479208, glue-ab2). The pure launch-gap total is therefore ~0.1-0.35 ms/step, depending on the run.
+
+A second server ran the same config on hold 2489248 (`an/*-2489248-*`). It reproduces the numbers:
+- Cycle: 1121 us (50K) and 1129 us (5K).
+- Spans: 22.05 and 22.17 ms.
+- Every non-MoE group within 3 us per cycle.
+- MoE 545 vs 561 us per cycle, the routing/hot-set spread.
+- Non-overlapped edges again 0.16 us median. The 0.42-0.48 of the 10-23 trace came from that run, not from the kernels.
