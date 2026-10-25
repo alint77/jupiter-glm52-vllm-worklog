@@ -4,7 +4,9 @@
 # changed). Uses the caller's environment (VLLM_CACHE_ROOT, *_DEFINES), so the
 # builds are the ones the server's own load() calls would make; serve.sh starts
 # it in the background at boot. TORCH_CUDA_ARCH_LIST=9.0+PTX gives one_shot
-# (no -gencode of its own) the flags the GPU-visible build derives.
+# (no -gencode of its own) the flags the GPU-visible build derives. -P: the
+# server imports vLLM from PYTHONPATH (the pinned prod tree), and `python -c`
+# would put the cwd (the main tree) ahead of it.
 #     prebuild_extensions.py
 import os
 import subprocess
@@ -25,7 +27,7 @@ procs = {}
 for tag, target in BUILDS.items():
     module, fn = target.split(":")
     code = f"import {module} as m; m.{fn}()"
-    procs[tag] = subprocess.Popen([sys.executable, "-c", code], env=env,
+    procs[tag] = subprocess.Popen([sys.executable, "-P", "-c", code], env=env,
                                   stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
                                   text=True)
 failed = 0

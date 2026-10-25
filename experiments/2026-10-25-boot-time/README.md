@@ -147,4 +147,20 @@ Boots on hold 2507069 (jpbo-004-01), all from `worktrees/prod`:
 - "To healthy" counts from `srun` start and includes ~1.5 min of imports and spawn.
 - The target load fell from 352 s to 65 s.
 - In B and C the MTP load benefits from the page cache of the earlier boot on the same node.
-- A profile run of 94-120 s, against 33 s in the warm mmap boot: the prebuild was still checking or building when the profile run's `load()` calls ran, and they waited on its locks. That needs a look.
+- The profile runs took 94-120 s, against 33 s in the warm mmap boot, and in C the server rebuilt all 5 extensions one after another (17:16-17:26).
+  - Cause: the prebuild ran `python -c` from the main tree's directory. `-c` puts the cwd ahead of `PYTHONPATH`, so the prebuild built the main tree's sources while the server built the pinned tree's, and each rebuilt over the other.
+  - Fixed with `python -P` for the build processes.
+
+Boot E (hold 2507069, prod c=4 root, vllm a49557e242, prebuild fixed): **healthy 4:51 after `serve.sh`** (17:35:08 → 17:40:06), against 10:56 warm and 19:32 cold this morning.
+
+| phase | E | warm mmap boot (prod code) |
+|---|--:|--:|
+| `serve.sh` → load start | 1:33 | 2:10 |
+| target weights | 64.2 s | 352.2 s |
+| MTP layer weights | 3.6 s | 19.2 s |
+| torch.compile (hit) | 30.6 s | 35.6 s |
+| profile run | 28.5 s | 33.3 s |
+| graph capture | 33 s | 37 s |
+| observed HBM free | 2.91 GiB | 2.91 GiB |
+
+The prebuild found all 6 extensions up to date in 12-33 s, in the background.
