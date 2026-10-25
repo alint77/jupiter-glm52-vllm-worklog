@@ -1,0 +1,7 @@
+14:49:14.048 start on jpbo-096-37
+14:49:15.416 env cold done
+14:49:16.666 serve.sh
+14:51:25.540 load start, TP0 pid 746555
+14:55:58.755 load done
+15:01:34.808 health ok
+15:01:50.676 server down

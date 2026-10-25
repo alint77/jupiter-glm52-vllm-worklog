@@ -1,0 +1,5 @@
+r1 readers=1 bytes=9399050144 s=1.286541154 GiB/s=6.80
+r4 readers=4 bytes=25316274376 s=.972293372 GiB/s=24.24
+r16 readers=16 bytes=51467915912 s=1.097450472 GiB/s=43.67
+r32 readers=32 bytes=50928009480 s=1.154254457 GiB/s=41.09
+s4 readers=4 bytes=37365987488 s=1.429155345 GiB/s=24.34 (same files: per-reader bytes counted once each)
