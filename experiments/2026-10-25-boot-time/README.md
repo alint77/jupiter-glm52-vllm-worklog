@@ -164,3 +164,5 @@ Boot E (hold 2507069, prod c=4 root, vllm a49557e242, prebuild fixed): **healthy
 | observed HBM free | 2.91 GiB | 2.91 GiB |
 
 The prebuild found all 6 extensions up to date in 12-33 s, in the background.
+
+Boot D (fresh node jpbo-070-05, hold 2510045, same code and cache as E): **healthy 5:20 after `serve.sh`**. Target weights 67.4 s, MTP layer weights 5.3 s (109 s in boot A before the drafter fix), compile hit 36.0 s, profile run 29.8 s, observed free 2.91 GiB. On a node with a cold page cache, the drafter now reads only its own layer.
