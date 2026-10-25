@@ -117,3 +117,34 @@ With the first three, a boot is ~7.5 min, against 19.5 min today and 11 min warm
 - `node_probe.sh`: the boot with import times, vmstat and py-spy, then the GPFS dd probes.
 - `shard_probe.py`, `shard_probe.sh`: one shard through the tp_sliced slicing, mmap against eager.
 - `out-2503094/` (warm prod boot plus probes), `out-2503094-eager/` (failed eager boot), `out-2503094-eager2/` (eager, sorted fix), `logs/`
+
+## Levers shipped (2026-10-25, afternoon)
+
+- **Read-ahead load** (vllm f722d708e2, local).
+  - The tp_sliced target reads up to 2 shards ahead in 64 MiB parallel `preadv`s and yields zero-copy views. The order is the mmap walk's: files naturally sorted, names sorted.
+  - `tests/model_executor/model_loader/test_tiered_moe_readahead.py` checks the stream against mmap.
+  - On real GLM shards, 1,244 tensors (bf16, f32, i32, i64) are byte-identical.
+  - `VLLM_TIERED_MOE_READAHEAD_LOAD=0` restores mmap.
+- **The drafter skips the target's experts** (vllm a49557e242).
+  - With the target no longer filling the page cache, the tp_sliced MTP drafter's mmap walk faulted the whole checkpoint in again: 109 s on a fresh node (boot A).
+  - It now gets the layer-aware expert map the EP drafter uses (none of the target's experts, all of its own), so the target's routed experts are skipped before any read.
+  - Two tests in `test_registry.py` fail with and without this change: their fake configs lack `tiered_moe_config.layout`. They predate this work.
+- **Parallel prebuild:** `agent_space/scripts/prebuild_extensions.py`, started in the background by `serve.sh`.
+  - It builds the 6 JIT extensions at once with no GPU visible. `TORCH_CUDA_ARCH_LIST=9.0+PTX` reproduces `one_shot`'s device-derived flags; build.ninja is identical to the server's own.
+  - Timing: 88 s for a full build, 19 s for an up-to-date check, all behind the weight load.
+- **Pinned prod tree:** `agent_space/scripts/prod_pin.sh [commit]` sets up `worktrees/prod` with the built artifacts copied in.
+  - `claude-server.sbatch` runs from it via `PYTHONPATH` (`CLAUDE_PROD_TREE=` opts out).
+  - `prod_prewarm.sh <hold> <c>` boots a launcher's config once to warm its caches.
+
+Boots on hold 2507069 (jpbo-004-01), all from `worktrees/prod`:
+
+| boot | cache | to healthy | target load | MTP load | torch.compile | profile run |
+|---|---|--:|--:|--:|--:|--:|
+| A | copy of prod c=4 cache, new tree path (miss) | 14:17 | **64.7 s** | 108.8 s | 248 s | 94 s |
+| B | same copy, warm | **8:56** | 64.8 s | 18.6 s | 32 s | 120 s |
+| C | real prod c=4 root (prewarm) | 11:51 | 64.2 s | 6.6 s | 241 s | 94 s |
+
+- "To healthy" counts from `srun` start and includes ~1.5 min of imports and spawn.
+- The target load fell from 352 s to 65 s.
+- In B and C the MTP load benefits from the page cache of the earlier boot on the same node.
+- A profile run of 94-120 s, against 33 s in the warm mmap boot: the prebuild was still checking or building when the profile run's `load()` calls ran, and they waited on its locks. That needs a look.

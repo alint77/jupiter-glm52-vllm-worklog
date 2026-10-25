@@ -184,6 +184,13 @@ elif [[ -n "${TRACE_ROOT:-}" ]]; then
   mkdir -p "${TRACE_ROOT}"
   extra+=(--profiler-config "{\"profiler\":\"torch\",\"torch_profiler_dir\":\"${TRACE_ROOT}\",\"torch_profiler_with_stack\":${TRACE_STACK:-false},\"torch_profiler_record_shapes\":true,\"ignore_frontend\":true}")
 fi
+# The JIT extensions, built (or found up to date) all at once and off the GPUs
+# while the server boots, instead of one after another inside it: up to 3.8 min
+# when their headers changed (2026-10-25-boot-time). The server's own load()
+# waits on each build's lock. PREBUILD= turns it off.
+if [[ -n "${PREBUILD-1}" ]]; then
+  "${VLLM_VENV_DIR:-${PWD}/.venv}/bin/python" agent_space/scripts/prebuild_extensions.py >&2 &
+fi
 exec agent_space/experiments/2026-07-17-end-to-end-tuning/run-server.sh \
   --speculative-config "${spec_config}" \
   --decode-context-parallel-size "${DCP:-4}" \

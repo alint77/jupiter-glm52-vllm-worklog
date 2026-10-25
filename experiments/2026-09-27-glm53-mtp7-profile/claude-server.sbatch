@@ -31,6 +31,14 @@ log_dir="${CLAUDE_LOCAL_LOG_DIR:-${repo_dir}/${E}}"
 
 cd "${repo_dir}"
 source agent_space/jupiter-env.sh
+# vLLM from the pinned prod tree (agent_space/scripts/prod_pin.sh), so the
+# compile and extension caches survive main-tree edits; CLAUDE_PROD_TREE=
+# runs the main tree.
+prod_tree="${CLAUDE_PROD_TREE-/e/fscratch/profound/${USER:-$(id -un)}/worktrees/prod}"
+if [[ -n "${prod_tree}" && -d "${prod_tree}/vllm" ]]; then
+  export PYTHONPATH="${prod_tree}${PYTHONPATH:+:${PYTHONPATH}}"
+  echo "vLLM from ${prod_tree} at $(git -C "${prod_tree}" log --oneline -1)"
+fi
 
 [[ -s "${token_file}" ]]
 export VLLM_API_KEY="$(<"${token_file}")"
